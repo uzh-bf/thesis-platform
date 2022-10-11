@@ -61,14 +61,12 @@ model User {
 
   accounts Account[]
 
-  assignedProposal   Proposal? @relation("proposalAssignment")
-  assignedProposalId String?
-
-  supervises Proposal[] @relation("proposalSupervision")
-  appliedFor Proposal[] @relation("proposalApplication")
-
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+
+  assignedProposals   UserProposalAssignment[]
+  supervisedProposals UserProposalSupervision[]
+  appliedFor          UserProposalApplication[]
 }
 
 model VerificationToken {
@@ -93,12 +91,40 @@ model Proposal {
   type   ProposalType
   status ProposalStatus @default(OPEN)
 
-  assignedTo          User?   @relation("proposalAssignment", fields: [assignedToStudentId], references: [id])
-  assignedToStudentId String? @unique
-
-  supervisedBy User[] @relation("proposalSupervision")
-  applicants   User[] @relation("proposalApplication")
-
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+
+  assignedTo   UserProposalAssignment[]
+  supervisedBy UserProposalSupervision[]
+  applications UserProposalApplication[]
+}
+
+model UserProposalAssignment {
+  proposal   Proposal @relation(fields: [proposalId], references: [id])
+  proposalId String
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  @@unique([proposalId, userId])
+}
+
+model UserProposalSupervision {
+  proposal   Proposal @relation(fields: [proposalId], references: [id])
+  proposalId String
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  @@unique([proposalId, userId])
+}
+
+model UserProposalApplication {
+  proposal   Proposal @relation(fields: [proposalId], references: [id])
+  proposalId String
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  @@unique([proposalId, userId])
 }
