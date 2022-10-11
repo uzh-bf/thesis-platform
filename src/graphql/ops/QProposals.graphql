@@ -1,0 +1,11 @@
+query Proposals {
+  proposals {
+    id
+
+    title
+    description
+
+    type
+    status
+  }
+}
