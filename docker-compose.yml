@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:14
+    image: postgres:14.4
     environment:
       POSTGRES_USER: thesis
       POSTGRES_PASSWORD: thesis

@@ -37,13 +37,13 @@ export enum ProposalType {
 
 export type Query = {
   __typename?: 'Query';
-  proposals?: Maybe<Array<Maybe<Proposal>>>;
+  proposals?: Maybe<Array<Proposal>>;
 };
 
 export type ProposalsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type ProposalsQuery = { __typename?: 'Query', proposals?: Array<{ __typename?: 'Proposal', id: string, title: string, description: string, type: ProposalType, status: ProposalStatus } | null> | null };
+export type ProposalsQuery = { __typename?: 'Query', proposals?: Array<{ __typename?: 'Proposal', id: string, title: string, description: string, type: ProposalType, status: ProposalStatus }> | null };
 
 
 
@@ -140,7 +140,7 @@ export type ProposalResolvers<ContextType = any, ParentType extends ResolversPar
 };
 
 export type QueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
-  proposals?: Resolver<Maybe<Array<Maybe<ResolversTypes['Proposal']>>>, ParentType, ContextType>;
+  proposals?: Resolver<Maybe<Array<ResolversTypes['Proposal']>>, ParentType, ContextType>;
 };
 
 export type Resolvers<ContextType = any> = {

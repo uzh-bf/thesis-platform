@@ -178,9 +178,13 @@
               "kind": "LIST",
               "name": null,
               "ofType": {
-                "kind": "OBJECT",
-                "name": "Proposal",
-                "ofType": null
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "Proposal",
+                  "ofType": null
+                }
               }
             },
             "isDeprecated": false,

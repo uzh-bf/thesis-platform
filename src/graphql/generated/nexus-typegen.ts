@@ -59,7 +59,7 @@ export interface NexusGenFieldTypes {
     type: NexusGenEnums['ProposalType']; // ProposalType!
   }
   Query: { // field return type
-    proposals: Array<NexusGenRootTypes['Proposal'] | null> | null; // [Proposal]
+    proposals: NexusGenRootTypes['Proposal'][] | null; // [Proposal!]
   }
 }
 
