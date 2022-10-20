@@ -23,5 +23,5 @@ enum ProposalType {
 }
 
 type Query {
-  proposals: [Proposal!]
+  proposals: [Proposal!]!
 }

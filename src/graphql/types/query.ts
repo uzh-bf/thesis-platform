@@ -1,11 +1,11 @@
 import { objectType } from 'nexus'
-import { Proposal } from './proposals'
+import * as ProposalTypes from './proposals'
 
 export const Query = objectType({
   name: 'Query',
   definition(t) {
-    t.list.nonNull.field('proposals', {
-      type: Proposal,
+    t.nonNull.list.nonNull.field('proposals', {
+      type: ProposalTypes.Proposal,
       resolve(_root, _args, ctx) {
         return ctx.prisma.proposal.findMany()
       },
