@@ -24,10 +24,13 @@ export type Proposal = {
 };
 
 export enum ProposalStatus {
-  Assigned = 'ASSIGNED',
   Closed = 'CLOSED',
-  Grading = 'GRADING',
-  Open = 'OPEN'
+  Matched = 'MATCHED',
+  Open = 'OPEN',
+  Reviewed = 'REVIEWED',
+  Submitted = 'SUBMITTED',
+  WaitingForStudent = 'WAITING_FOR_STUDENT',
+  WaitingForSupervisor = 'WAITING_FOR_SUPERVISOR'
 }
 
 export enum ProposalType {

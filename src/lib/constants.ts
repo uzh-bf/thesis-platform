@@ -14,6 +14,7 @@ export enum ProposalType {
 }
 
 export enum ProposalFeedbackType {
+  ACCEPTED = 'ACCEPTED',
   REJECTED_CONTENT = 'REJECTED_CONTENT',
   REJECTED_FORMAT = 'REJECTED_FORMAT',
   DECLINED_INTEREST = 'DECLINED_INTEREST',

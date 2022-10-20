@@ -17,7 +17,7 @@ export interface NexusGenInputs {
 }
 
 export interface NexusGenEnums {
-  ProposalStatus: "ASSIGNED" | "CLOSED" | "GRADING" | "OPEN"
+  ProposalStatus: "CLOSED" | "MATCHED" | "OPEN" | "REVIEWED" | "SUBMITTED" | "WAITING_FOR_STUDENT" | "WAITING_FOR_SUPERVISOR"
   ProposalType: "STUDENT" | "SUPERVISOR"
 }
 

@@ -29,7 +29,7 @@ model ProposalFeedbackType {
 }
 
 model Account {
-  id String @id @default(cuid())
+  id String @id @default(uuid())
 
   userId                   String
   type                     String
@@ -50,7 +50,7 @@ model Account {
 }
 
 model User {
-  id String @id @default(cuid())
+  id String @id @default(uuid())
 
   name          String?
   email         String?   @unique
@@ -79,7 +79,7 @@ model VerificationToken {
 }
 
 model TopicArea {
-  id String @id @default(cuid())
+  id String @id @default(uuid())
 
   name String
 
@@ -87,7 +87,7 @@ model TopicArea {
 }
 
 model ProposalAttachment {
-  id String @id @default(cuid())
+  id String @id @default(uuid())
 
   href String
 
@@ -96,7 +96,7 @@ model ProposalAttachment {
 }
 
 model Proposal {
-  id String @id @unique @default(cuid())
+  id String @id @unique @default(uuid())
 
   title       String
   description String

@@ -1,13 +1,14 @@
 import { enumType, objectType } from 'nexus'
+import { ProposalStatus, ProposalType } from '../../lib/constants'
 
-export const ProposalType = enumType({
+export const EnumProposalType = enumType({
   name: 'ProposalType',
-  members: ['STUDENT', 'SUPERVISOR'],
+  members: ProposalType,
 })
 
-export const ProposalStatus = enumType({
+export const EnumProposalStatus = enumType({
   name: 'ProposalStatus',
-  members: ['OPEN', 'ASSIGNED', 'GRADING', 'CLOSED'],
+  members: ProposalStatus,
 })
 
 export const Proposal = objectType({
@@ -19,11 +20,11 @@ export const Proposal = objectType({
     t.nonNull.string('description')
 
     t.nonNull.field('type', {
-      type: ProposalType,
+      type: EnumProposalType,
     })
 
     t.nonNull.field('status', {
-      type: ProposalStatus,
+      type: EnumProposalStatus,
     })
   },
 })

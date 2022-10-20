@@ -11,10 +11,13 @@ type Proposal {
 }
 
 enum ProposalStatus {
-  ASSIGNED
   CLOSED
-  GRADING
+  MATCHED
   OPEN
+  REVIEWED
+  SUBMITTED
+  WAITING_FOR_STUDENT
+  WAITING_FOR_SUPERVISOR
 }
 
 enum ProposalType {
