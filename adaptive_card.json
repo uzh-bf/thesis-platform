@@ -1,0 +1,160 @@
+{
+  "type": "AdaptiveCard",
+  "body": [
+    {
+      "type": "TextBlock",
+      "size": "Medium",
+      "weight": "Bolder",
+      "text": "New Thesis Proposal - ${title}"
+    },
+    {
+      "type": "ColumnSet",
+      "columns": [
+        {
+          "type": "Column",
+          "items": [
+            {
+              "type": "TextBlock",
+              "weight": "Bolder",
+              "text": "Submitted by: ${creator.name}",
+              "wrap": true
+            },
+            {
+              "type": "TextBlock",
+              "spacing": "None",
+              "text": "Submitted on  {{DATE(${createdUtc},SHORT)}}",
+              "isSubtle": true,
+              "wrap": true
+            }
+          ],
+          "width": "auto"
+        },
+        {
+          "type": "Column",
+          "items": [
+            {
+              "type": "TextBlock",
+              "weight": "Bolder",
+              "text": "Student CV",
+              "wrap": true
+            },
+            {
+              "type": "TextBlock",
+              "spacing": "None",
+              "text": "Student Gradebook",
+              "isSubtle": false,
+              "wrap": true,
+              "weight": "Bolder"
+            }
+          ],
+          "width": "auto"
+        }
+      ]
+    },
+    {
+      "type": "TextBlock",
+      "text": "${description}",
+      "wrap": true
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.ShowCard",
+      "title": "Accept",
+      "card": {
+        "type": "AdaptiveCard",
+        "body": [
+          {
+            "type": "TextBlock",
+            "text": "Once you accept this proposal, the student will be asked to verify the matching. The proposal will then be removed from the proposal market and assigned to you for supervision.",
+            "wrap": true
+          },
+          {
+            "type": "Input.Text",
+            "id": "acceptComment",
+            "placeholder": "Add any follow-up comment that you would like to send directly to the student.",
+            "isMultiline": true,
+            "isRequired": true
+          }
+        ],
+        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json"
+      }
+    },
+    {
+      "type": "Action.ShowCard",
+      "title": "Reject",
+      "card": {
+        "type": "AdaptiveCard",
+        "body": [
+          {
+            "type": "TextBlock",
+            "text": "Rejecting this proposal because of lacking content quality or format requirements will cause review of the proposal by BW. Upon approval of the rejection, the student will need to improve and resubmit the proposal.",
+            "wrap": true
+          },
+          {
+            "type": "Input.ChoiceSet",
+            "choices": [
+              {
+                "title": "Content Unsuitable",
+                "value": "REJECTED_CONTENT"
+              },
+              {
+                "title": "Format Unsuitable",
+                "value": "REJECTED_FORMAT"
+              }
+            ],
+            "placeholder": "Why should this proposal be rejected?",
+            "isRequired": true
+          },
+          {
+            "type": "Input.Text",
+            "id": "rejectComment",
+            "placeholder": "Comment on the specific reasons of rejection (will not be sent to the student).",
+            "isMultiline": true,
+            "isRequired": true
+          }
+        ],
+        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json"
+      }
+    },
+    {
+      "type": "Action.ShowCard",
+      "title": "Decline",
+      "card": {
+        "type": "AdaptiveCard",
+        "body": [
+          {
+            "type": "TextBlock",
+            "text": "Declining this proposal because of a mismatch in your personal interest or a high workload on your side will close this matter from your side.",
+            "wrap": true
+          },
+          {
+            "type": "Input.ChoiceSet",
+            "choices": [
+              {
+                "title": "Lack of Interest",
+                "value": "DECLINED_INTEREST"
+              },
+              {
+                "title": "Current Workload",
+                "value": "DECLINED_WORKLOAD"
+              }
+            ],
+            "placeholder": "Why do you want do decline this proposal?",
+            "isRequired": true
+          },
+          {
+            "type": "Input.Text",
+            "id": "comment",
+            "placeholder": "Comment on the specific reasons for declining this proposal (will not be sent to the student).",
+            "isMultiline": true,
+            "isRequired": true
+          }
+        ],
+        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json"
+      }
+    }
+  ],
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "version": "1.4"
+}
