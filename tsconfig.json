@@ -24,7 +24,8 @@
   "ts-node": {
     "transpileOnly": true,
     "moduleTypes": {
-      "prisma/seed.ts": "esm"
+      "prisma/seed.ts": "esm",
+      "src/lib/constants.ts": "esm"
     }
   }
 }

@@ -19,7 +19,7 @@
     "prisma:push": "prisma db push",
     "prisma:reset": "prisma migrate reset",
     "prisma:studio": "studio",
-    "seed": "ts-node --esm prisma/seed.ts",
+    "prisma:seed": "ts-node --esm prisma/seed.ts",
     "start": "next start"
   },
   "dependencies": {
@@ -70,6 +70,6 @@
     "node": "18.11.0"
   },
   "prisma": {
-    "seed": "npm run seed"
+    "seed": "npm-run-all prisma:push prisma:seed"
   }
 }

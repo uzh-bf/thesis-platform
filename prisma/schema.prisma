@@ -3,38 +3,29 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlserver"
   url      = env("DATABASE_URL")
 }
 
-enum ProposalStatus {
-  OPEN
-  WAITING_FOR_STUDENT
-  WAITING_FOR_SUPERVISOR
-  MATCHED
-  SUBMITTED
-  REVIEWED
-  CLOSED
+// enum UserRole {
+//   STUDENT
+//   SUPERVISOR
+//   ADMIN
+// }
+
+model ProposalStatus {
+  key       String     @id @unique
+  proposals Proposal[]
 }
 
-enum UserRole {
-  STUDENT
-  SUPERVISOR
-  ADMIN
+model ProposalType {
+  key       String     @id @unique
+  proposals Proposal[]
 }
 
-enum ProposalType {
-  STUDENT
-  SUPERVISOR
-}
-
-// goal: multiple rejections will trigger review process by BW
-// declining will not trigger review, but will be recorded
-enum ProposalFeedback {
-  REJECTED_CONTENT
-  REJECTED_FORMAT
-  DECLINED_INTEREST
-  DECLINED_WORKLOAD
+model ProposalFeedbackType {
+  key       String                 @id @unique
+  proposals UserProposalFeedback[]
 }
 
 model Account {
@@ -66,7 +57,7 @@ model User {
   emailVerified DateTime?
   image         String?
 
-  role UserRole @default(STUDENT)
+  role String @default("UNSET")
 
   accounts Account[]
 
@@ -95,6 +86,15 @@ model TopicArea {
   proposals Proposal[]
 }
 
+model ProposalAttachment {
+  id String @id @default(cuid())
+
+  href String
+
+  proposal   Proposal @relation(fields: [proposalId], references: [id])
+  proposalId String
+}
+
 model Proposal {
   id String @id @unique @default(cuid())
 
@@ -104,10 +104,13 @@ model Proposal {
   plannedStartAt DateTime?
   plannedEndAt   DateTime?
 
-  attachments String[]
+  attachments ProposalAttachment[]
 
-  type   ProposalType
-  status ProposalStatus @default(OPEN)
+  type    ProposalType @relation(fields: [typeKey], references: [key])
+  typeKey String
+
+  status    ProposalStatus @relation(fields: [statusKey], references: [key])
+  statusKey String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -162,7 +165,9 @@ model UserProposalFeedback {
   user   User   @relation(fields: [userId], references: [id])
   userId String
 
-  type        ProposalFeedback
+  type    ProposalFeedbackType @relation(fields: [typeKey], references: [key])
+  typeKey String
+
   description String
 
   @@unique([proposalId, userId])
