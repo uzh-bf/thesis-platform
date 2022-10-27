@@ -22,10 +22,14 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user, account }) {
-      return token
+      return {
+        ...token,
+        role: user?.role,
+      }
     },
     async session({ session, user, token }) {
       session.user.sub = token.sub
+      session.user.role = token.role
       return session
     },
   },
