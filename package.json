@@ -8,9 +8,10 @@
     "build:graphql": "graphql-codegen --config codegen.ts",
     "build:next": "next build",
     "predev": "npm-run-all prisma:generate build:nexus",
-    "dev": "npm-run-all --parallel dev:generate dev:next",
+    "dev": "npm-run-all --parallel dev:*",
     "dev:generate": "graphql-codegen --config codegen.ts --watch",
     "dev:next": "next dev",
+    "dev:nexus": "ts-node-dev --transpile-only --no-notify -P tsconfig.nexus.json src/pages/api/graphql.ts",
     "format": "prettier --write .",
     "lint": "next lint",
     "prisma:deploy": "prisma migrate deploy",
@@ -27,10 +28,10 @@
     "@prisma/client": "4.5.0",
     "@uzh-bf/design-system": "0.0.61",
     "graphql": "16.6.0",
-    "graphql-yoga": "3.0.0-next.5",
+    "graphql-yoga": "3.0.0-next.7",
     "jsonwebtoken": "8.5.1",
-    "next": "12.3.1",
-    "next-auth": "4.14.0",
+    "next": "13.0.0",
+    "next-auth": "4.15.0",
     "nexus": "1.3.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
@@ -55,15 +56,16 @@
     "@types/react": "^18.0.21",
     "@types/react-dom": "^18.0.6",
     "autoprefixer": "10.4.12",
-    "eslint": "8.25.0",
-    "eslint-config-next": "12.3.1",
+    "eslint": "8.26.0",
+    "eslint-config-next": "13.0.0",
     "npm-run-all": "4.1.5",
     "postcss": "8.4.18",
     "prettier-plugin-organize-imports": "3.1.1",
     "prisma": "4.5.0",
-    "tailwindcss": "3.2.0",
+    "tailwindcss": "3.2.1",
     "tailwindcss-radix": "2.6.1",
     "ts-node": "10.9.1",
+    "ts-node-dev": "2.0.0",
     "typescript": "4.8.4"
   },
   "volta": {
@@ -71,5 +73,10 @@
   },
   "prisma": {
     "seed": "npm-run-all prisma:push prisma:seed"
+  },
+  "overrides": {
+    "next-auth": {
+      "next": "13.0.0"
+    }
   }
 }
