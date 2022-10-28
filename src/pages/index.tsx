@@ -21,6 +21,7 @@ function Index() {
   }, [data, selectedProposal])
 
   console.log(session?.user.role)
+
   if (session?.user) {
     return (
       <div className="p-4 m-auto mt-4 space-y-4 border rounded max-w-7xl">
@@ -34,15 +35,32 @@ function Index() {
             {data?.proposals?.map((proposal) => (
               <div key={proposal.id} className="p-4 space-y-2 border rounded">
                 <H1>{proposal.title}</H1>
-                <Button
-                  active={selectedProposal === proposal.id}
-                  onClick={() => {
-                    setSelectedProposal(proposal.id)
-                    setDisplayMode('details')
-                  }}
-                >
-                  Details
-                </Button>
+                <div className="flex flex-row gap-2">
+                  <Button
+                    active={
+                      selectedProposal === proposal.id &&
+                      displayMode === 'details'
+                    }
+                    onClick={() => {
+                      setSelectedProposal(proposal.id)
+                      setDisplayMode('details')
+                    }}
+                  >
+                    Details
+                  </Button>
+                  <Button
+                    active={
+                      selectedProposal === proposal.id &&
+                      displayMode === 'application'
+                    }
+                    onClick={() => {
+                      setSelectedProposal(proposal.id)
+                      setDisplayMode('application')
+                    }}
+                  >
+                    Application
+                  </Button>
+                </div>
               </div>
             ))}
 
@@ -53,7 +71,7 @@ function Index() {
                 setDisplayMode('create')
               }}
             >
-              Create new Proposal
+              Submit new Proposal
             </Button>
           </div>
 
@@ -67,20 +85,23 @@ function Index() {
               </div>
             )}
 
+            {displayMode === 'application' && proposalDetails && (
+              <div>
+                <iframe
+                  className="rounded"
+                  width="100%"
+                  height="1300px"
+                  src="https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAs3FqIECvYGdIv-SlumKwtF1UOUhFT0pOS1pBWEFSTFpOTU1YMU1DMlk0RC4u&embed=true"
+                ></iframe>
+              </div>
+            )}
+
             {displayMode === 'create' && (
               <iframe
                 className="rounded"
                 width="100%"
                 height="1300px"
                 src="https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAs3FqIECvYGdIv-SlumKwtF1UOE9LV0RPSDRDNE8xNE9HQVJLN0RFTklTRC4u&embed=true"
-                // frameborder="0"
-                // marginwidth="0"
-                // marginheight="0"
-                // style="border: none; max-width:100%; max-height:100vh"
-                // allowfullscreen
-                // webkitallowfullscreen
-                // mozallowfullscreen
-                // msallowfullscreen
               ></iframe>
             )}
           </div>
@@ -88,6 +109,7 @@ function Index() {
       </div>
     )
   }
+
   return (
     <div className="flex flex-row items-center justify-between max-w-5xl p-4 m-auto mt-4 space-y-4 border rounded">
       Not signed in
