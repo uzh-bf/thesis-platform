@@ -17,6 +17,16 @@
         "possibleTypes": null
       },
       {
+        "kind": "SCALAR",
+        "name": "File",
+        "description": null,
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
         "kind": "OBJECT",
         "name": "Proposal",
         "description": null,

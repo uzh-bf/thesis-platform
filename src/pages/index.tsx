@@ -1,8 +1,27 @@
 import { ProposalsDocument } from '@graphql/ops'
 import { Button, H1 } from '@uzh-bf/design-system'
+import { Field, Form, Formik, FormikHelpers } from 'formik'
 import { signIn, signOut, useSession } from 'next-auth/react'
 import { useMemo, useState } from 'react'
 import { useQuery } from 'urql'
+
+interface ApplicationValues {
+  matriculationNumber: string
+  fullName: string
+  plannedStartingDate?: Date
+  motivation: string
+  personalCV?: File
+  transcriptOfRecords?: File
+}
+
+const ApplicationInitialValues: ApplicationValues = {
+  matriculationNumber: '',
+  fullName: '',
+  plannedStartingDate: undefined,
+  motivation: '',
+  personalCV: undefined,
+  transcriptOfRecords: undefined,
+}
 
 function Index() {
   const { data: session } = useSession()
@@ -33,35 +52,20 @@ function Index() {
         <div className="flex flex-row gap-4">
           <div className="flex-1 space-y-1">
             {data?.proposals?.map((proposal) => (
-              <div key={proposal.id} className="p-4 space-y-2 border rounded">
+              <Button
+                fluid
+                key={proposal.id}
+                className="p-4 space-y-2 border rounded"
+                active={
+                  selectedProposal === proposal.id && displayMode === 'details'
+                }
+                onClick={() => {
+                  setSelectedProposal(proposal.id)
+                  setDisplayMode('details')
+                }}
+              >
                 <H1>{proposal.title}</H1>
-                <div className="flex flex-row gap-2">
-                  <Button
-                    active={
-                      selectedProposal === proposal.id &&
-                      displayMode === 'details'
-                    }
-                    onClick={() => {
-                      setSelectedProposal(proposal.id)
-                      setDisplayMode('details')
-                    }}
-                  >
-                    Details
-                  </Button>
-                  <Button
-                    active={
-                      selectedProposal === proposal.id &&
-                      displayMode === 'application'
-                    }
-                    onClick={() => {
-                      setSelectedProposal(proposal.id)
-                      setDisplayMode('application')
-                    }}
-                  >
-                    Application
-                  </Button>
-                </div>
-              </div>
+              </Button>
             ))}
 
             <Button
@@ -76,23 +80,77 @@ function Index() {
           </div>
 
           <div className="flex-1 border rounded shadow">
-            {displayMode === 'details' && proposalDetails && (
-              <div className="p-4">
-                <H1>{proposalDetails.title}</H1>
-                <p>{proposalDetails.description}</p>
-                <div>{proposalDetails.status}</div>
-                <div>{proposalDetails.type}</div>
-              </div>
-            )}
+            {(displayMode === 'details' || displayMode === 'application') &&
+              proposalDetails && (
+                <div className="p-4">
+                  <H1>{proposalDetails.title}</H1>
+                  <p>{proposalDetails.description}</p>
+                  <div>{proposalDetails.status}</div>
+                  <div>{proposalDetails.type}</div>
+                  <Button
+                    active={
+                      selectedProposal === proposalDetails.id &&
+                      displayMode === 'application'
+                    }
+                    onClick={() => {
+                      setSelectedProposal(proposalDetails.id)
+                      setDisplayMode('application')
+                    }}
+                  >
+                    Application
+                  </Button>
+                </div>
+              )}
 
             {displayMode === 'application' && proposalDetails && (
               <div>
-                <iframe
-                  className="rounded"
-                  width="100%"
-                  height="1300px"
-                  src="https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAs3FqIECvYGdIv-SlumKwtF1UOUhFT0pOS1pBWEFSTFpOTU1YMU1DMlk0RC4u&embed=true"
-                ></iframe>
+                <Formik
+                  initialValues={ApplicationInitialValues}
+                  onSubmit={(
+                    values: ApplicationValues,
+                    { setSubmitting }: FormikHelpers<ApplicationValues>,
+                  ) => {
+                    console.log(values)
+                  }}
+                >
+                  <Form>
+                    <Field
+                      id="matriculationNumber"
+                      name="matriculationNumber"
+                      placeholder="matriculationNumber"
+                    />
+                    <Field
+                      id="fullName"
+                      name="fullName"
+                      placeholder="fullName"
+                    />
+                    <Field
+                      id="plannedStartingDate"
+                      name="plannedStartingDate"
+                      placeholder="plannedStartingDate"
+                      type="date"
+                    />
+                    <Field
+                      id="motivation"
+                      name="motivation"
+                      placeholder="motivation"
+                      as="textarea"
+                    />
+                    <Field
+                      id="personalCV"
+                      name="personalCV"
+                      placeholder="personalCV"
+                      type="file"
+                    />
+                    <Field
+                      id="transcriptOfRecords"
+                      name="transcriptOfRecords"
+                      placeholder="transcriptOfRecords"
+                      type="file"
+                    />
+                    <Button type="submit">Submit</Button>
+                  </Form>
+                </Formik>
               </div>
             )}
 

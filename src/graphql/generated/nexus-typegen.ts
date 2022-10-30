@@ -27,6 +27,7 @@ export interface NexusGenScalars {
   Float: number
   Boolean: boolean
   ID: string
+  File: any
 }
 
 export interface NexusGenObjects {

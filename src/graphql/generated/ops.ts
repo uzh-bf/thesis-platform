@@ -1,4 +1,4 @@
-import { GraphQLResolveInfo } from 'graphql';
+import { GraphQLResolveInfo, GraphQLScalarType, GraphQLScalarTypeConfig } from 'graphql';
 import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
@@ -12,6 +12,7 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
+  File: any;
 };
 
 export type Proposal = {
@@ -118,6 +119,7 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = {
   Boolean: ResolverTypeWrapper<Scalars['Boolean']>;
+  File: ResolverTypeWrapper<Scalars['File']>;
   Proposal: ResolverTypeWrapper<Proposal>;
   ProposalStatus: ProposalStatus;
   ProposalType: ProposalType;
@@ -128,10 +130,15 @@ export type ResolversTypes = {
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = {
   Boolean: Scalars['Boolean'];
+  File: Scalars['File'];
   Proposal: Proposal;
   Query: {};
   String: Scalars['String'];
 };
+
+export interface FileScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['File'], any> {
+  name: 'File';
+}
 
 export type ProposalResolvers<ContextType = any, ParentType extends ResolversParentTypes['Proposal'] = ResolversParentTypes['Proposal']> = {
   description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -147,6 +154,7 @@ export type QueryResolvers<ContextType = any, ParentType extends ResolversParent
 };
 
 export type Resolvers<ContextType = any> = {
+  File?: GraphQLScalarType;
   Proposal?: ProposalResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
 };
