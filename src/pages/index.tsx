@@ -1,5 +1,10 @@
 import { ProposalsDocument } from '@graphql/ops'
-import { Button, H1 } from '@uzh-bf/design-system'
+import {
+  Button,
+  FormikTextareaField,
+  FormikTextField,
+  H1,
+} from '@uzh-bf/design-system'
 import { Field, Form, Formik, FormikHelpers } from 'formik'
 import { signIn, signOut, useSession } from 'next-auth/react'
 import { useMemo, useState } from 'react'
@@ -111,39 +116,42 @@ function Index() {
                     { setSubmitting }: FormikHelpers<ApplicationValues>,
                   ) => {
                     console.log(values)
+
+                    const formData = new FormData()
+                    formData.append(
+                      'matriculationNumber',
+                      values.matriculationNumber,
+                    )
+                    formData.append('cv', values.personalCV!)
+
+                    fetch(
+                      'https://prod-119.westeurope.logic.azure.com:443/workflows/8a7c3785ade64d168a78cc9e21ed7a1c/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=yykbjdA-5KZju5qiBWHw5Gt5WsBa_t1tgBTlqTk7_WU',
+                      {
+                        method: 'POST',
+                        body: formData,
+                      },
+                    )
                   }}
                 >
                   <Form>
-                    <Field
-                      id="matriculationNumber"
+                    <FormikTextField
                       name="matriculationNumber"
-                      placeholder="matriculationNumber"
+                      label="Matriculation Number"
+                      required
                     />
-                    <Field
-                      id="fullName"
+                    <FormikTextField
                       name="fullName"
-                      placeholder="fullName"
+                      label="Full Name"
+                      required
                     />
+                    <Field name="plannedStartingDate" type="date" />
+                    <FormikTextareaField name="motivation" label="Motivation" />
                     <Field
-                      id="plannedStartingDate"
-                      name="plannedStartingDate"
-                      placeholder="plannedStartingDate"
-                      type="date"
-                    />
-                    <Field
-                      id="motivation"
-                      name="motivation"
-                      placeholder="motivation"
-                      as="textarea"
-                    />
-                    <Field
-                      id="personalCV"
                       name="personalCV"
                       placeholder="personalCV"
                       type="file"
                     />
                     <Field
-                      id="transcriptOfRecords"
                       name="transcriptOfRecords"
                       placeholder="transcriptOfRecords"
                       type="file"
