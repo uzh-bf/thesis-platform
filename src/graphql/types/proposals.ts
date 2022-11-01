@@ -19,11 +19,11 @@ export const Proposal = objectType({
     t.nonNull.string('title')
     t.nonNull.string('description')
 
-    t.nonNull.field('type', {
+    t.nonNull.field('typeKey', {
       type: EnumProposalType,
     })
 
-    t.nonNull.field('status', {
+    t.nonNull.field('statusKey', {
       type: EnumProposalStatus,
     })
   },

@@ -44,8 +44,6 @@ function Index() {
     return data?.proposals.find((p) => p.id === selectedProposal)
   }, [data, selectedProposal])
 
-  console.log(session?.user.role)
-
   if (session?.user) {
     return (
       <div className="p-4 m-auto mt-4 space-y-4 border rounded max-w-7xl">

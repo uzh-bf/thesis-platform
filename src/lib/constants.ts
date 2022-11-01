@@ -20,3 +20,9 @@ export enum ProposalFeedbackType {
   DECLINED_INTEREST = 'DECLINED_INTEREST',
   DECLINED_WORKLOAD = 'DECLINED_WORKLOAD',
 }
+
+export enum UserRole {
+  STUDENT = 'STUDENT',
+  SUPERVISOR = 'SUPERVISOR',
+  ADMIN = 'ADMIN',
+}

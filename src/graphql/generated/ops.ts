@@ -19,9 +19,9 @@ export type Proposal = {
   __typename?: 'Proposal';
   description: Scalars['String'];
   id: Scalars['String'];
-  status: ProposalStatus;
+  statusKey: ProposalStatus;
   title: Scalars['String'];
-  type: ProposalType;
+  typeKey: ProposalType;
 };
 
 export enum ProposalStatus {
@@ -47,7 +47,7 @@ export type Query = {
 export type ProposalsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type ProposalsQuery = { __typename?: 'Query', proposals: Array<{ __typename?: 'Proposal', id: string, title: string, description: string, type: ProposalType, status: ProposalStatus }> };
+export type ProposalsQuery = { __typename?: 'Query', proposals: Array<{ __typename?: 'Proposal', id: string, title: string, description: string, typeKey: ProposalType, statusKey: ProposalStatus }> };
 
 
 
@@ -143,9 +143,9 @@ export interface FileScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes
 export type ProposalResolvers<ContextType = any, ParentType extends ResolversParentTypes['Proposal'] = ResolversParentTypes['Proposal']> = {
   description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  status?: Resolver<ResolversTypes['ProposalStatus'], ParentType, ContextType>;
+  statusKey?: Resolver<ResolversTypes['ProposalStatus'], ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  type?: Resolver<ResolversTypes['ProposalType'], ParentType, ContextType>;
+  typeKey?: Resolver<ResolversTypes['ProposalType'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -161,7 +161,7 @@ export type Resolvers<ContextType = any> = {
 
 
 
-export const ProposalsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Proposals"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"proposals"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<ProposalsQuery, ProposalsQueryVariables>;
+export const ProposalsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Proposals"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"proposals"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"typeKey"}},{"kind":"Field","name":{"kind":"Name","value":"statusKey"}}]}}]}}]} as unknown as DocumentNode<ProposalsQuery, ProposalsQueryVariables>;
 
       export interface PossibleTypesResultData {
         possibleTypes: {

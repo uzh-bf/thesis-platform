@@ -21,11 +21,12 @@ export const authOptions: NextAuthOptions = {
     decode,
   },
   callbacks: {
-    async jwt({ token, user, account }) {
-      return {
-        ...token,
-        role: user?.role,
+    async jwt({ token, user, account, profile }) {
+      if (account) {
+        token.sub = user.id
+        token.role = user.role
       }
+      return token
     },
     async session({ session, user, token }) {
       session.user.sub = token.sub

@@ -5,7 +5,7 @@ query Proposals {
     title
     description
 
-    type
-    status
+    typeKey
+    statusKey
   }
 }

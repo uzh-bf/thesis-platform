@@ -34,9 +34,9 @@ export interface NexusGenObjects {
   Proposal: { // root type
     description: string; // String!
     id: string; // String!
-    status: NexusGenEnums['ProposalStatus']; // ProposalStatus!
+    statusKey: NexusGenEnums['ProposalStatus']; // ProposalStatus!
     title: string; // String!
-    type: NexusGenEnums['ProposalType']; // ProposalType!
+    typeKey: NexusGenEnums['ProposalType']; // ProposalType!
   }
   Query: {};
 }
@@ -55,9 +55,9 @@ export interface NexusGenFieldTypes {
   Proposal: { // field return type
     description: string; // String!
     id: string; // String!
-    status: NexusGenEnums['ProposalStatus']; // ProposalStatus!
+    statusKey: NexusGenEnums['ProposalStatus']; // ProposalStatus!
     title: string; // String!
-    type: NexusGenEnums['ProposalType']; // ProposalType!
+    typeKey: NexusGenEnums['ProposalType']; // ProposalType!
   }
   Query: { // field return type
     proposals: NexusGenRootTypes['Proposal'][]; // [Proposal!]!
@@ -68,9 +68,9 @@ export interface NexusGenFieldTypeNames {
   Proposal: { // field return type name
     description: 'String'
     id: 'String'
-    status: 'ProposalStatus'
+    statusKey: 'ProposalStatus'
     title: 'String'
-    type: 'ProposalType'
+    typeKey: 'ProposalType'
   }
   Query: { // field return type name
     proposals: 'Proposal'

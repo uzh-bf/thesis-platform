@@ -7,9 +7,9 @@ scalar File
 type Proposal {
   description: String!
   id: String!
-  status: ProposalStatus!
+  statusKey: ProposalStatus!
   title: String!
-  type: ProposalType!
+  typeKey: ProposalType!
 }
 
 enum ProposalStatus {

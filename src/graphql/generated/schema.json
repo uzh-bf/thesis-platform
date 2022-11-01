@@ -64,7 +64,7 @@
             "deprecationReason": null
           },
           {
-            "name": "status",
+            "name": "statusKey",
             "description": null,
             "args": [],
             "type": {
@@ -96,7 +96,7 @@
             "deprecationReason": null
           },
           {
-            "name": "type",
+            "name": "typeKey",
             "description": null,
             "args": [],
             "type": {
