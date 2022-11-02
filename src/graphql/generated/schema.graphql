@@ -7,8 +7,10 @@ scalar File
 type Proposal {
   description: String!
   id: String!
+  ownedBy: [User!]!
   statusKey: ProposalStatus!
   title: String!
+  topicAreas: [TopicArea!]!
   typeKey: ProposalType!
 }
 
@@ -29,4 +31,16 @@ enum ProposalType {
 
 type Query {
   proposals: [Proposal!]!
+}
+
+type TopicArea {
+  id: String
+  name: String
+}
+
+type User {
+  email: String!
+  id: Int!
+  name: String!
+  role: String!
 }

@@ -19,8 +19,10 @@ export type Proposal = {
   __typename?: 'Proposal';
   description: Scalars['String'];
   id: Scalars['String'];
+  ownedBy: Array<User>;
   statusKey: ProposalStatus;
   title: Scalars['String'];
+  topicAreas: Array<TopicArea>;
   typeKey: ProposalType;
 };
 
@@ -44,10 +46,24 @@ export type Query = {
   proposals: Array<Proposal>;
 };
 
+export type TopicArea = {
+  __typename?: 'TopicArea';
+  id?: Maybe<Scalars['String']>;
+  name?: Maybe<Scalars['String']>;
+};
+
+export type User = {
+  __typename?: 'User';
+  email: Scalars['String'];
+  id: Scalars['Int'];
+  name: Scalars['String'];
+  role: Scalars['String'];
+};
+
 export type ProposalsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type ProposalsQuery = { __typename?: 'Query', proposals: Array<{ __typename?: 'Proposal', id: string, title: string, description: string, typeKey: ProposalType, statusKey: ProposalStatus }> };
+export type ProposalsQuery = { __typename?: 'Query', proposals: Array<{ __typename?: 'Proposal', id: string, title: string, description: string, typeKey: ProposalType, statusKey: ProposalStatus, topicAreas: Array<{ __typename?: 'TopicArea', id?: string | null, name?: string | null }>, ownedBy: Array<{ __typename?: 'User', id: number, name: string, role: string }> }> };
 
 
 
@@ -120,20 +136,26 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 export type ResolversTypes = {
   Boolean: ResolverTypeWrapper<Scalars['Boolean']>;
   File: ResolverTypeWrapper<Scalars['File']>;
+  Int: ResolverTypeWrapper<Scalars['Int']>;
   Proposal: ResolverTypeWrapper<Proposal>;
   ProposalStatus: ProposalStatus;
   ProposalType: ProposalType;
   Query: ResolverTypeWrapper<{}>;
   String: ResolverTypeWrapper<Scalars['String']>;
+  TopicArea: ResolverTypeWrapper<TopicArea>;
+  User: ResolverTypeWrapper<User>;
 };
 
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = {
   Boolean: Scalars['Boolean'];
   File: Scalars['File'];
+  Int: Scalars['Int'];
   Proposal: Proposal;
   Query: {};
   String: Scalars['String'];
+  TopicArea: TopicArea;
+  User: User;
 };
 
 export interface FileScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['File'], any> {
@@ -143,8 +165,10 @@ export interface FileScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes
 export type ProposalResolvers<ContextType = any, ParentType extends ResolversParentTypes['Proposal'] = ResolversParentTypes['Proposal']> = {
   description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  ownedBy?: Resolver<Array<ResolversTypes['User']>, ParentType, ContextType>;
   statusKey?: Resolver<ResolversTypes['ProposalStatus'], ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  topicAreas?: Resolver<Array<ResolversTypes['TopicArea']>, ParentType, ContextType>;
   typeKey?: Resolver<ResolversTypes['ProposalType'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
@@ -153,15 +177,31 @@ export type QueryResolvers<ContextType = any, ParentType extends ResolversParent
   proposals?: Resolver<Array<ResolversTypes['Proposal']>, ParentType, ContextType>;
 };
 
+export type TopicAreaResolvers<ContextType = any, ParentType extends ResolversParentTypes['TopicArea'] = ResolversParentTypes['TopicArea']> = {
+  id?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type UserResolvers<ContextType = any, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = {
+  email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  role?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type Resolvers<ContextType = any> = {
   File?: GraphQLScalarType;
   Proposal?: ProposalResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
+  TopicArea?: TopicAreaResolvers<ContextType>;
+  User?: UserResolvers<ContextType>;
 };
 
 
 
-export const ProposalsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Proposals"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"proposals"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"typeKey"}},{"kind":"Field","name":{"kind":"Name","value":"statusKey"}}]}}]}}]} as unknown as DocumentNode<ProposalsQuery, ProposalsQueryVariables>;
+export const ProposalsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Proposals"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"proposals"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"typeKey"}},{"kind":"Field","name":{"kind":"Name","value":"statusKey"}},{"kind":"Field","name":{"kind":"Name","value":"topicAreas"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"ownedBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}}]}}]}}]} as unknown as DocumentNode<ProposalsQuery, ProposalsQueryVariables>;
 
       export interface PossibleTypesResultData {
         possibleTypes: {

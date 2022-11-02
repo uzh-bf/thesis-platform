@@ -18,9 +18,23 @@ export const Query = objectType({
                   : ['SUPERVISOR'],
             },
           },
+          include: {
+            attachments: true,
+            topicAreas: true,
+            ownedBy: {
+              include: { user: true },
+            },
+            supervisedBy: {
+              include: { user: true },
+            },
+          },
         })
 
-        return proposals
+        return proposals.map((p) => ({
+          ...p,
+          ownedBy: p.ownedBy[0].user,
+          supervisedBy: p.supervisedBy?.[0].user ?? [],
+        }))
       },
     })
   },

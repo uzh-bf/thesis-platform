@@ -11,6 +11,26 @@ export const EnumProposalStatus = enumType({
   members: ProposalStatus,
 })
 
+export const User = objectType({
+  name: 'User',
+  definition(t) {
+    t.nonNull.int('id')
+
+    t.nonNull.string('name')
+    t.nonNull.string('email')
+    t.nonNull.string('role')
+  },
+})
+
+export const TopicArea = objectType({
+  name: 'TopicArea',
+  definition(t) {
+    t.string('id')
+
+    t.string('name')
+  },
+})
+
 export const Proposal = objectType({
   name: 'Proposal',
   definition(t) {
@@ -25,6 +45,14 @@ export const Proposal = objectType({
 
     t.nonNull.field('statusKey', {
       type: EnumProposalStatus,
+    })
+
+    t.nonNull.list.nonNull.field('topicAreas', {
+      type: TopicArea,
+    })
+
+    t.nonNull.list.nonNull.field('ownedBy', {
+      type: User,
     })
   },
 })

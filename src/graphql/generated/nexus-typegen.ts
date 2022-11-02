@@ -34,11 +34,23 @@ export interface NexusGenObjects {
   Proposal: { // root type
     description: string; // String!
     id: string; // String!
+    ownedBy: NexusGenRootTypes['User'][]; // [User!]!
     statusKey: NexusGenEnums['ProposalStatus']; // ProposalStatus!
     title: string; // String!
+    topicAreas: NexusGenRootTypes['TopicArea'][]; // [TopicArea!]!
     typeKey: NexusGenEnums['ProposalType']; // ProposalType!
   }
   Query: {};
+  TopicArea: { // root type
+    id?: string | null; // String
+    name?: string | null; // String
+  }
+  User: { // root type
+    email: string; // String!
+    id: number; // Int!
+    name: string; // String!
+    role: string; // String!
+  }
 }
 
 export interface NexusGenInterfaces {
@@ -55,12 +67,24 @@ export interface NexusGenFieldTypes {
   Proposal: { // field return type
     description: string; // String!
     id: string; // String!
+    ownedBy: NexusGenRootTypes['User'][]; // [User!]!
     statusKey: NexusGenEnums['ProposalStatus']; // ProposalStatus!
     title: string; // String!
+    topicAreas: NexusGenRootTypes['TopicArea'][]; // [TopicArea!]!
     typeKey: NexusGenEnums['ProposalType']; // ProposalType!
   }
   Query: { // field return type
     proposals: NexusGenRootTypes['Proposal'][]; // [Proposal!]!
+  }
+  TopicArea: { // field return type
+    id: string | null; // String
+    name: string | null; // String
+  }
+  User: { // field return type
+    email: string; // String!
+    id: number; // Int!
+    name: string; // String!
+    role: string; // String!
   }
 }
 
@@ -68,12 +92,24 @@ export interface NexusGenFieldTypeNames {
   Proposal: { // field return type name
     description: 'String'
     id: 'String'
+    ownedBy: 'User'
     statusKey: 'ProposalStatus'
     title: 'String'
+    topicAreas: 'TopicArea'
     typeKey: 'ProposalType'
   }
   Query: { // field return type name
     proposals: 'Proposal'
+  }
+  TopicArea: { // field return type name
+    id: 'String'
+    name: 'String'
+  }
+  User: { // field return type name
+    email: 'String'
+    id: 'Int'
+    name: 'String'
+    role: 'String'
   }
 }
 

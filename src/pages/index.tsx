@@ -5,6 +5,7 @@ import {
   FormikTextField,
   H1,
 } from '@uzh-bf/design-system'
+import { add, format } from 'date-fns'
 import { Field, Form, Formik, FormikHelpers } from 'formik'
 import { signIn, signOut, useSession } from 'next-auth/react'
 import { useMemo, useState } from 'react'
@@ -13,7 +14,7 @@ import { useQuery } from 'urql'
 interface ApplicationValues {
   matriculationNumber: string
   fullName: string
-  plannedStartingDate?: Date
+  plannedStartingDate: string
   motivation: string
   personalCV?: File
   transcriptOfRecords?: File
@@ -22,7 +23,7 @@ interface ApplicationValues {
 const ApplicationInitialValues: ApplicationValues = {
   matriculationNumber: '',
   fullName: '',
-  plannedStartingDate: undefined,
+  plannedStartingDate: format(add(new Date(), { months: 6 }), 'yyyy-MM-dd'),
   motivation: '',
   personalCV: undefined,
   transcriptOfRecords: undefined,
@@ -47,80 +48,88 @@ function Index() {
   if (session?.user) {
     return (
       <div className="p-4 m-auto mt-4 space-y-4 border rounded max-w-7xl">
-        <div className="flex flex-row items-end justify-between">
-          <div>Signed in as {session.user.email}</div>
+        <div className="flex flex-row items-center justify-between p-4 text-gray-600 bg-gray-200 border-b rounded">
+          <div>
+            Signed in as {session.user.email} ({session.user.role})
+          </div>
           <Button onClick={() => signOut()}>Sign out</Button>
         </div>
 
         <div className="flex flex-row gap-4">
-          <div className="flex-1 space-y-1">
-            {data?.proposals?.map((proposal) => (
+          <div className="flex-none w-[30rem] space-y-8">
+            <div>
+              <H1>Available Theses</H1>
+              <div className="space-y-1">
+                {data?.proposals?.map((proposal) => (
+                  <Button
+                    fluid
+                    key={proposal.id}
+                    className="flex flex-row justify-between"
+                    active={
+                      selectedProposal === proposal.id &&
+                      displayMode === 'details'
+                    }
+                    onClick={() => {
+                      setSelectedProposal(proposal.id)
+                      setDisplayMode('details')
+                    }}
+                  >
+                    <div>{proposal.title}</div>
+                    <div>{proposal.statusKey}</div>
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div>
               <Button
-                fluid
-                key={proposal.id}
-                className="p-4 space-y-2 border rounded"
-                active={
-                  selectedProposal === proposal.id && displayMode === 'details'
-                }
+                active={displayMode === 'create'}
                 onClick={() => {
-                  setSelectedProposal(proposal.id)
-                  setDisplayMode('details')
+                  setSelectedProposal(null)
+                  setDisplayMode('create')
                 }}
               >
-                <H1>{proposal.title}</H1>
+                Submit Proposal
               </Button>
-            ))}
-
-            <Button
-              active={displayMode === 'create'}
-              onClick={() => {
-                setSelectedProposal(null)
-                setDisplayMode('create')
-              }}
-            >
-              Submit new Proposal
-            </Button>
+            </div>
           </div>
 
           <div className="flex-1 border rounded shadow">
-            {(displayMode === 'details' || displayMode === 'application') &&
-              proposalDetails && (
-                <div className="p-4">
-                  <H1>{proposalDetails.title}</H1>
-                  <p>{proposalDetails.description}</p>
-                  <div>{proposalDetails.status}</div>
-                  <div>{proposalDetails.type}</div>
-                  <Button
-                    active={
-                      selectedProposal === proposalDetails.id &&
-                      displayMode === 'application'
-                    }
-                    onClick={() => {
-                      setSelectedProposal(proposalDetails.id)
-                      setDisplayMode('application')
-                    }}
-                  >
-                    Application
-                  </Button>
+            {proposalDetails && (
+              <div className="p-4">
+                <div className="flex flex-row justify-between">
+                  <H1>Proposal {proposalDetails.title}</H1>
+                  <div>{proposalDetails.statusKey}</div>
                 </div>
-              )}
+                <p>{proposalDetails.description}</p>
+                <div>{proposalDetails.typeKey}</div>
+              </div>
+            )}
 
-            {displayMode === 'application' && proposalDetails && (
-              <div>
+            {proposalDetails && (
+              <div className="p-4 border-t">
                 <Formik
                   initialValues={ApplicationInitialValues}
                   onSubmit={(
                     values: ApplicationValues,
                     { setSubmitting }: FormikHelpers<ApplicationValues>,
                   ) => {
-                    console.log(values)
-
                     const formData = new FormData()
                     formData.append(
                       'matriculationNumber',
                       values.matriculationNumber,
                     )
-                    formData.append('cv', values.personalCV!)
+                    formData.append('fullName', values.fullName)
+                    formData.append(
+                      'plannedStartingDate',
+                      values.plannedStartingDate,
+                    )
+                    formData.append('motivation', values.motivation)
+                    formData.append('personalCV', values.personalCV!)
+                    formData.append(
+                      'transcriptOfRecords',
+                      values.transcriptOfRecords!,
+                    )
 
                     fetch(
                       'https://prod-119.westeurope.logic.azure.com:443/workflows/8a7c3785ade64d168a78cc9e21ed7a1c/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=yykbjdA-5KZju5qiBWHw5Gt5WsBa_t1tgBTlqTk7_WU',
@@ -131,7 +140,7 @@ function Index() {
                     )
                   }}
                 >
-                  <Form>
+                  <Form className="flex flex-col gap-2">
                     <FormikTextField
                       name="matriculationNumber"
                       label="Matriculation Number"
@@ -142,18 +151,28 @@ function Index() {
                       label="Full Name"
                       required
                     />
-                    <Field name="plannedStartingDate" type="date" />
+                    <div>
+                      Starting Date
+                      <Field name="plannedStartingDate" type="date" />
+                    </div>
                     <FormikTextareaField name="motivation" label="Motivation" />
-                    <Field
-                      name="personalCV"
-                      placeholder="personalCV"
-                      type="file"
-                    />
-                    <Field
-                      name="transcriptOfRecords"
-                      placeholder="transcriptOfRecords"
-                      type="file"
-                    />
+                    <div>
+                      Personal CV (PDF){' '}
+                      <Field
+                        name="personalCV"
+                        placeholder="personalCV"
+                        type="file"
+                      />
+                    </div>
+                    <div>
+                      Transcript of Records (PDF){' '}
+                      <Field
+                        name="transcriptOfRecords"
+                        placeholder="transcriptOfRecords"
+                        type="file"
+                      />
+                    </div>
+
                     <Button type="submit">Submit</Button>
                   </Form>
                 </Formik>
