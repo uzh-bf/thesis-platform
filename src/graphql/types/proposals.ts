@@ -1,5 +1,9 @@
-import { enumType, objectType } from 'nexus'
+import { DateTimeResolver, JSONObjectResolver } from 'graphql-scalars'
+import { asNexusMethod, enumType, objectType } from 'nexus'
 import { ProposalStatus, ProposalType } from '../../lib/constants'
+
+export const jsonScalar = asNexusMethod(JSONObjectResolver, 'json')
+export const dateTimeScalar = asNexusMethod(DateTimeResolver, 'date')
 
 export const EnumProposalType = enumType({
   name: 'ProposalType',
@@ -14,7 +18,7 @@ export const EnumProposalStatus = enumType({
 export const User = objectType({
   name: 'User',
   definition(t) {
-    t.nonNull.int('id')
+    t.nonNull.string('id')
 
     t.nonNull.string('name')
     t.nonNull.string('email')
@@ -38,6 +42,9 @@ export const Proposal = objectType({
 
     t.nonNull.string('title')
     t.nonNull.string('description')
+    t.nonNull.string('language')
+    t.nonNull.string('studyLevel')
+    t.date('plannedStartAt')
 
     t.nonNull.field('typeKey', {
       type: EnumProposalType,
@@ -51,7 +58,11 @@ export const Proposal = objectType({
       type: TopicArea,
     })
 
-    t.nonNull.list.nonNull.field('ownedBy', {
+    t.nonNull.field('ownedBy', {
+      type: User,
+    })
+
+    t.field('supervisedBy', {
       type: User,
     })
   },

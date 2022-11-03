@@ -4,9 +4,31 @@
  */
 
 
-
-
-
+import type { core } from "nexus"
+declare global {
+  interface NexusGenCustomInputMethods<TypeName extends string> {
+    /**
+     * The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+     */
+    json<FieldName extends string>(fieldName: FieldName, opts?: core.CommonInputFieldConfig<TypeName, FieldName>): void // "JSONObject";
+    /**
+     * A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar.
+     */
+    date<FieldName extends string>(fieldName: FieldName, opts?: core.CommonInputFieldConfig<TypeName, FieldName>): void // "DateTime";
+  }
+}
+declare global {
+  interface NexusGenCustomOutputMethods<TypeName extends string> {
+    /**
+     * The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+     */
+    json<FieldName extends string>(fieldName: FieldName, ...opts: core.ScalarOutSpread<TypeName, FieldName>): void // "JSONObject";
+    /**
+     * A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar.
+     */
+    date<FieldName extends string>(fieldName: FieldName, ...opts: core.ScalarOutSpread<TypeName, FieldName>): void // "DateTime";
+  }
+}
 
 
 declare global {
@@ -27,15 +49,21 @@ export interface NexusGenScalars {
   Float: number
   Boolean: boolean
   ID: string
+  DateTime: any
   File: any
+  JSONObject: any
 }
 
 export interface NexusGenObjects {
   Proposal: { // root type
     description: string; // String!
     id: string; // String!
-    ownedBy: NexusGenRootTypes['User'][]; // [User!]!
+    language: string; // String!
+    ownedBy: NexusGenRootTypes['User']; // User!
+    plannedStartAt?: NexusGenScalars['DateTime'] | null; // DateTime
     statusKey: NexusGenEnums['ProposalStatus']; // ProposalStatus!
+    studyLevel: string; // String!
+    supervisedBy?: NexusGenRootTypes['User'] | null; // User
     title: string; // String!
     topicAreas: NexusGenRootTypes['TopicArea'][]; // [TopicArea!]!
     typeKey: NexusGenEnums['ProposalType']; // ProposalType!
@@ -47,7 +75,7 @@ export interface NexusGenObjects {
   }
   User: { // root type
     email: string; // String!
-    id: number; // Int!
+    id: string; // String!
     name: string; // String!
     role: string; // String!
   }
@@ -67,8 +95,12 @@ export interface NexusGenFieldTypes {
   Proposal: { // field return type
     description: string; // String!
     id: string; // String!
-    ownedBy: NexusGenRootTypes['User'][]; // [User!]!
+    language: string; // String!
+    ownedBy: NexusGenRootTypes['User']; // User!
+    plannedStartAt: NexusGenScalars['DateTime'] | null; // DateTime
     statusKey: NexusGenEnums['ProposalStatus']; // ProposalStatus!
+    studyLevel: string; // String!
+    supervisedBy: NexusGenRootTypes['User'] | null; // User
     title: string; // String!
     topicAreas: NexusGenRootTypes['TopicArea'][]; // [TopicArea!]!
     typeKey: NexusGenEnums['ProposalType']; // ProposalType!
@@ -82,7 +114,7 @@ export interface NexusGenFieldTypes {
   }
   User: { // field return type
     email: string; // String!
-    id: number; // Int!
+    id: string; // String!
     name: string; // String!
     role: string; // String!
   }
@@ -92,8 +124,12 @@ export interface NexusGenFieldTypeNames {
   Proposal: { // field return type name
     description: 'String'
     id: 'String'
+    language: 'String'
     ownedBy: 'User'
+    plannedStartAt: 'DateTime'
     statusKey: 'ProposalStatus'
+    studyLevel: 'String'
+    supervisedBy: 'User'
     title: 'String'
     topicAreas: 'TopicArea'
     typeKey: 'ProposalType'
@@ -107,7 +143,7 @@ export interface NexusGenFieldTypeNames {
   }
   User: { // field return type name
     email: 'String'
-    id: 'Int'
+    id: 'String'
     name: 'String'
     role: 'String'
   }

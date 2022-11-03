@@ -4,6 +4,9 @@ query Proposals {
 
     title
     description
+    language
+    studyLevel
+    plannedStartAt
 
     typeKey
     statusKey
@@ -19,6 +22,12 @@ query Proposals {
 
       name
       role
+    }
+
+    supervisedBy {
+      id
+
+      name
     }
   }
 }

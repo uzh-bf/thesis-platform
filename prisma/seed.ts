@@ -44,20 +44,40 @@ async function seed(prisma: PrismaClient) {
     where: { email: 'roland.schlaefli@bf.uzh.ch' },
     create: {
       email: 'roland.schlaefli@bf.uzh.ch',
+      name: 'Roland Schläfli',
+      role: 'SUPERVISOR',
     },
-    update: {},
+    update: {
+      role: 'SUPERVISOR',
+    },
   })
 
   await prisma.proposal.upsert({
     where: { id: '3ef84a3b-cff0-4350-b760-4c5bb3b3c98f' },
     create: {
+      id: '3ef84a3b-cff0-4350-b760-4c5bb3b3c98f',
       title: 'Student Proposal',
       description: 'This is a student proposal',
+      language: 'German',
+      plannedStartAt: new Date(),
+      studyLevel: 'Master Thesis (30 ECTS)',
+      topicAreas: {
+        create: {
+          name: 'Sustainable Finance',
+        },
+      },
       status: {
         connect: { key: ProposalStatus.OPEN },
       },
       type: {
         connect: { key: ProposalType.STUDENT },
+      },
+      ownedBy: {
+        create: {
+          user: {
+            connect: { id: user.id },
+          },
+        },
       },
     },
     update: {},
@@ -66,8 +86,16 @@ async function seed(prisma: PrismaClient) {
   await prisma.proposal.upsert({
     where: { id: '33a9a1b7-cad7-46e7-8b72-cfcbdbaa60d6' },
     create: {
+      id: '33a9a1b7-cad7-46e7-8b72-cfcbdbaa60d6',
       title: 'Supervisor Proposal',
       description: 'This is a supervisor proposal',
+      language: 'English',
+      studyLevel: 'Bachelor Thesis (18 ECTS)',
+      topicAreas: {
+        create: {
+          name: 'Banking',
+        },
+      },
       status: {
         connect: { key: ProposalStatus.OPEN },
       },
@@ -75,17 +103,16 @@ async function seed(prisma: PrismaClient) {
         connect: { key: ProposalType.SUPERVISOR },
       },
       supervisedBy: {
-        connectOrCreate: {
-          where: {
-            proposalId_userId: {
-              proposalId: '33a9a1b7-cad7-46e7-8b72-cfcbdbaa60d6',
-              userId: user.id,
-            },
+        create: {
+          user: {
+            connect: { id: user.id },
           },
-          create: {
-            user: {
-              connect: { id: user.id },
-            },
+        },
+      },
+      ownedBy: {
+        create: {
+          user: {
+            connect: { id: user.id },
           },
         },
       },

@@ -30,10 +30,12 @@ export const Query = objectType({
           },
         })
 
+        console.log(JSON.stringify(proposals, null, 2))
+
         return proposals.map((p) => ({
           ...p,
           ownedBy: p.ownedBy[0].user,
-          supervisedBy: p.supervisedBy?.[0].user ?? [],
+          supervisedBy: p.supervisedBy?.[0]?.user,
         }))
       },
     })

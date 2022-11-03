@@ -52,13 +52,11 @@ model Account {
 model User {
   id String @id @default(uuid())
 
-  name                String?
-  email               String?   @unique
+  name                String
+  email               String    @unique
   emailVerified       DateTime?
   image               String?
   matriculationNumber String?
-  personalCV          String?
-  transcriptOfRecords String?
 
   role String @default("STUDENT")
 
@@ -106,6 +104,7 @@ model Proposal {
   description    String
   language       String?
   plannedStartAt DateTime?
+  studyLevel     String
 
   attachments ProposalAttachment[]
 

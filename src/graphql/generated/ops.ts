@@ -12,15 +12,23 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
+  /** A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar. */
+  DateTime: any;
   File: any;
+  /** The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
+  JSONObject: any;
 };
 
 export type Proposal = {
   __typename?: 'Proposal';
   description: Scalars['String'];
   id: Scalars['String'];
-  ownedBy: Array<User>;
+  language: Scalars['String'];
+  ownedBy: User;
+  plannedStartAt?: Maybe<Scalars['DateTime']>;
   statusKey: ProposalStatus;
+  studyLevel: Scalars['String'];
+  supervisedBy?: Maybe<User>;
   title: Scalars['String'];
   topicAreas: Array<TopicArea>;
   typeKey: ProposalType;
@@ -55,7 +63,7 @@ export type TopicArea = {
 export type User = {
   __typename?: 'User';
   email: Scalars['String'];
-  id: Scalars['Int'];
+  id: Scalars['String'];
   name: Scalars['String'];
   role: Scalars['String'];
 };
@@ -63,7 +71,7 @@ export type User = {
 export type ProposalsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type ProposalsQuery = { __typename?: 'Query', proposals: Array<{ __typename?: 'Proposal', id: string, title: string, description: string, typeKey: ProposalType, statusKey: ProposalStatus, topicAreas: Array<{ __typename?: 'TopicArea', id?: string | null, name?: string | null }>, ownedBy: Array<{ __typename?: 'User', id: number, name: string, role: string }> }> };
+export type ProposalsQuery = { __typename?: 'Query', proposals: Array<{ __typename?: 'Proposal', id: string, title: string, description: string, language: string, studyLevel: string, plannedStartAt?: any | null, typeKey: ProposalType, statusKey: ProposalStatus, topicAreas: Array<{ __typename?: 'TopicArea', id?: string | null, name?: string | null }>, ownedBy: { __typename?: 'User', id: string, name: string, role: string }, supervisedBy?: { __typename?: 'User', id: string, name: string } | null }> };
 
 
 
@@ -135,8 +143,9 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = {
   Boolean: ResolverTypeWrapper<Scalars['Boolean']>;
+  DateTime: ResolverTypeWrapper<Scalars['DateTime']>;
   File: ResolverTypeWrapper<Scalars['File']>;
-  Int: ResolverTypeWrapper<Scalars['Int']>;
+  JSONObject: ResolverTypeWrapper<Scalars['JSONObject']>;
   Proposal: ResolverTypeWrapper<Proposal>;
   ProposalStatus: ProposalStatus;
   ProposalType: ProposalType;
@@ -149,8 +158,9 @@ export type ResolversTypes = {
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = {
   Boolean: Scalars['Boolean'];
+  DateTime: Scalars['DateTime'];
   File: Scalars['File'];
-  Int: Scalars['Int'];
+  JSONObject: Scalars['JSONObject'];
   Proposal: Proposal;
   Query: {};
   String: Scalars['String'];
@@ -158,15 +168,27 @@ export type ResolversParentTypes = {
   User: User;
 };
 
+export interface DateTimeScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['DateTime'], any> {
+  name: 'DateTime';
+}
+
 export interface FileScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['File'], any> {
   name: 'File';
+}
+
+export interface JsonObjectScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['JSONObject'], any> {
+  name: 'JSONObject';
 }
 
 export type ProposalResolvers<ContextType = any, ParentType extends ResolversParentTypes['Proposal'] = ResolversParentTypes['Proposal']> = {
   description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  ownedBy?: Resolver<Array<ResolversTypes['User']>, ParentType, ContextType>;
+  language?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  ownedBy?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
+  plannedStartAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   statusKey?: Resolver<ResolversTypes['ProposalStatus'], ParentType, ContextType>;
+  studyLevel?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  supervisedBy?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   topicAreas?: Resolver<Array<ResolversTypes['TopicArea']>, ParentType, ContextType>;
   typeKey?: Resolver<ResolversTypes['ProposalType'], ParentType, ContextType>;
@@ -185,14 +207,16 @@ export type TopicAreaResolvers<ContextType = any, ParentType extends ResolversPa
 
 export type UserResolvers<ContextType = any, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = {
   email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   role?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type Resolvers<ContextType = any> = {
+  DateTime?: GraphQLScalarType;
   File?: GraphQLScalarType;
+  JSONObject?: GraphQLScalarType;
   Proposal?: ProposalResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   TopicArea?: TopicAreaResolvers<ContextType>;
@@ -201,7 +225,7 @@ export type Resolvers<ContextType = any> = {
 
 
 
-export const ProposalsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Proposals"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"proposals"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"typeKey"}},{"kind":"Field","name":{"kind":"Name","value":"statusKey"}},{"kind":"Field","name":{"kind":"Name","value":"topicAreas"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"ownedBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}}]}}]}}]} as unknown as DocumentNode<ProposalsQuery, ProposalsQueryVariables>;
+export const ProposalsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Proposals"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"proposals"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"language"}},{"kind":"Field","name":{"kind":"Name","value":"studyLevel"}},{"kind":"Field","name":{"kind":"Name","value":"plannedStartAt"}},{"kind":"Field","name":{"kind":"Name","value":"typeKey"}},{"kind":"Field","name":{"kind":"Name","value":"statusKey"}},{"kind":"Field","name":{"kind":"Name","value":"topicAreas"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"ownedBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"Field","name":{"kind":"Name","value":"supervisedBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<ProposalsQuery, ProposalsQueryVariables>;
 
       export interface PossibleTypesResultData {
         possibleTypes: {
