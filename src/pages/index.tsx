@@ -64,27 +64,55 @@ function Index() {
         <div className="flex flex-row gap-8">
           <div className="flex-none w-[30rem] space-y-8">
             <div>
-              <H1>Proposals</H1>
+              <H1>Student Proposals</H1>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                {data?.proposals?.map((proposal) => (
-                  <Button
-                    fluid
-                    key={proposal.id}
-                    className="flex flex-col justify-between"
-                    active={
-                      selectedProposal === proposal.id &&
-                      displayMode === 'details'
-                    }
-                    onClick={() => {
-                      setSelectedProposal(proposal.id)
-                      setDisplayMode('details')
-                    }}
-                  >
-                    <div className="font-bold">{proposal.title}</div>
-                    <div>{proposal.studyLevel}</div>
-                    <div>{proposal.topicAreas.map((area) => area.name)}</div>
-                  </Button>
-                ))}
+                {data?.proposals
+                  ?.filter((proposal) => proposal.typeKey === 'STUDENT')
+                  .map((proposal) => (
+                    <Button
+                      fluid
+                      key={proposal.id}
+                      className="flex flex-col justify-between"
+                      active={
+                        selectedProposal === proposal.id &&
+                        displayMode === 'details'
+                      }
+                      onClick={() => {
+                        setSelectedProposal(proposal.id)
+                        setDisplayMode('details')
+                      }}
+                    >
+                      <div className="font-bold">{proposal.title}</div>
+                      <div>{proposal.studyLevel}</div>
+                      <div>{proposal.topicAreas.map((area) => area.name)}</div>
+                    </Button>
+                  ))}
+              </div>
+            </div>
+            <div>
+              <H1>Supervisor Proposals</H1>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                {data?.proposals
+                  ?.filter((proposal) => proposal.typeKey === 'SUPERVISOR')
+                  .map((proposal) => (
+                    <Button
+                      fluid
+                      key={proposal.id}
+                      className="flex flex-col justify-between"
+                      active={
+                        selectedProposal === proposal.id &&
+                        displayMode === 'details'
+                      }
+                      onClick={() => {
+                        setSelectedProposal(proposal.id)
+                        setDisplayMode('details')
+                      }}
+                    >
+                      <div className="font-bold">{proposal.title}</div>
+                      <div>{proposal.studyLevel}</div>
+                      <div>{proposal.topicAreas.map((area) => area.name)}</div>
+                    </Button>
+                  ))}
               </div>
             </div>
 

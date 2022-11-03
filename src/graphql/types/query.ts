@@ -13,7 +13,7 @@ export const Query = objectType({
           where: {
             typeKey: {
               in:
-                ctx.user.role === UserRole.SUPERVISOR
+                ctx.user?.role === UserRole.SUPERVISOR
                   ? ['SUPERVISOR', 'STUDENT']
                   : ['SUPERVISOR'],
             },
