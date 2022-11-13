@@ -8,6 +8,7 @@ import {
   H1,
   H2,
 } from '@uzh-bf/design-system'
+import fetch from 'cross-fetch'
 import { add, format } from 'date-fns'
 import { Field, Form, Formik, FormikHelpers } from 'formik'
 import { signIn, signOut, useSession } from 'next-auth/react'
@@ -252,13 +253,14 @@ function Index() {
                       values.transcriptOfRecords!,
                     )
 
-                    fetch(
+                    const result = fetch(
                       'https://prod-119.westeurope.logic.azure.com:443/workflows/8a7c3785ade64d168a78cc9e21ed7a1c/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=yykbjdA-5KZju5qiBWHw5Gt5WsBa_t1tgBTlqTk7_WU',
                       {
                         method: 'POST',
                         body: formData,
                       },
                     )
+                    console.log(result)
                   }}
                 >
                   <Form className="flex flex-col gap-4">
