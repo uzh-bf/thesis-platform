@@ -1,6 +1,6 @@
 import { faFilePdf, faFileWord } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { ProposalsDocument } from '@graphql/ops'
+import { trpc } from '@lib/trpc'
 import {
   Button,
   FormikTextareaField,
@@ -12,7 +12,6 @@ import { add, format } from 'date-fns'
 import { Field, Form, Formik, FormikHelpers } from 'formik'
 import { signIn, signOut, useSession } from 'next-auth/react'
 import { useMemo, useState } from 'react'
-import { useQuery } from 'urql'
 
 interface ApplicationValues {
   matriculationNumber: string
@@ -35,9 +34,7 @@ const ApplicationInitialValues: ApplicationValues = {
 function Index() {
   const { data: session } = useSession()
 
-  const [{ data, fetching, error }] = useQuery({
-    query: ProposalsDocument,
-  })
+  const result = trpc.proposals.useQuery()
 
   const [displayMode, setDisplayMode] = useState('createStudent')
   const [selectedProposal, setSelectedProposal] = useState<string | null>(null)
@@ -45,8 +42,14 @@ function Index() {
   const proposalDetails = useMemo(() => {
     if (!selectedProposal) return null
 
-    return data?.proposals.find((p) => p.id === selectedProposal)
-  }, [data, selectedProposal])
+    return result.data?.find((p) => p.id === selectedProposal)
+  }, [result, selectedProposal])
+
+  if (!result.data) {
+    return <div>Loading...</div>
+  }
+
+  const data = result.data
 
   if (session?.user) {
     const isSupervisor = session.user.role === 'SUPERVISOR'
@@ -66,8 +69,8 @@ function Index() {
             <div>
               <H1>Student Proposals</H1>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                {data?.proposals
-                  ?.filter((proposal) => proposal.typeKey === 'STUDENT')
+                {data
+                  .filter((proposal) => proposal.typeKey === 'STUDENT')
                   .map((proposal) => (
                     <Button
                       fluid
@@ -92,8 +95,8 @@ function Index() {
             <div>
               <H1>Supervisor Proposals</H1>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                {data?.proposals
-                  ?.filter((proposal) => proposal.typeKey === 'SUPERVISOR')
+                {data
+                  .filter((proposal) => proposal.typeKey === 'SUPERVISOR')
                   .map((proposal) => (
                     <Button
                       fluid

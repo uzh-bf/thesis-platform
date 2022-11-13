@@ -1,54 +1,26 @@
 {
   "extends": "@tsconfig/node18/tsconfig.json",
   "compilerOptions": {
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "baseUrl": ".",
+    "paths": {
+      "@components/*": ["src/components/*"],
+      "@graphql/*": ["src/graphql/*"],
+      "@graphql/ops": ["src/graphql/generated/ops"],
+      "@lib/*": ["src/lib/*"],
+      "@pages/*": ["src/pages/*"],
+      "@type/*": ["src/types/*"]
+    },
+    "plugins": [{ "name": "next" }],
     "allowJs": true,
     "noEmit": true,
-    "module": "esnext",
+    "incremental": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
-    "incremental": true,
-    "baseUrl": ".",
-    "paths": {
-      "@components/*": [
-        "src/components/*"
-      ],
-      "@graphql/*": [
-        "src/graphql/*"
-      ],
-      "@graphql/ops": [
-        "src/graphql/generated/ops"
-      ],
-      "@lib/*": [
-        "src/lib/*"
-      ],
-      "@pages/*": [
-        "src/pages/*"
-      ],
-      "@type/*": [
-        "src/types/*"
-      ]
-    },
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ]
+     "strictNullChecks": true
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"],
   "ts-node": {
     "transpileOnly": true,
     "moduleTypes": {
