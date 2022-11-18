@@ -83,7 +83,7 @@ model VerificationToken {
 model TopicArea {
   id String @id @default(uuid())
 
-  name String
+  name String @unique
 
   proposals Proposal[]
 }
@@ -119,14 +119,14 @@ model Proposal {
   status    ProposalStatus @relation(fields: [statusKey], references: [key])
   statusKey String
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
   ownedBy           UserProposalOwnership[]
   assignedTo        UserProposalAssignment[]
   supervisedBy      UserProposalSupervision[]
   applications      ProposalApplication[]
   receivedFeedbacks UserProposalFeedback[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model ProposalApplication {

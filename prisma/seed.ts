@@ -61,9 +61,14 @@ async function seed(prisma: PrismaClient) {
       language: 'German',
       plannedStartAt: new Date(),
       studyLevel: 'Master Thesis (30 ECTS)',
-      topicAreas: {
-        create: {
-          name: 'Sustainable Finance',
+      topicArea: {
+        connectOrCreate: {
+          where: {
+            name: 'Sustainable Finance',
+          },
+          create: {
+            name: 'Sustainable Finance',
+          },
         },
       },
       status: {
@@ -91,9 +96,14 @@ async function seed(prisma: PrismaClient) {
       description: 'This is a supervisor proposal',
       language: 'English',
       studyLevel: 'Bachelor Thesis (18 ECTS)',
-      topicAreas: {
-        create: {
-          name: 'Banking',
+      topicArea: {
+        connectOrCreate: {
+          where: {
+            name: 'Banking',
+          },
+          create: {
+            name: 'Banking',
+          },
         },
       },
       status: {

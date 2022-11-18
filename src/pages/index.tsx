@@ -1,18 +1,10 @@
 import { faFilePdf, faFileWord } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { trpc } from '@lib/trpc'
-import {
-  Button,
-  FormikTextareaField,
-  FormikTextField,
-  H1,
-  H2,
-} from '@uzh-bf/design-system'
-import fetch from 'cross-fetch'
+import { Button, H1 } from '@uzh-bf/design-system'
 import { add, format } from 'date-fns'
-import { Field, Form, Formik, FormikHelpers } from 'formik'
 import { signIn, signOut, useSession } from 'next-auth/react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 interface ApplicationValues {
   matriculationNumber: string
@@ -46,6 +38,30 @@ function Index() {
     return result.data?.find((p) => p.id === selectedProposal)
   }, [result, selectedProposal])
 
+  useEffect(() => {
+    const s: any = document.createElement('script')
+    const options = {
+      id: 147,
+      theme: 0,
+      container: 'c7',
+      height: '479px',
+      form: '//www.bf-tools.uzh.ch/applications/easyforms/index.php?r=app%2Fembed',
+    }
+    s.type = 'text/javascript'
+    s.src =
+      'https://www.bf-tools.uzh.ch/applications/easyforms/static_files/js/form.widget.js'
+    s.onload = s.onreadystatechange = function () {
+      const rs = this.readyState
+      if (rs) if (rs != 'complete') if (rs != 'loaded') return
+      try {
+        new window.EasyForms().initialize(options).display()
+      } catch (e) {}
+    }
+    const scr = document.getElementsByTagName('script')[0]
+    const par: any = scr.parentNode
+    par.insertBefore(s, scr)
+  }, [proposalDetails])
+
   if (!result.data) {
     return <div>Loading...</div>
   }
@@ -57,7 +73,7 @@ function Index() {
     const isStudent = session.user.role === 'STUDENT'
 
     return (
-      <div className="p-4 m-auto mt-4 space-y-8 border rounded max-w-7xl">
+      <div className="p-4 m-auto mt-4 space-y-8">
         <div className="flex flex-row items-center justify-between p-4 text-gray-600 bg-gray-200 border-b rounded">
           <div>
             Signed in as {session.user.email} ({session.user.role})
@@ -88,7 +104,7 @@ function Index() {
                     >
                       <div className="font-bold">{proposal.title}</div>
                       <div>{proposal.studyLevel}</div>
-                      <div>{proposal.topicAreas.map((area) => area.name)}</div>
+                      <div>{proposal.topicArea.name}</div>
                     </Button>
                   ))}
               </div>
@@ -114,7 +130,7 @@ function Index() {
                     >
                       <div className="font-bold">{proposal.title}</div>
                       <div>{proposal.studyLevel}</div>
-                      <div>{proposal.topicAreas.map((area) => area.name)}</div>
+                      <div>{proposal.topicArea.name}</div>
                     </Button>
                   ))}
               </div>
@@ -169,9 +185,7 @@ function Index() {
                   <div className="flex-none w-48 font-bold">
                     Field of Research
                   </div>
-                  <div>
-                    {proposalDetails.topicAreas.map((area) => area.name)}
-                  </div>
+                  <div>{proposalDetails.topicArea.name}</div>
                 </div>
                 <div className="flex flex-row gap-2">
                   <div className="flex-none w-48 font-bold">
@@ -229,82 +243,17 @@ function Index() {
 
             {proposalDetails?.typeKey === 'SUPERVISOR' && (
               <div className="p-4 border-t">
-                <H2 className="mb-4">Application</H2>
-                <Formik
-                  initialValues={ApplicationInitialValues}
-                  onSubmit={(
-                    values: ApplicationValues,
-                    { setSubmitting }: FormikHelpers<ApplicationValues>,
-                  ) => {
-                    const formData = new FormData()
-                    formData.append(
-                      'matriculationNumber',
-                      values.matriculationNumber,
-                    )
-                    formData.append('fullName', values.fullName)
-                    formData.append(
-                      'plannedStartingDate',
-                      values.plannedStartingDate,
-                    )
-                    formData.append('motivation', values.motivation)
-                    formData.append('personalCV', values.personalCV!)
-                    formData.append(
-                      'transcriptOfRecords',
-                      values.transcriptOfRecords!,
-                    )
-
-                    const result = fetch(
-                      'https://prod-119.westeurope.logic.azure.com:443/workflows/8a7c3785ade64d168a78cc9e21ed7a1c/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=yykbjdA-5KZju5qiBWHw5Gt5WsBa_t1tgBTlqTk7_WU',
-                      {
-                        method: 'POST',
-                        body: formData,
-                      },
-                    )
-                    console.log(result)
-                  }}
-                >
-                  <Form className="flex flex-col gap-4">
-                    <FormikTextField
-                      name="matriculationNumber"
-                      label="Matriculation Number"
-                      required
-                    />
-                    <FormikTextField
-                      name="fullName"
-                      label="Full Name"
-                      required
-                    />
-                    <div className="flex flex-row items-center gap-4">
-                      <div className="font-bold">Starting Date</div>
-                      <Field name="plannedStartingDate" type="date" />
-                    </div>
-                    <FormikTextareaField
-                      required
-                      name="motivation"
-                      label="Motivation"
-                    />
-                    <div className="space-y-1">
-                      <div className="font-bold">Personal CV (PDF)</div>
-                      <Field
-                        name="personalCV"
-                        placeholder="personalCV"
-                        type="file"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <div className="font-bold">
-                        Transcript of Records (PDF)
-                      </div>
-                      <Field
-                        name="transcriptOfRecords"
-                        placeholder="transcriptOfRecords"
-                        type="file"
-                      />
-                    </div>
-
-                    <Button type="submit">Submit</Button>
-                  </Form>
-                </Formik>
+                <div className="max-w-lg border">
+                  <div id="c7">
+                    Fill in the{' '}
+                    <a
+                      href={`https://www.bf-tools.uzh.ch/applications/easyforms/index.php?r=app%2Fform&id=13&hidden_1=${proposalDetails.id}`}
+                    >
+                      online form
+                    </a>
+                    .
+                  </div>
+                </div>
               </div>
             )}
 

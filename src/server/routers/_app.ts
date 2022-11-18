@@ -14,7 +14,7 @@ export const appRouter = router({
       },
       include: {
         attachments: true,
-        topicAreas: true,
+        topicArea: true,
         ownedBy: {
           include: { user: true },
         },
