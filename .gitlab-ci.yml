@@ -7,9 +7,27 @@
 # See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
 stages:
 - test
+- build
+
 sast:
   stage: test
+
 include:
 - template: Security/SAST.gitlab-ci.yml
 - template: Security/Container-Scanning.gitlab-ci.yml
 - template: Security/Secret-Detection.gitlab-ci.yml
+
+services:
+  - name: cr.gitlab.uzh.ch/uzh-bf/devops/ci-images/docker:19.03.13-dind
+    alias: docker
+
+build:
+  image: cr.gitlab.uzh.ch/uzh-bf/devops/ci-images/docker:19.03.13
+  stage: build
+  script:
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+    - docker pull $CI_REGISTRY_IMAGE:latest || true
+    - >
+      docker build . -t $CI_REGISTRY_IMAGE:latest
+      --cache-from $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE
