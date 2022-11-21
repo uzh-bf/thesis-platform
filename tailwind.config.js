@@ -6,6 +6,8 @@ const {
   TailwindFonts,
 } = require('@uzh-bf/design-system/dist/constants')
 
+const { fontFamily } = require('tailwindcss/defaultTheme')
+
 module.exports = {
   content: ['./src/**/*.{js,ts,jsx,tsx}'],
   theme: {
@@ -16,6 +18,7 @@ module.exports = {
       },
       fontFamily: {
         ...TailwindFonts,
+        sans: ['var(--font-source-sans)', ...fontFamily.sans],
       },
     },
   },

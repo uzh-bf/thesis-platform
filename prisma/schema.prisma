@@ -7,15 +7,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// enum UserRole {
-//   STUDENT
-//   SUPERVISOR
-//   ADMIN
-// }
-
 model ProposalStatus {
   key       String     @id @unique
   proposals Proposal[]
+}
+
+model ApplicationStatus {
+  key          String                @id @unique
+  applications ProposalApplication[]
 }
 
 model ProposalType {
@@ -49,29 +48,6 @@ model Account {
   @@unique([provider, providerAccountId])
 }
 
-model User {
-  id String @id @default(uuid())
-
-  name                String
-  email               String    @unique
-  emailVerified       DateTime?
-  image               String?
-  matriculationNumber String?
-
-  role String @default("STUDENT")
-
-  accounts Account[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  ownedProposals      UserProposalOwnership[]
-  assignedProposals   UserProposalAssignment[]
-  supervisedProposals UserProposalSupervision[]
-  appliedFor          ProposalApplication[]
-  createdFeedbacks    UserProposalFeedback[]
-}
-
 model VerificationToken {
   identifier String
   token      String   @unique
@@ -80,9 +56,30 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model User {
+  id String @id @default(uuid())
+
+  name          String
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+
+  role String @default("UNSET")
+
+  accounts Account[]
+
+  ownedProposals      Proposal[]
+  supervisedProposals UserProposalSupervision[]
+  createdFeedbacks    UserProposalFeedback[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
 model TopicArea {
   id String @id @default(uuid())
 
+  slug String @unique
   name String @unique
 
   proposals Proposal[]
@@ -91,25 +88,41 @@ model TopicArea {
 model ProposalAttachment {
   id String @id @default(uuid())
 
-  name        String
-  href        String
-  description String?
+  name String
+  href String
+  type String
 
-  proposal   Proposal @relation(fields: [proposalId], references: [id])
+  proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
   proposalId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model ApplicationAttachment {
+  id String @id @default(uuid())
+
+  name String
+  href String
+  type String
+
+  proposalApplication   ProposalApplication @relation(fields: [proposalApplicationId], references: [id], onDelete: Cascade)
+  proposalApplicationId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model Proposal {
   id String @id @unique @default(uuid())
 
-  title          String
-  description    String
-  language       String?
-  plannedStartAt DateTime?
-  studyLevel     String
+  title       String
+  description String
+  language    String
+  studyLevel  String
 
-  topicArea   TopicArea @relation(fields: [topicAreaId], references: [id])
-  topicAreaId String
+  topicArea     TopicArea @relation(fields: [topicAreaSlug], references: [slug])
+  topicAreaSlug String
 
   attachments ProposalAttachment[]
 
@@ -117,10 +130,12 @@ model Proposal {
   typeKey String
 
   status    ProposalStatus @relation(fields: [statusKey], references: [key])
-  statusKey String
+  statusKey String         @default("OPEN")
 
-  ownedBy           UserProposalOwnership[]
-  assignedTo        UserProposalAssignment[]
+  ownedByUser      User?   @relation(fields: [ownedByUserEmail], references: [email], onDelete: SetNull)
+  ownedByUserEmail String?
+  ownedByStudent   String?
+
   supervisedBy      UserProposalSupervision[]
   applications      ProposalApplication[]
   receivedFeedbacks UserProposalFeedback[]
@@ -132,69 +147,58 @@ model Proposal {
 model ProposalApplication {
   id String @id @default(uuid())
 
+  status    ApplicationStatus @relation(fields: [statusKey], references: [key])
+  statusKey String            @default("OPEN")
+
+  email               String
   matriculationNumber String
   fullName            String
-  startingDate        DateTime
+  plannedStartAt      DateTime
   motivation          String
-  personalCV          String
-  transcript          String
 
-  proposal   Proposal @relation(fields: [proposalId], references: [id])
+  attachments ApplicationAttachment[]
+
+  proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
   proposalId String
 
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
+  supervision   UserProposalSupervision? @relation(fields: [supervisionId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  supervisionId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  @@unique([proposalId, userId])
-}
-
-model UserProposalAssignment {
-  proposal   Proposal @relation(fields: [proposalId], references: [id])
-  proposalId String
-
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
-
-  acceptedBySupervisor Boolean @default(false)
-  acceptedByStudent    Boolean @default(false)
-
-  @@unique([proposalId, userId])
+  @@unique([proposalId, email])
 }
 
 model UserProposalSupervision {
-  proposal   Proposal @relation(fields: [proposalId], references: [id])
-  proposalId String
+  id String @id @default(uuid())
 
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
+  proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  proposalId String   @unique
 
-  @@unique([proposalId, userId])
-}
+  supervisor      User?   @relation(fields: [supervisorEmail], references: [email], onUpdate: NoAction, onDelete: NoAction)
+  supervisorEmail String?
 
-model UserProposalOwnership {
-  proposal   Proposal @relation(fields: [proposalId], references: [id])
-  proposalId String
+  application ProposalApplication[]
 
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
-
-  @@unique([proposalId, userId])
+  studentEmail String?
+  studyLevel   String?
 }
 
 model UserProposalFeedback {
-  proposal   Proposal @relation(fields: [proposalId], references: [id])
+  id String @id @default(uuid())
+
+  proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
   proposalId String
 
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
+  user      User   @relation(fields: [userEmail], references: [email], onUpdate: NoAction, onDelete: NoAction)
+  userEmail String
 
   type    ProposalFeedbackType @relation(fields: [typeKey], references: [key])
   typeKey String
 
-  description String
+  reason  String
+  comment String
 
-  @@unique([proposalId, userId])
+  @@unique([proposalId, userEmail])
 }

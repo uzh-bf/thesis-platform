@@ -8,6 +8,13 @@ export enum ProposalStatus {
   CLOSED = 'CLOSED',
 }
 
+export enum ApplicationStatus {
+  OPEN = 'OPEN',
+  DECLINED = 'DECLINED',
+  ACCEPTED = 'ACCEPTED',
+  WITHDRAWN = 'WITHDRAWN',
+}
+
 export enum ProposalType {
   STUDENT = 'STUDENT',
   SUPERVISOR = 'SUPERVISOR',
@@ -25,4 +32,12 @@ export enum UserRole {
   STUDENT = 'STUDENT',
   SUPERVISOR = 'SUPERVISOR',
   ADMIN = 'ADMIN',
+}
+
+export enum TopicAreas {
+  banking_and_insurance = 'Banking and Insurance',
+  corporate_finance = 'Corporate Finance',
+  financial_economics = 'Financial Economics',
+  quantitative_finance = 'Quantitative Finance',
+  sustainable_finance = 'Sustainable Finance',
 }

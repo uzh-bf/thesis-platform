@@ -1,17 +1,24 @@
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import type { NextAuthOptions } from 'next-auth'
 import { decode, encode } from 'next-auth/jwt'
-import GithubProvider from 'next-auth/providers/github'
 // import AzureADProvider from 'next-auth/providers/azure-ad'
+import EmailProvider from 'next-auth/providers/email'
 
-import prisma from './prisma'
+import prisma from '../server/prisma'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
-    GithubProvider({
-      clientId: process.env.GITHUB_ID as string,
-      clientSecret: process.env.GITHUB_SECRET as string,
+    EmailProvider({
+      server: {
+        host: process.env.EMAIL_SERVER_HOST,
+        port: process.env.EMAIL_SERVER_PORT,
+        auth: {
+          user: process.env.EMAIL_SERVER_USER,
+          pass: process.env.EMAIL_SERVER_PASSWORD,
+        },
+      },
+      from: process.env.EMAIL_FROM,
     }),
     // AzureADProvider({
     //   clientId: process.env.AZURE_AD_CLIENT_ID as string,

@@ -1,9 +1,16 @@
+// import { ClientSecretCredential } from '@azure/identity'
 import { UserRole } from '@lib/constants'
-import { publicProcedure, router } from '../trpc'
+// import { Client } from '@microsoft/microsoft-graph-client'
+// import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials'
+import 'cross-fetch/polyfill'
+import { prisma } from '../prisma'
+import { optionalAuthedProcedure, publicProcedure, router } from '../trpc'
 
 export const appRouter = router({
-  proposals: publicProcedure.query(async ({ ctx }) => {
-    const proposals = await ctx.prisma.proposal.findMany({
+  healthcheck: publicProcedure.query(() => 'OK'),
+
+  proposals: optionalAuthedProcedure.query(async ({ ctx }) => {
+    const proposals = await prisma.proposal.findMany({
       where: {
         typeKey: {
           in:
@@ -15,23 +22,61 @@ export const appRouter = router({
       include: {
         attachments: true,
         topicArea: true,
-        ownedBy: {
-          include: { user: true },
-        },
+        ownedByUser: true,
         supervisedBy: {
-          include: { user: true },
+          include: {
+            supervisor: true,
+          },
         },
+        applications:
+          ctx.user?.role === UserRole.SUPERVISOR
+            ? {
+                include: {
+                  attachments: true,
+                  status: true,
+                },
+              }
+            : undefined,
+        receivedFeedbacks: ctx.user?.role === UserRole.SUPERVISOR,
       },
     })
 
-    console.log(JSON.stringify(proposals, null, 2))
-
     return proposals.map((p) => ({
       ...p,
-      ownedBy: p.ownedBy[0].user,
-      supervisedBy: p.supervisedBy?.[0]?.user,
+      supervisedBy: p.supervisedBy?.[0]?.supervisor,
+      ownedBy: p.ownedByUser,
+      isSupervisedProposal:
+        p.supervisedBy && p.supervisedBy[0]?.supervisor?.id === ctx.user?.sub,
+      isOwnProposal: p.ownedByUser && p.ownedByUser.id === ctx.user?.sub,
     }))
   }),
+
+  // supervisors: optionalAuthedProcedure.query(async ({ ctx }) => {
+  //   // Create an instance of the TokenCredential class that is imported
+  //   const tokenCredential = new ClientSecretCredential(
+  //     process.env.AZURE_AD_TENANT_ID,
+  //     process.env.AZURE_AD_CLIENT_ID,
+  //     process.env.AZURE_AD_CLIENT_SECRET,
+  //   )
+
+  //   // Create an instance of the TokenCredentialAuthenticationProvider by passing the tokenCredential instance and options to the constructor
+  //   const authProvider = new TokenCredentialAuthenticationProvider(
+  //     tokenCredential,
+  //     {
+  //       scopes: ['https://graph.microsoft.com/.default'],
+  //       getTokenOptions: { tenantId: process.env.AZURE_AD_TENANT_ID },
+  //     },
+  //   )
+  //   const client = Client.initWithMiddleware({
+  //     debugLogging: true,
+  //     authProvider: authProvider,
+  //   })
+  //   const res = await client
+  //     .api('/sites/UZHBFThesisMarket/lists/Supervisors/items')
+  //     .get()
+
+  //   console.log(res)
+  // }),
 })
 
 export type AppRouter = typeof appRouter
