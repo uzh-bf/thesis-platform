@@ -1,0 +1,3 @@
+setup:
+  project: thesis-platform
+  config: prd

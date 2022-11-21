@@ -1,0 +1,28 @@
+releases:
+  - name: thesis-platform
+    namespace: thesis-platform
+    createNamespace: true
+    chart: ./chart
+    version: '{{ env "CHART_VERSION" | default "0.1.0" }}'
+    installed: true
+    kubeContext: bf-k8s463ba113
+    values:
+      - imageCredentials:
+          password: '{{ env "REGISTRY_PASSWORD" }}'
+
+        azureAd:
+          clientId: '{{ env "AZURE_AD_CLIENT_ID" }}'
+          clientSecret: '{{ env "AZURE_AD_CLIENT_SECRET" }}'
+          tenantId: '{{ env "AZURE_AD_TENANT_ID" }}'
+
+        email:
+          host: '{{ env "EMAIL_SERVER_HOST" }}'
+          password: '{{ env "EMAIL_SERVER_PASSWORD" }}'
+          user: '{{ env "EMAIL_SERVER_USER" }}'
+          port: '{{ env "EMAIL_SERVER_PORT" }}'
+          from: '{{ env "EMAIL_FROM" }}'
+
+        database:
+          url: '{{ env "DATABASE_URL" }}'
+
+        appSecret: '{{ env "NEXTAUTH_SECRET" }}'

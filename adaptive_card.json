@@ -180,7 +180,7 @@
     "body": [
         {
             "type": "TextBlock",
-            "text": "Thesis Proposal for Review - @{body('GetResponseDetails')?['r7240915136fb41e8b884a045d08f39ce']}",
+            "text": "@{body('GetResponseDetails')?['r7240915136fb41e8b884a045d08f39ce']}",
             "wrap": true,
             "size": "Medium",
             "weight": "Bolder"

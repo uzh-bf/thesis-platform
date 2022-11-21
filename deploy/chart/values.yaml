@@ -1,0 +1,59 @@
+azureAd:
+  clientId: ""
+  clientSecret: ""
+  tenantId: ""
+
+email:
+  user: ""
+  password: ""
+  host: ""
+  port: ""
+  from: ""
+
+database:
+  url: ""
+
+appSecret: ""
+
+imageCredentials:
+  registry: cr.gitlab.uzh.ch
+  username: gitlab+deploy-token
+
+imagePullSecrets:
+  - name: gitlab-uzh-thesis-platform-registry
+
+replicaCount: 2
+
+image:
+  repository: cr.gitlab.uzh.ch/uzh-bf/thesis-platform
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  enabled: true
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 256m
+    cert-manager.io/cluster-issuer: letsencrypt
+  hosts:
+    - host: theses.bf.uzh.ch
+      paths:
+        - /
+  tls:
+    - secretName: thesis-platform-tls
+      hosts:
+        - theses.bf.uzh.ch
+
+resources:
+  requests:
+    memory: 128Mi
+    cpu: 100m
+  limits:
+    memory: 256Mi
+    cpu: 200m
+
+annotations: {}
+podAnnotations: {}
