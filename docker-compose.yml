@@ -1,25 +1,40 @@
 services:
-  postgres:
-    image: postgres:14.4
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2019-CU14-ubuntu-20.04
     environment:
-      POSTGRES_USER: thesis
-      POSTGRES_PASSWORD: thesis
-      POSTGRES_DB: main
+      ACCEPT_EULA: 'Y'
+      MSSQL_SA_PASSWORD: rtScuF7pnvCiG4gg5b3qgvkn
     ports:
-      - 5432:5432
+      - 1433:1433
+    networks:
+      - thesis-platform
 
   next:
+    profiles:
+      - app
     build: .
     environment:
-      NEXTAUTH_SECRET: 'N/l1mmMLDNwKaTlID6v8UyOjqu9VdGRLGjkF3S7a6vo='
-      AZURE_AD_CLIENT_ID: '366366bc-802b-4a5c-8f2c-89be11ba47c5'
-      AZURE_AD_CLIENT_SECRET: 'zo_8Q~VeNfTo3ig-uFgZJ0IQ63etHguz9Nqbccc~'
-      AZURE_AD_TENANT_ID: 'c7e438db-e462-4c22-a90a-c358b16980b3'
-      EMAIL_SERVER_USER: 'AKIAYSOSGZVT2KT7MMTY'
-      EMAIL_SERVER_PASSWORD: 'BA5Fwl/bOS4HHx8REbzMZO+s7umfE7D8eaGJNbnyPrDP'
-      EMAIL_SERVER_HOST: email-smtp.eu-west-1.amazonaws.com
-      EMAIL_SERVER_PORT: 587
+      NEXTAUTH_SECRET: 'abcdabcd'
       EMAIL_FROM: theses-signin@bf-app.ch
-      DATABASE_URL: 'sqlserver://uzhbfthesisassignment.database.windows.net:1433;database=thesis-assignment-dev;user=superuser@uzhbfthesisassignment;password=XCH5bQZ7T5fucgmQCkMMhMU4r24dMY86e;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;'
+      EMAIL_SERVER_HOST: sendria
+      EMAIL_SERVER_PORT: 1025
+      EMAIL_SERVER_USER:
+      EMAIL_SERVER_PASSWORD:
+      DATABASE_URL: 'sqlserver://localhost:1433;database=main;user=sa;password=rtScuF7pnvCiG4gg5b3qgvkn;trustServerCertificate=true;'
     ports:
       - 3000:3000
+    networks:
+      - thesis-platform
+
+  sendria:
+    profiles:
+      - app
+    image: msztolcman/sendria:v2.2.2.0
+    ports:
+      - 1025:1025
+      - 1080:1080
+    networks:
+      - thesis-platform
+
+networks:
+  thesis-platform:
