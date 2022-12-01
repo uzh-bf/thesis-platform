@@ -8,7 +8,7 @@ import { trpc } from '@lib/trpc'
 import { inferProcedureOutput } from '@trpc/server'
 import { Button, H1, H2, Table, Tabs } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
-import { signIn, signOut, useSession } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import Script from 'next/script'
 import { useMemo, useState } from 'react'
@@ -29,7 +29,7 @@ function Header() {
     <header className="w-full">
       <div className="flex flex-row items-center justify-between gap-4 px-4 py-2 text-sm text-gray-600 bg-gray-200 border-b rounded">
         <H1 className="m-0">IBF Thesis Market</H1>
-        <div className="flex flex-row items-center gap-4">
+        {/* <div className="flex flex-row items-center gap-4">
           {session?.user ? (
             <>
               <div>
@@ -43,7 +43,7 @@ function Header() {
               <Button onClick={() => signIn()}>Sign in</Button>
             </>
           )}
-        </div>
+        </div> */}
       </div>
     </header>
   )
