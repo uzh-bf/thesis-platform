@@ -10,6 +10,7 @@ import { Button, H1, H2, Table, Tabs } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 import Script from 'next/script'
 import { useMemo, useState } from 'react'
 import { AppRouter } from 'src/server/routers/_app'
@@ -23,27 +24,31 @@ const FileTypeIconMap: Record<string, IconDefinition> = {
 }
 
 function Header() {
+  const router = useRouter()
+
   const { data: session } = useSession()
 
   return (
     <header className="w-full">
       <div className="flex flex-row items-center justify-between gap-4 px-4 py-2 text-sm text-gray-600 bg-gray-200 border-b rounded">
         <H1 className="m-0">IBF Thesis Market</H1>
-        {/* <div className="flex flex-row items-center gap-4">
-          {session?.user ? (
-            <>
-              <div>
-                Signed in as {session.user.email} ({session.user.role})
-              </div>
-              <Button onClick={() => signOut()}>Sign out</Button>
-            </>
-          ) : (
-            <>
-              <div>Not signed in</div>
-              <Button onClick={() => signIn()}>Sign in</Button>
-            </>
-          )}
-        </div> */}
+        {router?.query?.supervisor && (
+          <div className="flex flex-row items-center gap-4">
+            {session?.user ? (
+              <>
+                <div>
+                  Signed in as {session.user.email} ({session.user.role})
+                </div>
+                <Button onClick={() => signOut()}>Sign out</Button>
+              </>
+            ) : (
+              <>
+                <div>Not signed in</div>
+                <Button onClick={() => signIn()}>Sign in</Button>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </header>
   )
@@ -180,7 +185,6 @@ function EasyFormsEmbed({ formId, defaultValues }) {
             })
             .display()
         }}
-        on
       />
     </div>
   )
