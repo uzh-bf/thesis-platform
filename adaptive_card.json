@@ -176,7 +176,7 @@
         }
     ],
     "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-    "version": "1.4",
+    "version": "1.0",
     "body": [
         {
             "type": "TextBlock",
@@ -191,7 +191,7 @@
             "wrap": true,
             "separator": true
         },
-{
+        {
             "type": "TextBlock",
             "text": "@{body('GetResponseDetails')?['r60d760e8828645cc84d8fde2a6fe3b27']}",
             "wrap": true,

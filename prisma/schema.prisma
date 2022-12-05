@@ -121,6 +121,7 @@ model Proposal {
   description String
   language    String
   studyLevel  String
+  timeFrame   String
 
   topicArea     TopicArea @relation(fields: [topicAreaSlug], references: [slug])
   topicAreaSlug String
