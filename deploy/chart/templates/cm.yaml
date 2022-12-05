@@ -11,3 +11,4 @@ data:
   EMAIL_SERVER_HOST: {{ .Values.email.host | quote }}
   EMAIL_SERVER_PORT: {{ .Values.email.port | quote }}
   EMAIL_FROM: {{ .Values.email.from | quote }}
+  NEXTAUTH_URL: {{ .Values.appUrl | quote }}

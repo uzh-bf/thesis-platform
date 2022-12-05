@@ -26,3 +26,4 @@ releases:
           url: '{{ env "DATABASE_URL" }}'
 
         appSecret: '{{ env "NEXTAUTH_SECRET" }}'
+        appUrl: '{{ env "APP_URL" }}'
