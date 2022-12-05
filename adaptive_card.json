@@ -1,232 +1,230 @@
-<script type="application/adaptivecard+json">
 {
-    "originator": "@{variables('Originator')}",
-    "type": "AdaptiveCard",
-    "actions": [
+  "originator": "@{variables('Originator')}",
+  "type": "AdaptiveCard",
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "version": "1.0",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "@{body('GetResponseDetails')?['r7240915136fb41e8b884a045d08f39ce']}",
+      "wrap": true,
+      "size": "Medium",
+      "weight": "Bolder"
+    },
+    {
+      "type": "TextBlock",
+      "text": "@{body('GetResponseDetails')?['r7425856917f245efbd0c4cb2a7f0c434']}",
+      "wrap": true,
+      "separator": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "@{body('GetResponseDetails')?['r60d760e8828645cc84d8fde2a6fe3b27']}",
+      "wrap": true,
+      "separator": true
+    },
+    {
+      "type": "FactSet",
+      "facts": [
         {
-            "type": "Action.ShowCard",
-            "title": "Accept",
-            "card": {
-                "version": "1.0",
-                "type": "AdaptiveCard",
-                "originator": "@{variables('Originator')}",
-                "body": [
-                    {
-                        "type": "TextBlock",
-                        "text": "Once you accept this proposal, the student will be asked to verify the matching. The proposal will be removed from the proposal market and assigned to you for supervision.",
-                        "wrap": true
-                    },
-                    {
-                        "type": "Input.Text",
-                        "id": "acceptComment",
-                        "placeholder": "Your message will be sent to the student alongside your acceptance notification.",
-                        "isMultiline": true,
-                        "isRequired": true,
-                        "label": "Follow-Up Comment (sent to student)"
-                    }
-                ],
-                "actions": [
-                    {
-                        "type": "Action.Http",
-                        "title": "Submit",
-                        "method": "POST",
-                        "url": "https://prod2-235.westeurope.logic.azure.com:443/workflows/687e33b82dd1454bbf1bf244b936a1db/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=RQa_8G5eA5FNPvGPU6x41tI8ZGWgTqYpLK9045lUIgg",
-                        "headers": [
-                            {
-                                "name": "Authorization",
-                                "value": ""
-                            },
-                            {
-                                "name": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": "{\n \"requestedSpecific\": @{variables('WasSpecificRequest')},\"proposalId\": \"@{variables('ProposalId')}\",\"email\": \"@{items('EmailToSupervisors')}\", \"type\": \"ACCEPT\",\n\"reason\": \"ACCEPT\",\n\"comment\": \"{{acceptComment.value}}\"\n}"
-                    }
-                ]
-            }
+          "title": "Submitted By",
+          "value": "@{body('GetResponseDetails')?['r7844031f633e4dd49368b0c116ad148d']} (@{body('GetResponseDetails')?['r6c3b387342aa4bd0b5f423aa43662850']}, @{body('GetResponseDetails')?['responder']})"
         },
         {
-            "type": "Action.ShowCard",
-            "title": "Reject",
-            "card": {
-                "version": "1.0",
-                "type": "AdaptiveCard",
-                "originator": "@{variables('Originator')}",
-                "body": [
-                    {
-                        "type": "TextBlock",
-                        "text": "Rejecting this proposal because of lacking content quality or format requirements will cause review by the thesis coordinator. The student will need to improve and resubmit the proposal.",
-                        "wrap": true
-                    },
-                    {
-                        "type": "Input.ChoiceSet",
-                        "choices": [
-                            {
-                                "title": "Proposal too broad",
-                                "value": "TOO_BROAD"
-                            },
-                            {
-                                "title": "Proposal not sufficiently scientific",
-                                "value": "NOT_SCIENTIFIC"
-                            },
-{
-                                "title": "Proposal or scope not clear",
-                                "value": "NOT_CLEAR"
-                            },
-{
-                                "title": "Format unsuitable",
-                                "value": "FORMAT_UNSUITABLE"
-                            }
-                        ],
-                        "placeholder": "Why should this proposal be rejected?",
-                        "isRequired": true,
-                        "label": "Reason",
-                        "id": "rejectReason"
-                    },
-                    {
-                        "type": "Input.Text",
-                        "id": "rejectComment",
-                        "placeholder": "Why do you recommend this proposal for rejection? Your comment will not be shown to the student.",
-                        "isMultiline": true,
-                        "isRequired": true,
-                        "label": "Comment"
-                    }
-                ],
-                "actions": [
-                    {
-                        "type": "Action.Http",
-                        "title": "Submit",
-                        "method": "POST",
-                        "url": "https://prod2-235.westeurope.logic.azure.com:443/workflows/687e33b82dd1454bbf1bf244b936a1db/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=RQa_8G5eA5FNPvGPU6x41tI8ZGWgTqYpLK9045lUIgg",
-                        "headers": [
-                            {
-                                "name": "Authorization",
-                                "value": ""
-                            },
-                            {
-                                "name": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": "{\n \"requestedSpecific\": @{variables('WasSpecificRequest')},\"proposalId\": \"@{variables('ProposalId')}\",\"email\": \"@{items('EmailToSupervisors')}\", \"type\": \"REJECT\",\n  \"reason\": \"{{rejectReason.value}}\",\n\"comment\": \"{{rejectComment.value}}\"\n}"
-                    }
-                ]
-            }
+          "title": "Proposed Title",
+          "value": "@{body('GetResponseDetails')?['r7240915136fb41e8b884a045d08f39ce']}"
         },
         {
-            "type": "Action.ShowCard",
-            "title": "Decline",
-            "card": {
-                "version": "1.0",
-                "type": "AdaptiveCard",
-                "originator": "@{variables('Originator')}",
-                "body": [
-                    {
-                        "type": "TextBlock",
-                        "text": "Declining this proposal because of a mismatch of interests or a high workload on your side will keep it available for other supervisors.",
-                        "wrap": true
-                    },
-                    {
-                        "type": "Input.ChoiceSet",
-                        "choices": [
-                            {
-                                "title": "Lack of interest in specific topic",
-                                "value": "LACKING_INTEREST"
-                            },
-                            {
-                                "title": "Personal workload too high",
-                                "value": "PERSONAL_WORKLOAD"
-                            }
-                        ],
-                        "placeholder": "Why do you want do decline this proposal?",
-                        "isRequired": true,
-                        "id": "declineReason",
-                        "label": "Reason"
-                    },
-                    {
-                        "type": "Input.Text",
-                        "id": "declineComment",
-                        "placeholder": "Why do you decline this proposal specifically? Your comment will not be shown to the student.",
-                        "isMultiline": true,
-                        "isRequired": true,
-                        "label": "Comment"
-                    }
-                ],
-                "actions": [
-                    {
-                        "type": "Action.Http",
-                        "title": "Submit",
-                        "method": "POST",
-                        "url": "https://prod2-235.westeurope.logic.azure.com:443/workflows/687e33b82dd1454bbf1bf244b936a1db/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=RQa_8G5eA5FNPvGPU6x41tI8ZGWgTqYpLK9045lUIgg",
-                        "headers": [
-                            {
-                                "name": "Authorization",
-                                "value": ""
-                            },
-                            {
-                                "name": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": "{\n \"requestedSpecific\": @{variables('WasSpecificRequest')},\"proposalId\": \"@{variables('ProposalId')}\",\"email\": \"@{items('EmailToSupervisors')}\", \"type\": \"DECLINE\",\n  \"reason\": \"{{declineReason.value}}\",\n\"comment\": \"{{declineComment.value}}\"\n}"
-                    }
-                ]
-            }
+          "title": "Type of Proposal",
+          "value": "@{body('GetResponseDetails')?['rc797ecd1491b44a0ac091174abbac9f6']}"
+        },
+        {
+          "title": "Field of Research",
+          "value": "@{body('GetResponseDetails')?['r975d59f3f5114998b6e30c56c035334b']}"
+        },
+        {
+          "title": "Proposal Language",
+          "value": "@{body('GetResponseDetails')?['r8b7f3f4a7502459598d155e9b31eb25e']}"
+        },
+        {
+          "title": "Planned Start Date",
+          "value": "@{body('GetResponseDetails')?['r837fec8c113c4851a217e947217c5b7f']}"
         }
-    ],
-    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-    "version": "1.0",
-    "body": [
-        {
+      ],
+      "separator": true
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.ShowCard",
+      "title": "Accept",
+      "card": {
+        "version": "1.0",
+        "type": "AdaptiveCard",
+        "originator": "@{variables('Originator')}",
+        "body": [
+          {
             "type": "TextBlock",
-            "text": "@{body('GetResponseDetails')?['r7240915136fb41e8b884a045d08f39ce']}",
-            "wrap": true,
-            "size": "Medium",
-            "weight": "Bolder"
-        },
-        {
-            "type": "TextBlock",
-            "text": "@{body('GetResponseDetails')?['r7425856917f245efbd0c4cb2a7f0c434']}",
-            "wrap": true,
-            "separator": true
-        },
-        {
-            "type": "TextBlock",
-            "text": "@{body('GetResponseDetails')?['r60d760e8828645cc84d8fde2a6fe3b27']}",
-            "wrap": true,
-            "separator": true
-        },
-        {
-            "type": "FactSet",
-            "facts": [
-                {
-                    "title": "Submitted By",
-                    "value": "@{body('GetResponseDetails')?['r7844031f633e4dd49368b0c116ad148d']} (@{body('GetResponseDetails')?['r6c3b387342aa4bd0b5f423aa43662850']}, @{body('GetResponseDetails')?['responder']})"
-                },
-                {
-                    "title": "Proposed Title",
-                    "value": "@{body('GetResponseDetails')?['r7240915136fb41e8b884a045d08f39ce']}"
-                },
-                {
-                    "title": "Type of Proposal",
-                    "value": "@{body('GetResponseDetails')?['rc797ecd1491b44a0ac091174abbac9f6']}"
-                },
-                {
-                    "title": "Field of Research",
-                    "value": "@{body('GetResponseDetails')?['r975d59f3f5114998b6e30c56c035334b']}"
-                },
-                {
-                    "title": "Proposal Language",
-                    "value": "@{body('GetResponseDetails')?['r8b7f3f4a7502459598d155e9b31eb25e']}"
-                },
-                {
-                    "title": "Planned Start Date",
-                    "value": "@{body('GetResponseDetails')?['r837fec8c113c4851a217e947217c5b7f']}"
-                }
+            "text": "Once you accept this proposal, the student will be asked to verify the matching. The proposal will be removed from the proposal market and assigned to you for supervision.",
+            "wrap": true
+          },
+          {
+            "type": "Input.Text",
+            "id": "acceptComment",
+            "placeholder": "Your message will be sent to the student alongside your acceptance notification.",
+            "isMultiline": true,
+            "isRequired": true,
+            "label": "Follow-Up Comment (sent to student)"
+          }
+        ],
+        "actions": [
+          {
+            "type": "Action.Http",
+            "title": "Submit",
+            "method": "POST",
+            "url": "https://prod2-235.westeurope.logic.azure.com:443/workflows/687e33b82dd1454bbf1bf244b936a1db/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=RQa_8G5eA5FNPvGPU6x41tI8ZGWgTqYpLK9045lUIgg",
+            "headers": [
+              {
+                "name": "Authorization",
+                "value": ""
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "separator": true
-        }
-    ]
+            "body": "{\n \"requestedSpecific\": @{variables('WasSpecificRequest')},\"proposalId\": \"@{variables('ProposalId')}\",\"email\": \"@{items('EmailToSupervisors')}\", \"type\": \"ACCEPT\",\n\"reason\": \"ACCEPT\",\n\"comment\": \"{{acceptComment.value}}\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Action.ShowCard",
+      "title": "Reject",
+      "card": {
+        "version": "1.0",
+        "type": "AdaptiveCard",
+        "originator": "@{variables('Originator')}",
+        "body": [
+          {
+            "type": "TextBlock",
+            "text": "Rejecting this proposal because of lacking content quality or format requirements will cause review by the thesis coordinator. The student will need to improve and resubmit the proposal.",
+            "wrap": true
+          },
+          {
+            "type": "Input.ChoiceSet",
+            "choices": [
+              {
+                "title": "Proposal too broad",
+                "value": "TOO_BROAD"
+              },
+              {
+                "title": "Proposal not sufficiently scientific",
+                "value": "NOT_SCIENTIFIC"
+              },
+              {
+                "title": "Proposal or scope not clear",
+                "value": "NOT_CLEAR"
+              },
+              {
+                "title": "Format unsuitable",
+                "value": "FORMAT_UNSUITABLE"
+              }
+            ],
+            "placeholder": "Why should this proposal be rejected?",
+            "isRequired": true,
+            "label": "Reason",
+            "id": "rejectReason"
+          },
+          {
+            "type": "Input.Text",
+            "id": "rejectComment",
+            "placeholder": "Why do you recommend this proposal for rejection? Your comment will not be shown to the student.",
+            "isMultiline": true,
+            "isRequired": true,
+            "label": "Comment"
+          }
+        ],
+        "actions": [
+          {
+            "type": "Action.Http",
+            "title": "Submit",
+            "method": "POST",
+            "url": "https://prod2-235.westeurope.logic.azure.com:443/workflows/687e33b82dd1454bbf1bf244b936a1db/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=RQa_8G5eA5FNPvGPU6x41tI8ZGWgTqYpLK9045lUIgg",
+            "headers": [
+              {
+                "name": "Authorization",
+                "value": ""
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n \"requestedSpecific\": @{variables('WasSpecificRequest')},\"proposalId\": \"@{variables('ProposalId')}\",\"email\": \"@{items('EmailToSupervisors')}\", \"type\": \"REJECT\",\n  \"reason\": \"{{rejectReason.value}}\",\n\"comment\": \"{{rejectComment.value}}\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Action.ShowCard",
+      "title": "Decline",
+      "card": {
+        "version": "1.0",
+        "type": "AdaptiveCard",
+        "originator": "@{variables('Originator')}",
+        "body": [
+          {
+            "type": "TextBlock",
+            "text": "Declining this proposal because of a mismatch of interests or a high workload on your side will keep it available for other supervisors.",
+            "wrap": true
+          },
+          {
+            "type": "Input.ChoiceSet",
+            "choices": [
+              {
+                "title": "Lack of interest in specific topic",
+                "value": "LACKING_INTEREST"
+              },
+              {
+                "title": "Personal workload too high",
+                "value": "PERSONAL_WORKLOAD"
+              }
+            ],
+            "placeholder": "Why do you want do decline this proposal?",
+            "isRequired": true,
+            "id": "declineReason",
+            "label": "Reason"
+          },
+          {
+            "type": "Input.Text",
+            "id": "declineComment",
+            "placeholder": "Why do you decline this proposal specifically? Your comment will not be shown to the student.",
+            "isMultiline": true,
+            "isRequired": true,
+            "label": "Comment"
+          }
+        ],
+        "actions": [
+          {
+            "type": "Action.Http",
+            "title": "Submit",
+            "method": "POST",
+            "url": "https://prod2-235.westeurope.logic.azure.com:443/workflows/687e33b82dd1454bbf1bf244b936a1db/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=RQa_8G5eA5FNPvGPU6x41tI8ZGWgTqYpLK9045lUIgg",
+            "headers": [
+              {
+                "name": "Authorization",
+                "value": ""
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n \"requestedSpecific\": @{variables('WasSpecificRequest')},\"proposalId\": \"@{variables('ProposalId')}\",\"email\": \"@{items('EmailToSupervisors')}\", \"type\": \"DECLINE\",\n  \"reason\": \"{{declineReason.value}}\",\n\"comment\": \"{{declineComment.value}}\"\n}"
+          }
+        ]
+      }
+    }
+  ]
 }
-</script>
