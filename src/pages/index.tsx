@@ -292,7 +292,7 @@ function Index() {
     if (!selectedProposal) return null
 
     return result.data?.find((p) => p.id === selectedProposal)
-  }, [result, selectedProposal, router.query.proposalId])
+  }, [result, selectedProposal])
 
   if (!result.data) {
     return <div>Loading...</div>
@@ -349,10 +349,7 @@ function Index() {
                     <ProposalCard
                       key={proposal.id}
                       proposal={proposal}
-                      isActive={
-                        selectedProposal === proposal.id &&
-                        displayMode === 'details'
-                      }
+                      isActive={selectedProposal === proposal.id}
                       onClick={() => {
                         setSelectedProposal(proposal.id)
                         setDisplayMode('details')
@@ -376,10 +373,7 @@ function Index() {
                   <ProposalCard
                     key={proposal.id}
                     proposal={proposal}
-                    isActive={
-                      selectedProposal === proposal.id &&
-                      displayMode === 'details'
-                    }
+                    isActive={selectedProposal === proposal.id}
                     onClick={() => {
                       setSelectedProposal(proposal.id)
                       setDisplayMode('details')
