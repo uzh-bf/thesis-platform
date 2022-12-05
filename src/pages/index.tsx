@@ -77,7 +77,7 @@ function ProposalMeta({
       </div>
       <div className="flex flex-row gap-2">
         <div className="flex-none w-48 font-bold">Proposal Language</div>
-        <div>{proposalDetails.language}</div>
+        <div>{JSON.parse(proposalDetails.language).join(', ')}</div>
       </div>
       {proposalDetails.typeKey === 'STUDENT' && (
         <div className="flex flex-row gap-2">
@@ -90,15 +90,21 @@ function ProposalMeta({
           </div>
         </div>
       )}
+      {proposalDetails.typeKey === 'SUPERVISOR' && (
+        <div className="flex flex-row gap-2">
+          <div className="flex-none w-48 font-bold">Time Frame</div>
+          <div>{proposalDetails.timeFrame}</div>
+        </div>
+      )}
       <div className="flex flex-row gap-2">
         <div className="flex-none w-48 font-bold">Supervised By</div>
         <div>{proposalDetails.supervisedBy?.name ?? 'Unassigned'}</div>
       </div>
 
-      <div className="flex flex-row gap-2">
-        <div className="flex-none w-48 font-bold">Submitted By</div>
-        <div>
-          {proposalDetails.typeKey === 'STUDENT' ? (
+      {proposalDetails.typeKey === 'STUDENT' && (
+        <div className="flex flex-row gap-2">
+          <div className="flex-none w-48 font-bold">Submitted By</div>
+          <div>
             <a
               href=""
               target="_blank"
@@ -107,11 +113,9 @@ function ProposalMeta({
               <FontAwesomeIcon icon={faMessage} />
               {proposalDetails.applications[0].fullName}
             </a>
-          ) : (
-            proposalDetails.ownedBy?.name
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {proposalDetails.typeKey === 'STUDENT' && (
         <div className="flex flex-row gap-6 pt-4 text-sm">
@@ -271,6 +275,8 @@ function ProposalCard({
 }
 
 function Index() {
+  const router = useRouter()
+
   const { data: session } = useSession()
 
   const result = trpc.proposals.useQuery()
@@ -278,13 +284,15 @@ function Index() {
   // const res = trpc.supervisors.useQuery()
 
   const [displayMode, setDisplayMode] = useState('')
-  const [selectedProposal, setSelectedProposal] = useState<string | null>(null)
+  const [selectedProposal, setSelectedProposal] = useState<string | null>(
+    (router?.query?.proposalId as string) ?? null,
+  )
 
   const proposalDetails = useMemo(() => {
     if (!selectedProposal) return null
 
     return result.data?.find((p) => p.id === selectedProposal)
-  }, [result, selectedProposal])
+  }, [result, selectedProposal, router.query.proposalId])
 
   if (!result.data) {
     return <div>Loading...</div>
