@@ -9,7 +9,7 @@ BEGIN TRY
 BEGIN TRAN;
 
 -- AlterTable
-ALTER TABLE [dbo].[Proposal] ADD [timeFrame] NVARCHAR(1000) NOT NULL;
+ALTER TABLE [dbo].[Proposal] ADD [timeFrame] NVARCHAR(1000);
 
 COMMIT TRAN;
 
