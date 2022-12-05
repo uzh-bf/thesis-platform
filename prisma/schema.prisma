@@ -29,7 +29,7 @@ model ProposalFeedbackType {
 }
 
 model Account {
-  id String @id @default(uuid())
+  id String @id @unique @default(uuid())
 
   userId                   String
   type                     String
@@ -58,7 +58,7 @@ model VerificationToken {
 }
 
 model User {
-  id String @id @default(uuid())
+  id String @id @unique @default(uuid())
 
   name          String
   email         String    @unique
@@ -78,7 +78,7 @@ model User {
 }
 
 model TopicArea {
-  id String @id @default(uuid())
+  id String @id @unique @default(uuid())
 
   slug String @unique
   name String @unique
@@ -87,7 +87,7 @@ model TopicArea {
 }
 
 model ProposalAttachment {
-  id String @id @default(uuid())
+  id String @id @unique @default(uuid())
 
   name String
   href String
@@ -101,7 +101,7 @@ model ProposalAttachment {
 }
 
 model ApplicationAttachment {
-  id String @id @default(uuid())
+  id String @id @unique @default(uuid())
 
   name String
   href String
@@ -147,7 +147,7 @@ model Proposal {
 }
 
 model ProposalApplication {
-  id String @id @default(uuid())
+  id String @id @unique @default(uuid())
 
   status    ApplicationStatus @relation(fields: [statusKey], references: [key])
   statusKey String            @default("OPEN")
@@ -160,7 +160,7 @@ model ProposalApplication {
 
   attachments ApplicationAttachment[]
 
-  proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  proposal   Proposal @relation(fields: [proposalId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   proposalId String
 
   supervision   UserProposalSupervision? @relation(fields: [supervisionId], references: [id], onUpdate: NoAction, onDelete: NoAction)
@@ -173,7 +173,7 @@ model ProposalApplication {
 }
 
 model UserProposalSupervision {
-  id String @id @default(uuid())
+  id String @id @unique @default(uuid())
 
   proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
   proposalId String   @unique
@@ -188,7 +188,7 @@ model UserProposalSupervision {
 }
 
 model UserProposalFeedback {
-  id String @id @default(uuid())
+  id String @id @unique @default(uuid())
 
   proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
   proposalId String
