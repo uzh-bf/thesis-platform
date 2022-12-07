@@ -43,6 +43,7 @@ model Account {
   scope                    String?
   id_token                 String? @db.Text
   session_state            String?
+  ext_expires_in           Int?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -118,7 +119,7 @@ model Proposal {
   id String @id @unique @default(uuid())
 
   title       String
-  description String
+  description String  @db.Text
   language    String
   studyLevel  String
   timeFrame   String?
@@ -156,7 +157,7 @@ model ProposalApplication {
   matriculationNumber String
   fullName            String
   plannedStartAt      DateTime
-  motivation          String
+  motivation          String   @db.Text
 
   attachments ApplicationAttachment[]
 
@@ -200,7 +201,7 @@ model UserProposalFeedback {
   typeKey String
 
   reason  String
-  comment String
+  comment String @db.Text
 
   @@unique([proposalId, userEmail])
 }
