@@ -29,7 +29,7 @@ function Header() {
   return (
     <header className="w-full">
       <div className="flex flex-row items-center justify-between gap-4 px-4 py-2 text-sm text-gray-600 bg-gray-200 border-b rounded">
-        <H1 className="m-0">DBF Thesis Market</H1>
+        <H1 className={{ root: 'm-0' }}>DBF Thesis Market</H1>
         <div className="flex flex-row items-center gap-4">
           {session?.user ? (
             <>
@@ -257,7 +257,9 @@ function ProposalCard({
     <Button
       fluid
       key={proposal.id}
-      className="flex flex-col justify-between w-56 gap-1 p-2 text-sm md:w-64"
+      className={{
+        root: 'flex flex-col justify-between w-56 gap-1 p-2 text-sm md:w-64',
+      }}
       active={isActive}
       onClick={onClick}
     >
@@ -467,7 +469,7 @@ function Index() {
           {proposalDetails?.typeKey === 'STUDENT' && (
             <div className="pt-4 border-t md:p-4">
               <Tabs defaultValue="accept">
-                <Tabs.TabList className="flex flex-row border">
+                <Tabs.TabList className={{ root: 'flex flex-row border' }}>
                   <Tabs.Tab key="accept" value="accept" label="Accept" />
                   <Tabs.Tab key="reject" value="reject" label="Reject" />
                   <Tabs.Tab key="decline" value="decline" label="Decline" />
@@ -475,7 +477,7 @@ function Index() {
                 <Tabs.TabContent
                   key="accept"
                   value="accept"
-                  className="border border-t-0 rounded-none"
+                  className={{ root: 'border border-t-0 rounded-none' }}
                 >
                   <AcceptProposalForm
                     proposalId={proposalDetails.id}
@@ -485,7 +487,7 @@ function Index() {
                 <Tabs.TabContent
                   key="reject"
                   value="reject"
-                  className="border border-t-0 rounded-none"
+                  className={{ root: 'border border-t-0 rounded-none' }}
                 >
                   <RejectProposalForm
                     proposalId={proposalDetails.id}
@@ -495,7 +497,7 @@ function Index() {
                 <Tabs.TabContent
                   key="decline"
                   value="decline"
-                  className="border border-t-0 rounded-none"
+                  className={{ root: 'border border-t-0 rounded-none' }}
                 >
                   <DeclineProposalForm
                     proposalId={proposalDetails.id}
