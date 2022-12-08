@@ -1,5 +1,5 @@
 // import { ClientSecretCredential } from '@azure/identity'
-import { UserRole } from '@lib/constants'
+import { ProposalStatus, UserRole } from '@lib/constants'
 // import { Client } from '@microsoft/microsoft-graph-client'
 // import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials'
 import 'cross-fetch/polyfill'
@@ -41,14 +41,22 @@ export const appRouter = router({
       },
     })
 
-    return proposals.map((p) => ({
-      ...p,
-      supervisedBy: p.supervisedBy?.[0]?.supervisor,
-      ownedBy: p.ownedByUser,
-      isSupervisedProposal:
-        p.supervisedBy && p.supervisedBy[0]?.supervisor?.id === ctx.user?.sub,
-      isOwnProposal: p.ownedByUser && p.ownedByUser.id === ctx.user?.sub,
-    }))
+    return proposals
+      .map((p) => ({
+        ...p,
+        supervisedBy: p.supervisedBy?.[0]?.supervisor,
+        ownedBy: p.ownedByUser,
+        isSupervisedProposal:
+          p.supervisedBy && p.supervisedBy[0]?.supervisor?.id === ctx.user?.sub,
+        isOwnProposal: p.ownedByUser && p.ownedByUser.id === ctx.user?.sub,
+      }))
+      .filter((p) => {
+        return (
+          p.statusKey === ProposalStatus.OPEN ||
+          p.isOwnProposal ||
+          p.isSupervisedProposal
+        )
+      })
   }),
 
   // supervisors: optionalAuthedProcedure.query(async ({ ctx }) => {

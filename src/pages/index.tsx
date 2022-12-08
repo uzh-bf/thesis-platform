@@ -166,7 +166,7 @@ function ProposalMeta({
 
 function EasyFormsEmbed({ formId, defaultValues }) {
   return (
-    <div className="w-full">
+    <div className="w-full px-4 md:p-0">
       <div id={`form-${formId}`}>Loading...</div>
       <Script
         src="https://www.bf-tools.uzh.ch/applications/easyforms/static_files/js/form.widget.js"
@@ -255,17 +255,22 @@ function ProposalCard({
 }) {
   return (
     <Button
-      fluid
       key={proposal.id}
       className={{
-        root: 'flex flex-col justify-between w-56 gap-1 p-2 text-sm md:w-64',
+        root: twMerge(
+          'flex flex-col justify-between w-full gap-1 p-2 text-sm md:w-64',
+          (proposal.isOwnProposal || proposal.isSupervisedProposal) &&
+            'border-orange-300',
+        ),
       }}
       active={isActive}
       onClick={onClick}
     >
       <div className="font-bold">{proposal.title}</div>
-      <div>
-        {proposal.studyLevel} - {proposal.topicArea.name}
+      <div className="mt-1 space-y-1 text-xs">
+        <div>{proposal.studyLevel}</div>
+        <div>{proposal.topicArea.name}</div>
+        <div>{proposal.statusKey}</div>
       </div>
     </Button>
   )
@@ -305,9 +310,7 @@ function Index() {
       <Header />
 
       <div
-        className={twMerge(
-          'flex flex-row flex-wrap md:flex-nowrap pt-4 md:p-4 gap-8',
-        )}
+        className={twMerge('flex flex-row flex-wrap md:flex-nowrap p-4 gap-8')}
       >
         <div className="flex-initial space-y-4 md:flex-1">
           <div>
