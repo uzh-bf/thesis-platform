@@ -22,7 +22,7 @@ imageCredentials:
 imagePullSecrets:
   - name: gitlab-uzh-thesis-platform-registry
 
-replicaCount: 2
+replicaCount: 1
 
 image:
   repository: cr.gitlab.uzh.ch/uzh-bf/thesis-platform
