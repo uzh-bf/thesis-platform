@@ -399,6 +399,7 @@ function Index() {
             <div className="pt-4 border-t md:p-4">
               {isStudent && (
                 <ApplicationForm
+                  key={proposalDetails.id}
                   proposalName={proposalDetails.title}
                   proposalId={proposalDetails.id}
                 />
@@ -500,6 +501,7 @@ function Index() {
                   className={{ root: 'border border-t-0 rounded-none' }}
                 >
                   <AcceptProposalForm
+                    key={proposalDetails.id}
                     proposalName={proposalDetails.title}
                     proposalId={proposalDetails.id}
                     supervisorEmail={session?.user?.email}
@@ -511,6 +513,7 @@ function Index() {
                   className={{ root: 'border border-t-0 rounded-none' }}
                 >
                   <DeclineProposalForm
+                    key={proposalDetails.id}
                     proposalName={proposalDetails.title}
                     proposalId={proposalDetails.id}
                     supervisorEmail={session?.user?.email}
@@ -522,6 +525,7 @@ function Index() {
                   className={{ root: 'border border-t-0 rounded-none' }}
                 >
                   <RejectProposalForm
+                    key={proposalDetails.id}
                     proposalName={proposalDetails.title}
                     proposalId={proposalDetails.id}
                     supervisorEmail={session?.user?.email}
