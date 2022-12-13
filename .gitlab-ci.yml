@@ -18,11 +18,11 @@ include:
 - template: Security/Secret-Detection.gitlab-ci.yml
 
 services:
-  - name: cr.gitlab.uzh.ch/uzh-bf/devops/ci-images/docker:19.03.13-dind
+  - name: cr.gitlab.uzh.ch/uzh-bf/devops/ci-images/docker:dind
     alias: docker
 
 build:
-  image: cr.gitlab.uzh.ch/uzh-bf/devops/ci-images/docker:19.03.13
+  image: cr.gitlab.uzh.ch/uzh-bf/devops/ci-images/docker
   stage: build
   script:
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
