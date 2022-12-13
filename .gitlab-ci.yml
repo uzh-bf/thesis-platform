@@ -20,7 +20,7 @@ before_script:
   - docker info
 
 build:
-  image: cr.gitlab.uzh.ch/uzh-bf/devops/ci-images/docker
+  image: docker:20.10.16
   stage: build
   script:
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
