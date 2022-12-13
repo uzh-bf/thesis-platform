@@ -99,16 +99,7 @@ function ProposalMeta({
       {proposalDetails.typeKey === 'STUDENT' && (
         <div className="flex flex-row gap-2">
           <div className="flex-none w-48 font-bold">Submitted By</div>
-          <div>
-            <a
-              href=""
-              target="_blank"
-              className="flex flex-row items-center gap-1 hover:text-orange-600"
-            >
-              <FontAwesomeIcon icon={faMessage} />
-              {proposalDetails.applications[0].fullName}
-            </a>
-          </div>
+          <div>{proposalDetails.applications[0].fullName}</div>
         </div>
       )}
 
