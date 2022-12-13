@@ -180,9 +180,12 @@ function EasyFormsEmbed({ formId, defaultValues }) {
   )
 }
 
-function ApplicationForm({ proposalId }) {
+function ApplicationForm({ proposalName, proposalId }) {
   return (
-    <EasyFormsEmbed formId={147} defaultValues={{ hidden_1: proposalId }} />
+    <EasyFormsEmbed
+      formId={147}
+      defaultValues={{ text_3: proposalName, hidden_1: proposalId }}
+    />
   )
 }
 
@@ -394,7 +397,12 @@ function Index() {
 
           {proposalDetails?.typeKey === 'SUPERVISOR' && (
             <div className="pt-4 border-t md:p-4">
-              {isStudent && <ApplicationForm proposalId={proposalDetails.id} />}
+              {isStudent && (
+                <ApplicationForm
+                  proposalName={proposalDetails.title}
+                  proposalId={proposalDetails.id}
+                />
+              )}
               {isSupervisor && (
                 <div>
                   <H2>Applications</H2>
