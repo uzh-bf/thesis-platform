@@ -195,29 +195,41 @@ function ApplicationForm({ proposalId }) {
   )
 }
 
-function AcceptProposalForm({ proposalId, supervisorEmail }) {
+function AcceptProposalForm({ proposalName, proposalId, supervisorEmail }) {
   return (
     <EasyFormsEmbed
       formId={148}
-      defaultValues={{ hidden_3: proposalId, hidden_1: supervisorEmail }}
+      defaultValues={{
+        text_1: proposalName,
+        hidden_3: proposalId,
+        hidden_1: supervisorEmail,
+      }}
     />
   )
 }
 
-function RejectProposalForm({ proposalId, supervisorEmail }) {
+function RejectProposalForm({ proposalName, proposalId, supervisorEmail }) {
   return (
     <EasyFormsEmbed
       formId={149}
-      defaultValues={{ hidden_1: supervisorEmail, hidden_2: proposalId }}
+      defaultValues={{
+        text_1: proposalName,
+        hidden_1: supervisorEmail,
+        hidden_2: proposalId,
+      }}
     />
   )
 }
 
-function DeclineProposalForm({ proposalId, supervisorEmail }) {
+function DeclineProposalForm({ proposalName, proposalId, supervisorEmail }) {
   return (
     <EasyFormsEmbed
       formId={150}
-      defaultValues={{ hidden_3: proposalId, hidden_1: supervisorEmail }}
+      defaultValues={{
+        text_1: proposalId,
+        hidden_3: proposalId,
+        hidden_1: supervisorEmail,
+      }}
     />
   )
 }
@@ -402,6 +414,12 @@ function Index() {
                       className={{ root: 'text-sm', tableHeader: 'text-base' }}
                       columns={[
                         {
+                          label: 'Status',
+                          accessor: 'status',
+                          sortable: true,
+                          transformer: (status) => <div>{status.key}</div>,
+                        },
+                        {
                           label: 'Working Period',
                           accessor: 'plannedStartAt',
                           sortable: true,
@@ -483,16 +501,7 @@ function Index() {
                   className={{ root: 'border border-t-0 rounded-none' }}
                 >
                   <AcceptProposalForm
-                    proposalId={proposalDetails.id}
-                    supervisorEmail={session?.user?.email}
-                  />
-                </Tabs.TabContent>
-                <Tabs.TabContent
-                  key="reject"
-                  value="reject"
-                  className={{ root: 'border border-t-0 rounded-none' }}
-                >
-                  <RejectProposalForm
+                    proposalName={proposalDetails.title}
                     proposalId={proposalDetails.id}
                     supervisorEmail={session?.user?.email}
                   />
@@ -503,6 +512,18 @@ function Index() {
                   className={{ root: 'border border-t-0 rounded-none' }}
                 >
                   <DeclineProposalForm
+                    proposalName={proposalDetails.title}
+                    proposalId={proposalDetails.id}
+                    supervisorEmail={session?.user?.email}
+                  />
+                </Tabs.TabContent>
+                <Tabs.TabContent
+                  key="reject"
+                  value="reject"
+                  className={{ root: 'border border-t-0 rounded-none' }}
+                >
+                  <RejectProposalForm
+                    proposalName={proposalDetails.title}
                     proposalId={proposalDetails.id}
                     supervisorEmail={session?.user?.email}
                   />
