@@ -217,7 +217,7 @@ function DeclineProposalForm({ proposalName, proposalId, supervisorEmail }) {
     <EasyFormsEmbed
       formId={150}
       defaultValues={{
-        text_1: proposalId,
+        text_1: proposalName,
         hidden_3: proposalId,
         hidden_1: supervisorEmail,
       }}
