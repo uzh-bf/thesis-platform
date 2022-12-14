@@ -358,7 +358,7 @@ function Index() {
           {isSupervisor && (
             <div>
               <H2>Student Proposals</H2>
-              <div className="text-sm">
+              <div className="space-y-2 text-sm">
                 {data.filter((proposal) => proposal.typeKey === 'STUDENT')
                   .length === 0 && <div>No student proposals available...</div>}
 
