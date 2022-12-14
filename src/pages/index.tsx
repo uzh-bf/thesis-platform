@@ -6,12 +6,13 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { trpc } from '@lib/trpc'
 import { inferProcedureOutput } from '@trpc/server'
-import { Button, H1, H2, Table, Tabs } from '@uzh-bf/design-system'
+import { Button, H1, H2, H3, Table, Tabs } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
 import { signIn, signOut, useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import Script from 'next/script'
+import * as R from 'ramda'
 import { useMemo, useState } from 'react'
 import { AppRouter } from 'src/server/routers/_app'
 import { twMerge } from 'tailwind-merge'
@@ -296,6 +297,14 @@ function Index() {
     (router?.query?.proposalId as string) ?? null,
   )
 
+  const groupedStudentProposals = useMemo(() => {
+    if (!result.data) return []
+    return R.groupBy(
+      (p) => p.topicArea.name,
+      result.data.filter((proposal) => proposal.typeKey === 'STUDENT'),
+    )
+  }, [result])
+
   const proposalDetails = useMemo(() => {
     if (!selectedProposal) return null
 
@@ -349,18 +358,33 @@ function Index() {
               <div className="flex flex-row flex-wrap gap-2 text-sm">
                 {data.filter((proposal) => proposal.typeKey === 'STUDENT')
                   .length === 0 && <div>No student proposals available...</div>}
-                {data
-                  .filter((proposal) => proposal.typeKey === 'STUDENT')
-                  .map((proposal) => (
-                    <ProposalCard
-                      key={proposal.id}
-                      proposal={proposal}
-                      isActive={selectedProposal === proposal.id}
-                      onClick={() => {
-                        setSelectedProposal(proposal.id)
-                        setDisplayMode('details')
-                      }}
-                    />
+
+                {[
+                  'Banking and Insurance',
+                  'Corporate Finance',
+                  'Financial Economics',
+                  'Quantitative Finance',
+                  'Sustainable Finance',
+                ]
+                  .filter(
+                    (topicArea) =>
+                      groupedStudentProposals?.[topicArea]?.length > 0,
+                  )
+                  .map((topicArea) => (
+                    <div key={topicArea}>
+                      <H3>{topicArea}</H3>
+                      {groupedStudentProposals?.[topicArea].map((proposal) => (
+                        <ProposalCard
+                          key={proposal.id}
+                          proposal={proposal}
+                          isActive={selectedProposal === proposal.id}
+                          onClick={() => {
+                            setSelectedProposal(proposal.id)
+                            setDisplayMode('details')
+                          }}
+                        />
+                      ))}
+                    </div>
                   ))}
               </div>
             </div>
