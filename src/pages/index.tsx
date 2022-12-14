@@ -358,7 +358,7 @@ function Index() {
           {isSupervisor && (
             <div>
               <H2>Student Proposals</H2>
-              <div className="flex flex-row flex-wrap gap-2 text-sm">
+              <div className="text-sm">
                 {data.filter((proposal) => proposal.typeKey === 'STUDENT')
                   .length === 0 && <div>No student proposals available...</div>}
 
@@ -376,17 +376,21 @@ function Index() {
                   .map((topicArea) => (
                     <div key={topicArea}>
                       <H3>{topicArea}</H3>
-                      {groupedStudentProposals?.[topicArea].map((proposal) => (
-                        <ProposalCard
-                          key={proposal.id}
-                          proposal={proposal}
-                          isActive={selectedProposal === proposal.id}
-                          onClick={() => {
-                            setSelectedProposal(proposal.id)
-                            setDisplayMode('details')
-                          }}
-                        />
-                      ))}
+                      <div className="flex flex-row flex-wrap gap-2">
+                        {groupedStudentProposals?.[topicArea].map(
+                          (proposal) => (
+                            <ProposalCard
+                              key={proposal.id}
+                              proposal={proposal}
+                              isActive={selectedProposal === proposal.id}
+                              onClick={() => {
+                                setSelectedProposal(proposal.id)
+                                setDisplayMode('details')
+                              }}
+                            />
+                          ),
+                        )}
+                      </div>
                     </div>
                   ))}
               </div>
