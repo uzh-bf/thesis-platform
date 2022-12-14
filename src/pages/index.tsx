@@ -301,7 +301,10 @@ function Index() {
     if (!result.data) return []
     return R.groupBy(
       (p) => p.topicArea.name,
-      result.data.filter((proposal) => proposal.typeKey === 'STUDENT'),
+      R.sortBy(
+        R.prop('title'),
+        result.data.filter((proposal) => proposal.typeKey === 'STUDENT'),
+      ),
     )
   }, [result])
 
