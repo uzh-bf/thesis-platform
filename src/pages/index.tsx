@@ -203,6 +203,23 @@ function AcceptProposalForm({ proposalName, proposalId, supervisorEmail }) {
   )
 }
 
+function TentativeAcceptProposalForm({
+  proposalName,
+  proposalId,
+  supervisorEmail,
+}) {
+  return (
+    <EasyFormsEmbed
+      formId={152}
+      defaultValues={{
+        text_1: proposalName,
+        hidden_3: proposalId,
+        hidden_1: supervisorEmail,
+      }}
+    />
+  )
+}
+
 function RejectProposalForm({ proposalName, proposalId, supervisorEmail }) {
   return (
     <EasyFormsEmbed
@@ -523,6 +540,11 @@ function Index() {
               <Tabs defaultValue="accept">
                 <Tabs.TabList className={{ root: 'flex flex-row border' }}>
                   <Tabs.Tab key="accept" value="accept" label="Accept" />
+                  <Tabs.Tab
+                    key="acceptTentative"
+                    value="acceptTentative"
+                    label="Accept (Tentative)"
+                  />
                   <Tabs.Tab key="reject" value="reject" label="Reject" />
                   <Tabs.Tab key="decline" value="decline" label="Decline" />
                 </Tabs.TabList>
@@ -532,6 +554,18 @@ function Index() {
                   className={{ root: 'border border-t-0 rounded-none' }}
                 >
                   <AcceptProposalForm
+                    key={proposalDetails.id}
+                    proposalName={proposalDetails.title}
+                    proposalId={proposalDetails.id}
+                    supervisorEmail={session?.user?.email}
+                  />
+                </Tabs.TabContent>
+                <Tabs.TabContent
+                  key="acceptTentative"
+                  value="acceptTentative"
+                  className={{ root: 'border border-t-0 rounded-none' }}
+                >
+                  <TentativeAcceptProposalForm
                     key={proposalDetails.id}
                     proposalName={proposalDetails.title}
                     proposalId={proposalDetails.id}
