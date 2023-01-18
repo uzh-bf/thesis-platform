@@ -4,6 +4,7 @@ import {
   IconDefinition,
 } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { ProposalType } from '@lib/constants'
 import { trpc } from '@lib/trpc'
 import { inferProcedureOutput } from '@trpc/server'
 import { Button, H1, H2, H3, Table, Tabs } from '@uzh-bf/design-system'
@@ -294,7 +295,11 @@ function ProposalCard({
       <div className="mt-1 space-y-1 text-xs">
         <div>{proposal.studyLevel}</div>
         <div>{proposal.topicArea.name}</div>
-        <div>{proposal.applications?.[0]?.fullName}</div>
+        <div>
+          {proposal.typeKey === ProposalType.STUDENT
+            ? proposal.applications?.[0]?.fullName
+            : proposal.supervisedBy?.name}
+        </div>
       </div>
     </Button>
   )
