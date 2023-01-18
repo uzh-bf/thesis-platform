@@ -294,7 +294,7 @@ function ProposalCard({
       <div className="mt-1 space-y-1 text-xs">
         <div>{proposal.studyLevel}</div>
         <div>{proposal.topicArea.name}</div>
-        <div>{proposal.statusKey}</div>
+        <div>{proposal.applications[0].fullName}</div>
       </div>
     </Button>
   )
