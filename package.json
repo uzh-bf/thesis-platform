@@ -8,17 +8,18 @@
     "build:next": "next build",
     "predev": "npm-run-all prisma:generate",
     "dev": "npm-run-all --parallel dev:*",
-    "dev:next": "next dev",
+    "dev:next": "doppler run --config dev -- next dev",
     "format": "prettier --write .",
     "lint": "next lint",
-    "prisma:deploy": "prisma migrate deploy",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:push": "prisma db push",
-    "prisma:reset": "prisma migrate reset",
-    "prisma:studio": "prisma studio",
-    "prisma:seed": "ts-node --esm prisma/seed.ts",
-    "start": "next start"
+    "prisma:deploy": "doppler run --config dev -- prisma migrate deploy",
+    "prisma:generate": "doppler run --config dev -- prisma generate",
+    "prisma:migrate": "doppler run --config dev -- prisma migrate dev",
+    "prisma:push": "doppler run --config dev -- prisma db push",
+    "prisma:reset": "doppler run --config dev -- prisma migrate reset",
+    "prisma:studio": "doppler run --config dev -- prisma studio",
+    "prisma:seed": "doppler run --config dev -- ts-node --esm prisma/seed.ts",
+    "prisma:setup": "run-s prisma:reset prisma:push prisma:seed",
+    "start": "doppler run --config dev -- next start"
   },
   "dependencies": {
     "@azure/identity": "3.1.2",
@@ -77,9 +78,6 @@
   },
   "volta": {
     "node": "18.12.1"
-  },
-  "prisma": {
-    "seed": "npm-run-all prisma:push prisma:seed"
   },
   "overrides": {
     "next-auth": {

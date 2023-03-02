@@ -63,10 +63,10 @@ async function seed(prisma: PrismaClient) {
   )
 
   const user = await prisma.user.upsert({
-    where: { email: 'roland.schlaefli@bf.uzh.ch' },
+    where: { email: process.env.USER_EMAIL },
     create: {
-      email: 'roland.schlaefli@bf.uzh.ch',
-      name: 'Roland Schläfli',
+      email: process.env.USER_EMAIL as string,
+      name: process.env.USER_NAME as string,
     },
     update: {},
   })
