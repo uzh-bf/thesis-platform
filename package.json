@@ -12,7 +12,7 @@
     "format": "prettier --write .",
     "lint": "next lint",
     "prisma:deploy": "doppler run --config dev -- prisma migrate deploy",
-    "prisma:generate": "doppler run --config dev -- prisma generate",
+    "prisma:generate": "prisma generate",
     "prisma:migrate": "doppler run --config dev -- prisma migrate dev",
     "prisma:push": "doppler run --config dev -- prisma db push",
     "prisma:reset": "doppler run --config dev -- prisma migrate reset",
