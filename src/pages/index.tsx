@@ -283,7 +283,7 @@ function ProposalCard({
 
   const hasFeedback =
     session?.user?.role === UserRole.SUPERVISOR &&
-    proposal.receivedFeedbacks.length > 0
+    proposal.receivedFeedbacks?.length > 0
 
   return (
     <Button
@@ -310,7 +310,7 @@ function ProposalCard({
         </div>
         {hasFeedback && (
           <div>
-            {proposal.receivedFeedbacks.map((feedback) => feedback.typeKey)}
+            {proposal.receivedFeedbacks?.map((feedback) => feedback.typeKey)}
           </div>
         )}
       </div>
@@ -552,7 +552,7 @@ function Index() {
             </div>
           )}
 
-          {proposalDetails?.receivedFeedbacks.length > 0 &&
+          {proposalDetails?.receivedFeedbacks?.length > 0 &&
             (isSupervisor || isAdmin) &&
             proposalDetails?.receivedFeedbacks.map((feedback) => (
               <div key={feedback.id} className="p-4 border-t">
