@@ -14,7 +14,8 @@ export const appRouter = router({
       where: {
         typeKey: {
           in:
-            ctx.user?.role === UserRole.SUPERVISOR
+            ctx.user?.role === UserRole.SUPERVISOR ||
+            ctx.user?.role === UserRole.ADMIN
               ? ['SUPERVISOR', 'STUDENT']
               : ['SUPERVISOR'],
         },
@@ -37,7 +38,18 @@ export const appRouter = router({
                 },
               }
             : undefined,
-        receivedFeedbacks: ctx.user?.role === UserRole.SUPERVISOR,
+        receivedFeedbacks: [UserRole.SUPERVISOR, UserRole.ADMIN].includes(
+          ctx.user?.role,
+        ) && {
+          where:
+            ctx.user?.role === UserRole.SUPERVISOR && ctx.user.email
+              ? {
+                  user: {
+                    email: ctx.user.email,
+                  },
+                }
+              : undefined,
+        },
       },
     })
 
@@ -49,9 +61,11 @@ export const appRouter = router({
         isSupervisedProposal:
           p.supervisedBy && p.supervisedBy[0]?.supervisor?.id === ctx.user?.sub,
         isOwnProposal: p.ownedByUser && p.ownedByUser.id === ctx.user?.sub,
+        receivedFeedbacks: p.receivedFeedbacks,
       }))
       .filter((p) => {
         return (
+          ctx.user?.role === UserRole.ADMIN ||
           p.statusKey === ProposalStatus.OPEN ||
           p.isOwnProposal ||
           p.isSupervisedProposal

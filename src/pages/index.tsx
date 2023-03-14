@@ -1,10 +1,11 @@
 import {
+  faComment,
   faFilePdf,
   faMessage,
   IconDefinition,
 } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { ProposalType } from '@lib/constants'
+import { ProposalType, UserRole } from '@lib/constants'
 import { trpc } from '@lib/trpc'
 import { inferProcedureOutput } from '@trpc/server'
 import { Button, H1, H2, H3, Table, Tabs } from '@uzh-bf/design-system'
@@ -278,6 +279,12 @@ function ProposalCard({
   isActive: boolean
   onClick: () => void
 }) {
+  const { data: session } = useSession()
+
+  const hasFeedback =
+    session?.user?.role === UserRole.SUPERVISOR &&
+    proposal.receivedFeedbacks.length > 0
+
   return (
     <Button
       key={proposal.id}
@@ -286,6 +293,7 @@ function ProposalCard({
           'flex flex-col justify-between w-full gap-1 p-2 text-sm md:w-64',
           (proposal.isOwnProposal || proposal.isSupervisedProposal) &&
             'border-orange-300',
+          hasFeedback && 'bg-slate-100 border-slate-200',
         ),
       }}
       active={isActive}
@@ -300,6 +308,11 @@ function ProposalCard({
             ? proposal.applications?.[0]?.fullName
             : proposal.supervisedBy?.name}
         </div>
+        {hasFeedback && (
+          <div>
+            {proposal.receivedFeedbacks.map((feedback) => feedback.typeKey)}
+          </div>
+        )}
       </div>
     </Button>
   )
@@ -311,8 +324,6 @@ function Index() {
   const { data: session } = useSession()
 
   const result = trpc.proposals.useQuery()
-
-  // const res = trpc.supervisors.useQuery()
 
   const [displayMode, setDisplayMode] = useState('')
   const [selectedProposal, setSelectedProposal] = useState<string | null>(
@@ -342,8 +353,9 @@ function Index() {
 
   const data = result.data
 
-  const isSupervisor = session?.user?.role === 'SUPERVISOR'
-  const isStudent = !session?.user || session.user.role === 'UNSET'
+  const isAdmin = session?.user?.role === UserRole.ADMIN
+  const isSupervisor = session?.user?.role === UserRole.SUPERVISOR
+  const isStudent = !isAdmin && !isSupervisor
 
   return (
     <div className="">
@@ -539,6 +551,21 @@ function Index() {
               )}
             </div>
           )}
+
+          {proposalDetails?.receivedFeedbacks.length > 0 &&
+            (isSupervisor || isAdmin) &&
+            proposalDetails?.receivedFeedbacks.map((feedback) => (
+              <div key={feedback.id} className="p-4 border-t">
+                <div className="flex flex-row items-center gap-4">
+                  <FontAwesomeIcon icon={faComment} />
+                  <div>
+                    <div>{feedback.typeKey}</div>
+                    <div className="prose-sm prose">{feedback.comment}</div>
+                    <div className="prose-sm prose">{feedback.userEmail}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
 
           {proposalDetails?.typeKey === 'STUDENT' && (
             <div className="pt-4 border-t md:p-4">

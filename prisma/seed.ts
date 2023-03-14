@@ -5,6 +5,7 @@ import {
   ProposalStatus,
   ProposalType,
   TopicAreas,
+  UserRole,
 } from '../src/lib/constants.js'
 
 const prismaClient = new PrismaClient()
@@ -62,13 +63,12 @@ async function seed(prisma: PrismaClient) {
     ),
   )
 
-  const user = await prisma.user.upsert({
+  const user = await prisma.user.update({
     where: { email: process.env.USER_EMAIL },
-    create: {
-      email: process.env.USER_EMAIL as string,
+    data: {
+      role: UserRole.SUPERVISOR,
       name: process.env.USER_NAME as string,
     },
-    update: {},
   })
 
   await prisma.proposal.upsert({
@@ -100,6 +100,18 @@ async function seed(prisma: PrismaClient) {
         },
       },
       ownedByStudent: 'roland.ferdinand@uzh.ch',
+      receivedFeedbacks: {
+        create: {
+          comment: 'Rejected because',
+          type: {
+            connect: { key: ProposalFeedbackType.REJECTED_NOT_SCIENTIFIC },
+          },
+          reason: ProposalFeedbackType.REJECTED_NOT_SCIENTIFIC,
+          user: {
+            connect: { email: user.email },
+          },
+        },
+      },
     },
     update: {},
   })
