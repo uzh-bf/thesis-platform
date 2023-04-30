@@ -1,6 +1,7 @@
 stages:
 - test
 - build
+- deploy
 
 sast:
   stage: test
@@ -27,3 +28,30 @@ build:
       docker build . -t $CI_REGISTRY_IMAGE:latest
       --cache-from $CI_REGISTRY_IMAGE:latest
     - docker push $CI_REGISTRY_IMAGE
+
+deploy-dev:
+  stage: deploy
+  image: registry.gitlab.com/static-web-apps/azure-static-web-apps-deploy
+  script:
+    - echo "App deployed successfully."
+  variables:
+    API_TOKEN: f5c5d675c404b72649e01305d91ee398964e7307fcdadeac28a5d54233c664a43-798dca5f-0ded-4f00-ba3d-0e28e961690b003227035
+    APP_PATH: $CI_PROJECT_DIR
+  environment:
+    name: dev
+  only: 
+    - dev
+
+# deploy-prod:
+#   stage: deploy
+#   image: registry.gitlab.com/static-web-apps/azure-static-web-apps-deploy
+#   script:
+#     - echo "App deployed successfully."
+#   variables:
+#     API_TOKEN: abcd
+#     APP_PATH: $CI_PROJECT_DIR
+#   environment:
+#     name: prod
+#   only: 
+#     - master
+
