@@ -5,8 +5,6 @@ import {
   IconDefinition,
 } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { ProposalType, UserRole } from '@lib/constants'
-import { trpc } from '@lib/trpc'
 import { inferProcedureOutput } from '@trpc/server'
 import { Button, H1, H2, H3, Table, Tabs } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
@@ -16,6 +14,8 @@ import { useRouter } from 'next/router'
 import Script from 'next/script'
 import * as R from 'ramda'
 import { useMemo, useState } from 'react'
+import { ProposalType, UserRole } from 'src/lib/constants'
+import { trpc } from 'src/lib/trpc'
 import { AppRouter } from 'src/server/routers/_app'
 import { twMerge } from 'tailwind-merge'
 
