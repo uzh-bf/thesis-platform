@@ -44,7 +44,7 @@ build-stable:
     - >
       docker build . -t $CI_REGISTRY_IMAGE:stable
       --cache-from $CI_REGISTRY_IMAGE:latest
-    - docker push $CI_REGISTRY_IMAGE
+    - docker push $CI_REGISTRY_IMAGE:stable
   only:
     - main
 
