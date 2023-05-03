@@ -65,49 +65,56 @@ function ProposalMeta({
         {proposalDetails.description}
       </p>
 
-      <div className="flex flex-row gap-2">
-        <div className="flex-none w-48 font-bold">Type of Proposal</div>
-        <div>{proposalDetails.studyLevel}</div>
-      </div>
-      <div className="flex flex-row gap-2">
-        <div className="flex-none w-48 font-bold">Field of Research</div>
-        <div>{proposalDetails.topicArea.name}</div>
-      </div>
-      <div className="flex flex-row gap-2">
-        <div className="flex-none w-48 font-bold">Proposal Language</div>
-        <div>{JSON.parse(proposalDetails.language).join(', ')}</div>
-      </div>
-      {proposalDetails.typeKey === 'STUDENT' && (
+      <div className="grid grid-cols-2">
         <div className="flex flex-row gap-2">
-          <div className="flex-none w-48 font-bold">Planned Start Date</div>
-          <div>
-            {format(
-              parseISO(proposalDetails.applications[0].plannedStartAt),
-              'yyyy-MM-dd',
-            )}
+          <div className="flex-none w-48 font-bold">Type of Proposal</div>
+          <div>{proposalDetails.studyLevel}</div>
+        </div>
+        <div className="flex flex-row gap-2">
+          <div className="flex-none w-48 font-bold">Field of Research</div>
+          <div>{proposalDetails.topicArea.name}</div>
+        </div>
+        <div className="flex flex-row gap-2">
+          <div className="flex-none w-48 font-bold">Proposal Language</div>
+          <div>{JSON.parse(proposalDetails.language).join(', ')}</div>
+        </div>
+        {proposalDetails.typeKey === 'STUDENT' && (
+          <div className="flex flex-row gap-2">
+            <div className="flex-none w-48 font-bold">Planned Start Date</div>
+            <div>
+              {format(
+                parseISO(proposalDetails.applications[0].plannedStartAt),
+                'yyyy-MM-dd',
+              )}
+            </div>
           </div>
-        </div>
-      )}
-      {proposalDetails.typeKey === 'SUPERVISOR' && (
+        )}
+        {proposalDetails.typeKey === 'SUPERVISOR' && (
+          <div className="flex flex-row gap-2">
+            <div className="flex-none w-48 font-bold">Time Frame</div>
+            <div>{proposalDetails.timeFrame}</div>
+          </div>
+        )}
         <div className="flex flex-row gap-2">
-          <div className="flex-none w-48 font-bold">Time Frame</div>
-          <div>{proposalDetails.timeFrame}</div>
+          <div className="flex-none w-48 font-bold">Supervised By</div>
+          <div>{proposalDetails.supervisedBy?.name ?? 'Unassigned'}</div>
         </div>
-      )}
-      <div className="flex flex-row gap-2">
-        <div className="flex-none w-48 font-bold">Supervised By</div>
-        <div>{proposalDetails.supervisedBy?.name ?? 'Unassigned'}</div>
+
+        {proposalDetails.typeKey === 'STUDENT' && (
+          <div className="flex flex-row gap-2">
+            <div className="flex-none w-48 font-bold">Submitted By</div>
+            <div>{proposalDetails.applications[0].fullName}</div>
+          </div>
+        )}
+
+        <div className="flex flex-row gap-2">
+          <div className="flex-none w-48 font-bold">Submitted On</div>
+          <div>{format(parseISO(proposalDetails.createdAt), 'dd.MM.Y')}</div>
+        </div>
       </div>
 
       {proposalDetails.typeKey === 'STUDENT' && (
-        <div className="flex flex-row gap-2">
-          <div className="flex-none w-48 font-bold">Submitted By</div>
-          <div>{proposalDetails.applications[0].fullName}</div>
-        </div>
-      )}
-
-      {proposalDetails.typeKey === 'STUDENT' && (
-        <div className="flex flex-row gap-6 pt-4 text-sm">
+        <div className="flex flex-row gap-6 text-sm">
           {proposalDetails.attachments.map((attachment) => (
             <Link
               key={attachment.id}
@@ -138,7 +145,7 @@ function ProposalMeta({
       )}
 
       {proposalDetails.typeKey === 'SUPERVISOR' && (
-        <div className="flex flex-row gap-6 pt-4 text-sm">
+        <div className="flex flex-row gap-6 text-sm">
           {proposalDetails.attachments.map((attachment) => (
             <Link
               key={attachment.id}
@@ -318,7 +325,7 @@ function ProposalCard({
   )
 }
 
-function Index() {
+function Index(props) {
   const router = useRouter()
 
   const { data: session } = useSession()
@@ -475,22 +482,25 @@ function Index() {
                   {proposalDetails.applications.length === 0 &&
                     'No applications for this proposal...'}
                   {proposalDetails.applications.length > 0 && (
-                    <Table
+                    <Table<(typeof proposalDetails.applications)[0]>
                       className={{ root: 'text-sm', tableHeader: 'text-base' }}
                       columns={[
                         {
                           label: 'Status',
                           accessor: 'status',
                           sortable: true,
-                          transformer: (status) => <div>{status.key}</div>,
+                          transformer: ({ row }) => <div>{row.statusKey}</div>,
                         },
                         {
                           label: 'Working Period',
                           accessor: 'plannedStartAt',
                           sortable: true,
-                          transformer: (date) =>
-                            `${format(parseISO(date), 'd.M.Y')} - ${format(
-                              add(parseISO(date), { months: 6 }),
+                          transformer: ({ row }) =>
+                            `${format(
+                              parseISO(row.plannedStartAt),
+                              'd.M.Y',
+                            )} - ${format(
+                              add(parseISO(row.plannedStartAt), { months: 6 }),
                               'd.M.Y',
                             )}`,
                         },
@@ -498,33 +508,33 @@ function Index() {
                           label: 'Name',
                           accessor: 'fullName',
                           sortable: true,
-                          transformer: (name, all) => (
+                          transformer: ({ row }) => (
                             <a
-                              href={`mailto:${all.email}`}
+                              href={`mailto:${row.email}`}
                               target="_blank"
                               className="flex flex-row items-center gap-2 hover:text-orange-700"
                               rel="noreferrer"
                             >
                               <FontAwesomeIcon icon={faMessage} />
-                              {name}
+                              {row.fullName}
                             </a>
                           ),
                         },
                         {
                           label: 'Motivation',
                           accessor: 'motivation',
-                          transformer: (motivation) => (
+                          transformer: ({ row }) => (
                             <div className="text-xs break-all">
-                              {motivation}
+                              {row.motivation}
                             </div>
                           ),
                         },
                         {
                           label: 'Attachments',
                           accessor: 'attachments',
-                          transformer: (attachments) => (
+                          transformer: ({ row }) => (
                             <div>
-                              {attachments.map((attachment) => (
+                              {row.attachments?.map((attachment) => (
                                 <a
                                   href={attachment.href}
                                   target="_blank"
