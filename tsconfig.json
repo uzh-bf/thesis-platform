@@ -1,23 +1,7 @@
 {
-  "extends": "@tsconfig/node18/tsconfig.json",
+  "extends": ["@tsconfig/node18/tsconfig.json", "@tsconfig/next/tsconfig.json"],
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@components/*": ["src/components/*"],
-      "@graphql/*": ["src/graphql/*"],
-      "@graphql/ops": ["src/graphql/generated/ops"],
-      "@lib/*": ["src/lib/*"],
-      "@pages/*": ["src/pages/*"],
-      "@type/*": ["src/types/*"]
-    },
-    "plugins": [{ "name": "next" }],
-    "allowJs": true,
-    "noEmit": true,
-    "incremental": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "strictNullChecks": true
+    "baseUrl": "."
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"],

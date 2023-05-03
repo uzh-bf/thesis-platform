@@ -14,7 +14,7 @@ include:
 # variables:
 #   DOCKER_TLS_CERTDIR: "/certs"
 
-build:
+build-dev:
   image: docker:20.10.16
   stage: build
   services:
@@ -58,7 +58,7 @@ deploy-dev:
     APP_PATH: $CI_PROJECT_DIR
   environment:
     name: dev
-  only: 
+  only:
     - dev
 
 # deploy-prod:
@@ -71,6 +71,5 @@ deploy-dev:
 #     APP_PATH: $CI_PROJECT_DIR
 #   environment:
 #     name: prod
-#   only: 
+#   only:
 #     - master
-

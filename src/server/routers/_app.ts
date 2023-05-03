@@ -1,10 +1,14 @@
 // import { ClientSecretCredential } from '@azure/identity'
-import { ProposalStatus, UserRole } from '@lib/constants'
+import { ProposalStatus, UserRole } from 'src/lib/constants'
 // import { Client } from '@microsoft/microsoft-graph-client'
 // import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials'
 import 'cross-fetch/polyfill'
-import { prisma } from '../prisma'
-import { optionalAuthedProcedure, publicProcedure, router } from '../trpc'
+import { prisma } from 'src/server/prisma'
+import {
+  optionalAuthedProcedure,
+  publicProcedure,
+  router,
+} from 'src/server/trpc'
 
 export const appRouter = router({
   healthcheck: publicProcedure.query(() => 'OK'),

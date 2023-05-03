@@ -1,4 +1,6 @@
 import { PrismaClient } from '@prisma/client'
+import readline from 'readline'
+
 import {
   ApplicationStatus,
   ProposalFeedbackType,
@@ -8,10 +10,17 @@ import {
   UserRole,
 } from '../src/lib/constants.js'
 
-const prismaClient = new PrismaClient()
+const prismaClient = new PrismaClient({
+  log: ['query', 'info', 'warn', 'error'],
+})
 
 async function seed(prisma: PrismaClient) {
   console.log('> running prisma seed')
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  })
 
   await Promise.all(
     Object.entries(TopicAreas).map(([slug, name]) =>
@@ -61,6 +70,13 @@ async function seed(prisma: PrismaClient) {
         update: {},
       }),
     ),
+  )
+
+  await new Promise((resolve) =>
+    rl.question('Please sign-in with Github before continuing...', (ans) => {
+      rl.close()
+      resolve(ans)
+    }),
   )
 
   const user = await prisma.user.update({
