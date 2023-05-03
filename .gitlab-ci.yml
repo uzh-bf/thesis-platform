@@ -14,7 +14,7 @@ include:
 # variables:
 #   DOCKER_TLS_CERTDIR: "/certs"
 
-build:
+build-dev:
   image: docker:20.10.16
   stage: build
   services:
@@ -28,6 +28,8 @@ build:
       docker build . -t $CI_REGISTRY_IMAGE:latest
       --cache-from $CI_REGISTRY_IMAGE:latest
     - docker push $CI_REGISTRY_IMAGE
+  only:
+    - dev
 
 deploy-dev:
   stage: deploy
@@ -39,7 +41,7 @@ deploy-dev:
     APP_PATH: $CI_PROJECT_DIR
   environment:
     name: dev
-  only: 
+  only:
     - dev
 
 # deploy-prod:
@@ -52,6 +54,5 @@ deploy-dev:
 #     APP_PATH: $CI_PROJECT_DIR
 #   environment:
 #     name: prod
-#   only: 
+#   only:
 #     - master
-
