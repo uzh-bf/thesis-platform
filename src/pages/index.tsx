@@ -59,11 +59,9 @@ function ProposalMeta({
 }) {
   return (
     <div className="pb-4 md:p-4 md:min-w-[500px]">
-      <H1>{proposalDetails.title}</H1>
+      <H1 className={{ root: 'text-xl' }}>{proposalDetails.title}</H1>
 
-      <p className="pt-2 pb-4 prose max-w-none">
-        {proposalDetails.description}
-      </p>
+      <p className="pb-4 prose max-w-none">{proposalDetails.description}</p>
 
       <div className="grid grid-cols-2">
         <div className="flex flex-row gap-2">
@@ -483,8 +481,14 @@ function Index(props) {
                     'No applications for this proposal...'}
                   {proposalDetails.applications.length > 0 && (
                     <Table<(typeof proposalDetails.applications)[0]>
-                      className={{ root: 'text-sm', tableHeader: 'text-base' }}
+                      className={{ root: 'text-xs', tableHeader: 'text-sm' }}
                       columns={[
+                        {
+                          label: 'Date',
+                          accessor: 'createdAt',
+                          transformer: ({ row }) =>
+                            format(parseISO(row.createdAt), 'dd.MM.Y'),
+                        },
                         {
                           label: 'Status',
                           accessor: 'status',
