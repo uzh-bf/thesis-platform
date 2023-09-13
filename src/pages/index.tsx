@@ -27,9 +27,9 @@ import { trpc } from 'src/lib/trpc'
 const FileTypeIconMap: Record<string, IconDefinition> = {
   'application/pdf': faFilePdf,
 }
-function Index(props) {
+function Index() {
   const router = useRouter()
-  const ref = useRef(null)
+  const ref = useRef<null | HTMLDivElement>(null)
 
   const { data: session } = useSession()
 
