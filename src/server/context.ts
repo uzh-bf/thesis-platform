@@ -1,11 +1,12 @@
 import * as trpc from '@trpc/server'
 import * as trpcNext from '@trpc/server/adapters/next'
-import { getSession } from 'next-auth/react'
+import { getServerSession } from 'next-auth'
+import { authOptions } from 'src/lib/authOptions'
 
-export const createContext = async (
-  opts: trpcNext.CreateNextContextOptions,
-) => {
-  const session = await getSession(opts)
+export const createContext = async (ctx: trpcNext.CreateNextContextOptions) => {
+  const { req, res } = ctx
+
+  const session = await getServerSession(req, res, authOptions)
 
   return { session }
 }

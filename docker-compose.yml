@@ -1,13 +1,18 @@
 services:
-  mssql:
-    image: mcr.microsoft.com/mssql/server:2019-CU14-ubuntu-20.04
+  mysql:
+    image: docker.io/library/mysql:8.0
     environment:
-      ACCEPT_EULA: 'Y'
+      MYSQL_ROOT_PASSWORD: thesis
+      MYSQL_DATABASE: thesis
+      MYSQL_USER: thesis
+      MYSQL_PASSWORD: thesis
       MSSQL_SA_PASSWORD: rtScuF7pnvCiG4gg5b3qgvkn
     ports:
-      - 1433:1433
+      - 3306:3306
     networks:
       - thesis-platform
+    volumes:
+      - /var/lib/mysql
 
   next:
     profiles:
@@ -20,19 +25,17 @@ services:
       EMAIL_SERVER_PORT: 1025
       EMAIL_SERVER_USER:
       EMAIL_SERVER_PASSWORD:
-      DATABASE_URL: 'sqlserver://localhost:1433;database=main;user=sa;password=rtScuF7pnvCiG4gg5b3qgvkn;trustServerCertificate=true;'
+      DATABASE_URL: 'mysql://thesis:thesis@localhost:3306/thesis'
     ports:
       - 3000:3000
     networks:
       - thesis-platform
 
-  sendria:
-    profiles:
-      - app
-    image: msztolcman/sendria:v2.2.2.0
+  mailhog:
+    image: docker.io/mailhog/mailhog:latest
     ports:
       - 1025:1025
-      - 1080:1080
+      - 8025:8025
     networks:
       - thesis-platform
 

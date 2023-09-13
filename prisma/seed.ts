@@ -28,8 +28,8 @@ async function seed(prisma: PrismaClient) {
         where: { slug },
         create: { slug, name },
         update: {},
-      }),
-    ),
+      })
+    )
   )
 
   await Promise.all(
@@ -38,8 +38,8 @@ async function seed(prisma: PrismaClient) {
         where: { key: status },
         create: { key: status },
         update: {},
-      }),
-    ),
+      })
+    )
   )
 
   await Promise.all(
@@ -48,8 +48,8 @@ async function seed(prisma: PrismaClient) {
         where: { key: status },
         create: { key: status },
         update: {},
-      }),
-    ),
+      })
+    )
   )
 
   await Promise.all(
@@ -58,8 +58,8 @@ async function seed(prisma: PrismaClient) {
         where: { key: status },
         create: { key: status },
         update: {},
-      }),
-    ),
+      })
+    )
   )
 
   await Promise.all(
@@ -68,15 +68,15 @@ async function seed(prisma: PrismaClient) {
         where: { key: status },
         create: { key: status },
         update: {},
-      }),
-    ),
+      })
+    )
   )
 
   await new Promise((resolve) =>
-    rl.question('Please sign-in with Github before continuing...', (ans) => {
+    rl.question('Please sign-in with Azure AD before continuing...', (ans) => {
       rl.close()
       resolve(ans)
-    }),
+    })
   )
 
   const user = await prisma.user.update({
@@ -116,6 +116,9 @@ async function seed(prisma: PrismaClient) {
         },
       },
       ownedByStudent: 'roland.ferdinand@uzh.ch',
+      ownedByUser: {
+        connect: { email: user.email },
+      },
       receivedFeedbacks: {
         create: {
           comment: 'Rejected because',
