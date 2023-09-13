@@ -5,7 +5,6 @@ import {
   faMessage,
 } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { inferProcedureOutput } from '@trpc/server'
 import { Button, H2, H3, Table, Tabs } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
 import { useSession } from 'next-auth/react'
@@ -18,72 +17,19 @@ import CreateStudentProposal from 'src/components/CreateStudentProposal'
 import CreateSupervisorProposal from 'src/components/CreateSupervisorProposal'
 import DeclineProposalForm from 'src/components/DeclineProposalForm'
 import Header from 'src/components/Header'
+import ProposalCard from 'src/components/ProposalCard'
 import ProposalMeta from 'src/components/ProposalMeta'
 import RejectProposalForm from 'src/components/RejectProposalForm'
 import TentativeAcceptProposalForm from 'src/components/TentativeAcceptProposalForm'
-import { ProposalType, UserRole } from 'src/lib/constants'
+import { UserRole } from 'src/lib/constants'
 import { trpc } from 'src/lib/trpc'
-import { AppRouter } from 'src/server/routers/_app'
-import { twMerge } from 'tailwind-merge'
-
-type Proposals = inferProcedureOutput<AppRouter['proposals']>
-type ProposalDetails = Proposals[number]
 
 const FileTypeIconMap: Record<string, IconDefinition> = {
   'application/pdf': faFilePdf,
 }
-
-function ProposalCard({
-  proposal,
-  isActive,
-  onClick,
-}: {
-  proposal: ProposalDetails
-  isActive: boolean
-  onClick: () => void
-}) {
-  const { data: session } = useSession()
-
-  const hasFeedback =
-    session?.user?.role === UserRole.SUPERVISOR &&
-    proposal.receivedFeedbacks?.length > 0
-
-  return (
-    <Button
-      key={proposal.id}
-      className={{
-        root: twMerge(
-          'flex flex-col justify-between w-full md:w-64 p-2 text-sm',
-          (proposal.isOwnProposal || proposal.isSupervisedProposal) &&
-            'border-orange-300',
-          hasFeedback && 'bg-slate-100 border-slate-200'
-        ),
-      }}
-      active={isActive}
-      onClick={onClick}
-    >
-      <div className="font-bold">{proposal.title}</div>
-      <div className="mt-1 space-y-1 text-xs">
-        <div>{proposal.studyLevel}</div>
-        <div>{proposal.topicArea.name}</div>
-        <div>
-          {proposal.typeKey === ProposalType.STUDENT
-            ? proposal.applications?.[0]?.fullName
-            : proposal.supervisedBy?.name}
-        </div>
-        {hasFeedback && (
-          <div>
-            {proposal.receivedFeedbacks?.map((feedback) => feedback.typeKey)}
-          </div>
-        )}
-      </div>
-    </Button>
-  )
-}
-
-function Index(props) {
+function Index() {
   const router = useRouter()
-  const ref = useRef(null)
+  const ref = useRef<null | HTMLDivElement>(null)
 
   const { data: session } = useSession()
 
