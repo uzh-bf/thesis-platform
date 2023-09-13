@@ -6,7 +6,6 @@ services:
       MYSQL_DATABASE: thesis
       MYSQL_USER: thesis
       MYSQL_PASSWORD: thesis
-      MSSQL_SA_PASSWORD: rtScuF7pnvCiG4gg5b3qgvkn
     ports:
       - 3306:3306
     networks:
