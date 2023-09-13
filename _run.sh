@@ -1,2 +1,2 @@
 #!/bin/bash
-podman-compose up mssql
+podman-compose up mysql

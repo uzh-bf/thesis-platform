@@ -1,12 +1,8 @@
-/** @type {import('tailwindcss').Config} */
-
 const {
   TailwindColorsUZH,
   TailwindAnimations,
   TailwindFonts,
 } = require('@uzh-bf/design-system/dist/constants')
-
-const { fontFamily } = require('tailwindcss/defaultTheme')
 
 module.exports = {
   content: ['./src/**/*.{js,ts,jsx,tsx}'],
@@ -18,17 +14,19 @@ module.exports = {
       },
       fontFamily: {
         ...TailwindFonts,
-        sans: ['var(--font-source-sans)', ...fontFamily.sans],
       },
     },
   },
+  corePlugins: {
+    preflight: false,
+    aspectRatio: false,
+  },
   plugins: [
-    require('tailwindcss-radix')({ variantPrefix: 'rdx' }),
+    require('tailwindcss-radix')({
+      variantPrefix: 'rdx',
+    }),
     require('@tailwindcss/typography'),
     require('@tailwindcss/aspect-ratio'),
     require('@tailwindcss/forms'),
   ],
-  corePlugins: {
-    preflight: false,
-  },
 }

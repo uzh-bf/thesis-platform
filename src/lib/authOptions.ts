@@ -1,6 +1,7 @@
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import type { NextAuthOptions } from 'next-auth'
 import { decode, encode } from 'next-auth/jwt'
+import Auth0Provider from 'next-auth/providers/auth0'
 import AzureADProvider from 'next-auth/providers/azure-ad'
 // import EmailProvider from 'next-auth/providers/email'
 
@@ -25,6 +26,12 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.AZURE_AD_CLIENT_SECRET as string,
       tenantId: process.env.AZURE_AD_TENANT_ID as string,
     }),
+    process.env.NODE_ENV === 'development' &&
+      (Auth0Provider({
+        clientId: process.env.AUTH0_CLIENT_ID as string,
+        clientSecret: process.env.AUTH0_CLIENT_SECRET as string,
+        issuer: process.env.AUTH0_ISSUER as string,
+      }) as any),
   ],
   session: {
     strategy: 'jwt',

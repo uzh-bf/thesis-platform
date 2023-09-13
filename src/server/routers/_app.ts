@@ -2,6 +2,11 @@
 import { ProposalStatus, UserRole } from 'src/lib/constants'
 // import { Client } from '@microsoft/microsoft-graph-client'
 // import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials'
+import {
+  BlobSASPermissions,
+  StorageSharedKeyCredential,
+  generateBlobSASQueryParameters,
+} from '@azure/storage-blob'
 import 'cross-fetch/polyfill'
 import { prisma } from 'src/server/prisma'
 import {
@@ -11,6 +16,30 @@ import {
 } from 'src/server/trpc'
 
 export const appRouter = router({
+  generateSasQueryToken: optionalAuthedProcedure.mutation(() => {
+    const sharedKeyCredential = new StorageSharedKeyCredential(
+      process.env.NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME!,
+      process.env.AZURE_STORAGE_ACCOUNT_ACCESS_KEY!
+    )
+    const permissions = BlobSASPermissions.parse('w')
+    const startDate = new Date()
+    const expiryDate = new Date(startDate)
+    expiryDate.setMinutes(startDate.getMinutes() + 100)
+    const queryParams = generateBlobSASQueryParameters(
+      {
+        containerName: process.env.NEXT_PUBLIC_CONTAINER_NAME!,
+        permissions: permissions,
+        expiresOn: expiryDate,
+      },
+      sharedKeyCredential
+    )
+    return {
+      SAS_STRING: queryParams.toString(),
+      CONTAINER_NAME: process.env.NEXT_PUBLIC_CONTAINER_NAME!,
+      URL: process.env.NEXT_PUBLIC_AZURE_STORAGE_URL,
+    }
+  }),
+
   healthcheck: publicProcedure.query(() => 'OK'),
 
   proposals: optionalAuthedProcedure.query(async ({ ctx }) => {
@@ -43,7 +72,7 @@ export const appRouter = router({
               }
             : undefined,
         receivedFeedbacks: [UserRole.SUPERVISOR, UserRole.ADMIN].includes(
-          ctx.user?.role,
+          ctx.user?.role
         ) && {
           where:
             ctx.user?.role === UserRole.SUPERVISOR && ctx.user.email

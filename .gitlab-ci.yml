@@ -1,15 +1,15 @@
 stages:
-- test
-- build
-- deploy
+  - test
+  - build
+  - deploy
 
 sast:
   stage: test
 
 include:
-- template: Security/SAST.gitlab-ci.yml
-- template: Security/Container-Scanning.gitlab-ci.yml
-- template: Security/Secret-Detection.gitlab-ci.yml
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Container-Scanning.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
 
 # variables:
 #   DOCKER_TLS_CERTDIR: "/certs"
@@ -60,7 +60,6 @@ deploy-dev:
     name: dev
   only:
     - dev
-
 # deploy-prod:
 #   stage: deploy
 #   image: registry.gitlab.com/static-web-apps/azure-static-web-apps-deploy
