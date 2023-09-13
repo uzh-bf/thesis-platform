@@ -34,7 +34,7 @@ import { trpc } from 'src/lib/trpc'
 import { AppRouter } from 'src/server/routers/_app'
 import { twMerge } from 'tailwind-merge'
 import * as Yup from 'yup'
-import useLocalStorage from './hooks/useLocalStorage'
+import useLocalStorage from '../lib/hooks/useLocalStorage'
 
 type Proposals = inferProcedureOutput<AppRouter['proposals']>
 type ProposalDetails = Proposals[number]
