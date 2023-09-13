@@ -8,7 +8,6 @@
     "build:next": "next build",
     "predev": "npm-run-all prisma:generate",
     "dev": "doppler run --config dev -- next dev",
-    "stage": "doppler run --config stg -- next dev",
     "format": "prettier --write .",
     "lint": "next lint",
     "prisma:deploy": "doppler run --config dev -- prisma migrate deploy",
@@ -18,15 +17,9 @@
     "prisma:push": "doppler run --config dev -- prisma db push",
     "prisma:reset": "doppler run --config dev -- prisma migrate reset",
     "prisma:studio": "doppler run --config dev -- prisma studio",
-    "prisma:migrate:stage": "doppler run --config stg -- prisma migrate dev",
-    "prisma:push:stage": "doppler run --config stg -- prisma db push",
-    "prisma:reset:stage": "doppler run --config stg -- prisma migrate reset",
-    "prisma:studio:stage": "doppler run --config stg -- prisma studio",
-    "prisma:seed:stage": "doppler run --config stg -- ts-node --project tsconfig.tsnode.json --esm prisma/seed.ts",
     "prisma:studio:prod": "doppler run --config prd -- prisma studio",
     "prisma:seed": "doppler run --config dev -- ts-node --project tsconfig.tsnode.json --esm prisma/seed.ts",
     "prisma:setup": "run-s prisma:reset prisma:push prisma:seed",
-    "prisma:setup:stage": "dotenv -e .env.local run-s prisma:reset:stage prisma:push:stage prisma:seed:stage",
     "start": "doppler run --config dev -- next start"
   },
   "dependencies": {

@@ -89,7 +89,7 @@ function DeclineProposalForm({ proposalName, proposalId, supervisorEmail }) {
             }}
           />
           <div className="mt-2 italic">
-            Why do you decline this proposal specifcally? Your comment will not
+            Why do you decline this proposal specifically? Your comment will not
             be shown to the student.
           </div>
         </div>
