@@ -14,6 +14,8 @@ import * as R from 'ramda'
 import { useMemo, useRef, useState } from 'react'
 import AcceptProposalForm from 'src/components/AcceptProposalForm'
 import ApplicationForm from 'src/components/ApplicationForm'
+import CreateStudentProposal from 'src/components/CreateStudentProposal'
+import CreateSupervisorProposal from 'src/components/CreateSupervisorProposal'
 import DeclineProposalForm from 'src/components/DeclineProposalForm'
 import Header from 'src/components/Header'
 import ProposalMeta from 'src/components/ProposalMeta'
@@ -29,30 +31,6 @@ type ProposalDetails = Proposals[number]
 
 const FileTypeIconMap: Record<string, IconDefinition> = {
   'application/pdf': faFilePdf,
-}
-
-function CreateStudentProposal({ ref }) {
-  return (
-    <iframe
-      ref={ref}
-      className="rounded"
-      width="100%"
-      height="1400px"
-      src={process.env.NEXT_PUBLIC_FORMS_URL_SUBMIT}
-    ></iframe>
-  )
-}
-
-function CreateSupervisorProposal({ ref }) {
-  return (
-    <iframe
-      ref={ref}
-      className="rounded"
-      width="100%"
-      height="1400px"
-      src={process.env.NEXT_PUBLIC_FORMS_URL_PUBLISH}
-    ></iframe>
-  )
 }
 
 function ProposalCard({
