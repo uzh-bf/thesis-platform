@@ -63,7 +63,7 @@ function Index() {
   }, [data, selectedProposal])
 
   if (isLoading) {
-    return <div className="p-2">Loading 🔄</div>
+    return <div className="p-2">Loading 🔄🚀</div>
   }
 
   const isAdmin = session?.user?.role === UserRole.ADMIN
