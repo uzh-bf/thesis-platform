@@ -32,7 +32,11 @@ jobs:
           output_location: ''
           # output_location: '.next/standalone' # Built app content directory - optional
           ###### End of Repository/Build Configurations ######
-
+        env: # Add environment variables here
+          ENABLE_PREVIEW_FEATURES: true
+          FUNCTION_LANGUAGE: node
+          FUNCTION_LANGUAGE_VERSION: 18
+          
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
