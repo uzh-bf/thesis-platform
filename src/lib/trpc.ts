@@ -7,7 +7,8 @@ function getBaseUrl() {
     // browser should use relative path
     return ''
 
-  if (process.env.APP_URL) return `https://${process.env.APP_URL}`
+  if (process.env.NEXT_PUBLIC_APP_URL)
+    return `https://${process.env.NEXT_PUBLIC_APP_URL}`
 
   if (process.env.VERCEL_URL)
     // reference for vercel.com
