@@ -5,7 +5,7 @@
   "scripts": {
     "prebuild": "npm run prisma:generate",
     "build": "npm-run-all build:next",
-    "build:next": "next build && rm -rf ./.next/cache",
+    "build:next": "next build",
     "predev": "npm-run-all prisma:generate",
     "dev": "doppler run --config dev -- next dev",
     "format": "prettier --write .",
