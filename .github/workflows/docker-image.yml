@@ -2,11 +2,11 @@ name: Build Docker image for backend-docker
 
 on:
   push:
-    tags: ['v*.*.*']
+    # tags: ['v*.*.*']
     branches:
       - 'main'
   pull_request:
-    branches: [ "main" ]
+    branches: ['main']
 
 env:
   REGISTRY: ghcr.io
