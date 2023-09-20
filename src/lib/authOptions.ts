@@ -22,6 +22,7 @@ export const authOptions: NextAuthOptions = {
     //   from: process.env.EMAIL_FROM,
     // }),
     typeof process.env.AZURE_AD_CLIENT_ID === 'string' &&
+      process.env.AZURE_AD_CLIENT_ID !== '' &&
       AzureADProvider({
         clientId: process.env.AZURE_AD_CLIENT_ID as string,
         clientSecret: process.env.AZURE_AD_CLIENT_SECRET as string,
