@@ -10,4 +10,3 @@ data:
   AZURE_AD_CLIENT_ID: {{ .Values.azureAd.clientId | quote }}
   AZURE_AD_TENANT_ID: {{ .Values.azureAd.tenantId | quote }}
   NEXTAUTH_URL: {{ .Values.appUrl | quote }}
-  NODE_ENV: {{ .Values.env | quote }}
