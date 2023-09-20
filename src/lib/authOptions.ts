@@ -28,7 +28,8 @@ export const authOptions: NextAuthOptions = {
         clientSecret: process.env.AZURE_AD_CLIENT_SECRET as string,
         tenantId: process.env.AZURE_AD_TENANT_ID as string,
       }),
-    process.env.NODE_ENV !== 'production' &&
+    typeof process.env.AUTH0_CLIENT_ID === 'string' &&
+      process.env.AUTH0_CLIENT_ID !== '' &&
       (Auth0Provider({
         clientId: process.env.AUTH0_CLIENT_ID as string,
         clientSecret: process.env.AUTH0_CLIENT_SECRET as string,
