@@ -21,12 +21,13 @@ export const authOptions: NextAuthOptions = {
     //   },
     //   from: process.env.EMAIL_FROM,
     // }),
-    AzureADProvider({
-      clientId: process.env.AZURE_AD_CLIENT_ID as string,
-      clientSecret: process.env.AZURE_AD_CLIENT_SECRET as string,
-      tenantId: process.env.AZURE_AD_TENANT_ID as string,
-    }),
-    process.env.NODE_ENV === 'development' &&
+    typeof process.env.AZURE_AD_CLIENT_ID === 'string' &&
+      AzureADProvider({
+        clientId: process.env.AZURE_AD_CLIENT_ID as string,
+        clientSecret: process.env.AZURE_AD_CLIENT_SECRET as string,
+        tenantId: process.env.AZURE_AD_TENANT_ID as string,
+      }),
+    process.env.NODE_ENV !== 'production' &&
       (Auth0Provider({
         clientId: process.env.AUTH0_CLIENT_ID as string,
         clientSecret: process.env.AUTH0_CLIENT_SECRET as string,
