@@ -1,32 +1,28 @@
+env: ""
+
 azureAd:
   clientId: ""
   clientSecret: ""
   tenantId: ""
 
-email:
-  user: ""
-  password: ""
-  host: ""
-  port: ""
-  from: ""
+auth0:
+  clientId: ""
+  clientSecret: ""
+  issuer: ""
+
+azureBlob:
+  accessKey: ""
 
 database:
   url: ""
 
 appSecret: ""
 
-imageCredentials:
-  registry: cr.gitlab.uzh.ch
-  username: gitlab+deploy-token
-
-imagePullSecrets:
-  - name: gitlab-uzh-thesis-platform-registry
-
 replicaCount: 1
 
 image:
-  repository: cr.gitlab.uzh.ch/uzh-bf/thesis-platform
-  tag: latest
+  repository: ghcr.io/uzh-bf/thesis-platform
+  tag: main
   pullPolicy: Always
 
 service:

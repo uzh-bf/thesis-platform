@@ -1,29 +1,38 @@
 releases:
   - name: thesis-platform
-    namespace: thesis-platform
+    namespace: '{{ env "NAMESPACE" | default "thesis-platform-stage" }}'
     createNamespace: true
     chart: ./chart
     version: '{{ env "CHART_VERSION" | default "0.1.0" }}'
     installed: true
     kubeContext: bf-k8s463ba113
     values:
-      - imageCredentials:
-          password: '{{ env "REGISTRY_PASSWORD" }}'
+      - appSecret: '{{ env "NEXTAUTH_SECRET" }}'
+        appUrl: '{{ env "NEXT_PUBLIC_APP_URL" }}'
+        env: '{{ env "NODE_ENV" }}'
 
         azureAd:
           clientId: '{{ env "AZURE_AD_CLIENT_ID" }}'
           clientSecret: '{{ env "AZURE_AD_CLIENT_SECRET" }}'
           tenantId: '{{ env "AZURE_AD_TENANT_ID" }}'
 
-        email:
-          host: '{{ env "EMAIL_SERVER_HOST" }}'
-          password: '{{ env "EMAIL_SERVER_PASSWORD" }}'
-          user: '{{ env "EMAIL_SERVER_USER" }}'
-          port: '{{ env "EMAIL_SERVER_PORT" }}'
-          from: '{{ env "EMAIL_FROM" }}'
+        auth0:
+          clientId: '{{ env "AUTH0_CLIENT_ID" }}'
+          clientSecret: '{{ env "AUTH0_CLIENT_SECRET" }}'
+          issuer: '{{ env "AUTH0_ISSUER" }}'
+
+        azureBlob:
+          accessKey: '{{ env "AZURE_STORAGE_ACCOUNT_ACCESS_KEY" }}'
 
         database:
           url: '{{ env "DATABASE_URL" }}'
 
-        appSecret: '{{ env "NEXTAUTH_SECRET" }}'
-        appUrl: '{{ env "NEXT_PUBLIC_APP_URL" }}'
+        ingress:
+          hosts:
+            - host: '{{ env "APP_DOMAIN" }}'
+              paths:
+                - /
+          tls:
+            - secretName: thesis-platform-tls
+              hosts:
+                - '{{ env "APP_DOMAIN" }}'

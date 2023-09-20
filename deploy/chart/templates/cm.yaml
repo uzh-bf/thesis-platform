@@ -5,10 +5,9 @@ metadata:
   labels:
     {{- include "thesis-platform.labels" . | nindent 4 }}
 data:
+  AUTH0_CLIENT_ID: {{ .Values.auth0.clientId | quote }}
+  AUTH0_ISSUER: {{ .Values.auth0.issuer | quote }}
   AZURE_AD_CLIENT_ID: {{ .Values.azureAd.clientId | quote }}
   AZURE_AD_TENANT_ID: {{ .Values.azureAd.tenantId | quote }}
-  EMAIL_SERVER_USER: {{ .Values.email.user | quote }}
-  EMAIL_SERVER_HOST: {{ .Values.email.host | quote }}
-  EMAIL_SERVER_PORT: {{ .Values.email.port | quote }}
-  EMAIL_FROM: {{ .Values.email.from | quote }}
   NEXTAUTH_URL: {{ .Values.appUrl | quote }}
+  NODE_ENV: {{ .Values.env | quote }}
