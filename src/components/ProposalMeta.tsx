@@ -6,7 +6,7 @@ import Link from 'next/link'
 const FileTypeIconMap: Record<string, IconDefinition> = {
   'application/pdf': faFilePdf,
 }
-function ProposalMeta({
+export default function ProposalMeta({
   proposalDetails,
 }: {
   proposalDetails: ProposalDetails
@@ -116,5 +116,3 @@ function ProposalMeta({
     </div>
   )
 }
-
-export default ProposalMeta

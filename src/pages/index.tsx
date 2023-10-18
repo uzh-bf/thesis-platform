@@ -13,15 +13,14 @@ import * as R from 'ramda'
 import { useMemo, useRef, useState } from 'react'
 import AcceptProposalForm from 'src/components/AcceptProposalForm'
 import ApplicationForm from 'src/components/ApplicationForm'
-import CreateStudentProposal from 'src/components/CreateStudentProposal'
-import CreateSupervisorProposal from 'src/components/CreateSupervisorProposal'
+import CreateProposal from 'src/components/CreateProposal'
 import DeclineProposalForm from 'src/components/DeclineProposalForm'
 import Header from 'src/components/Header'
 import NewProposalButton from 'src/components/NewProposalButton'
-import ProposalCard from 'src/components/ProposalCard'
 import ProposalMeta from 'src/components/ProposalMeta'
 import RejectProposalForm from 'src/components/RejectProposalForm'
 import StudentProposals from 'src/components/StudentProposals'
+import SupervisorProposals from 'src/components/SupervisorProposals'
 import TentativeAcceptProposalForm from 'src/components/TentativeAcceptProposalForm'
 import { UserRole } from 'src/lib/constants'
 import { trpc } from 'src/lib/trpc'
@@ -94,35 +93,19 @@ function Index() {
             setDisplayMode={setDisplayMode}
             buttonRef={buttonRef}
           />
-
-          <div>
-            {isSupervisor && <H2>Supervisor Proposals</H2>}
-            <div className="flex flex-row flex-wrap grid-cols-3 gap-2">
-              {data?.filter((proposal) => proposal.typeKey === 'SUPERVISOR')
-                .length === 0 && (
-                <div>No supervisor proposals available...</div>
-              )}
-              {data
-                ?.filter((proposal) => proposal.typeKey === 'SUPERVISOR')
-                .map((proposal) => (
-                  <ProposalCard
-                    key={proposal.id}
-                    proposal={proposal}
-                    isActive={selectedProposal === proposal.id}
-                    onClick={() => {
-                      setSelectedProposal(proposal.id),
-                        setDisplayMode('details')
-                      buttonRef.current?.scrollIntoView({
-                        behavior: 'smooth',
-                      })
-                    }}
-                  />
-                ))}
-            </div>
-          </div>
+          <SupervisorProposals
+            isSupervisor={isSupervisor}
+            data={data}
+            selectedProposal={selectedProposal}
+            setSelectedProposal={setSelectedProposal}
+            setDisplayMode={setDisplayMode}
+            buttonRef={buttonRef}
+          />
         </div>
 
         <div className="mb-4 border shadow" ref={buttonRef}>
+          <CreateProposal displayMode={displayMode} ref={buttonRef} />
+
           {proposalDetails && (
             <ProposalMeta proposalDetails={proposalDetails} />
           )}
@@ -373,14 +356,6 @@ function Index() {
                 </Tabs>
               </div>
             )
-          )}
-
-          {displayMode === 'createStudent' && (
-            <CreateStudentProposal ref={buttonRef} />
-          )}
-
-          {displayMode === 'createSupervisor' && (
-            <CreateSupervisorProposal ref={buttonRef} />
           )}
         </div>
       </div>
