@@ -1,9 +1,4 @@
-import {
-  IconDefinition,
-  faComment,
-  faFilePdf,
-} from '@fortawesome/free-regular-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { IconDefinition, faFilePdf } from '@fortawesome/free-regular-svg-icons'
 import { Tabs } from '@uzh-bf/design-system'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
@@ -15,6 +10,7 @@ import DeclineProposalForm from 'src/components/DeclineProposalForm'
 import Header from 'src/components/Header'
 import NewProposalButton from 'src/components/NewProposalButton'
 import ProposalApplication from 'src/components/ProposalApplication'
+import ProposalFeedback from 'src/components/ProposalFeedback'
 import ProposalMeta from 'src/components/ProposalMeta'
 import RejectProposalForm from 'src/components/RejectProposalForm'
 import StudentProposals from 'src/components/StudentProposals'
@@ -109,21 +105,11 @@ function Index() {
             isStudent={isStudent}
             isSupervisor={isSupervisor}
           />
-
-          {proposalDetails?.receivedFeedbacks?.length > 0 &&
-            (isSupervisor || isAdmin) &&
-            proposalDetails?.receivedFeedbacks.map((feedback) => (
-              <div key={feedback.id} className="border-t">
-                <div className="flex flex-row items-center gap-2 p-4 text-sm">
-                  <FontAwesomeIcon icon={faComment} />
-                  <div>
-                    <div>{feedback.typeKey}</div>
-                    <div className="prose-sm prose">{feedback.comment}</div>
-                    <div className="prose-sm prose">{feedback.userEmail}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <ProposalFeedback
+            proposalDetails={proposalDetails}
+            isSupervisor={isSupervisor}
+            isAdmin={isAdmin}
+          />
 
           {proposalDetails?.typeKey === 'STUDENT' &&
           proposalDetails?.statusKey === 'MATCHED_TENTATIVE' ? (
