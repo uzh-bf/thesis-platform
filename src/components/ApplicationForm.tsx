@@ -14,7 +14,7 @@ import useLocalStorage from 'src/lib/hooks/useLocalStorage'
 import { trpc } from 'src/lib/trpc'
 import * as Yup from 'yup'
 
-function ApplicationForm({ proposalName, proposalId }) {
+export default function ApplicationForm({ proposalName, proposalId }) {
   const [cv, setCv] = useState([])
   const [transcript, setTranscript] = useState([])
 
@@ -248,5 +248,3 @@ function ApplicationForm({ proposalName, proposalId }) {
     </>
   )
 }
-
-export default ApplicationForm

@@ -8,7 +8,11 @@ import { Form, Formik } from 'formik'
 import toast, { Toaster } from 'react-hot-toast'
 import * as Yup from 'yup'
 
-function RejectProposalForm({ proposalName, proposalId, supervisorEmail }) {
+export default function RejectProposalForm({
+  proposalName,
+  proposalId,
+  supervisorEmail,
+}) {
   const SignupSchema = Yup.object().shape({
     reason: Yup.string().required('Required'),
     comment: Yup.string().required('Required'),
@@ -107,5 +111,3 @@ function RejectProposalForm({ proposalName, proposalId, supervisorEmail }) {
     </Formik>
   )
 }
-
-export default RejectProposalForm

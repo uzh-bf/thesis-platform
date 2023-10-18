@@ -7,7 +7,7 @@ import { Form, Formik } from 'formik'
 import toast, { Toaster } from 'react-hot-toast'
 import * as Yup from 'yup'
 
-function TentativeAcceptProposalForm({
+export default function TentativeAcceptProposalForm({
   proposalName,
   proposalId,
   supervisorEmail,
@@ -79,5 +79,3 @@ function TentativeAcceptProposalForm({
     </Formik>
   )
 }
-
-export default TentativeAcceptProposalForm

@@ -1,6 +1,6 @@
 import { Button } from '@uzh-bf/design-system'
 
-function NewProposalButton({
+export default function NewProposalButton({
   isSupervisor,
   displayMode,
   setDisplayMode,
@@ -30,5 +30,3 @@ function NewProposalButton({
     </div>
   )
 }
-
-export default NewProposalButton

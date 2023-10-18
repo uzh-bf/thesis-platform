@@ -7,7 +7,7 @@ import { twMerge } from 'tailwind-merge'
 
 type Proposals = inferProcedureOutput<AppRouter['proposals']>
 type ProposalDetails = Proposals[number]
-function ProposalCard({
+export default function ProposalCard({
   proposal,
   isActive,
   onClick,
@@ -54,5 +54,3 @@ function ProposalCard({
     </Button>
   )
 }
-
-export default ProposalCard
