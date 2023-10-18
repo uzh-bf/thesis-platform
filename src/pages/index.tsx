@@ -5,7 +5,7 @@ import {
   faMessage,
 } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { H2, H3, Table, Tabs } from '@uzh-bf/design-system'
+import { H2, Table, Tabs } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
@@ -21,6 +21,7 @@ import NewProposalButton from 'src/components/NewProposalButton'
 import ProposalCard from 'src/components/ProposalCard'
 import ProposalMeta from 'src/components/ProposalMeta'
 import RejectProposalForm from 'src/components/RejectProposalForm'
+import StudentProposals from 'src/components/StudentProposals'
 import TentativeAcceptProposalForm from 'src/components/TentativeAcceptProposalForm'
 import { UserRole } from 'src/lib/constants'
 import { trpc } from 'src/lib/trpc'
@@ -77,60 +78,22 @@ function Index() {
 
       <div className="grid grid-cols-1 gap-2 m-4 md:grid-cols-2">
         <div className="flex-initial pb-4 space-y-4 md:flex-1">
-          <div>
-            <NewProposalButton
-              isSupervisor={isSupervisor}
-              displayMode={displayMode}
-              setDisplayMode={setDisplayMode}
-              setSelectedProposal={setSelectedProposal}
-              buttonRef={buttonRef}
-            />
-          </div>
-
-          {isSupervisor && (
-            <div>
-              <H2>Student Proposals</H2>
-              <div className="text-base">
-                {data?.filter((proposal) => proposal.typeKey === 'STUDENT')
-                  .length === 0 && <div>No student proposals available...</div>}
-
-                {[
-                  'Banking and Insurance',
-                  'Corporate Finance',
-                  'Financial Economics',
-                  'Quantitative Finance',
-                  'Sustainable Finance',
-                ]
-                  .filter(
-                    (topicArea) =>
-                      groupedStudentProposals?.[topicArea]?.length > 0
-                  )
-                  .map((topicArea) => (
-                    <div key={topicArea}>
-                      <H3>{topicArea}</H3>
-                      <div className="flex flex-row flex-wrap grid-cols-3 gap-2">
-                        {groupedStudentProposals?.[topicArea].map(
-                          (proposal) => (
-                            <ProposalCard
-                              key={proposal.id}
-                              proposal={proposal}
-                              isActive={selectedProposal === proposal.id}
-                              onClick={() => {
-                                setSelectedProposal(proposal.id),
-                                  setDisplayMode('details')
-                                buttonRef.current?.scrollIntoView({
-                                  behavior: 'smooth',
-                                })
-                              }}
-                            />
-                          )
-                        )}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )}
+          <NewProposalButton
+            isSupervisor={isSupervisor}
+            displayMode={displayMode}
+            setDisplayMode={setDisplayMode}
+            setSelectedProposal={setSelectedProposal}
+            buttonRef={buttonRef}
+          />
+          <StudentProposals
+            isSupervisor={isSupervisor}
+            data={data}
+            groupedStudentProposals={groupedStudentProposals}
+            selectedProposal={selectedProposal}
+            setSelectedProposal={setSelectedProposal}
+            setDisplayMode={setDisplayMode}
+            buttonRef={buttonRef}
+          />
 
           <div>
             {isSupervisor && <H2>Supervisor Proposals</H2>}
@@ -159,7 +122,7 @@ function Index() {
           </div>
         </div>
 
-        <div className="mb-4 border rounded shadow" ref={buttonRef}>
+        <div className="mb-4 border shadow" ref={buttonRef}>
           {proposalDetails && (
             <ProposalMeta proposalDetails={proposalDetails} />
           )}
