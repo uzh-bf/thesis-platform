@@ -1,14 +1,24 @@
-import { faFilePdf, faMessage } from '@fortawesome/free-regular-svg-icons'
+import {
+  IconDefinition,
+  faFilePdf,
+  faMessage,
+} from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { H2, Table } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
 import ApplicationForm from './ApplicationForm'
 
+interface ProposalApplicationProps {
+  proposalDetails: any
+  isStudent: boolean
+  isSupervisor: boolean
+}
+
 export default function ProposalApplication({
   proposalDetails,
   isStudent,
   isSupervisor,
-}) {
+}: ProposalApplicationProps) {
   const FileTypeIconMap: Record<string, IconDefinition> = {
     'application/pdf': faFilePdf,
   }
@@ -87,7 +97,7 @@ export default function ProposalApplication({
                     accessor: 'attachments',
                     transformer: ({ row }) => (
                       <div>
-                        {row.attachments?.map((attachment) => (
+                        {row.attachments?.map((attachment: any) => (
                           <a
                             href={attachment.href}
                             target="_blank"

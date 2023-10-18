@@ -34,7 +34,7 @@ export default function Index() {
   const groupedStudentProposals = useMemo(() => {
     if (!data) return []
     return R.groupBy(
-      (p) => p.topicArea.name,
+      (p: any) => p.topicArea.name,
       R.sortBy(
         R.prop('title'),
         data.filter((proposal) => proposal.typeKey === 'STUDENT')

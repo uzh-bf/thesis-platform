@@ -1,4 +1,4 @@
-import { faFilePdf } from '@fortawesome/free-regular-svg-icons'
+import { IconDefinition, faFilePdf } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { format, parseISO } from 'date-fns'
 import Link from 'next/link'
@@ -6,11 +6,7 @@ import Link from 'next/link'
 const FileTypeIconMap: Record<string, IconDefinition> = {
   'application/pdf': faFilePdf,
 }
-export default function ProposalMeta({
-  proposalDetails,
-}: {
-  proposalDetails: ProposalDetails
-}) {
+export default function ProposalMeta({ proposalDetails }: any) {
   if (!proposalDetails) return null
   return (
     <div className="p-4">
@@ -68,7 +64,7 @@ export default function ProposalMeta({
 
       {proposalDetails.typeKey === 'STUDENT' && (
         <div className="text-sm">
-          {proposalDetails.attachments.map((attachment) => (
+          {proposalDetails.attachments.map((attachment: any) => (
             <Link
               key={attachment.id}
               href={attachment.href}
@@ -81,25 +77,27 @@ export default function ProposalMeta({
               </div>
             </Link>
           ))}
-          {proposalDetails.applications[0].attachments.map((attachment) => (
-            <Link
-              key={attachment.id}
-              href={attachment.href}
-              target="_blank"
-              className="hover:text-orange-600"
-            >
-              <div className="flex flex-row items-center gap-2 text-lg">
-                <FontAwesomeIcon icon={FileTypeIconMap[attachment.type]} />
-                <div>{attachment.name}</div>
-              </div>
-            </Link>
-          ))}
+          {proposalDetails.applications[0].attachments.map(
+            (attachment: any) => (
+              <Link
+                key={attachment.id}
+                href={attachment.href}
+                target="_blank"
+                className="hover:text-orange-600"
+              >
+                <div className="flex flex-row items-center gap-2 text-lg">
+                  <FontAwesomeIcon icon={FileTypeIconMap[attachment.type]} />
+                  <div>{attachment.name}</div>
+                </div>
+              </Link>
+            )
+          )}
         </div>
       )}
 
       {proposalDetails.typeKey === 'SUPERVISOR' && (
         <div className="flex flex-row gap-6 text-sm">
-          {proposalDetails.attachments.map((attachment) => (
+          {proposalDetails.attachments.map((attachment: any) => (
             <Link
               key={attachment.id}
               href={attachment.href}

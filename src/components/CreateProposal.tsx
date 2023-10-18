@@ -1,4 +1,12 @@
-export default function CreateProposal({ displayMode, ref }) {
+interface CreateProposalProps {
+  displayMode: string
+  ref: any
+}
+
+export default function CreateProposal({
+  displayMode,
+  ref,
+}: CreateProposalProps) {
   if (displayMode === 'createSupervisor') {
     return (
       <iframe

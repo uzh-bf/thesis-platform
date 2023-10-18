@@ -3,8 +3,15 @@ import AcceptProposalForm from './AcceptProposalForm' // Import AcceptProposalFo
 import DeclineProposalForm from './DeclineProposalForm'
 import RejectProposalForm from './RejectProposalForm'
 import TentativeAcceptProposalForm from './TentativeAcceptProposalForm'
+interface ProposalStatusFormProps {
+  proposalDetails: any
+  session: any
+}
 
-export default function ProposalStatusForm({ proposalDetails, session }) {
+export default function ProposalStatusForm({
+  proposalDetails,
+  session,
+}: ProposalStatusFormProps) {
   if (
     proposalDetails?.typeKey === 'STUDENT' &&
     proposalDetails?.statusKey === 'MATCHED_TENTATIVE'

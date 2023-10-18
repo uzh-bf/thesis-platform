@@ -1,6 +1,16 @@
 import { H2, H3 } from '@uzh-bf/design-system'
 import ProposalCard from './ProposalCard'
 
+interface StudentProposalsProps {
+  isSupervisor: boolean
+  data: any
+  groupedStudentProposals: any
+  selectedProposal: string | null
+  setSelectedProposal: (proposalId: string | null) => void
+  setDisplayMode: (displayMode: string) => void
+  buttonRef: any
+}
+
 export default function StudentProposals({
   isSupervisor,
   data,
@@ -9,14 +19,14 @@ export default function StudentProposals({
   setSelectedProposal,
   setDisplayMode,
   buttonRef,
-}) {
+}: StudentProposalsProps) {
   if (isSupervisor) {
     return (
       <div>
         <H2>Student Proposals</H2>
         <div className="text-base">
-          {data?.filter((proposal) => proposal.typeKey === 'STUDENT').length ===
-            0 && <div>No student proposals available...</div>}
+          {data?.filter((proposal: any) => proposal.typeKey === 'STUDENT')
+            .length === 0 && <div>No student proposals available...</div>}
 
           {[
             'Banking and Insurance',
@@ -32,7 +42,7 @@ export default function StudentProposals({
               <div key={topicArea}>
                 <H3>{topicArea}</H3>
                 <div className="flex flex-row flex-wrap grid-cols-3 gap-2">
-                  {groupedStudentProposals?.[topicArea].map((proposal) => (
+                  {groupedStudentProposals?.[topicArea].map((proposal: any) => (
                     <ProposalCard
                       key={proposal.id}
                       proposal={proposal}
