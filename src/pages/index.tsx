@@ -5,7 +5,7 @@ import {
   faMessage,
 } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Button, H2, H3, Table, Tabs } from '@uzh-bf/design-system'
+import { H2, H3, Table, Tabs } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
@@ -17,6 +17,7 @@ import CreateStudentProposal from 'src/components/CreateStudentProposal'
 import CreateSupervisorProposal from 'src/components/CreateSupervisorProposal'
 import DeclineProposalForm from 'src/components/DeclineProposalForm'
 import Header from 'src/components/Header'
+import NewProposalButton from 'src/components/NewProposalButton'
 import ProposalCard from 'src/components/ProposalCard'
 import ProposalMeta from 'src/components/ProposalMeta'
 import RejectProposalForm from 'src/components/RejectProposalForm'
@@ -29,7 +30,7 @@ const FileTypeIconMap: Record<string, IconDefinition> = {
 }
 function Index() {
   const router = useRouter()
-  const ref = useRef<null | HTMLDivElement>(null)
+  const buttonRef = useRef<null | HTMLDivElement>(null)
 
   const { data: session } = useSession()
 
@@ -77,41 +78,13 @@ function Index() {
       <div className="grid grid-cols-1 gap-2 m-4 md:grid-cols-2">
         <div className="flex-initial pb-4 space-y-4 md:flex-1">
           <div>
-            {isSupervisor ? (
-              <Button
-                active={displayMode === 'createSupervisor'}
-                onClick={() => {
-                  if (displayMode === 'createSupervisor') {
-                    setDisplayMode('')
-                  } else {
-                    setSelectedProposal(null)
-                    setDisplayMode('createSupervisor')
-                  }
-                  ref.current?.scrollIntoView({
-                    behavior: 'smooth',
-                  })
-                }}
-              >
-                New Proposal
-              </Button>
-            ) : (
-              <Button
-                active={displayMode === 'createStudent'}
-                onClick={() => {
-                  if (displayMode === 'createStudent') {
-                    setDisplayMode('')
-                  } else {
-                    setSelectedProposal(null)
-                    setDisplayMode('createStudent')
-                  }
-                  ref.current?.scrollIntoView({
-                    behavior: 'smooth',
-                  })
-                }}
-              >
-                New Proposal
-              </Button>
-            )}
+            <NewProposalButton
+              isSupervisor={isSupervisor}
+              displayMode={displayMode}
+              setDisplayMode={setDisplayMode}
+              setSelectedProposal={setSelectedProposal}
+              buttonRef={buttonRef}
+            />
           </div>
 
           {isSupervisor && (
@@ -145,7 +118,7 @@ function Index() {
                               onClick={() => {
                                 setSelectedProposal(proposal.id),
                                   setDisplayMode('details')
-                                ref.current?.scrollIntoView({
+                                buttonRef.current?.scrollIntoView({
                                   behavior: 'smooth',
                                 })
                               }}
@@ -176,7 +149,7 @@ function Index() {
                     onClick={() => {
                       setSelectedProposal(proposal.id),
                         setDisplayMode('details')
-                      ref.current?.scrollIntoView({
+                      buttonRef.current?.scrollIntoView({
                         behavior: 'smooth',
                       })
                     }}
@@ -186,7 +159,7 @@ function Index() {
           </div>
         </div>
 
-        <div className="mb-4 border rounded shadow" ref={ref}>
+        <div className="mb-4 border rounded shadow" ref={buttonRef}>
           {proposalDetails && (
             <ProposalMeta proposalDetails={proposalDetails} />
           )}
@@ -440,11 +413,11 @@ function Index() {
           )}
 
           {displayMode === 'createStudent' && (
-            <CreateStudentProposal ref={ref} />
+            <CreateStudentProposal ref={buttonRef} />
           )}
 
           {displayMode === 'createSupervisor' && (
-            <CreateSupervisorProposal ref={ref} />
+            <CreateSupervisorProposal ref={buttonRef} />
           )}
         </div>
       </div>
