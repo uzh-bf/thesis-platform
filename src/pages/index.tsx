@@ -105,10 +105,7 @@ function Index() {
 
         <div className="mb-4 border shadow" ref={buttonRef}>
           <CreateProposal displayMode={displayMode} ref={buttonRef} />
-
-          {proposalDetails && (
-            <ProposalMeta proposalDetails={proposalDetails} />
-          )}
+          <ProposalMeta proposalDetails={proposalDetails} />
 
           {proposalDetails?.typeKey === 'SUPERVISOR' && (
             <div className="p-4">

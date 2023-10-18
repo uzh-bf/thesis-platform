@@ -11,6 +11,7 @@ export default function ProposalMeta({
 }: {
   proposalDetails: ProposalDetails
 }) {
+  if (!proposalDetails) return null
   return (
     <div className="p-4">
       <h1 className="text-base font-bold">{proposalDetails.title}</h1>
