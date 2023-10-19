@@ -1,4 +1,5 @@
 import { H2, H3 } from '@uzh-bf/design-system'
+import { RefObject } from 'react'
 import ProposalCard from './ProposalCard'
 
 interface StudentProposalsProps {
@@ -8,7 +9,7 @@ interface StudentProposalsProps {
   selectedProposal: string | null
   setSelectedProposal: (proposalId: string | null) => void
   setDisplayMode: (displayMode: string) => void
-  buttonRef: any
+  buttonRef: RefObject<HTMLButtonElement>
 }
 
 export default function StudentProposals({
@@ -50,7 +51,7 @@ export default function StudentProposals({
                       onClick={() => {
                         setSelectedProposal(proposal.id),
                           setDisplayMode('details')
-                        buttonRef.current?.scrollIntoView({
+                        buttonRef?.current?.scrollIntoView({
                           behavior: 'smooth',
                         })
                       }}

@@ -1,4 +1,5 @@
 import { H2 } from '@uzh-bf/design-system'
+import { RefObject } from 'react'
 import ProposalCard from './ProposalCard'
 
 interface SupervisorProposalsProps {
@@ -7,7 +8,7 @@ interface SupervisorProposalsProps {
   selectedProposal: string | null
   setSelectedProposal: (proposalId: string | null) => void
   setDisplayMode: (displayMode: string) => void
-  buttonRef: any
+  buttonRef: RefObject<HTMLButtonElement>
 }
 
 export default function SupervisorProposals({

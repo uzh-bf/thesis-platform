@@ -1,11 +1,12 @@
 import { Button } from '@uzh-bf/design-system'
+import { RefObject } from 'react'
 
 interface NewProposalButtonProps {
   isSupervisor: boolean
   displayMode: string
   setDisplayMode: (displayMode: string) => void
   setSelectedProposal: (proposalId: string | null) => void
-  buttonRef: any
+  buttonRef: RefObject<HTMLButtonElement>
 }
 
 export default function NewProposalButton({
@@ -20,7 +21,7 @@ export default function NewProposalButton({
     isSupervisor
       ? setDisplayMode('createSupervisor')
       : setDisplayMode('createStudent')
-    buttonRef.current?.scrollIntoView({
+    buttonRef?.current?.scrollIntoView({
       behavior: 'smooth',
     })
   }

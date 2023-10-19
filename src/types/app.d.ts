@@ -1,6 +1,9 @@
 import type { PrismaClient } from '@prisma/client'
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server'
 import type { DefaultSession, DefaultUser } from 'next-auth'
+import type { IterableElement } from 'type-fest'
 import type { UserRole } from '../lib/constants'
+import type { AppRouter } from '../server/routers/_app'
 
 interface Context extends BaseContext {
   prisma: PrismaClient
@@ -31,3 +34,9 @@ declare module 'next-auth' {
     } & DefaultSession['user']
   }
 }
+
+type RouterInput = inferRouterInputs<AppRouter>
+type RouterOutput = inferRouterOutputs<AppRouter>
+
+type ProposalsOutput = RouterOutput['proposals']
+type ProposalDetails = IterableElement<ProposalsOutput>

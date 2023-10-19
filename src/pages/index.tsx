@@ -14,6 +14,7 @@ import StudentProposals from 'src/components/StudentProposals'
 import SupervisorProposals from 'src/components/SupervisorProposals'
 import { UserRole } from 'src/lib/constants'
 import { trpc } from 'src/lib/trpc'
+import { ProposalDetails } from 'src/types/app'
 
 const FileTypeIconMap: Record<string, IconDefinition> = {
   'application/pdf': faFilePdf,
@@ -33,8 +34,8 @@ export default function Index() {
 
   const groupedStudentProposals = useMemo(() => {
     if (!data) return []
-    return R.groupBy(
-      (p: any) => p.topicArea.name,
+    return R.groupBy<ProposalDetails>(
+      (p) => p.topicArea.name,
       R.sortBy(
         R.prop('title'),
         data.filter((proposal) => proposal.typeKey === 'STUDENT')
@@ -48,10 +49,11 @@ export default function Index() {
       displayMode === 'createSupervisor'
     )
       return null
+
     if (!selectedProposal) return setSelectedProposal(data?.[0]?.id as string)
 
     return data?.find((p) => p.id === selectedProposal)
-  }, [data, selectedProposal])
+  }, [data, selectedProposal, displayMode])
 
   if (isLoading) {
     return <div className="p-2">Loading 🔄🚀</div>

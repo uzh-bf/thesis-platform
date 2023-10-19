@@ -2,11 +2,16 @@ import { IconDefinition, faFilePdf } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { format, parseISO } from 'date-fns'
 import Link from 'next/link'
+import { ProposalDetails } from 'src/types/app'
+
+interface ProposalMetaProps {
+  proposalDetails: ProposalDetails
+}
 
 const FileTypeIconMap: Record<string, IconDefinition> = {
   'application/pdf': faFilePdf,
 }
-export default function ProposalMeta({ proposalDetails }: any) {
+export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
   if (!proposalDetails) return null
   return (
     <div className="p-4">

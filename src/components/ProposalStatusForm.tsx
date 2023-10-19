@@ -1,11 +1,13 @@
 import { Tabs } from '@uzh-bf/design-system'
+import type { Session } from 'next-auth'
+import { ProposalDetails } from 'src/types/app'
 import AcceptProposalForm from './AcceptProposalForm' // Import AcceptProposalForm and other form components
 import DeclineProposalForm from './DeclineProposalForm'
 import RejectProposalForm from './RejectProposalForm'
 import TentativeAcceptProposalForm from './TentativeAcceptProposalForm'
 interface ProposalStatusFormProps {
-  proposalDetails: any
-  session: any
+  proposalDetails: ProposalDetails
+  session: Session | null
 }
 
 export default function ProposalStatusForm({
@@ -41,7 +43,7 @@ export default function ProposalStatusForm({
                 key={proposalDetails?.id}
                 proposalName={proposalDetails?.title}
                 proposalId={proposalDetails?.id}
-                supervisorEmail={session?.user?.email}
+                supervisorEmail={session?.user?.email as string}
               />
             </Tabs.TabContent>
             <Tabs.TabContent
@@ -55,7 +57,7 @@ export default function ProposalStatusForm({
                 key={proposalDetails?.id}
                 proposalName={proposalDetails?.title}
                 proposalId={proposalDetails?.id}
-                supervisorEmail={session?.user?.email}
+                supervisorEmail={session?.user?.email as string}
               />
             </Tabs.TabContent>
           </Tabs>
@@ -99,7 +101,7 @@ export default function ProposalStatusForm({
               key={proposalDetails?.id}
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
-              supervisorEmail={session?.user?.email}
+              supervisorEmail={session?.user?.email as string}
             />
           </Tabs.TabContent>
           <Tabs.TabContent
@@ -113,7 +115,7 @@ export default function ProposalStatusForm({
               key={proposalDetails?.id}
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
-              supervisorEmail={session?.user?.email}
+              supervisorEmail={session?.user?.email as string}
             />
           </Tabs.TabContent>
           <Tabs.TabContent
@@ -127,7 +129,7 @@ export default function ProposalStatusForm({
               key={proposalDetails?.id}
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
-              supervisorEmail={session?.user?.email}
+              supervisorEmail={session?.user?.email as string}
             />
           </Tabs.TabContent>
           <Tabs.TabContent
@@ -141,7 +143,7 @@ export default function ProposalStatusForm({
               key={proposalDetails?.id}
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
-              supervisorEmail={session?.user?.email}
+              supervisorEmail={session?.user?.email as string}
             />
           </Tabs.TabContent>
         </Tabs>

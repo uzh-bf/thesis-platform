@@ -1,8 +1,9 @@
 import { faComment } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { ProposalDetails } from 'src/types/app'
 
 interface ProposalFeedbackProps {
-  proposalDetails: any
+  proposalDetails: ProposalDetails
   isSupervisor: boolean
   isAdmin: boolean
 }

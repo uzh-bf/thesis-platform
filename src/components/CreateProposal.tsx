@@ -1,6 +1,8 @@
+import { Ref } from 'react'
+
 interface CreateProposalProps {
   displayMode: string
-  ref: any
+  ref: Ref<HTMLIFrameElement>
 }
 
 export default function CreateProposal({

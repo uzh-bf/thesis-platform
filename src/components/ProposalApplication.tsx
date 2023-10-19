@@ -6,10 +6,12 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { H2, Table } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
+import { ProposalDetails } from 'src/types/app'
+import { IterableElement } from 'type-fest'
 import ApplicationForm from './ApplicationForm'
 
 interface ProposalApplicationProps {
-  proposalDetails: any
+  proposalDetails: ProposalDetails
   isStudent: boolean
   isSupervisor: boolean
 }
@@ -38,7 +40,7 @@ export default function ProposalApplication({
             {proposalDetails?.applications?.length === 0 &&
               'No applications for this proposal...'}
             {proposalDetails?.applications?.length > 0 && (
-              <Table<(typeof proposalDetails.applications)[0]>
+              <Table<IterableElement<(typeof proposalDetails)['applications']>>
                 className={{
                   root: 'text-xs',
                   tableHeader: 'text-sm',
