@@ -71,18 +71,18 @@ export const appRouter = router({
                 },
               }
             : undefined,
-        receivedFeedbacks: [UserRole.SUPERVISOR, UserRole.ADMIN].includes(
-          ctx.user?.role
-        ) && {
-          where:
-            ctx.user?.role === UserRole.SUPERVISOR && ctx.user.email
-              ? {
-                  user: {
-                    email: ctx.user.email,
-                  },
-                }
-              : undefined,
-        },
+        receivedFeedbacks: ctx.user?.role
+          ? [UserRole.SUPERVISOR, UserRole.ADMIN].includes(ctx.user.role) && {
+              where:
+                ctx.user.role === UserRole.SUPERVISOR && ctx.user.email
+                  ? {
+                      user: {
+                        email: ctx.user.email,
+                      },
+                    }
+                  : undefined,
+            }
+          : undefined,
       },
     })
 

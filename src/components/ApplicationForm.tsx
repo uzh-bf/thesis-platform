@@ -14,16 +14,24 @@ import useLocalStorage from 'src/lib/hooks/useLocalStorage'
 import { trpc } from 'src/lib/trpc'
 import * as Yup from 'yup'
 
-function ApplicationForm({ proposalName, proposalId }) {
-  const [cv, setCv] = useState([])
-  const [transcript, setTranscript] = useState([])
+interface ApplicationFormProps {
+  proposalName: string
+  proposalId: string
+}
+export default function ApplicationForm({
+  proposalName,
+  proposalId,
+}: ApplicationFormProps) {
+  const [cv, setCv] = useState<any[]>([])
+  const [transcript, setTranscript] = useState<any[]>([])
 
   const mutation = trpc.generateSasQueryToken.useMutation()
 
   const [submitted, setLocalStorage] = useLocalStorage<boolean>(proposalId)
 
   const handleFileFieldChange =
-    (fieldKey, fileName, formikProps) => async (files) => {
+    (fieldKey: string, fileName: string, formikProps: any) =>
+    async (files: any[]) => {
       const file = files[0]
       const { SAS_STRING } = await mutation.mutateAsync()
       console.log('MUTATION RESULT: ', SAS_STRING)
@@ -248,5 +256,3 @@ function ApplicationForm({ proposalName, proposalId }) {
     </>
   )
 }
-
-export default ApplicationForm

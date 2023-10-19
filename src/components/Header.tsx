@@ -1,7 +1,7 @@
 import { Button, H1 } from '@uzh-bf/design-system'
 import { signIn, signOut, useSession } from 'next-auth/react'
 
-function Header() {
+export default function Header() {
   const { data: session } = useSession()
 
   return (
@@ -26,5 +26,3 @@ function Header() {
     </header>
   )
 }
-
-export default Header
