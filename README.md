@@ -2,7 +2,7 @@
 
 This project serves as a platform to facilitate the creation, management, and viewing of academic proposals. The system allows users to create new proposals, view proposal details, manage feedback, and update proposal statuses. It categorizes proposals based on their topic area and differentiates between student and supervisor roles, ensuring a clear and organized workflow.
 
-The motivation behind this project is to provide a tool for academic institutions to streamline the proposal submission, review, and feedback process, supporting the matching process between students and supervisors.
+The motivation behind this project is to offer academic institutions an efficient mechanism to simplify the proposal submission, evaluation, and feedback cycles, thereby facilitating a smoother pairing of students with their respective supervisors.
 
 ## Installation
 
@@ -24,7 +24,7 @@ npm install
 ## Usage
 
 ```bash
-# run the web app in developer mode
+# Run the web app in developer mode
 npm run dev
 ```
 
