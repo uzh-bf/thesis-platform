@@ -42,11 +42,11 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      - name: Replace .env.production with .env.stage
-        shell: bash
-        run: |
-          rm .env.production
-          mv .env.stage .env.production
+      # - name: Replace .env.production with .env.stage
+      #   shell: bash
+      #   run: |
+      #     rm .env.production
+      #     mv .env.stage .env.production
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
