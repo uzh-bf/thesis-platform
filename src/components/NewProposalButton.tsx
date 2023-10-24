@@ -1,41 +1,25 @@
 import { Button } from '@uzh-bf/design-system'
-import { RefObject } from 'react'
+import Link from 'next/link'
 
 interface NewProposalButtonProps {
   isSupervisor: boolean
-  displayMode: string
-  setDisplayMode: (displayMode: string) => void
-  setSelectedProposal: (proposalId: string | null) => void
-  buttonRef: RefObject<HTMLButtonElement>
 }
 
 export default function NewProposalButton({
   isSupervisor,
-  displayMode,
-  setDisplayMode,
-  setSelectedProposal,
-  buttonRef,
 }: NewProposalButtonProps) {
-  const handleButtonClick = () => {
-    setSelectedProposal(null)
-    isSupervisor
-      ? setDisplayMode('createSupervisor')
-      : setDisplayMode('createStudent')
-    buttonRef?.current?.scrollIntoView({
-      behavior: 'smooth',
-    })
-  }
-
   return (
     <div>
-      <Button
-        active={
-          displayMode === 'createSupervisor' || displayMode === 'createStudent'
+      <Link
+        target="_blank"
+        href={
+          isSupervisor
+            ? (process.env.NEXT_PUBLIC_FORMS_URL_PUBLISH as string)
+            : (process.env.NEXT_PUBLIC_FORMS_URL_SUBMIT as string)
         }
-        onClick={handleButtonClick}
       >
-        New Proposal
-      </Button>
+        <Button>New Proposal</Button>
+      </Link>
     </div>
   )
 }

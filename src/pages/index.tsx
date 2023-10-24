@@ -3,7 +3,6 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
 import * as R from 'ramda'
 import { useMemo, useRef, useState } from 'react'
-import CreateProposal from 'src/components/CreateProposal'
 import Header from 'src/components/Header'
 import NewProposalButton from 'src/components/NewProposalButton'
 import ProposalApplication from 'src/components/ProposalApplication'
@@ -69,13 +68,7 @@ export default function Index() {
 
       <div className="grid grid-cols-1 gap-2 m-4 md:grid-cols-2">
         <div className="flex-initial pb-4 space-y-4 md:flex-1">
-          <NewProposalButton
-            isSupervisor={isSupervisor}
-            displayMode={displayMode}
-            setDisplayMode={setDisplayMode}
-            setSelectedProposal={setSelectedProposal}
-            buttonRef={buttonRef}
-          />
+          <NewProposalButton isSupervisor={isSupervisor} />
           <StudentProposals
             isSupervisor={isSupervisor}
             data={data}
@@ -96,7 +89,7 @@ export default function Index() {
         </div>
 
         <div className="mb-4 border shadow" ref={buttonRef}>
-          <CreateProposal displayMode={displayMode} ref={buttonRef} />
+          {!selectedProposal && <div className="p-4">No proposal selected</div>}
           <ProposalMeta proposalDetails={proposalDetails} />
           <ProposalApplication
             proposalDetails={proposalDetails}
