@@ -7,13 +7,17 @@ releases:
     installed: true
     kubeContext: bf-k8s463ba113
     values:
-      - appSecret: '{{ env "NEXTAUTH_SECRET" }}'
-        appUrl: '{{ env "NEXT_PUBLIC_APP_URL" }}'
+      - appSecret: '{{ requiredEnv "NEXTAUTH_SECRET" }}'
+        appUrl: '{{ requiredEnv "NEXT_PUBLIC_APP_URL" }}'
+
+        flows:
+          application: '{{ requiredEnv "APPLICATION_URL" }}'
+          proposalFeedback: '{{ requiredEnv "PROPOSAL_FEEDBACK_URL" }}'
 
         azureAd:
-          clientId: '{{ env "AZURE_AD_CLIENT_ID" }}'
-          clientSecret: '{{ env "AZURE_AD_CLIENT_SECRET" }}'
-          tenantId: '{{ env "AZURE_AD_TENANT_ID" }}'
+          clientId: '{{ requiredEnv "AZURE_AD_CLIENT_ID" }}'
+          clientSecret: '{{ requiredEnv "AZURE_AD_CLIENT_SECRET" }}'
+          tenantId: '{{ requiredEnv "AZURE_AD_TENANT_ID" }}'
 
         auth0:
           clientId: '{{ env "AUTH0_CLIENT_ID" }}'
@@ -21,17 +25,17 @@ releases:
           issuer: '{{ env "AUTH0_ISSUER" }}'
 
         azureBlob:
-          accessKey: '{{ env "AZURE_STORAGE_ACCOUNT_ACCESS_KEY" }}'
+          accessKey: '{{ requiredEnv "AZURE_STORAGE_ACCOUNT_ACCESS_KEY" }}'
 
         database:
-          url: '{{ env "DATABASE_URL" }}'
+          url: '{{ requiredEnv "DATABASE_URL" }}'
 
         ingress:
           hosts:
-            - host: '{{ env "APP_DOMAIN" }}'
+            - host: '{{ requiredEnv "APP_DOMAIN" }}'
               paths:
                 - /
           tls:
             - secretName: thesis-platform-tls
               hosts:
-                - '{{ env "APP_DOMAIN" }}'
+                - '{{ requiredEnv "APP_DOMAIN" }}'

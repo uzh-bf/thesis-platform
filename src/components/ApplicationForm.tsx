@@ -26,6 +26,7 @@ export default function ApplicationForm({
   const [transcript, setTranscript] = useState<any[]>([])
 
   const mutation = trpc.generateSasQueryToken.useMutation()
+  const submitApplication = trpc.submitProposalApplication.useMutation()
 
   const [submitted, setLocalStorage] = useLocalStorage<boolean>(proposalId)
 
@@ -111,15 +112,7 @@ export default function ApplicationForm({
       }}
       validationSchema={SignupSchema}
       onSubmit={async (values, { resetForm }) => {
-        console.log(JSON.stringify(values)),
-          await fetch(process.env.NEXT_PUBLIC_APPLICATION_URL as string, {
-            method: 'POST',
-            headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(values),
-          })
+        await submitApplication.mutateAsync(values)
         await setLocalStorage(true)
         resetForm()
         setCv([])

@@ -6,6 +6,7 @@ import {
 } from '@uzh-bf/design-system'
 import { Form, Formik } from 'formik'
 import toast, { Toaster } from 'react-hot-toast'
+import { trpc } from 'src/lib/trpc'
 import * as Yup from 'yup'
 
 interface RejectProposalFormProps {
@@ -24,6 +25,8 @@ export default function RejectProposalForm({
     comment: Yup.string().required('Required'),
   })
 
+  const submitFeedback = trpc.submitProposalFeedback.useMutation()
+
   return (
     <Formik
       initialValues={{
@@ -36,15 +39,8 @@ export default function RejectProposalForm({
       }}
       validationSchema={SignupSchema}
       onSubmit={async (values, { resetForm }) => {
-        console.log(JSON.stringify(values)),
-          await fetch(process.env.NEXT_PUBLIC_PROPOSAL_FEEDBACK_URL as string, {
-            method: 'POST',
-            headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(values),
-          })
+        await submitFeedback.mutateAsync(values)
+
         resetForm()
         toast.success('Proposal rejected successfully!')
       }}

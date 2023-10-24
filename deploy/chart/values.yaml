@@ -18,6 +18,10 @@ database:
 
 appSecret: ""
 
+flows:
+  application: ""
+  proposalFeedback: ""
+
 replicaCount: 1
 
 image:

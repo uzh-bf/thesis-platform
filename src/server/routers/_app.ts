@@ -7,13 +7,16 @@ import {
   StorageSharedKeyCredential,
   generateBlobSASQueryParameters,
 } from '@azure/storage-blob'
+import axios from 'axios'
 import 'cross-fetch/polyfill'
 import { prisma } from 'src/server/prisma'
 import {
+  authedProcedure,
   optionalAuthedProcedure,
   publicProcedure,
   router,
 } from 'src/server/trpc'
+import { z } from 'zod'
 
 export const appRouter = router({
   generateSasQueryToken: optionalAuthedProcedure.mutation(() => {
@@ -105,6 +108,49 @@ export const appRouter = router({
         )
       })
   }),
+
+  submitProposalFeedback: authedProcedure
+    .input(
+      z.object({
+        proposalName: z.string(),
+        comment: z.string(),
+        proposalId: z.string(),
+        supervisorEmail: z.string().email(),
+        actionType: z.string(),
+        reason: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await axios.post(process.env.APPLICATION_URL as string, input, {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+      })
+    }),
+
+  submitProposalApplication: publicProcedure
+    .input(
+      z.object({
+        proposalTitle: z.string(),
+        uzhemail: z.string().email(),
+        matriculationNumber: z.string(),
+        fullName: z.string(),
+        startingDate: z.string(),
+        motivation: z.string(),
+        proposalId: z.string(),
+        cvFile: z.any(),
+        transcriptFile: z.any(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await axios.post(process.env.APPLICATION_URL as string, input, {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+      })
+    }),
 
   // supervisors: optionalAuthedProcedure.query(async ({ ctx }) => {
   //   // Create an instance of the TokenCredential class that is imported
