@@ -1,0 +1,10 @@
+<environmentvariabledefinition schemaname="uzhbf_thesisplatform_supervisors_list_name_env_var">
+  <displayname default="Supervisors List Name">
+    <label description="Supervisors List Name" languagecode="1033" />
+  </displayname>
+  <introducedversion>0.0.0.2</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>

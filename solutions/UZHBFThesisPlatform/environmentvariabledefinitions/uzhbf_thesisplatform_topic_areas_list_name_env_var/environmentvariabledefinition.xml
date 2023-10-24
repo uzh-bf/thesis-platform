@@ -1,0 +1,10 @@
+<environmentvariabledefinition schemaname="uzhbf_thesisplatform_topic_areas_list_name_env_var">
+  <displayname default="Topic Areas List Name">
+    <label description="Topic Areas List Name" languagecode="1033" />
+  </displayname>
+  <introducedversion>0.0.0.2</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>

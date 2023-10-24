@@ -1,0 +1,702 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_microsoftforms": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "uzhbf_thesisplatform_forms_ref"
+        },
+        "api": {
+          "name": "shared_microsoftforms"
+        }
+      },
+      "shared_azuremysql": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "uzhbf_thesisplatform_sql_ref"
+        },
+        "api": {
+          "name": "shared_azuremysql"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "uzhbf_thesisplatform_sharePoint_ref"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_onedriveforbusiness": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "uzhbf_thesisplatform_oneDrive_ref"
+        },
+        "api": {
+          "name": "shared_onedriveforbusiness"
+        }
+      },
+      "shared_office365_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "uzhbf_thesisplatform_outlook365_ref"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)": {
+          "defaultValue": "https://uzh.sharepoint.com/sites/UZHBFThesisPlatformDEV",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_sharepoint_site_env_var"
+          }
+        },
+        "Publish Thesis Proposal Forms Id (uzhbf_thesisplatform_publish_thesis_proposal_forms_id_env_var)": {
+          "defaultValue": "2zjkx2LkIkypCsNYsWmAs1QgPDYXFIJFoTn3sHbg3YFUOFBGVEI2SlY2WEVQRUc0VUFIRUdKNDE5QS4u",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_publish_thesis_proposal_forms_id_env_var"
+          }
+        },
+        "Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)": {
+          "defaultValue": "maximilian.weber@bf.uzh.ch",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_outlook_from_address_env_var"
+          }
+        },
+        "Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)": {
+          "defaultValue": "maximilian.weber@bf.uzh.ch",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_thesis_inbox_env_var"
+          }
+        },
+        "Topic Areas List Name (uzhbf_thesisplatform_topic_areas_list_name_env_var)": {
+          "defaultValue": "Topic Areas",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_topic_areas_list_name_env_var"
+          }
+        },
+        "Supervisors List Name (uzhbf_thesisplatform_supervisors_list_name_env_var)": {
+          "defaultValue": "Thesis Supervisors",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_supervisors_list_name_env_var"
+          }
+        },
+        "Proposals Document Library Name (uzhbf_thesisplatform_proposals_document_library_name_env_var)": {
+          "defaultValue": "ProposalDocuments",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_proposals_document_library_name_env_var"
+          }
+        }
+      },
+      "triggers": {
+        "When_a_new_response_is_submitted": {
+          "splitOn": "@triggerOutputs()?['body/value']",
+          "metadata": {
+            "operationMetadataId": "4be9950e-3162-44c8-9488-522170fcad25"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_microsoftforms",
+              "operationId": "CreateFormWebhook",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_microsoftforms"
+            },
+            "parameters": {
+              "form_id": "@parameters('Publish Thesis Proposal Forms Id (uzhbf_thesisplatform_publish_thesis_proposal_forms_id_env_var)')"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "GetResponseDetails": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "a4ebfb3a-cca3-40f0-ae3c-bcc1463b605d"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_microsoftforms",
+              "operationId": "GetFormResponseById",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_microsoftforms"
+            },
+            "parameters": {
+              "form_id": "@parameters('Publish Thesis Proposal Forms Id (uzhbf_thesisplatform_publish_thesis_proposal_forms_id_env_var)')",
+              "response_id": "@triggerOutputs()?['body/resourceData/responseId']"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "GenerateProposalId": {
+          "runAfter": {
+            "GetResponseDetails": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e7ab0158-8106-4190-8eee-bd2eddd72b96"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "ProposalId",
+                "type": "string",
+                "value": "@{guid()}"
+              }
+            ]
+          }
+        },
+        "GetMatchingUsers": {
+          "runAfter": {
+            "GenerateProposalId": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "0ba12ef9-1a14-4f00-a1cd-ef238599c322"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_azuremysql",
+              "operationId": "GetItems",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+            },
+            "parameters": {
+              "server": "default",
+              "database": "default",
+              "table": "[main].[user]",
+              "$filter": "email eq '@{outputs('GetResponseDetails')?['body/responder']}'"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "IfUserExists": {
+          "actions": {},
+          "runAfter": {
+            "GetMatchingUsers": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {
+              "PersistNewUser": {
+                "runAfter": {},
+                "metadata": {
+                  "operationMetadataId": "5e447837-c6a0-4b84-bd3d-46efd8c4f5ba"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "host": {
+                    "connectionName": "shared_azuremysql",
+                    "operationId": "PostItem",
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+                  },
+                  "parameters": {
+                    "server": "default",
+                    "database": "default",
+                    "table": "[main].[user]",
+                    "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+                    "item/email": "@outputs('GetResponseDetails')?['body/responder']",
+                    "item/id": "@guid()",
+                    "item/name": "Anonymous",
+                    "item/role": "SUPERVISOR",
+                    "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              }
+            }
+          },
+          "expression": {
+            "greater": [
+              "@length(body('GetMatchingUsers')['value'])",
+              0
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "c3ab16c6-9dd8-4538-bc92-c9281ec2ed1d"
+          },
+          "type": "If"
+        },
+        "GetSupervisors": {
+          "runAfter": {
+            "GenerateProposalId": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "5ed3ba8d-d9c6-462a-8c1a-04cb56e2b4b7"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_sharepointonline",
+              "operationId": "GetItems",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+            },
+            "parameters": {
+              "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
+              "table": "@parameters('Supervisors List Name (uzhbf_thesisplatform_supervisors_list_name_env_var)')",
+              "$filter": "field_1 eq '@{outputs('GetResponseDetails')?['body/ra234958191ee49a28a4fc68389dd0ce2']}'",
+              "$top": 1
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "SetSupervisorEmail": {
+          "runAfter": {
+            "GetSupervisors": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "f9ea5082-3cd5-468c-905d-889a1200e698"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "SupervisorEmail",
+                "type": "string",
+                "value": "@{first(body('GetSupervisors')['value'])['Title']}"
+              }
+            ]
+          }
+        },
+        "GetTopicAreas": {
+          "runAfter": {
+            "GenerateProposalId": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "48306085-4df9-4c51-b4b1-2d6de6dc0395"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_sharepointonline",
+              "operationId": "GetItems",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+            },
+            "parameters": {
+              "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
+              "table": "@parameters('Topic Areas List Name (uzhbf_thesisplatform_topic_areas_list_name_env_var)')",
+              "$filter": "Title eq '@{outputs('GetResponseDetails')?['body/r2a41d1ed540f418caa89f10a35cdb069']}'",
+              "$top": 1
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "SetTopicAreaDetails": {
+          "runAfter": {
+            "GetTopicAreas": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "908e7f8f-b3ec-459f-827a-fbee27dc6938"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "TopicAreaDetails",
+                "type": "object",
+                "value": "@first(body('GetTopicAreas')['value'])"
+              }
+            ]
+          }
+        },
+        "ParseProposalPDF": {
+          "runAfter": {
+            "GenerateProposalId": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "fa91e1d7-7937-4285-8fc3-677cb8bf6a7c"
+          },
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@outputs('GetResponseDetails')?['body/rdde59a23cc104fc7b93e394925f30168']",
+            "schema": {
+              "items": {
+                "properties": {
+                  "driveId": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "link": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "referenceId": {
+                    "type": "string"
+                  },
+                  "size": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "integer"
+                  },
+                  "type": {},
+                  "uploadSessionUrl": {}
+                },
+                "required": [
+                  "name",
+                  "link",
+                  "id",
+                  "type",
+                  "size",
+                  "referenceId",
+                  "driveId",
+                  "status",
+                  "uploadSessionUrl"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "ExtractProposalPDFName": {
+          "runAfter": {
+            "ParseProposalPDF": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "6168e8c3-e6fc-40c3-9af4-7a37c36cdb5a"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "ProposalPDFName",
+                "type": "string",
+                "value": "@{first(body('ParseProposalPDF'))?['name']}"
+              }
+            ]
+          }
+        },
+        "GetFileUploadProposalPDF": {
+          "runAfter": {
+            "ExtractProposalPDFName": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "339b9272-47e6-4510-8a05-dad3e41ab01d"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_onedriveforbusiness",
+              "operationId": "GetFileContentByPath",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+            },
+            "parameters": {
+              "path": "/Apps/Microsoft Forms/Publish Thesis Proposal/Research Proposal (PDF)/@{variables('ProposalPDFName')}",
+              "inferContentType": true
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "PersistProposalPDF": {
+          "runAfter": {
+            "GetFileUploadProposalPDF": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "73d10613-2f21-405c-94f2-a864355e8d60"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_sharepointonline",
+              "operationId": "CreateFile",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+            },
+            "parameters": {
+              "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
+              "folderPath": "/@{parameters('Proposals Document Library Name (uzhbf_thesisplatform_proposals_document_library_name_env_var)')}/Proposals/@{outputs('GetResponseDetails')?['body/responder']}",
+              "name": "@{variables('ProposalId')}.pdf",
+              "body": "@body('GetFileUploadProposalPDF')"
+            },
+            "authentication": "@parameters('$authentication')"
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          }
+        },
+        "CreateShareLinkProposalPDF": {
+          "runAfter": {
+            "PersistProposalPDF": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "c63fa1e6-f889-4076-b4d1-47638b03d785"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_sharepointonline",
+              "operationId": "CreateSharingLink",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+            },
+            "parameters": {
+              "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
+              "table": "@parameters('Proposals Document Library Name (uzhbf_thesisplatform_proposals_document_library_name_env_var)')",
+              "id": "@outputs('PersistProposalPDF')?['body/ItemId']",
+              "permission/type": "view",
+              "permission/scope": "organization"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "GetMatchingSupervisor": {
+          "runAfter": {
+            "IfUserExists": [
+              "Succeeded"
+            ],
+            "SetSupervisorEmail": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "ecae3a00-da6c-48dd-a659-a020e89065e7"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_azuremysql",
+              "operationId": "GetItems",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+            },
+            "parameters": {
+              "server": "default",
+              "database": "default",
+              "table": "[main].[user]",
+              "$filter": "Email eq '@{variables('SupervisorEmail')}'",
+              "$top": 1
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "IfSupervisorExists": {
+          "actions": {},
+          "runAfter": {
+            "GetMatchingSupervisor": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {
+              "PersistNewSupervisor": {
+                "runAfter": {},
+                "metadata": {
+                  "operationMetadataId": "0bc44550-c738-4962-afd9-8944446555e6"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "host": {
+                    "connectionName": "shared_azuremysql",
+                    "operationId": "PostItem",
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+                  },
+                  "parameters": {
+                    "server": "default",
+                    "database": "default",
+                    "table": "[main].[user]",
+                    "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+                    "item/email": "@variables('SupervisorEmail')",
+                    "item/id": "@guid()",
+                    "item/name": "@outputs('GetResponseDetails')?['body/ra234958191ee49a28a4fc68389dd0ce2']",
+                    "item/role": "SUPERVISOR",
+                    "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              }
+            }
+          },
+          "expression": {
+            "greater": [
+              "@length(body('GetMatchingSupervisor')['value'])",
+              0
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "c369f54e-1077-42b2-ab0c-b64862ab1b57"
+          },
+          "type": "If"
+        },
+        "PersistProposal": {
+          "runAfter": {
+            "SetTopicAreaDetails": [
+              "Succeeded"
+            ],
+            "IfSupervisorExists": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "29966d86-05ac-472a-a145-9be54394940c"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_azuremysql",
+              "operationId": "PostItem",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+            },
+            "parameters": {
+              "server": "default",
+              "database": "default",
+              "table": "[main].[proposal]",
+              "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+              "item/description": "@outputs('GetResponseDetails')?['body/rc6188bd68e4d4ab19206e5e06dd703be']",
+              "item/id": "@variables('ProposalId')",
+              "item/language": "@outputs('GetResponseDetails')?['body/rb26c844ff536435a9abf2fae9d962082']",
+              "item/statusKey": "OPEN",
+              "item/studyLevel": "@outputs('GetResponseDetails')?['body/r93c920c31aaf4b8f8ca5e55bb9a0bf87']",
+              "item/title": "@outputs('GetResponseDetails')?['body/r2b3875d21899474a988a886e0d5b3621']",
+              "item/topicAreaSlug": "@variables('TopicAreaDetails')['Slug']",
+              "item/typeKey": "SUPERVISOR",
+              "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+              "item/ownedByUserEmail": "@outputs('GetResponseDetails')?['body/responder']",
+              "item/timeFrame": "@outputs('GetResponseDetails')?['body/r564b7a6cc5bf42ffb900990d26246c80']"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "PersistProposalSupervision": {
+          "runAfter": {
+            "PersistProposal": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "d310ff8e-6f06-4cbc-bcaf-924e1974cdf2"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_azuremysql",
+              "operationId": "PostItem",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+            },
+            "parameters": {
+              "server": "default",
+              "database": "default",
+              "table": "[main].[userproposalsupervision]",
+              "item/id": "@variables('ProposalId')",
+              "item/proposalId": "@variables('ProposalId')",
+              "item/studyLevel": "@outputs('GetResponseDetails')?['body/r93c920c31aaf4b8f8ca5e55bb9a0bf87']",
+              "item/supervisorEmail": "@variables('SupervisorEmail')"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "PersistProposalAttachment": {
+          "runAfter": {
+            "PersistProposalSupervision": [
+              "Succeeded"
+            ],
+            "CreateShareLinkProposalPDF": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "2e44e2bf-bb36-4238-8ab8-7804f6a6725d"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_azuremysql",
+              "operationId": "PostItem",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+            },
+            "parameters": {
+              "server": "default",
+              "database": "default",
+              "table": "[main].[proposalattachment]",
+              "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+              "item/href": "@outputs('CreateShareLinkProposalPDF')?['body/link/webUrl']",
+              "item/id": "@outputs('PersistProposalPDF')?['body/Id']",
+              "item/name": "Proposal",
+              "item/proposalId": "@variables('ProposalId')",
+              "item/type": "@outputs('PersistProposalPDF')?['body/MediaType']",
+              "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "SupervisorConfirmationEmail": {
+          "runAfter": {
+            "PersistProposalAttachment": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "daa4cff2-ecb1-4b41-b8b0-5d29d315a3ea"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_office365_1",
+              "operationId": "SharedMailboxSendEmailV2",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+            },
+            "parameters": {
+              "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
+              "emailMessage/To": "@variables('SupervisorEmail')",
+              "emailMessage/Subject": "DBF Theses - Your Proposal was posted",
+              "emailMessage/Body": "<p>Your proposal on \"@{outputs('GetResponseDetails')?['body/r2b3875d21899474a988a886e0d5b3621']}\" was posted on the DBF Thesis Platform. You will be notified as soon as applications are received.<br>\n<br>\nThe proposal is visible on https://theses.bf.uzh.ch/?supervisor=true&amp;proposalId=@{variables('ProposalId')}.<br>\n<br>\nIf you have any further remarks, please contact the DBF Thesis Coordinator by replying to this email.<br>\n<br>\nBest regards,<br>\nDBF Thesis Coordinator</p>",
+              "emailMessage/Cc": "@outputs('GetResponseDetails')?['body/responder']",
+              "emailMessage/Bcc": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
+              "emailMessage/ReplyTo": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
+              "emailMessage/Importance": "Normal"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}

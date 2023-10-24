@@ -1,0 +1,10 @@
+<environmentvariabledefinition schemaname="uzhbf_thesisplatform_publish_thesis_proposal_forms_id_env_var">
+  <displayname default="Publish Thesis Proposal Forms Id">
+    <label description="Publish Thesis Proposal Forms Id" languagecode="1033" />
+  </displayname>
+  <introducedversion>0.0.0.1</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>

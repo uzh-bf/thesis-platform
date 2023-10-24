@@ -1,0 +1,12 @@
+<environmentvariabledefinition schemaname="uzhbf_thesisplatform_sharepoint_site_env_var">
+  <apiid>/providers/microsoft.powerapps/apis/shared_sharepointonline</apiid>
+  <displayname default="Sharepoint Site">
+    <label description="Sharepoint Site" languagecode="1033" />
+  </displayname>
+  <introducedversion>0.0.0.1</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <parameterkey>dataset</parameterkey>
+  <secretstore>0</secretstore>
+  <type>100000004</type>
+</environmentvariabledefinition>

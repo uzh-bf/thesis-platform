@@ -1,0 +1,10 @@
+<environmentvariabledefinition schemaname="uzhbf_thesisplatform_thesis_inbox_env_var">
+  <displayname default="Outlook Management Inbox">
+    <label description="Outlook Management Inbox" languagecode="1033" />
+  </displayname>
+  <introducedversion>0.0.0.1</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>

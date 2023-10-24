@@ -1,0 +1,10 @@
+<environmentvariabledefinition schemaname="uzhbf_thesisplatform_outlook_from_address_env_var">
+  <displayname default="Outlook From Address">
+    <label description="Outlook From Address" languagecode="1033" />
+  </displayname>
+  <introducedversion>0.0.0.1</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>

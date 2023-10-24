@@ -1,0 +1,10 @@
+<environmentvariabledefinition schemaname="uzhbf_thesisplatform_http_trigger_thesis_proposal_feedback_env_var">
+  <displayname default="Http Trigger Thesis Proposal Feedback">
+    <label description="Http Trigger Thesis Proposal Feedback" languagecode="1033" />
+  </displayname>
+  <introducedversion>0.0.0.1</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>
