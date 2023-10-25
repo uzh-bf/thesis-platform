@@ -3,7 +3,6 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
 import * as R from 'ramda'
 import { useMemo, useRef, useState } from 'react'
-import Header from 'src/components/Header'
 import ProposalApplication from 'src/components/ProposalApplication'
 import ProposalFeedback from 'src/components/ProposalFeedback'
 import ProposalMeta from 'src/components/ProposalMeta'
@@ -56,50 +55,46 @@ export default function Index() {
   const isStudent = !isAdmin && !isSupervisor
 
   return (
-    <div>
-      <Header />
-
-      <div className="grid grid-cols-1 gap-2 m-4 md:grid-cols-2">
-        <div className="flex-initial pb-4 space-y-4 md:flex-1">
-          {isSupervisor && (
-            <StudentProposals
-              data={data}
-              groupedStudentProposals={groupedStudentProposals}
-              selectedProposal={selectedProposal}
-              setSelectedProposal={setSelectedProposal}
-              setDisplayMode={setDisplayMode}
-              buttonRef={buttonRef}
-            />
-          )}
-
-          <SupervisorProposals
-            isSupervisor={isSupervisor}
+    <div className="grid grid-cols-1 gap-2 m-4 md:grid-cols-2 flex-1">
+      <div className="flex-initial pb-4 space-y-4 md:flex-1">
+        {isSupervisor && (
+          <StudentProposals
             data={data}
+            groupedStudentProposals={groupedStudentProposals}
             selectedProposal={selectedProposal}
             setSelectedProposal={setSelectedProposal}
             setDisplayMode={setDisplayMode}
             buttonRef={buttonRef}
           />
-        </div>
+        )}
 
-        <div className="mb-4 border shadow" ref={buttonRef}>
-          {!selectedProposal && <div className="p-4">No proposal selected</div>}
-          <ProposalMeta proposalDetails={proposalDetails} />
-          <ProposalApplication
-            proposalDetails={proposalDetails}
-            isStudent={isStudent}
-            isSupervisor={isSupervisor}
-          />
-          <ProposalFeedback
-            proposalDetails={proposalDetails}
-            isSupervisor={isSupervisor}
-            isAdmin={isAdmin}
-          />
-          <ProposalStatusForm
-            proposalDetails={proposalDetails}
-            session={session}
-          />
-        </div>
+        <SupervisorProposals
+          isSupervisor={isSupervisor}
+          data={data}
+          selectedProposal={selectedProposal}
+          setSelectedProposal={setSelectedProposal}
+          setDisplayMode={setDisplayMode}
+          buttonRef={buttonRef}
+        />
+      </div>
+
+      <div className="mb-4 border shadow" ref={buttonRef}>
+        {!selectedProposal && <div className="p-4">No proposal selected</div>}
+        <ProposalMeta proposalDetails={proposalDetails} />
+        <ProposalApplication
+          proposalDetails={proposalDetails}
+          isStudent={isStudent}
+          isSupervisor={isSupervisor}
+        />
+        <ProposalFeedback
+          proposalDetails={proposalDetails}
+          isSupervisor={isSupervisor}
+          isAdmin={isAdmin}
+        />
+        <ProposalStatusForm
+          proposalDetails={proposalDetails}
+          session={session}
+        />
       </div>
     </div>
   )

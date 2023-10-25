@@ -7,6 +7,8 @@ import { Source_Sans_3 } from 'next/font/google'
 
 import { trpc } from '../lib/trpc'
 
+import Footer from 'src/components/Footer'
+import Header from 'src/components/Header'
 import '../globals.css'
 
 config.autoAddCss = false
@@ -22,20 +24,31 @@ function App({
   pageProps: { session, ...pageProps },
 }: AppProps<{ initialGraphQLState: any; session: Session }>) {
   return (
-    <div
-      id="#__app"
-      className={`${sourceSansPro.variable} font-sans antialiased h-full min-h-full`}
-    >
-      <SessionProvider session={session}>
-        <Component {...pageProps} />
-      </SessionProvider>
+    <SessionProvider session={session}>
+      <div
+        id="#__app"
+        className={`${sourceSansPro.variable} font-sans antialiased`}
+      >
+        <Header />
 
-      <style jsx global>{`
-        :root {
-          --theme-font-primary: ${sourceSansPro.variable};
-        }
-      `}</style>
-    </div>
+        <Component {...pageProps} />
+
+        <Footer />
+
+        <style jsx global>{`
+          :root {
+            --theme-font-primary: ${sourceSansPro.variable};
+          }
+
+          #__app {
+            min-height: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+          }
+        `}</style>
+      </div>
+    </SessionProvider>
   )
 }
 

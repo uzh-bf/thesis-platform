@@ -11,7 +11,7 @@ export default function Header() {
   const isSupervisor = session?.user?.role === UserRole.SUPERVISOR
 
   return (
-    <header className="bg-slate-100 flex flex-col p-4 text-gray-600 md:justify-between md:flex-row">
+    <header className="bg-slate-100 flex flex-col p-4 text-gray-600 md:justify-between md:flex-row flex-none">
       <div>
         <NewProposalButton isSupervisor={isSupervisor} />
       </div>
