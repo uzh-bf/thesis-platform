@@ -27,7 +27,7 @@ export default function ProposalCard({
       key={proposal.id}
       className={{
         root: twMerge(
-          'flex flex-col justify-between w-full md:w-64 p-2 text-sm',
+          'flex flex-row md:flex-col justify-between w-full md:w-64 p-2 text-right md:text-center text-sm',
           (proposal.isOwnProposal || proposal.isSupervisedProposal) &&
             'border-orange-300',
           hasFeedback && 'bg-slate-100 border-slate-200'

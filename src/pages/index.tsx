@@ -4,7 +4,6 @@ import { useRouter } from 'next/router'
 import * as R from 'ramda'
 import { useMemo, useRef, useState } from 'react'
 import Header from 'src/components/Header'
-import NewProposalButton from 'src/components/NewProposalButton'
 import ProposalApplication from 'src/components/ProposalApplication'
 import ProposalFeedback from 'src/components/ProposalFeedback'
 import ProposalMeta from 'src/components/ProposalMeta'
@@ -43,12 +42,6 @@ export default function Index() {
   }, [data])
 
   const proposalDetails = useMemo(() => {
-    if (
-      (!selectedProposal && displayMode === 'createStudent') ||
-      displayMode === 'createSupervisor'
-    )
-      return null
-
     if (!selectedProposal) return setSelectedProposal(data?.[0]?.id as string)
 
     return data?.find((p) => p.id === selectedProposal)
@@ -68,16 +61,17 @@ export default function Index() {
 
       <div className="grid grid-cols-1 gap-2 m-4 md:grid-cols-2">
         <div className="flex-initial pb-4 space-y-4 md:flex-1">
-          <NewProposalButton isSupervisor={isSupervisor} />
-          <StudentProposals
-            isSupervisor={isSupervisor}
-            data={data}
-            groupedStudentProposals={groupedStudentProposals}
-            selectedProposal={selectedProposal}
-            setSelectedProposal={setSelectedProposal}
-            setDisplayMode={setDisplayMode}
-            buttonRef={buttonRef}
-          />
+          {isSupervisor && (
+            <StudentProposals
+              data={data}
+              groupedStudentProposals={groupedStudentProposals}
+              selectedProposal={selectedProposal}
+              setSelectedProposal={setSelectedProposal}
+              setDisplayMode={setDisplayMode}
+              buttonRef={buttonRef}
+            />
+          )}
+
           <SupervisorProposals
             isSupervisor={isSupervisor}
             data={data}

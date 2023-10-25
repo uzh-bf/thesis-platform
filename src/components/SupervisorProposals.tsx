@@ -21,7 +21,9 @@ export default function SupervisorProposals({
 }: SupervisorProposalsProps) {
   return (
     <div>
-      {isSupervisor && <H2>Supervisor Proposals</H2>}
+      {isSupervisor && (
+        <H2 className={{ root: 'mt-2' }}>Supervisor Proposals</H2>
+      )}
       <div className="flex flex-row flex-wrap grid-cols-3 gap-2">
         {data?.filter((proposal: any) => proposal.typeKey === 'SUPERVISOR')
           .length === 0 && <div>No supervisor proposals available...</div>}
