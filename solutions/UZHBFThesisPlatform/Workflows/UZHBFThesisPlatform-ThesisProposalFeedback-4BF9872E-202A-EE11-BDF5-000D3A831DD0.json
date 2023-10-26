@@ -630,7 +630,7 @@
                     },
                     "parameters": {
                       "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
-                      "emailMessage/To": "@{parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')};@{outputs('ApplicationDetails')['email']}",
+                      "emailMessage/To": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
                       "emailMessage/Subject": "DBF Theses - Proposal declined (@{outputs('ProposalDetails')['title']})",
                       "emailMessage/Body": "<p>The proposal \"@{outputs('ProposalDetails')['title']}\" has been declined by \"@{outputs('SupervisorDetails')['field_1']}\".<br>\n<br>\n<strong>Reason: </strong>@{triggerBody()?['reason']}<br>\n<strong>Comment:</strong> @{triggerBody()?['comment']}</p>",
                       "emailMessage/Importance": "Normal"
@@ -704,7 +704,7 @@
                     },
                     "parameters": {
                       "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
-                      "emailMessage/To": "@{parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')};@{outputs('ApplicationDetails')['email']}",
+                      "emailMessage/To": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
                       "emailMessage/Subject": "DBF Theses - Proposal rejected (@{outputs('ProposalDetails')['title']})",
                       "emailMessage/Body": "<p>The proposal \"@{outputs('ProposalDetails')['title']}\" has been rejected by \"@{outputs('SupervisorDetails')['field_1']}\".<br>\n<br>\nReason: @{triggerBody()?['reason']}<br>\nComment: @{triggerBody()?['comment']}</p>",
                       "emailMessage/Importance": "Normal"
@@ -987,7 +987,7 @@
                     "body": [
                       {
                         "size": "Medium",
-                        "text": "Thesis Proposal was already accepted by @{outputs('AcceptedSupervisorDetails')['supervisorEmail']}",
+                        "text": "Thesis Proposal was already accepted by @{outputs('AcceptedSupervisorDetails')['supervisorEmail']} (@{outputs('ApplicationDetails')['statusKey']})",
                         "type": "TextBlock",
                         "weight": "Bolder"
                       }
@@ -1025,9 +1025,19 @@
                 }
               },
               "expression": {
-                "equals": [
-                  "@outputs('ApplicationDetails')['statusKey']",
-                  "ACCEPTED"
+                "or": [
+                  {
+                    "equals": [
+                      "@outputs('ApplicationDetails')['statusKey']",
+                      "ACCEPTED"
+                    ]
+                  },
+                  {
+                    "equals": [
+                      "@outputs('ApplicationDetails')['statusKey']",
+                      "ACCEPTED_TENTATIVE"
+                    ]
+                  }
                 ]
               },
               "metadata": {
