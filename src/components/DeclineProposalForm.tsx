@@ -47,9 +47,8 @@ export default function DeclineProposalForm({
     >
       <Form>
         <div>
-          Rejecting this proposal because of lacking content quality or format
-          requirements will cause review by the thesis coordinator. The student
-          will need to improve and resubmit the proposal.
+          Declining this proposal because of a mismatch of interests or a high
+          workload on your side will keep it available for other supervisors.
         </div>
         <div className="grid mt-4 place-items-lef">
           <FormikTextField
