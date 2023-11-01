@@ -13,12 +13,16 @@ interface RejectProposalFormProps {
   proposalName: string
   proposalId: string
   supervisorEmail: string
+  feedbackGiven: boolean
+  setFeedbackGiven: (value: boolean) => void
 }
 
 export default function RejectProposalForm({
   proposalName,
   proposalId,
   supervisorEmail,
+  feedbackGiven,
+  setFeedbackGiven,
 }: RejectProposalFormProps) {
   const SignupSchema = Yup.object().shape({
     reason: Yup.string().required('Required'),
@@ -39,8 +43,8 @@ export default function RejectProposalForm({
       }}
       validationSchema={SignupSchema}
       onSubmit={async (values, { resetForm }) => {
+        setFeedbackGiven(true)
         await submitFeedback.mutateAsync(values)
-
         resetForm()
         toast.success('Proposal rejected successfully!')
       }}
@@ -105,7 +109,11 @@ export default function RejectProposalForm({
           </div>
         </div>
 
-        <Button className={{ root: 'mt-2' }} type="submit">
+        <Button
+          className={{ root: 'mt-2' }}
+          type="submit"
+          disabled={feedbackGiven}
+        >
           Reject Proposal
         </Button>
         <Toaster />

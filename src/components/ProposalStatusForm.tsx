@@ -1,5 +1,6 @@
 import { Tabs } from '@uzh-bf/design-system'
 import type { Session } from 'next-auth'
+import { useState } from 'react'
 import { ProposalDetails } from 'src/types/app'
 import AcceptProposalForm from './AcceptProposalForm' // Import AcceptProposalForm and other form components
 import DeclineProposalForm from './DeclineProposalForm'
@@ -14,6 +15,8 @@ export default function ProposalStatusForm({
   proposalDetails,
   session,
 }: ProposalStatusFormProps) {
+  const [feedbackGiven, setFeedbackGiven] = useState(false)
+  const [feedbackGivenTentative, setFeedbackGivenTentative] = useState(false)
   if (
     proposalDetails?.typeKey === 'STUDENT' &&
     proposalDetails?.statusKey === 'MATCHED_TENTATIVE'
@@ -44,6 +47,8 @@ export default function ProposalStatusForm({
                 proposalName={proposalDetails?.title}
                 proposalId={proposalDetails?.id}
                 supervisorEmail={session?.user?.email as string}
+                feedbackGiven={feedbackGiven}
+                setFeedbackGiven={setFeedbackGiven}
               />
             </Tabs.TabContent>
             <Tabs.TabContent
@@ -58,6 +63,8 @@ export default function ProposalStatusForm({
                 proposalName={proposalDetails?.title}
                 proposalId={proposalDetails?.id}
                 supervisorEmail={session?.user?.email as string}
+                feedbackGiven={feedbackGiven}
+                setFeedbackGiven={setFeedbackGiven}
               />
             </Tabs.TabContent>
           </Tabs>
@@ -102,6 +109,8 @@ export default function ProposalStatusForm({
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
+              feedbackGiven={feedbackGiven}
+              setFeedbackGiven={setFeedbackGiven}
             />
           </Tabs.TabContent>
           <Tabs.TabContent
@@ -116,6 +125,8 @@ export default function ProposalStatusForm({
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
+              feedbackGivenTentative={feedbackGivenTentative}
+              setFeedbackGivenTentative={setFeedbackGivenTentative}
             />
           </Tabs.TabContent>
           <Tabs.TabContent
@@ -130,6 +141,8 @@ export default function ProposalStatusForm({
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
+              feedbackGiven={feedbackGiven}
+              setFeedbackGiven={setFeedbackGiven}
             />
           </Tabs.TabContent>
           <Tabs.TabContent
@@ -144,6 +157,8 @@ export default function ProposalStatusForm({
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
+              feedbackGiven={feedbackGiven}
+              setFeedbackGiven={setFeedbackGiven}
             />
           </Tabs.TabContent>
         </Tabs>
