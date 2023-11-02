@@ -1,6 +1,6 @@
+import { useSessionStorage } from '@uidotdev/usehooks'
 import { Tabs } from '@uzh-bf/design-system'
 import type { Session } from 'next-auth'
-import { useState } from 'react'
 import { ProposalDetails } from 'src/types/app'
 import AcceptProposalForm from './AcceptProposalForm' // Import AcceptProposalForm and other form components
 import DeclineProposalForm from './DeclineProposalForm'
@@ -15,11 +15,13 @@ export default function ProposalStatusForm({
   proposalDetails,
   session,
 }: ProposalStatusFormProps) {
-  const [feedbackGiven, setFeedbackGiven] = useState(false)
-  const [feedbackGivenTentative, setFeedbackGivenTentative] = useState(false)
+  const [providedFeedback, setProvidedFeedback] = useSessionStorage<
+    null | string
+  >(proposalDetails.id, null)
   if (
-    proposalDetails?.typeKey === 'STUDENT' &&
-    proposalDetails?.statusKey === 'MATCHED_TENTATIVE'
+    (proposalDetails?.typeKey === 'STUDENT' &&
+      proposalDetails?.statusKey === 'MATCHED_TENTATIVE') ||
+    providedFeedback === 'ACCEPT_TENTATIVE'
   ) {
     return (
       <>
@@ -47,8 +49,7 @@ export default function ProposalStatusForm({
                 proposalName={proposalDetails?.title}
                 proposalId={proposalDetails?.id}
                 supervisorEmail={session?.user?.email as string}
-                feedbackGiven={feedbackGiven}
-                setFeedbackGiven={setFeedbackGiven}
+                setValue={setProvidedFeedback}
               />
             </Tabs.TabContent>
             <Tabs.TabContent
@@ -63,8 +64,7 @@ export default function ProposalStatusForm({
                 proposalName={proposalDetails?.title}
                 proposalId={proposalDetails?.id}
                 supervisorEmail={session?.user?.email as string}
-                feedbackGiven={feedbackGiven}
-                setFeedbackGiven={setFeedbackGiven}
+                setValue={setProvidedFeedback}
               />
             </Tabs.TabContent>
           </Tabs>
@@ -74,7 +74,8 @@ export default function ProposalStatusForm({
   } else if (
     (proposalDetails?.typeKey === 'STUDENT' &&
       proposalDetails?.statusKey === 'MATCHED') ||
-    proposalDetails?.receivedFeedbacks?.length > 0
+    proposalDetails?.receivedFeedbacks?.length > 0 ||
+    providedFeedback
   ) {
     return (
       <div className="p-4 bg-yellow-100">
@@ -109,8 +110,7 @@ export default function ProposalStatusForm({
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
-              feedbackGiven={feedbackGiven}
-              setFeedbackGiven={setFeedbackGiven}
+              setValue={setProvidedFeedback}
             />
           </Tabs.TabContent>
           <Tabs.TabContent
@@ -125,8 +125,7 @@ export default function ProposalStatusForm({
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
-              feedbackGivenTentative={feedbackGivenTentative}
-              setFeedbackGivenTentative={setFeedbackGivenTentative}
+              setValue={setProvidedFeedback}
             />
           </Tabs.TabContent>
           <Tabs.TabContent
@@ -141,8 +140,7 @@ export default function ProposalStatusForm({
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
-              feedbackGiven={feedbackGiven}
-              setFeedbackGiven={setFeedbackGiven}
+              setValue={setProvidedFeedback}
             />
           </Tabs.TabContent>
           <Tabs.TabContent
@@ -157,8 +155,7 @@ export default function ProposalStatusForm({
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
-              feedbackGiven={feedbackGiven}
-              setFeedbackGiven={setFeedbackGiven}
+              setValue={setProvidedFeedback}
             />
           </Tabs.TabContent>
         </Tabs>

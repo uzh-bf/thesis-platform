@@ -13,16 +13,14 @@ interface DeclineProposalFormProps {
   proposalName: string
   proposalId: string
   supervisorEmail: string
-  feedbackGiven: boolean
-  setFeedbackGiven: (value: boolean) => void
+  setValue: (value: string) => void
 }
 
 export default function DeclineProposalForm({
   proposalName,
   proposalId,
   supervisorEmail,
-  feedbackGiven,
-  setFeedbackGiven,
+  setValue,
 }: DeclineProposalFormProps) {
   const SignupSchema = Yup.object().shape({
     reason: Yup.string().required('Required'),
@@ -43,9 +41,9 @@ export default function DeclineProposalForm({
       }}
       validationSchema={SignupSchema}
       onSubmit={async (values, { resetForm }) => {
-        setFeedbackGiven(true)
-        await submitFeedback.mutateAsync(values)
         resetForm()
+        setValue('DECLINE')
+        await submitFeedback.mutateAsync(values)
         toast.success('Proposal declined successfully!')
       }}
     >
@@ -103,11 +101,7 @@ export default function DeclineProposalForm({
           </div>
         </div>
 
-        <Button
-          className={{ root: 'mt-2' }}
-          type="submit"
-          disabled={feedbackGiven}
-        >
+        <Button className={{ root: 'mt-2' }} type="submit">
           Decline Proposal
         </Button>
         <Toaster />

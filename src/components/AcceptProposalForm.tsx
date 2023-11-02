@@ -12,16 +12,14 @@ interface AcceptProposalFormProps {
   proposalName: string
   proposalId: string
   supervisorEmail: string
-  feedbackGiven: boolean
-  setFeedbackGiven: (value: boolean) => void
+  setValue: (value: string) => void
 }
 
 export default function AcceptProposalForm({
   proposalName,
   proposalId,
   supervisorEmail,
-  feedbackGiven,
-  setFeedbackGiven,
+  setValue,
 }: AcceptProposalFormProps) {
   const SignupSchema = Yup.object().shape({
     comment: Yup.string().required('Required'),
@@ -40,9 +38,9 @@ export default function AcceptProposalForm({
       }}
       validationSchema={SignupSchema}
       onSubmit={async (values, { resetForm }) => {
-        setFeedbackGiven(true)
-        await submitFeedback.mutateAsync(values)
+        setValue('ACCEPT')
         resetForm()
+        await submitFeedback.mutateAsync(values)
         toast.success('Proposal accepted successfully!')
       }}
     >
@@ -78,11 +76,7 @@ export default function AcceptProposalForm({
           </div>
         </div>
 
-        <Button
-          className={{ root: 'mt-2' }}
-          type="submit"
-          disabled={feedbackGiven}
-        >
+        <Button className={{ root: 'mt-2' }} type="submit">
           Accept Proposal
         </Button>
         <Toaster />
