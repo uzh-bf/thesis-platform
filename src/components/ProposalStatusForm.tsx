@@ -79,7 +79,8 @@ export default function ProposalStatusForm({
   ) {
     return (
       <div className="p-4 bg-yellow-100">
-        {proposalDetails?.applications?.[0].statusKey === 'ACCEPTED'
+        {providedFeedback === 'ACCEPT' ||
+        proposalDetails?.applications?.[0].statusKey === 'ACCEPTED'
           ? 'You have already accepted this proposal!'
           : 'You have already provided feedback to this proposal!'}
       </div>
