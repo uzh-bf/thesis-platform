@@ -1,4 +1,5 @@
 import { IconDefinition, faFilePdf } from '@fortawesome/free-regular-svg-icons'
+import { Button } from '@uzh-bf/design-system'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
 import * as R from 'ramda'
@@ -23,22 +24,33 @@ export default function Index() {
   const { data: session } = useSession()
 
   const { data, isLoading, isError, isFetching } = trpc.proposals.useQuery()
+  const { data: openPropsData } = trpc.openProposals.useQuery()
 
   const [displayMode, setDisplayMode] = useState('')
+  const [show, setShow] = useState('proposals')
   const [selectedProposal, setSelectedProposal] = useState<string | null>(
     (router?.query?.proposalId as string) ?? null
   )
 
-  const groupedStudentProposals = useMemo(() => {
-    if (!data) return []
+  // Function to toggle the display mode
+  const toggleDisplayMode = () => {
+    if (show === 'proposals') {
+      setShow('openProposals')
+    } else {
+      setShow('proposals')
+    }
+  }
+
+  const groupedStudentProposals = (proposals) => {
+    if (!proposals) return []
     return R.groupBy<ProposalDetails>(
       (p) => p.topicArea.name,
       R.sortBy(
         R.prop('title'),
-        data.filter((proposal) => proposal.typeKey === 'STUDENT')
+        proposals.filter((proposal) => proposal.typeKey === 'STUDENT')
       )
     )
-  }, [data])
+  }
 
   const proposalDetails = useMemo(() => {
     if (!selectedProposal) return setSelectedProposal(data?.[0]?.id as string)
@@ -55,19 +67,35 @@ export default function Index() {
   const isStudent = !isAdmin && !isSupervisor
 
   return (
-    <div className="grid grid-cols-1 gap-2 m-4 md:grid-cols-2 flex-1">
+    <div className="grid flex-1 grid-cols-1 gap-2 m-4 md:grid-cols-2">
       <div className="flex-initial pb-4 space-y-4 md:flex-1">
         {isSupervisor && (
+          <Button onClick={toggleDisplayMode}>
+            {show === 'proposals'
+              ? 'Show Open Proposals'
+              : 'Show All Proposals'}
+          </Button>
+        )}
+        {show === 'proposals' && isSupervisor && (
           <StudentProposals
             data={data}
-            groupedStudentProposals={groupedStudentProposals}
+            groupedStudentProposals={groupedStudentProposals(data)}
             selectedProposal={selectedProposal}
             setSelectedProposal={setSelectedProposal}
             setDisplayMode={setDisplayMode}
             buttonRef={buttonRef}
           />
         )}
-
+        {show === 'openProposals' && isSupervisor && (
+          <StudentProposals
+            data={openPropsData}
+            groupedStudentProposals={groupedStudentProposals(openPropsData)}
+            selectedProposal={selectedProposal}
+            setSelectedProposal={setSelectedProposal}
+            setDisplayMode={setDisplayMode}
+            buttonRef={buttonRef}
+          />
+        )}
         <SupervisorProposals
           isSupervisor={isSupervisor}
           data={data}
