@@ -1,24 +1,36 @@
 import { H2, H3 } from '@uzh-bf/design-system'
-import { RefObject } from 'react'
+import * as R from 'ramda'
+import { RefObject, useMemo } from 'react'
+import { ProposalDetails } from 'src/types/app'
 import ProposalCard from './ProposalCard'
 
 interface StudentProposalsProps {
-  data: any
-  groupedStudentProposals: any
+  data: ProposalDetails[]
   selectedProposal: string | null
   setSelectedProposal: (proposalId: string | null) => void
-  setDisplayMode: (displayMode: string) => void
   buttonRef: RefObject<HTMLButtonElement>
 }
 
 export default function StudentProposals({
   data,
-  groupedStudentProposals,
   selectedProposal,
   setSelectedProposal,
-  setDisplayMode,
   buttonRef,
 }: StudentProposalsProps) {
+  const groupedStudentProposals = useMemo(() => {
+    if (!data) return {}
+
+    return R.groupBy<ProposalDetails>(
+      (p) => p.topicArea.name,
+      R.sortBy(
+        R.prop('title'),
+        data.filter(
+          (proposal: ProposalDetails) => proposal.typeKey === 'STUDENT'
+        )
+      )
+    )
+  }, [data])
+
   return (
     <div>
       <H2>Student Proposals</H2>
@@ -46,8 +58,7 @@ export default function StudentProposals({
                     proposal={proposal}
                     isActive={selectedProposal === proposal.id}
                     onClick={() => {
-                      setSelectedProposal(proposal.id),
-                        setDisplayMode('details')
+                      setSelectedProposal(proposal.id)
                       buttonRef?.current?.scrollIntoView({
                         behavior: 'smooth',
                       })
