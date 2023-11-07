@@ -40,3 +40,4 @@ type RouterOutput = inferRouterOutputs<AppRouter>
 
 type ProposalsOutput = RouterOutput['proposals']
 type ProposalDetails = IterableElement<ProposalsOutput>
+type ApplicationDetails = IterableElement<ProposalDetails['applications']>
