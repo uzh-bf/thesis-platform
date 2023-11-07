@@ -47,7 +47,7 @@ export default function ProposalStatusForm({
                 proposalName={proposalDetails?.title}
                 proposalId={proposalDetails?.id}
                 supervisorEmail={session?.user?.email as string}
-                setValue={setProvidedFeedback}
+                setProvidedFeedback={setProvidedFeedback}
               />
             </Tabs.TabContent>
             <Tabs.TabContent
@@ -62,7 +62,7 @@ export default function ProposalStatusForm({
                 proposalName={proposalDetails?.title}
                 proposalId={proposalDetails?.id}
                 supervisorEmail={session?.user?.email as string}
-                setValue={setProvidedFeedback}
+                setProvidedFeedback={setProvidedFeedback}
               />
             </Tabs.TabContent>
           </Tabs>
@@ -109,7 +109,7 @@ export default function ProposalStatusForm({
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
-              setValue={setProvidedFeedback}
+              setProvidedFeedback={setProvidedFeedback}
             />
           </Tabs.TabContent>
           <Tabs.TabContent
@@ -124,7 +124,7 @@ export default function ProposalStatusForm({
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
-              setValue={setProvidedFeedback}
+              setProvidedFeedback={setProvidedFeedback}
             />
           </Tabs.TabContent>
           <Tabs.TabContent
@@ -139,7 +139,7 @@ export default function ProposalStatusForm({
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
-              setValue={setProvidedFeedback}
+              setProvidedFeedback={setProvidedFeedback}
             />
           </Tabs.TabContent>
           <Tabs.TabContent
@@ -154,7 +154,7 @@ export default function ProposalStatusForm({
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
-              setValue={setProvidedFeedback}
+              setProvidedFeedback={setProvidedFeedback}
             />
           </Tabs.TabContent>
         </Tabs>

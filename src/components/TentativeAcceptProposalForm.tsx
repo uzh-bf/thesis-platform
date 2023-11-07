@@ -12,14 +12,14 @@ interface TentativeAcceptProposalFormProps {
   proposalName: string
   proposalId: string
   supervisorEmail: string
-  setValue: (value: string) => void
+  setProvidedFeedback: (value: string) => void
 }
 
 export default function TentativeAcceptProposalForm({
   proposalName,
   proposalId,
   supervisorEmail,
-  setValue,
+  setProvidedFeedback,
 }: TentativeAcceptProposalFormProps) {
   const SignupSchema = Yup.object().shape({
     comment: Yup.string().required('Required'),
@@ -39,7 +39,7 @@ export default function TentativeAcceptProposalForm({
       validationSchema={SignupSchema}
       onSubmit={async (values, { resetForm }) => {
         resetForm()
-        setValue('ACCEPT_TENTATIVE')
+        setProvidedFeedback('ACCEPT_TENTATIVE')
         await submitFeedback.mutateAsync(values)
         toast.success('Proposal tentatively accepted successfully!')
       }}
