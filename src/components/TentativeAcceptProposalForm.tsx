@@ -50,7 +50,7 @@ export default function TentativeAcceptProposalForm({
           your feedback and is required to improve the proposal before you
           finally accept the proposal for supervision.
         </div>
-        <div className="grid mt-4 place-items-lef">
+        <div className="flex flex-col gap-3 mt-4">
           <FormikTextField
             disabled={true}
             name="proposalName"
@@ -69,7 +69,7 @@ export default function TentativeAcceptProposalForm({
               field: 'flex-col',
             }}
           />
-          <div className="mt-2 italic">
+          <div className="italic">
             Your message will be sent to the student alongside your notification
             of interest.
           </div>

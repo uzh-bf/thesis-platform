@@ -68,7 +68,7 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
       </div>
 
       {proposalDetails.typeKey === 'STUDENT' && (
-        <div className="text-sm">
+        <div className="text-sm flex flex-row gap-6 mt-4">
           {proposalDetails.attachments.map((attachment: any) => (
             <Link
               key={attachment.id}

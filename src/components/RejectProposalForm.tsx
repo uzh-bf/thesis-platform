@@ -33,7 +33,7 @@ export default function RejectProposalForm({
     <Formik
       initialValues={{
         proposalName: proposalName,
-        reason: '',
+        reason: undefined,
         comment: '',
         proposalId: proposalId,
         supervisorEmail: supervisorEmail,
@@ -53,7 +53,7 @@ export default function RejectProposalForm({
           requirements will cause review by the thesis coordinator. The student
           will need to improve and resubmit the proposal.
         </div>
-        <div className="grid mt-4 place-items-lef">
+        <div className="flex flex-col gap-3 mt-4">
           <FormikTextField
             disabled={true}
             name="proposalName"
@@ -86,7 +86,7 @@ export default function RejectProposalForm({
               },
             ]}
             label="Reason"
-            placeholder="Select a name"
+            placeholder="Select a reason..."
             className={{
               label: 'font-sans text-lg',
               root: 'flex-col',
@@ -101,7 +101,7 @@ export default function RejectProposalForm({
               field: 'flex-col',
             }}
           />
-          <div className="mt-2 italic">
+          <div className="italic">
             Why do you recommend this proposal for rejection? Your comment will
             not be shown to the student.
           </div>

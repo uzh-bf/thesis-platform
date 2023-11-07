@@ -1,5 +1,5 @@
 import { useSessionStorage } from '@uidotdev/usehooks'
-import { Tabs } from '@uzh-bf/design-system'
+import { Tabs, UserNotification } from '@uzh-bf/design-system'
 import type { Session } from 'next-auth'
 import { ProposalDetails } from 'src/types/app'
 import AcceptProposalForm from './AcceptProposalForm' // Import AcceptProposalForm and other form components
@@ -25,12 +25,10 @@ export default function ProposalStatusForm({
   ) {
     return (
       <>
-        <div className="pl-4 bg-red-100">
-          <b>
-            This proposal is tentatively matched with a student. Please accept
-            or reject the proposal.
-          </b>
-        </div>
+        <UserNotification type="info" className={{ root: 'rounded-none' }}>
+          This proposal is tentatively matched with a student. Please accept or
+          reject the proposal.
+        </UserNotification>
         <div className="">
           <Tabs defaultValue="accept">
             <Tabs.TabList className={{ root: 'md:flex-row border' }}>
@@ -162,7 +160,5 @@ export default function ProposalStatusForm({
         </Tabs>
       </div>
     )
-  } else {
-    return null
   }
 }
