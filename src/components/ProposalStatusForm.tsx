@@ -1,4 +1,5 @@
-import { Tabs } from '@uzh-bf/design-system'
+import { useSessionStorage } from '@uidotdev/usehooks'
+import { Tabs, UserNotification } from '@uzh-bf/design-system'
 import type { Session } from 'next-auth'
 import { ProposalDetails } from 'src/types/app'
 import AcceptProposalForm from './AcceptProposalForm' // Import AcceptProposalForm and other form components
@@ -14,18 +15,20 @@ export default function ProposalStatusForm({
   proposalDetails,
   session,
 }: ProposalStatusFormProps) {
+  const [providedFeedback, setProvidedFeedback] = useSessionStorage<
+    null | string
+  >(proposalDetails.id, null)
   if (
-    proposalDetails?.typeKey === 'STUDENT' &&
-    proposalDetails?.statusKey === 'MATCHED_TENTATIVE'
+    (proposalDetails?.typeKey === 'STUDENT' &&
+      proposalDetails?.statusKey === 'MATCHED_TENTATIVE') ||
+    providedFeedback === 'ACCEPT_TENTATIVE'
   ) {
     return (
       <>
-        <div className="pl-4 bg-red-100">
-          <b>
-            This proposal is tentatively matched with a student. Please accept
-            or reject the proposal.
-          </b>
-        </div>
+        <UserNotification type="info" className={{ root: 'rounded-none' }}>
+          This proposal is tentatively matched with a student. Please accept or
+          reject the proposal.
+        </UserNotification>
         <div className="">
           <Tabs defaultValue="accept">
             <Tabs.TabList className={{ root: 'md:flex-row border' }}>
@@ -44,6 +47,7 @@ export default function ProposalStatusForm({
                 proposalName={proposalDetails?.title}
                 proposalId={proposalDetails?.id}
                 supervisorEmail={session?.user?.email as string}
+                setProvidedFeedback={setProvidedFeedback}
               />
             </Tabs.TabContent>
             <Tabs.TabContent
@@ -58,6 +62,7 @@ export default function ProposalStatusForm({
                 proposalName={proposalDetails?.title}
                 proposalId={proposalDetails?.id}
                 supervisorEmail={session?.user?.email as string}
+                setProvidedFeedback={setProvidedFeedback}
               />
             </Tabs.TabContent>
           </Tabs>
@@ -67,11 +72,13 @@ export default function ProposalStatusForm({
   } else if (
     (proposalDetails?.typeKey === 'STUDENT' &&
       proposalDetails?.statusKey === 'MATCHED') ||
-    proposalDetails?.receivedFeedbacks?.length > 0
+    proposalDetails?.receivedFeedbacks?.length > 0 ||
+    providedFeedback
   ) {
     return (
       <div className="p-4 bg-yellow-100">
-        {proposalDetails?.applications?.[0].statusKey === 'ACCEPTED'
+        {providedFeedback === 'ACCEPT' ||
+        proposalDetails?.applications?.[0].statusKey === 'ACCEPTED'
           ? 'You have already accepted this proposal!'
           : 'You have already provided feedback to this proposal!'}
       </div>
@@ -102,6 +109,7 @@ export default function ProposalStatusForm({
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
+              setProvidedFeedback={setProvidedFeedback}
             />
           </Tabs.TabContent>
           <Tabs.TabContent
@@ -116,6 +124,7 @@ export default function ProposalStatusForm({
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
+              setProvidedFeedback={setProvidedFeedback}
             />
           </Tabs.TabContent>
           <Tabs.TabContent
@@ -130,6 +139,7 @@ export default function ProposalStatusForm({
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
+              setProvidedFeedback={setProvidedFeedback}
             />
           </Tabs.TabContent>
           <Tabs.TabContent
@@ -144,12 +154,11 @@ export default function ProposalStatusForm({
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
+              setProvidedFeedback={setProvidedFeedback}
             />
           </Tabs.TabContent>
         </Tabs>
       </div>
     )
-  } else {
-    return null
   }
 }
