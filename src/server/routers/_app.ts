@@ -100,6 +100,13 @@ async function getSupervisorProposals({ ctx, filters }) {
     where = {
       ...where,
       statusKey: ProposalStatus.OPEN,
+      NOT: {
+        receivedFeedbacks: {
+          some: {
+            userEmail: ctx.user?.email,
+          },
+        },
+      },
     }
   }
 
