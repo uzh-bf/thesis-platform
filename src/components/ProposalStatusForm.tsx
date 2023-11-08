@@ -13,7 +13,7 @@ interface ProposalStatusFormProps {
 export default function ProposalStatusForm({
   proposalDetails,
 }: ProposalStatusFormProps) {
-  const session = useSession()
+  const { data: session } = useSession()
 
   const [providedFeedback, setProvidedFeedback] = useSessionStorage<
     null | string
