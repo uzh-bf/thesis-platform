@@ -18,7 +18,7 @@ export default function Index() {
   const [filters, setFilters] = useState<{
     status: ProposalStatusFilter
   }>({
-    status: ProposalStatusFilter.ALL_PROPOSALS,
+    status: ProposalStatusFilter.OPEN_PROPOSALS,
   })
 
   const { isAdmin, isStudent, isSupervisor } = useUserRole()
@@ -52,12 +52,12 @@ export default function Index() {
             value={filters.status}
             items={[
               {
-                value: ProposalStatusFilter.ALL_PROPOSALS,
-                label: 'All Proposals',
-              },
-              {
                 value: ProposalStatusFilter.OPEN_PROPOSALS,
                 label: 'Open Proposals',
+              },
+              {
+                value: ProposalStatusFilter.ALL_PROPOSALS,
+                label: 'All Proposals',
               },
               {
                 value: ProposalStatusFilter.MY_PROPOSALS,
