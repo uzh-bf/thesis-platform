@@ -63,6 +63,18 @@ export default function Index() {
                 value: ProposalStatusFilter.MY_PROPOSALS,
                 label: 'My Proposals',
               },
+              {
+                value: ProposalStatusFilter.TENTATIVELY_ACCEPTED_PROPOSALS,
+                label: 'Tentatively Accepted Proposals',
+              },
+              {
+                value: ProposalStatusFilter.REJECTED_PROPOSALS,
+                label: 'Rejected Proposals',
+              },
+              {
+                value: ProposalStatusFilter.DECLINED_PROPOSALS,
+                label: 'Declined Proposals',
+              },
             ]}
             onChange={(newStatus: string) => {
               setFilters({ status: newStatus as ProposalStatusFilter })
