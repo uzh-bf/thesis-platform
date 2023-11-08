@@ -47,4 +47,5 @@ export type ApplicationDetails = IterableElement<
 export enum ProposalStatusFilter {
   OPEN_PROPOSALS = 'OPEN_PROPOSALS',
   ALL_PROPOSALS = 'ALL_PROPOSALS',
+  MY_PROPOSALS = 'MY_PROPOSALS',
 }

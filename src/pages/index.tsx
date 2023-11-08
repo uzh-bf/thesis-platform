@@ -59,6 +59,10 @@ export default function Index() {
                 value: ProposalStatusFilter.OPEN_PROPOSALS,
                 label: 'Open Proposals',
               },
+              {
+                value: ProposalStatusFilter.MY_PROPOSALS,
+                label: 'My Proposals',
+              },
             ]}
             onChange={(newStatus: string) => {
               setFilters({ status: newStatus as ProposalStatusFilter })

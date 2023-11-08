@@ -43,20 +43,79 @@ async function getStudentProposals({ ctx, filters }) {
 }
 
 async function getSupervisorProposals({ ctx, filters }) {
-  const proposals = await prisma.proposal.findMany({
-    where: {
+  let where = {}
+  let applications = undefined
+  let receivedFeedbacks = undefined
+
+  if (ctx.user?.role === UserRole.SUPERVISOR) {
+    where = {
+      ...where,
       typeKey: {
-        in:
-          ctx.user?.role === UserRole.SUPERVISOR ||
-          ctx.user?.role === UserRole.ADMIN
-            ? ['SUPERVISOR', 'STUDENT']
-            : ['SUPERVISOR'],
+        in: ['SUPERVISOR', 'STUDENT'],
       },
-      statusKey:
-        filters.status === ProposalStatusFilter.OPEN_PROPOSALS
-          ? ProposalStatus.OPEN
-          : undefined,
-    },
+    }
+    applications = {
+      include: {
+        attachments: true,
+        status: true,
+      },
+    }
+    receivedFeedbacks = {
+      where: {
+        user: {
+          email: ctx.user.email,
+        },
+      },
+    }
+  } else {
+    where = {
+      ...where,
+      typeKey: {
+        in: ['SUPERVISOR'],
+      },
+    }
+  }
+
+  if (filters.status === ProposalStatusFilter.ALL_PROPOSALS) {
+    where = {
+      ...where,
+      OR: [
+        {
+          supervisedBy: {
+            some: {
+              supervisorEmail: ctx.user?.email,
+            },
+          },
+        },
+        {
+          supervisedBy: {
+            none: {},
+          },
+        },
+      ],
+    }
+  }
+
+  if (filters.status === ProposalStatusFilter.OPEN_PROPOSALS) {
+    where = {
+      ...where,
+      statusKey: ProposalStatus.OPEN,
+    }
+  }
+
+  if (filters.status === ProposalStatusFilter.MY_PROPOSALS) {
+    where = {
+      ...where,
+      supervisedBy: {
+        some: {
+          supervisorEmail: ctx.user?.email,
+        },
+      },
+    }
+  }
+
+  const proposals = await prisma.proposal.findMany({
+    where,
     include: {
       attachments: true,
       topicArea: true,
@@ -66,48 +125,11 @@ async function getSupervisorProposals({ ctx, filters }) {
           supervisor: true,
         },
       },
-      applications:
-        ctx.user?.role === UserRole.SUPERVISOR
-          ? {
-              include: {
-                attachments: true,
-                status: true,
-              },
-            }
-          : undefined,
-      receivedFeedbacks: ctx.user?.role
-        ? [UserRole.SUPERVISOR, UserRole.ADMIN].includes(ctx.user.role) && {
-            where:
-              ctx.user.role === UserRole.SUPERVISOR && ctx.user.email
-                ? {
-                    user: {
-                      email: ctx.user.email,
-                    },
-                  }
-                : undefined,
-          }
-        : undefined,
+      applications,
+      receivedFeedbacks,
     },
   })
-
   return proposals
-    .map((p) => ({
-      ...p,
-      supervisedBy: p.supervisedBy?.[0]?.supervisor,
-      ownedBy: p.ownedByUser,
-      isSupervisedProposal:
-        p.supervisedBy && p.supervisedBy[0]?.supervisor?.id === ctx.user?.sub,
-      isOwnProposal: p.ownedByUser && p.ownedByUser.id === ctx.user?.sub,
-      receivedFeedbacks: p.receivedFeedbacks,
-    }))
-    .filter((p) => {
-      return (
-        ctx.user?.role === UserRole.ADMIN ||
-        p.statusKey === ProposalStatus.OPEN ||
-        p.isOwnProposal ||
-        p.isSupervisedProposal
-      )
-    })
 }
 
 export const appRouter = router({
@@ -144,6 +166,7 @@ export const appRouter = router({
           status: z.enum([
             ProposalStatusFilter.ALL_PROPOSALS,
             ProposalStatusFilter.OPEN_PROPOSALS,
+            ProposalStatusFilter.MY_PROPOSALS,
           ]),
         }),
       })
