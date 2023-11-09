@@ -117,7 +117,7 @@ async function getSupervisorProposals({ ctx, filters }) {
     }
   }
 
-  if (filters.status === ProposalStatusFilter.REJECTED_n_DECLINED_PROPOSALS) {
+  if (filters.status === ProposalStatusFilter.REJECTED_AND_DECLINED_PROPOSALS) {
     where = {
       ...where,
       receivedFeedbacks: {
@@ -184,7 +184,7 @@ export const appRouter = router({
             ProposalStatusFilter.ALL_PROPOSALS,
             ProposalStatusFilter.OPEN_PROPOSALS,
             ProposalStatusFilter.MY_PROPOSALS,
-            ProposalStatusFilter.REJECTED_n_DECLINED_PROPOSALS,
+            ProposalStatusFilter.REJECTED_AND_DECLINED_PROPOSALS,
           ]),
         }),
       })

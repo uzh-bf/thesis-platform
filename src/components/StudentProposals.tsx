@@ -49,16 +49,16 @@ export default function StudentProposals({
               label: 'Open Proposals',
             },
             {
-              value: ProposalStatusFilter.ALL_PROPOSALS,
-              label: 'All Proposals',
-            },
-            {
               value: ProposalStatusFilter.MY_PROPOSALS,
               label: 'My Proposals',
             },
             {
-              value: ProposalStatusFilter.REJECTED_n_DECLINED_PROPOSALS,
+              value: ProposalStatusFilter.REJECTED_AND_DECLINED_PROPOSALS,
               label: 'Rejected / Declined Proposals',
+            },
+            {
+              value: ProposalStatusFilter.ALL_PROPOSALS,
+              label: 'All Proposals',
             },
           ]}
           onChange={(newStatus: string) => {
