@@ -64,16 +64,8 @@ export default function Index() {
                 label: 'My Proposals',
               },
               {
-                value: ProposalStatusFilter.TENTATIVELY_ACCEPTED_PROPOSALS,
-                label: 'Tentatively Accepted Proposals',
-              },
-              {
-                value: ProposalStatusFilter.REJECTED_PROPOSALS,
-                label: 'Rejected Proposals',
-              },
-              {
-                value: ProposalStatusFilter.DECLINED_PROPOSALS,
-                label: 'Declined Proposals',
+                value: ProposalStatusFilter.REJECTED_n_DECLINED_PROPOSALS,
+                label: 'Rejected / Declined Proposals',
               },
             ]}
             onChange={(newStatus: string) => {

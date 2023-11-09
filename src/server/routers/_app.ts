@@ -80,16 +80,12 @@ async function getSupervisorProposals({ ctx, filters }) {
     where = {
       ...where,
       OR: [
+        { statusKey: ProposalStatus.OPEN },
         {
           supervisedBy: {
             some: {
               supervisorEmail: ctx.user?.email,
             },
-          },
-        },
-        {
-          supervisedBy: {
-            none: {},
           },
         },
       ],
@@ -121,40 +117,14 @@ async function getSupervisorProposals({ ctx, filters }) {
     }
   }
 
-  if (filters.status === ProposalStatusFilter.TENTATIVELY_ACCEPTED_PROPOSALS) {
-    where = {
-      ...where,
-      statusKey: 'MATCHED_TENTATIVE',
-      supervisedBy: {
-        some: {
-          supervisorEmail: ctx.user?.email,
-        },
-      },
-    }
-  }
-
-  if (filters.status === ProposalStatusFilter.REJECTED_PROPOSALS) {
+  if (filters.status === ProposalStatusFilter.REJECTED_n_DECLINED_PROPOSALS) {
     where = {
       ...where,
       receivedFeedbacks: {
         some: {
           userEmail: ctx.user?.email,
           typeKey: {
-            startsWith: 'REJECTED',
-          },
-        },
-      },
-    }
-  }
-
-  if (filters.status === ProposalStatusFilter.DECLINED_PROPOSALS) {
-    where = {
-      ...where,
-      receivedFeedbacks: {
-        some: {
-          userEmail: ctx.user?.email,
-          typeKey: {
-            startsWith: 'DECLINED',
+            startsWith: 'REJECTED' || 'DECLINED',
           },
         },
       },
@@ -214,9 +184,7 @@ export const appRouter = router({
             ProposalStatusFilter.ALL_PROPOSALS,
             ProposalStatusFilter.OPEN_PROPOSALS,
             ProposalStatusFilter.MY_PROPOSALS,
-            ProposalStatusFilter.TENTATIVELY_ACCEPTED_PROPOSALS,
-            ProposalStatusFilter.REJECTED_PROPOSALS,
-            ProposalStatusFilter.DECLINED_PROPOSALS,
+            ProposalStatusFilter.REJECTED_n_DECLINED_PROPOSALS,
           ]),
         }),
       })
