@@ -1,5 +1,5 @@
 // import { ClientSecretCredential } from '@azure/identity'
-import { ProposalStatus, UserRole } from 'src/lib/constants'
+import { ProposalStatus, ProposalType, UserRole } from 'src/lib/constants'
 // import { Client } from '@microsoft/microsoft-graph-client'
 // import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials'
 import {
@@ -16,7 +16,148 @@ import {
   publicProcedure,
   router,
 } from 'src/server/trpc'
+import { ProposalStatusFilter } from 'src/types/app'
 import { z } from 'zod'
+
+async function getStudentProposals({ ctx, filters }) {
+  const proposals = await prisma.proposal.findMany({
+    where: {
+      typeKey: ProposalType.SUPERVISOR,
+      statusKey: ProposalStatus.OPEN,
+    },
+    include: {
+      attachments: true,
+      topicArea: true,
+      supervisedBy: {
+        include: {
+          supervisor: true,
+        },
+      },
+    },
+  })
+
+  return proposals.map((p) => ({
+    ...p,
+    supervisedBy: p.supervisedBy?.[0]?.supervisor,
+  }))
+}
+
+async function getSupervisorProposals({ ctx, filters }) {
+  let where = {}
+  let applications = undefined
+  let receivedFeedbacks = undefined
+
+  if (ctx.user?.role === UserRole.SUPERVISOR) {
+    where = {
+      ...where,
+      typeKey: {
+        in: ['SUPERVISOR', 'STUDENT'],
+      },
+    }
+    applications = {
+      include: {
+        attachments: true,
+        status: true,
+      },
+    }
+    receivedFeedbacks = {
+      where: {
+        user: {
+          email: ctx.user.email,
+        },
+      },
+    }
+  } else {
+    where = {
+      ...where,
+      typeKey: {
+        in: ['SUPERVISOR'],
+      },
+    }
+  }
+
+  if (filters.status === ProposalStatusFilter.ALL_PROPOSALS) {
+    where = {
+      ...where,
+      OR: [
+        { statusKey: ProposalStatus.OPEN },
+        {
+          supervisedBy: {
+            some: {
+              supervisorEmail: ctx.user?.email,
+            },
+          },
+        },
+      ],
+    }
+  }
+
+  if (filters.status === ProposalStatusFilter.OPEN_PROPOSALS) {
+    where = {
+      ...where,
+      statusKey: ProposalStatus.OPEN,
+      NOT: {
+        receivedFeedbacks: {
+          some: {
+            userEmail: ctx.user?.email,
+          },
+        },
+      },
+    }
+  }
+
+  if (filters.status === ProposalStatusFilter.MY_PROPOSALS) {
+    where = {
+      ...where,
+      supervisedBy: {
+        some: {
+          supervisorEmail: ctx.user?.email,
+        },
+      },
+    }
+  }
+
+  if (filters.status === ProposalStatusFilter.REJECTED_AND_DECLINED_PROPOSALS) {
+    where = {
+      ...where,
+      OR: [
+        {
+          receivedFeedbacks: {
+            some: {
+              userEmail: ctx.user?.email,
+              typeKey: { startsWith: 'REJECTED' },
+            },
+          },
+        },
+        {
+          receivedFeedbacks: {
+            some: {
+              userEmail: ctx.user?.email,
+              typeKey: { startsWith: 'DECLINED' },
+            },
+          },
+        },
+      ],
+    }
+  }
+
+  const proposals = await prisma.proposal.findMany({
+    where,
+    include: {
+      attachments: true,
+      topicArea: true,
+      ownedByUser: true,
+      supervisedBy: {
+        include: {
+          supervisor: true,
+        },
+      },
+      applications,
+      receivedFeedbacks,
+    },
+  })
+  return proposals
+}
 
 export const appRouter = router({
   generateSasQueryToken: optionalAuthedProcedure.mutation(() => {
@@ -45,69 +186,26 @@ export const appRouter = router({
 
   healthcheck: publicProcedure.query(() => 'OK'),
 
-  proposals: optionalAuthedProcedure.query(async ({ ctx }) => {
-    const proposals = await prisma.proposal.findMany({
-      where: {
-        typeKey: {
-          in:
-            ctx.user?.role === UserRole.SUPERVISOR ||
-            ctx.user?.role === UserRole.ADMIN
-              ? ['SUPERVISOR', 'STUDENT']
-              : ['SUPERVISOR'],
-        },
-      },
-      include: {
-        attachments: true,
-        topicArea: true,
-        ownedByUser: true,
-        supervisedBy: {
-          include: {
-            supervisor: true,
-          },
-        },
-        applications:
-          ctx.user?.role === UserRole.SUPERVISOR
-            ? {
-                include: {
-                  attachments: true,
-                  status: true,
-                },
-              }
-            : undefined,
-        receivedFeedbacks: ctx.user?.role
-          ? [UserRole.SUPERVISOR, UserRole.ADMIN].includes(ctx.user.role) && {
-              where:
-                ctx.user.role === UserRole.SUPERVISOR && ctx.user.email
-                  ? {
-                      user: {
-                        email: ctx.user.email,
-                      },
-                    }
-                  : undefined,
-            }
-          : undefined,
-      },
-    })
-
-    return proposals
-      .map((p) => ({
-        ...p,
-        supervisedBy: p.supervisedBy?.[0]?.supervisor,
-        ownedBy: p.ownedByUser,
-        isSupervisedProposal:
-          p.supervisedBy && p.supervisedBy[0]?.supervisor?.id === ctx.user?.sub,
-        isOwnProposal: p.ownedByUser && p.ownedByUser.id === ctx.user?.sub,
-        receivedFeedbacks: p.receivedFeedbacks,
-      }))
-      .filter((p) => {
-        return (
-          ctx.user?.role === UserRole.ADMIN ||
-          p.statusKey === ProposalStatus.OPEN ||
-          p.isOwnProposal ||
-          p.isSupervisedProposal
-        )
+  proposals: optionalAuthedProcedure
+    .input(
+      z.object({
+        filters: z.object({
+          status: z.enum([
+            ProposalStatusFilter.ALL_PROPOSALS,
+            ProposalStatusFilter.OPEN_PROPOSALS,
+            ProposalStatusFilter.MY_PROPOSALS,
+            ProposalStatusFilter.REJECTED_AND_DECLINED_PROPOSALS,
+          ]),
+        }),
       })
-  }),
+    )
+    .query(({ input, ctx }) => {
+      if ([UserRole.ADMIN, UserRole.SUPERVISOR].includes(ctx.user?.role)) {
+        return getSupervisorProposals({ ctx, filters: input.filters })
+      }
+
+      return getStudentProposals({ ctx, filters: input.filters })
+    }),
 
   submitProposalFeedback: authedProcedure
     .input(
@@ -144,33 +242,6 @@ export const appRouter = router({
     .mutation(async ({ ctx, input }) => {
       const res = await axios.post(process.env.APPLICATION_URL as string, input)
     }),
-
-  // supervisors: optionalAuthedProcedure.query(async ({ ctx }) => {
-  //   // Create an instance of the TokenCredential class that is imported
-  //   const tokenCredential = new ClientSecretCredential(
-  //     process.env.AZURE_AD_TENANT_ID,
-  //     process.env.AZURE_AD_CLIENT_ID,
-  //     process.env.AZURE_AD_CLIENT_SECRET,
-  //   )
-
-  //   // Create an instance of the TokenCredentialAuthenticationProvider by passing the tokenCredential instance and options to the constructor
-  //   const authProvider = new TokenCredentialAuthenticationProvider(
-  //     tokenCredential,
-  //     {
-  //       scopes: ['https://graph.microsoft.com/.default'],
-  //       getTokenOptions: { tenantId: process.env.AZURE_AD_TENANT_ID },
-  //     },
-  //   )
-  //   const client = Client.initWithMiddleware({
-  //     debugLogging: true,
-  //     authProvider: authProvider,
-  //   })
-  //   const res = await client
-  //     .api('/sites/UZHBFThesisMarket/lists/Supervisors/items')
-  //     .get()
-
-  //   console.log(res)
-  // }),
 })
 
 export type AppRouter = typeof appRouter

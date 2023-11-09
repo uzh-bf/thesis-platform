@@ -1,13 +1,13 @@
 import { H2 } from '@uzh-bf/design-system'
 import { RefObject } from 'react'
+import { ProposalDetails } from 'src/types/app'
 import ProposalCard from './ProposalCard'
 
 interface SupervisorProposalsProps {
   isSupervisor: boolean
-  data: any
+  data: ProposalDetails[]
   selectedProposal: string | null
   setSelectedProposal: (proposalId: string | null) => void
-  setDisplayMode: (displayMode: string) => void
   buttonRef: RefObject<HTMLButtonElement>
 }
 
@@ -16,7 +16,6 @@ export default function SupervisorProposals({
   data,
   selectedProposal,
   setSelectedProposal,
-  setDisplayMode,
   buttonRef,
 }: SupervisorProposalsProps) {
   return (
@@ -35,7 +34,7 @@ export default function SupervisorProposals({
               proposal={proposal}
               isActive={selectedProposal === proposal.id}
               onClick={() => {
-                setSelectedProposal(proposal.id), setDisplayMode('details')
+                setSelectedProposal(proposal.id)
                 buttonRef.current?.scrollIntoView({
                   behavior: 'smooth',
                 })

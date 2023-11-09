@@ -1,6 +1,6 @@
 import { useSessionStorage } from '@uidotdev/usehooks'
 import { Tabs, UserNotification } from '@uzh-bf/design-system'
-import type { Session } from 'next-auth'
+import { useSession } from 'next-auth/react'
 import { ProposalDetails } from 'src/types/app'
 import AcceptProposalForm from './AcceptProposalForm' // Import AcceptProposalForm and other form components
 import DeclineProposalForm from './DeclineProposalForm'
@@ -8,16 +8,17 @@ import RejectProposalForm from './RejectProposalForm'
 import TentativeAcceptProposalForm from './TentativeAcceptProposalForm'
 interface ProposalStatusFormProps {
   proposalDetails: ProposalDetails
-  session: Session | null
 }
 
 export default function ProposalStatusForm({
   proposalDetails,
-  session,
 }: ProposalStatusFormProps) {
+  const { data: session } = useSession()
+
   const [providedFeedback, setProvidedFeedback] = useSessionStorage<
     null | string
   >(proposalDetails.id, null)
+
   if (
     (proposalDetails?.typeKey === 'STUDENT' &&
       proposalDetails?.statusKey === 'MATCHED_TENTATIVE') ||
