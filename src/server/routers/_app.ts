@@ -120,14 +120,24 @@ async function getSupervisorProposals({ ctx, filters }) {
   if (filters.status === ProposalStatusFilter.REJECTED_AND_DECLINED_PROPOSALS) {
     where = {
       ...where,
-      receivedFeedbacks: {
-        some: {
-          userEmail: ctx.user?.email,
-          typeKey: {
-            startsWith: 'REJECTED' || 'DECLINED',
+      OR: [
+        {
+          receivedFeedbacks: {
+            some: {
+              userEmail: ctx.user?.email,
+              typeKey: { startsWith: 'REJECTED' },
+            },
           },
         },
-      },
+        {
+          receivedFeedbacks: {
+            some: {
+              userEmail: ctx.user?.email,
+              typeKey: { startsWith: 'DECLINED' },
+            },
+          },
+        },
+      ],
     }
   }
 
