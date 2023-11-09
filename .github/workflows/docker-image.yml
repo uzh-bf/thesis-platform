@@ -1,10 +1,11 @@
-name: Build Docker image for backend-docker
+name: Build Docker image
 
 on:
   push:
     # tags: ['v*.*.*']
     branches:
       - 'main'
+      - 'dev'
   # pull_request:
   #   branches: ['main']
 
