@@ -10,6 +10,9 @@ releases:
       - appSecret: '{{ requiredEnv "NEXTAUTH_SECRET" }}'
         appUrl: '{{ requiredEnv "NEXT_PUBLIC_APP_URL" }}'
 
+        image:
+          tag: '{{ requiredEnv "APP_VERSION" }}'
+
         flows:
           application: '{{ requiredEnv "APPLICATION_URL" }}'
           proposalFeedback: '{{ requiredEnv "PROPOSAL_FEEDBACK_URL" }}'
