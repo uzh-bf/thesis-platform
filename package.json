@@ -28,7 +28,9 @@
     "release:beta": "standard-version --prerelease beta --no-verify",
     "release:beta:dry": "standard-version --dry-run --prerelease beta",
     "release:rc": "standard-version --prerelease rc --no-verify",
-    "release:rc:dry": "standard-version --dry-run --prerelease rc"
+    "release:rc:dry": "standard-version --dry-run --prerelease rc",
+    "release": "standard-version",
+    "release:dry": "standard-version --dry-run"
   },
   "dependencies": {
     "@azure/identity": "3.3.0",
