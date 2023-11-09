@@ -1,7 +1,7 @@
-import { H2, H3 } from '@uzh-bf/design-system'
+import { H2, H3, Select } from '@uzh-bf/design-system'
 import * as R from 'ramda'
 import { RefObject, useMemo } from 'react'
-import { ProposalDetails } from 'src/types/app'
+import { ProposalDetails, ProposalStatusFilter } from 'src/types/app'
 import ProposalCard from './ProposalCard'
 
 interface StudentProposalsProps {
@@ -9,6 +9,10 @@ interface StudentProposalsProps {
   selectedProposal: string | null
   setSelectedProposal: (proposalId: string | null) => void
   buttonRef: RefObject<HTMLButtonElement>
+  filters: {
+    status: ProposalStatusFilter
+  }
+  setFilters: (filters: { status: ProposalStatusFilter }) => void
 }
 
 export default function StudentProposals({
@@ -16,6 +20,8 @@ export default function StudentProposals({
   selectedProposal,
   setSelectedProposal,
   buttonRef,
+  filters,
+  setFilters,
 }: StudentProposalsProps) {
   const groupedStudentProposals = useMemo(() => {
     if (!data) return {}
@@ -33,7 +39,34 @@ export default function StudentProposals({
 
   return (
     <div>
-      <H2>Student Proposals</H2>
+      <div className="flex items-center justify-between">
+        <H2>Student Proposals</H2>
+        <Select
+          value={filters.status}
+          items={[
+            {
+              value: ProposalStatusFilter.OPEN_PROPOSALS,
+              label: 'Open Proposals',
+            },
+            {
+              value: ProposalStatusFilter.ALL_PROPOSALS,
+              label: 'All Proposals',
+            },
+            {
+              value: ProposalStatusFilter.MY_PROPOSALS,
+              label: 'My Proposals',
+            },
+            {
+              value: ProposalStatusFilter.REJECTED_n_DECLINED_PROPOSALS,
+              label: 'Rejected / Declined Proposals',
+            },
+          ]}
+          onChange={(newStatus: string) => {
+            setFilters({ status: newStatus as ProposalStatusFilter })
+            setSelectedProposal(null)
+          }}
+        />
+      </div>
       <div className="text-base">
         {data?.filter((proposal: any) => proposal.typeKey === 'STUDENT')
           .length === 0 && <div>No student proposals available...</div>}

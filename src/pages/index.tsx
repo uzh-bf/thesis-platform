@@ -1,4 +1,3 @@
-import { Select } from '@uzh-bf/design-system'
 import { useRouter } from 'next/router'
 import { useMemo, useRef, useState } from 'react'
 import ProposalApplication from 'src/components/ProposalApplication'
@@ -48,39 +47,13 @@ export default function Index() {
     <div className="grid flex-1 grid-cols-1 gap-2 m-4 md:grid-cols-2">
       <div className="flex-initial pb-4 space-y-4 md:flex-1">
         {isSupervisor && (
-          <Select
-            value={filters.status}
-            items={[
-              {
-                value: ProposalStatusFilter.OPEN_PROPOSALS,
-                label: 'Open Proposals',
-              },
-              {
-                value: ProposalStatusFilter.ALL_PROPOSALS,
-                label: 'All Proposals',
-              },
-              {
-                value: ProposalStatusFilter.MY_PROPOSALS,
-                label: 'My Proposals',
-              },
-              {
-                value: ProposalStatusFilter.REJECTED_n_DECLINED_PROPOSALS,
-                label: 'Rejected / Declined Proposals',
-              },
-            ]}
-            onChange={(newStatus: string) => {
-              setFilters({ status: newStatus as ProposalStatusFilter })
-              setSelectedProposal(null)
-            }}
-          />
-        )}
-
-        {isSupervisor && (
           <StudentProposals
             data={data}
             selectedProposal={selectedProposal}
             setSelectedProposal={setSelectedProposal}
             buttonRef={buttonRef}
+            filters={filters}
+            setFilters={setFilters}
           />
         )}
 
