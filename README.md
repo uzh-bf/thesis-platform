@@ -30,39 +30,78 @@ npm install
 npm run dev
 ```
 
-The web app should now be visible on https://localhost:5000.
-
-## Deployment
-
-This section will guide you through the deployment process.
-
-### Pre-requisites
-
-- [Helm](https://helm.sh/) installed
-- [kubectl](https://kubernetes.io/docs/tasks/tools/) installed
+The web app should now be visible on <https://localhost:5000>.
 
 ### Steps
 
-- (dev): `npm run release:beta:dry` (to test)
-- (dev): `npm run release:beta` (to deploy)
-- (dev): `git push --follow-tags origin dev` (to push to dev branch)
-- (Github): Actions generate a new docker image automatically with a new tag (e.g. v1.0.0-beta.1)
-- (.env/doppler): Update the APP_VERSION environment variable to the new tag (e.g. v1.0.0-beta.1)
-- (dev): `cd deploy/`
-- (dev): `./_deploy_prod.sh diff` (to check the changes)
-- (dev): `./_deploy_prod.sh apply` (to deploy to the production environment)
-- New version is now deployed to the production environment on [https://theses.bf.uzh.ch/](https://theses.bf.uzh.ch/)
+## Deployment
 
-- After testing the new version in production, merge the dev branch into the main branch
-- (main): `npm run release:dry` (to test)
-- (main): `npm run release` (to deploy)
-- (main): `git push --follow-tags origin main` (to push to main branch)
-- (Github): Actions generate a new docker image automatically with a new tag (e.g. v1.0.0)
-- (.env/doppler): Update the APP_VERSION environment variable to the new tag (e.g. v1.0.0)
-- (main): `cd deploy/`
-- (main): `./_deploy_prod.sh diff` (to check the changes)
-- (main): `./_deploy_prod.sh apply` (to deploy to the production environment)
-- New version is now deployed to the production environment on [https://theses.bf.uzh.ch/](https://theses.bf.uzh.ch/)
+The following instructions will guide you through the deployment process step by step.
+
+### Pre-requisites
+
+Your system should have the following installed:
+
+1. [Helm](https://helm.sh/)
+2. [kubectl](https://kubernetes.io/docs/tasks/tools/)
+
+### Deployment steps
+
+Here are the steps you'll need to follow for deployment:
+
+1. Start in the development environment:
+
+   Run the command `npm run release:beta:dry` to test the setup.
+
+   ```bash
+   npm run release:beta:dry
+   ```
+
+2. Continue in the development environment:
+
+   Run `npm run release:beta` to start the deployment.
+
+   ```bash
+   npm run release:beta
+   ```
+
+3. Still within the development environment:
+
+   Push your changes to the dev branch using `git push --follow-tags origin dev`.
+
+   ```bash
+   git push --follow-tags origin dev
+   ```
+
+4. Switch to Github:
+
+   Actions will automatically generate a new Docker image with a new tag (for example, v1.0.0-beta.1).
+
+5. Now, move to the `.env/doppler`:
+
+   Update the APP_VERSION environment variable to the new tag (for example, v1.0.0-beta.1).
+
+6. Go back to the development environment:
+
+   Navigate to the deploy directory using `cd deploy/`.
+
+   ```bash
+   cd deploy/
+   ```
+
+7. Check the changes with `./_deploy_prod.sh diff`.
+
+   ```bash
+   ./_deploy_prod.sh diff
+   ```
+
+8. Apply the changes to the production environment using `./_deploy_prod.sh apply`.
+
+   ```bash
+   ./_deploy_prod.sh apply
+   ```
+
+9. Your new version is now deployed to the production environment on [https://theses.bf.uzh.ch/](https://theses.bf.uzh.ch/).
 
 ### Restart the app (if only Powerautomate Solution Update)
 
