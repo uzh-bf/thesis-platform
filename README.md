@@ -42,8 +42,8 @@ The following instructions will guide you through the deployment process step by
 
 Your system should have the following installed:
 
-1. [Helm](https://helm.sh/)
-2. [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [Helm](https://helm.sh/)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
 
 ### Deployment steps
 
