@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import ProposalApplication from 'src/components/ProposalApplication'
 import ProposalFeedback from 'src/components/ProposalFeedback'
 import ProposalMeta from 'src/components/ProposalMeta'
@@ -29,6 +29,26 @@ export default function Index() {
   const [selectedProposal, setSelectedProposal] = useState<string | null>(
     (router?.query?.proposalId as string) ?? null
   )
+
+  useEffect(() => {
+    if (router.query.proposalId) {
+      setSelectedProposal(router.query.proposalId as string)
+    } else if (data?.length) {
+      setSelectedProposal(data[0].id)
+    }
+  }, [data, router.query.proposalId])
+
+  useEffect(() => {
+    if (selectedProposal) {
+      router.push(
+        `/?filter=${filters.status}&proposalId=${selectedProposal}`,
+        undefined,
+        {
+          shallow: true,
+        }
+      )
+    }
+  }, [selectedProposal])
 
   const proposalDetails = useMemo(() => {
     if (!selectedProposal) {
