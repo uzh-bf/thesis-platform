@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import ProposalApplication from 'src/components/ProposalApplication'
 import ProposalFeedback from 'src/components/ProposalFeedback'
 import ProposalMeta from 'src/components/ProposalMeta'
@@ -26,38 +26,23 @@ export default function Index() {
     filters,
   })
 
-  const [selectedProposal, setSelectedProposal] = useState<string | null>(
-    (router?.query?.proposalId as string) ?? null
-  )
+  const [selectedProposal, setSelectedProposal] = useState<string | null>(null)
 
   useEffect(() => {
     if (router.query.proposalId) {
-      setSelectedProposal(router.query.proposalId as string)
-    } else if (data?.length) {
-      setSelectedProposal(data[0].id)
+      setSelectedProposal(router.query.proposalId[0] as string)
+    } else {
+      setSelectedProposal(data?.[0]?.id as string)
     }
   }, [data, router.query.proposalId])
 
   useEffect(() => {
     if (selectedProposal) {
-      router.push(
-        `/?filter=${filters.status}&proposalId=${selectedProposal}`,
-        undefined,
-        {
-          shallow: true,
-        }
-      )
+      router.push(`/${selectedProposal}`)
     }
   }, [selectedProposal])
 
-  const proposalDetails = useMemo(() => {
-    if (!selectedProposal) {
-      setSelectedProposal(data?.[0]?.id as string)
-      return
-    }
-
-    return data?.find((p) => p.id === selectedProposal)
-  }, [data, selectedProposal])
+  const proposalDetails = data?.find((p) => p.id === selectedProposal) || null
 
   if (isLoading) {
     return <div className="p-2">Loading 🔄🚀</div>
@@ -87,7 +72,12 @@ export default function Index() {
       </div>
 
       <div className="mb-4 border shadow" ref={buttonRef}>
-        {!selectedProposal && <div className="p-4">No proposal selected</div>}
+        {!proposalDetails && (
+          <div className="p-4">
+            You don't have access to this Proposal or the Proposal doesn't
+            exist!
+          </div>
+        )}
         {proposalDetails && (
           <>
             <ProposalMeta proposalDetails={proposalDetails} />
