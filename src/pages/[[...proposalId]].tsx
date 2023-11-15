@@ -39,6 +39,8 @@ export default function Index() {
   useEffect(() => {
     if (selectedProposal) {
       router.push(`/${selectedProposal}`)
+    } else {
+      setSelectedProposal(data?.[0]?.id as string)
     }
   }, [selectedProposal])
 
@@ -72,12 +74,7 @@ export default function Index() {
       </div>
 
       <div className="mb-4 border shadow" ref={buttonRef}>
-        {!proposalDetails && (
-          <div className="p-4">
-            You don't have access to this Proposal or the Proposal doesn't
-            exist!
-          </div>
-        )}
+        {!proposalDetails && <div className="p-4">No Proposal Selected</div>}
         {proposalDetails && (
           <>
             <ProposalMeta proposalDetails={proposalDetails} />
