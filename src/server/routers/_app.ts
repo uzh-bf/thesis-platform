@@ -242,6 +242,21 @@ export const appRouter = router({
     .mutation(async ({ ctx, input }) => {
       const res = await axios.post(process.env.APPLICATION_URL as string, input)
     }),
+
+  acceptProposalApplication: publicProcedure
+    .input(
+      z.object({
+        proposalId: z.string(),
+        proposalApplicationId: z.string(),
+        applicantEmail: z.string().email(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const res = await axios.post(
+        process.env.APPLICATION_ACCEPTANCE_URL as string,
+        input
+      )
+    }),
 })
 
 export type AppRouter = typeof appRouter

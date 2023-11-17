@@ -1,5 +1,6 @@
 import { H2, Table } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
+import { useState } from 'react'
 import { ApplicationDetails, ProposalDetails } from 'src/types/app'
 import ApplicationDetailsModal from './ApplicationDetailsModal'
 import ApplicationForm from './ApplicationForm'
@@ -15,6 +16,8 @@ export default function ProposalApplication({
   isStudent,
   isSupervisor,
 }: ProposalApplicationProps) {
+  const [isProposalOpen, setIsProposalOpen] = useState<boolean>(true)
+
   if (proposalDetails?.typeKey === 'SUPERVISOR') {
     return (
       <div className="p-4">
@@ -66,7 +69,11 @@ export default function ProposalApplication({
                     label: 'Details',
                     accessor: 'details',
                     transformer: ({ row }) => (
-                      <ApplicationDetailsModal row={row} />
+                      <ApplicationDetailsModal
+                        row={row}
+                        isProposalOpen={isProposalOpen}
+                        setIsProposalOpen={setIsProposalOpen}
+                      />
                     ),
                   },
                 ]}

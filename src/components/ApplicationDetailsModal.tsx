@@ -3,13 +3,25 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button, Modal, Prose } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
 import { useState } from 'react'
+import toast from 'react-hot-toast'
+import { trpc } from 'src/lib/trpc'
 import { ApplicationDetails } from 'src/types/app'
 
-function ApplicationDetailsModal({ row }: { row: ApplicationDetails }) {
+function ApplicationDetailsModal({
+  row,
+  isProposalOpen,
+  setIsProposalOpen,
+}: {
+  row: ApplicationDetails
+  isProposalOpen: boolean
+  setIsProposalOpen: (isOpen: boolean) => void
+}) {
   const FileTypeIconMap: Record<string, IconDefinition> = {
     'application/pdf': faFilePdf,
   }
   const [isOpen, setIsOpen] = useState(false)
+
+  const acceptApplication = trpc.acceptProposalApplication.useMutation()
 
   return (
     <Modal
@@ -39,7 +51,24 @@ function ApplicationDetailsModal({ row }: { row: ApplicationDetails }) {
         </div>
         <div>
           <h1 className="text-base font-bold">Status:</h1>
-          <p className="pb-2 text-base">{row?.statusKey}</p>
+          <p className="pb-2 text-base">
+            {isProposalOpen ? row?.statusKey : 'Please Refresh Page'}
+            {isProposalOpen && row?.statusKey === 'OPEN' ? (
+              <Button
+                onClick={async () => {
+                  setIsProposalOpen(false)
+                  await acceptApplication.mutateAsync({
+                    proposalId: row.proposalId,
+                    proposalApplicationId: row.id,
+                    applicantEmail: row.email,
+                  })
+                  toast.success('Application accepted successfully!')
+                }}
+              >
+                ACCEPT (Non Reversible)
+              </Button>
+            ) : null}
+          </p>
           <h1 className="text-base font-bold">Working Period:</h1>
           <p className="pb-2 text-base">
             {format(parseISO(row.plannedStartAt), 'dd.MM.Y')} -{' '}
