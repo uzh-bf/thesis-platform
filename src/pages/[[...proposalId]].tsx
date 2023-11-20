@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ProposalApplication from 'src/components/ProposalApplication'
 import ProposalFeedback from 'src/components/ProposalFeedback'
 import ProposalMeta from 'src/components/ProposalMeta'
@@ -14,6 +14,13 @@ export default function Index() {
   const router = useRouter()
   const buttonRef = useRef<null | HTMLDivElement>(null)
 
+  const setSelectedProposal = useCallback(
+    (proposalId: string) => {
+      router.push(`/${proposalId}`)
+    },
+    [router]
+  )
+
   const [filters, setFilters] = useState<{
     status: ProposalStatusFilter
   }>({
@@ -26,25 +33,31 @@ export default function Index() {
     filters,
   })
 
-  const [selectedProposal, setSelectedProposal] = useState<string | null>(null)
-
   useEffect(() => {
-    if (router.query.proposalId) {
-      setSelectedProposal(router.query.proposalId[0] as string)
-    } else {
-      setSelectedProposal(data?.[0]?.id as string)
+    if (!router.query.proposalId && data?.[0]?.id) {
+      setSelectedProposal(data[0].id)
     }
+  }, [setSelectedProposal, data, router.query.proposalId])
+
+  const { proposalId, proposalDetails } = useMemo(() => {
+    if (typeof router.query?.proposalId?.[0] !== 'undefined') {
+      return {
+        proposalId: router.query.proposalId[0],
+        proposalDetails: data
+          ? data.find((p) => p.id === router.query.proposalId[0])
+          : null,
+      }
+    }
+    return {}
   }, [data, router.query.proposalId])
 
   useEffect(() => {
-    if (selectedProposal) {
-      router.push(`/${selectedProposal}`)
-    } else {
-      setSelectedProposal(data?.[0]?.id as string)
+    if (router.query.filter) {
+      setFilters({
+        status: router.query.filter as ProposalStatusFilter,
+      })
     }
-  }, [selectedProposal])
-
-  const proposalDetails = data?.find((p) => p.id === selectedProposal) || null
+  }, [router.query.filter])
 
   if (isLoading) {
     return <div className="p-2">Loading 🔄🚀</div>
@@ -56,7 +69,7 @@ export default function Index() {
         {isSupervisor && (
           <StudentProposals
             data={data}
-            selectedProposal={selectedProposal}
+            selectedProposal={proposalId}
             setSelectedProposal={setSelectedProposal}
             buttonRef={buttonRef}
             filters={filters}
@@ -67,7 +80,7 @@ export default function Index() {
         <SupervisorProposals
           isSupervisor={isSupervisor}
           data={data}
-          selectedProposal={selectedProposal}
+          selectedProposal={proposalId}
           setSelectedProposal={setSelectedProposal}
           buttonRef={buttonRef}
         />
