@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import { useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ProposalApplication from 'src/components/ProposalApplication'
 import ProposalFeedback from 'src/components/ProposalFeedback'
 import ProposalMeta from 'src/components/ProposalMeta'
@@ -14,6 +14,13 @@ export default function Index() {
   const router = useRouter()
   const buttonRef = useRef<null | HTMLDivElement>(null)
 
+  const setSelectedProposal = useCallback(
+    (proposalId: string) => {
+      router.push(`/${proposalId}`)
+    },
+    [router]
+  )
+
   const [filters, setFilters] = useState<{
     status: ProposalStatusFilter
   }>({
@@ -26,18 +33,31 @@ export default function Index() {
     filters,
   })
 
-  const [selectedProposal, setSelectedProposal] = useState<string | null>(
-    (router?.query?.proposalId as string) ?? null
-  )
-
-  const proposalDetails = useMemo(() => {
-    if (!selectedProposal) {
-      setSelectedProposal(data?.[0]?.id as string)
-      return
+  useEffect(() => {
+    if (!router.query.proposalId && data?.[0]?.id) {
+      setSelectedProposal(data[0].id)
     }
+  }, [setSelectedProposal, data, router.query.proposalId])
 
-    return data?.find((p) => p.id === selectedProposal)
-  }, [data, selectedProposal])
+  const { proposalId, proposalDetails } = useMemo(() => {
+    if (typeof router.query?.proposalId?.[0] !== 'undefined') {
+      return {
+        proposalId: router.query.proposalId[0],
+        proposalDetails: data
+          ? data.find((p) => p.id === router.query.proposalId[0])
+          : null,
+      }
+    }
+    return {}
+  }, [data, router.query.proposalId])
+
+  useEffect(() => {
+    if (router.query.filter) {
+      setFilters({
+        status: router.query.filter as ProposalStatusFilter,
+      })
+    }
+  }, [router.query.filter])
 
   if (isLoading) {
     return <div className="p-2">Loading 🔄🚀</div>
@@ -49,7 +69,7 @@ export default function Index() {
         {isSupervisor && (
           <StudentProposals
             data={data}
-            selectedProposal={selectedProposal}
+            selectedProposal={proposalId}
             setSelectedProposal={setSelectedProposal}
             buttonRef={buttonRef}
             filters={filters}
@@ -60,14 +80,14 @@ export default function Index() {
         <SupervisorProposals
           isSupervisor={isSupervisor}
           data={data}
-          selectedProposal={selectedProposal}
+          selectedProposal={proposalId}
           setSelectedProposal={setSelectedProposal}
           buttonRef={buttonRef}
         />
       </div>
 
       <div className="mb-4 border shadow" ref={buttonRef}>
-        {!selectedProposal && <div className="p-4">No proposal selected</div>}
+        {!proposalDetails && <div className="p-4">No Proposal Selected</div>}
         {proposalDetails && (
           <>
             <ProposalMeta proposalDetails={proposalDetails} />
