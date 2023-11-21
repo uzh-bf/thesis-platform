@@ -16,7 +16,7 @@ export default function ProposalApplication({
   isStudent,
   isSupervisor,
 }: ProposalApplicationProps) {
-  const [isProposalOpen, setIsProposalOpen] = useState<boolean>(true)
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(true)
 
   if (proposalDetails?.typeKey === 'SUPERVISOR') {
     return (
@@ -71,8 +71,8 @@ export default function ProposalApplication({
                     transformer: ({ row }) => (
                       <ApplicationDetailsModal
                         row={row}
-                        isProposalOpen={isProposalOpen}
-                        setIsProposalOpen={setIsProposalOpen}
+                        isModalOpen={isModalOpen}
+                        setIsModalOpen={setIsModalOpen}
                       />
                     ),
                   },

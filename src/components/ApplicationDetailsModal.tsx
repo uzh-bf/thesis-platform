@@ -9,12 +9,12 @@ import { ApplicationDetails } from 'src/types/app'
 
 function ApplicationDetailsModal({
   row,
-  isProposalOpen,
-  setIsProposalOpen,
+  isModalOpen,
+  setIsModalOpen,
 }: {
   row: ApplicationDetails
-  isProposalOpen: boolean
-  setIsProposalOpen: (isOpen: boolean) => void
+  isModalOpen: boolean
+  setIsModalOpen: (isOpen: boolean) => void
 }) {
   const FileTypeIconMap: Record<string, IconDefinition> = {
     'application/pdf': faFilePdf,
@@ -52,11 +52,11 @@ function ApplicationDetailsModal({
         <div>
           <h1 className="text-base font-bold">Status:</h1>
           <p className="pb-2 text-base">
-            {isProposalOpen ? row?.statusKey : 'Please Refresh Page'}
-            {isProposalOpen && row?.statusKey === 'OPEN' ? (
+            {isModalOpen ? row?.statusKey : 'Please Refresh Page'}
+            {isModalOpen && row?.statusKey === 'OPEN' ? (
               <Button
                 onClick={async () => {
-                  setIsProposalOpen(false)
+                  setIsModalOpen(false)
                   await acceptApplication.mutateAsync({
                     proposalId: row.proposalId,
                     proposalApplicationId: row.id,
