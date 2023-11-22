@@ -1,6 +1,9 @@
-import { H2, Table } from '@uzh-bf/design-system'
+import { faCheckCircle } from '@fortawesome/free-regular-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Button, H2, Table } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
 import { useState } from 'react'
+import { trpc } from 'src/lib/trpc'
 import { ApplicationDetails, ProposalDetails } from 'src/types/app'
 import ApplicationDetailsModal from './ApplicationDetailsModal'
 import ApplicationForm from './ApplicationForm'
@@ -17,6 +20,9 @@ export default function ProposalApplication({
   isSupervisor,
 }: ProposalApplicationProps) {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(true)
+  const [buttonDisabled, setButtonDisabled] = useState<boolean>(false)
+
+  const acceptApplication = trpc.acceptProposalApplication.useMutation()
 
   if (proposalDetails?.typeKey === 'SUPERVISOR') {
     return (
@@ -74,6 +80,32 @@ export default function ProposalApplication({
                         isModalOpen={isModalOpen}
                         setIsModalOpen={setIsModalOpen}
                       />
+                    ),
+                  },
+                  {
+                    label: 'Action',
+                    accessor: 'action',
+                    transformer: ({ row }) => (
+                      <Button
+                        disabled={
+                          row.statusKey === 'ACCEPTED' || buttonDisabled
+                        }
+                        onClick={async () => {
+                          setButtonDisabled(true)
+                          await acceptApplication.mutateAsync({
+                            proposalId: proposalDetails.id,
+                            proposalApplicationId: row.id,
+                            applicantEmail: row.email,
+                          })
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faCheckCircle} />
+                        {buttonDisabled
+                          ? 'Refresh'
+                          : row.statusKey === 'ACCEPTED'
+                          ? 'Accepted'
+                          : 'Accept'}
+                      </Button>
                     ),
                   },
                 ]}
