@@ -20,7 +20,6 @@ export default function ProposalApplication({
   isSupervisor,
 }: ProposalApplicationProps) {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(true)
-  const [isButtonDisabled, setIsButtonDisabled] = useState<boolean>(false) // Why does this state not reset on proposal selection change? @rschlaefli
 
   const acceptApplication = trpc.acceptProposalApplication.useMutation()
 
@@ -88,10 +87,10 @@ export default function ProposalApplication({
                     transformer: ({ row }) => (
                       <Button
                         disabled={
-                          row.statusKey === 'ACCEPTED' || isButtonDisabled
+                          row.statusKey === 'ACCEPTED' ||
+                          acceptApplication.isLoading
                         }
                         onClick={async () => {
-                          setIsButtonDisabled(true)
                           await acceptApplication.mutateAsync({
                             proposalId: proposalDetails.id,
                             proposalApplicationId: row.id,
@@ -100,7 +99,7 @@ export default function ProposalApplication({
                         }}
                       >
                         <FontAwesomeIcon icon={faCheckCircle} />
-                        {isButtonDisabled
+                        {acceptApplication.isLoading
                           ? 'Refresh'
                           : row.statusKey === 'ACCEPTED'
                           ? 'Accepted'
