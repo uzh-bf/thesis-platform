@@ -4,7 +4,11 @@ import { Button, H2, Table } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
 import { useState } from 'react'
 import { trpc } from 'src/lib/trpc'
-import { ApplicationDetails, ProposalDetails } from 'src/types/app'
+import {
+  ApplicationDetails,
+  ProposalDetails,
+  ProposalStatusFilter,
+} from 'src/types/app'
 import ApplicationDetailsModal from './ApplicationDetailsModal'
 import ApplicationForm from './ApplicationForm'
 
@@ -20,6 +24,17 @@ export default function ProposalApplication({
   isSupervisor,
 }: ProposalApplicationProps) {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(true)
+
+  const [filters, setFilters] = useState<{
+    status: ProposalStatusFilter
+  }>({
+    status: ProposalStatusFilter.OPEN_PROPOSALS,
+  })
+
+  const { data, isLoading, isError, isFetching, refetch } =
+    trpc.proposals.useQuery({
+      filters,
+    })
 
   const acceptApplication = trpc.acceptProposalApplication.useMutation()
 
@@ -91,11 +106,18 @@ export default function ProposalApplication({
                           acceptApplication.isLoading
                         }
                         onClick={async () => {
-                          await acceptApplication.mutateAsync({
-                            proposalId: proposalDetails.id,
-                            proposalApplicationId: row.id,
-                            applicantEmail: row.email,
-                          })
+                          await acceptApplication.mutateAsync(
+                            {
+                              proposalId: proposalDetails.id,
+                              proposalApplicationId: row.id,
+                              applicantEmail: row.email,
+                            },
+                            {
+                              onSuccess: () => {
+                                refetch()
+                              },
+                            }
+                          )
                         }}
                       >
                         <FontAwesomeIcon icon={faCheckCircle} />
