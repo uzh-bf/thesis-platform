@@ -257,7 +257,13 @@ export const appRouter = router({
     .mutation(async ({ ctx, input }) => {
       const res = await axios.post(
         process.env.APPLICATION_ACCEPTANCE_URL as string,
-        input
+        input,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            secretkey: process.env.FLOW_SECRET as string,
+          },
+        }
       )
     }),
 })
