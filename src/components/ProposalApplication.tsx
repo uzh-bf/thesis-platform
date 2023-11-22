@@ -100,7 +100,7 @@ export default function ProposalApplication({
                       >
                         <FontAwesomeIcon icon={faCheckCircle} />
                         {acceptApplication.isLoading
-                          ? 'Refresh'
+                          ? 'Refreshing...'
                           : row.statusKey === 'ACCEPTED'
                           ? 'Accepted'
                           : 'Accept'}
