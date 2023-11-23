@@ -1,4 +1,5 @@
 import { faCheckCircle } from '@fortawesome/free-regular-svg-icons'
+import { faCircleXmark, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button, H2, Table } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
@@ -102,7 +103,7 @@ export default function ProposalApplication({
                     transformer: ({ row }) => (
                       <Button
                         disabled={
-                          row.statusKey === 'ACCEPTED' ||
+                          row.statusKey !== 'OPEN' ||
                           acceptApplication.isLoading
                         }
                         onClick={async () => {
@@ -120,12 +121,20 @@ export default function ProposalApplication({
                           )
                         }}
                       >
-                        <FontAwesomeIcon icon={faCheckCircle} />
+                        <FontAwesomeIcon
+                          icon={
+                            acceptApplication.isLoading
+                              ? faSpinner
+                              : row.statusKey === 'ACCEPTED'
+                              ? faCheckCircle
+                              : faCircleXmark
+                          }
+                        />
                         {acceptApplication.isLoading
-                          ? 'Refreshing...'
+                          ? 'Loading...'
                           : row.statusKey === 'ACCEPTED'
                           ? 'Accepted'
-                          : 'Accept'}
+                          : 'Declined'}
                       </Button>
                     ),
                   },
