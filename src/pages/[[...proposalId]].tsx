@@ -97,6 +97,7 @@ export default function Index() {
               isStudent={isStudent}
               isSupervisor={isSupervisor}
               refetch={refetch}
+              setFilters={setFilters}
             />
             <ProposalFeedback
               proposalDetails={proposalDetails}

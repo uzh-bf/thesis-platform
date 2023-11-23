@@ -8,7 +8,11 @@ import { Button, H2, Table } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
 import { useState } from 'react'
 import { trpc } from 'src/lib/trpc'
-import { ApplicationDetails, ProposalDetails } from 'src/types/app'
+import {
+  ApplicationDetails,
+  ProposalDetails,
+  ProposalStatusFilter,
+} from 'src/types/app'
 import ApplicationDetailsModal from './ApplicationDetailsModal'
 import ApplicationForm from './ApplicationForm'
 
@@ -17,6 +21,7 @@ interface ProposalApplicationProps {
   isStudent: boolean
   isSupervisor: boolean
   refetch: () => void
+  setFilters: (filters: { status: string }) => void
 }
 
 export default function ProposalApplication({
@@ -24,6 +29,7 @@ export default function ProposalApplication({
   isStudent,
   isSupervisor,
   refetch,
+  setFilters,
 }: ProposalApplicationProps) {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(true)
 
@@ -106,6 +112,9 @@ export default function ProposalApplication({
                             {
                               onSuccess: () => {
                                 refetch()
+                                setFilters({
+                                  status: ProposalStatusFilter.MY_PROPOSALS,
+                                })
                               },
                             }
                           )
