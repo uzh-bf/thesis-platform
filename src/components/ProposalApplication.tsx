@@ -125,13 +125,15 @@ export default function ProposalApplication({
                           icon={
                             acceptApplication.isLoading
                               ? faSpinner
-                              : row.statusKey === 'ACCEPTED'
+                              : row.statusKey === 'OPEN'
                               ? faCheckCircle
                               : faCircleXmark
                           }
                         />
                         {acceptApplication.isLoading
                           ? 'Loading...'
+                          : row.statusKey === 'OPEN'
+                          ? 'Accept'
                           : row.statusKey === 'ACCEPTED'
                           ? 'Accepted'
                           : 'Declined'}
