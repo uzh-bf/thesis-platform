@@ -156,6 +156,7 @@ async function getSupervisorProposals({ ctx, filters }) {
       receivedFeedbacks,
     },
   })
+
   return proposals
 }
 

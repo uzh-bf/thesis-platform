@@ -5,11 +5,7 @@ import { Button, H2, Table } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
 import { useState } from 'react'
 import { trpc } from 'src/lib/trpc'
-import {
-  ApplicationDetails,
-  ProposalDetails,
-  ProposalStatusFilter,
-} from 'src/types/app'
+import { ApplicationDetails, ProposalDetails } from 'src/types/app'
 import ApplicationDetailsModal from './ApplicationDetailsModal'
 import ApplicationForm from './ApplicationForm'
 
@@ -17,25 +13,16 @@ interface ProposalApplicationProps {
   proposalDetails: ProposalDetails
   isStudent: boolean
   isSupervisor: boolean
+  refetch: () => void
 }
 
 export default function ProposalApplication({
   proposalDetails,
   isStudent,
   isSupervisor,
+  refetch,
 }: ProposalApplicationProps) {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(true)
-
-  const [filters, setFilters] = useState<{
-    status: ProposalStatusFilter
-  }>({
-    status: ProposalStatusFilter.OPEN_PROPOSALS,
-  })
-
-  const { data, isLoading, isError, isFetching, refetch } =
-    trpc.proposals.useQuery({
-      filters,
-    })
 
   const acceptApplication = trpc.acceptProposalApplication.useMutation()
 
@@ -141,7 +128,7 @@ export default function ProposalApplication({
                     ),
                   },
                 ]}
-                data={proposalDetails.applications}
+                data={proposalDetails?.applications}
               />
             )}
           </div>

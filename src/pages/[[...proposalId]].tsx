@@ -29,9 +29,10 @@ export default function Index() {
 
   const { isAdmin, isStudent, isSupervisor } = useUserRole()
 
-  const { data, isLoading, isError, isFetching } = trpc.proposals.useQuery({
-    filters,
-  })
+  const { data, isLoading, isError, isFetching, refetch } =
+    trpc.proposals.useQuery({
+      filters,
+    })
 
   useEffect(() => {
     if (!router.query.proposalId && data?.[0]?.id) {
@@ -95,6 +96,7 @@ export default function Index() {
               proposalDetails={proposalDetails}
               isStudent={isStudent}
               isSupervisor={isSupervisor}
+              refetch={refetch}
             />
             <ProposalFeedback
               proposalDetails={proposalDetails}
