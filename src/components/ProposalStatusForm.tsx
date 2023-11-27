@@ -21,7 +21,9 @@ export default function ProposalStatusForm({
 
   if (
     (proposalDetails?.typeKey === 'STUDENT' &&
-      proposalDetails?.statusKey === 'MATCHED_TENTATIVE') ||
+      proposalDetails?.statusKey === 'MATCHED_TENTATIVE' &&
+      proposalDetails.supervisedBy[0].supervisorEmail ===
+        session?.user?.email) ||
     providedFeedback === 'ACCEPT_TENTATIVE'
   ) {
     return (
