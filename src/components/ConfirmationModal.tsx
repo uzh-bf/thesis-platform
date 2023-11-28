@@ -88,10 +88,12 @@ export default function ConfirmationModal({
         <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
       }
       hideCloseButton={true}
-      className={{ content: 'w-[40rem] h-max self-center pt-0' }}
+      className={{
+        content: 'w-max h-max self-center p-8 pt-4 text-sm',
+      }}
     >
       <div className="flex flex-col items-center gap-4">
-        <FontAwesomeIcon className="text-8xl" icon={faCircleXmark} />
+        <FontAwesomeIcon className="text-7xl" icon={faCheckCircle} />
         <Prose>
           This action cannot be undone. Once confirmed, the accepted student
           will receive an acceptance notification, while the other students will
