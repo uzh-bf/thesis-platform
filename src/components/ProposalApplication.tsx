@@ -1,20 +1,11 @@
-import {
-  faCheckCircle,
-  faCircleXmark,
-} from '@fortawesome/free-regular-svg-icons'
-import { faSpinner } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Button, H2, Table } from '@uzh-bf/design-system'
+import { H2, Table } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
 import { useState } from 'react'
 import { trpc } from 'src/lib/trpc'
-import {
-  ApplicationDetails,
-  ProposalDetails,
-  ProposalStatusFilter,
-} from 'src/types/app'
+import { ApplicationDetails, ProposalDetails } from 'src/types/app'
 import ApplicationDetailsModal from './ApplicationDetailsModal'
 import ApplicationForm from './ApplicationForm'
+import ConfirmationModal from './ConfirmationModal'
 
 interface ProposalApplicationProps {
   proposalDetails: ProposalDetails
@@ -32,6 +23,8 @@ export default function ProposalApplication({
   setFilters,
 }: ProposalApplicationProps) {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(true)
+  const [isConfirmationModalOpen, setIsConfirmationModalOpen] =
+    useState<boolean>(false)
 
   const acceptApplication = trpc.acceptProposalApplication.useMutation()
 
@@ -97,48 +90,15 @@ export default function ProposalApplication({
                     label: 'Action',
                     accessor: 'action',
                     transformer: ({ row }) => (
-                      <Button
-                        disabled={
-                          row.statusKey !== 'OPEN' ||
-                          acceptApplication.isLoading
-                        }
-                        onClick={async () => {
-                          await acceptApplication.mutateAsync(
-                            {
-                              proposalId: proposalDetails.id,
-                              proposalApplicationId: row.id,
-                              applicantEmail: row.email,
-                            },
-                            {
-                              onSuccess: () => {
-                                refetch()
-                                setFilters({
-                                  status: ProposalStatusFilter.MY_PROPOSALS,
-                                })
-                              },
-                            }
-                          )
-                        }}
-                      >
-                        <FontAwesomeIcon
-                          icon={
-                            acceptApplication.isLoading
-                              ? faSpinner
-                              : row.statusKey === 'OPEN'
-                              ? faCheckCircle
-                              : row.statusKey === 'ACCEPTED'
-                              ? faCheckCircle
-                              : faCircleXmark
-                          }
-                        />
-                        {acceptApplication.isLoading
-                          ? 'Loading...'
-                          : row.statusKey === 'OPEN'
-                          ? 'Accept'
-                          : row.statusKey === 'ACCEPTED'
-                          ? 'Accepted'
-                          : 'Declined'}
-                      </Button>
+                      <ConfirmationModal
+                        row={row}
+                        isConfirmationModalOpen={isConfirmationModalOpen}
+                        setIsConfirmationModalOpen={setIsConfirmationModalOpen}
+                        acceptApplication={acceptApplication}
+                        proposalDetails={proposalDetails}
+                        refetch={refetch}
+                        setFilters={setFilters}
+                      />
                     ),
                   },
                 ]}
