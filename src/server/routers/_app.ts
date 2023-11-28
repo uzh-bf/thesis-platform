@@ -80,11 +80,24 @@ async function getSupervisorProposals({ ctx, filters }) {
     where = {
       ...where,
       OR: [
-        { statusKey: ProposalStatus.OPEN },
+        {
+          statusKey: ProposalStatus.OPEN,
+          typeKey: {
+            in: ['STUDENT'],
+          },
+        },
+        { ownedByUserEmail: ctx.user?.email },
         {
           supervisedBy: {
             some: {
               supervisorEmail: ctx.user?.email,
+            },
+          },
+        },
+        {
+          receivedFeedbacks: {
+            some: {
+              userEmail: ctx.user?.email,
             },
           },
         },
@@ -95,7 +108,26 @@ async function getSupervisorProposals({ ctx, filters }) {
   if (filters.status === ProposalStatusFilter.OPEN_PROPOSALS) {
     where = {
       ...where,
-      statusKey: ProposalStatus.OPEN,
+      OR: [
+        {
+          statusKey: ProposalStatus.OPEN,
+          typeKey: {
+            in: ['STUDENT'],
+          },
+        },
+        {
+          statusKey: ProposalStatus.OPEN,
+          ownedByUserEmail: ctx.user?.email,
+        },
+        {
+          statusKey: ProposalStatus.OPEN,
+          supervisedBy: {
+            some: {
+              supervisorEmail: ctx.user?.email,
+            },
+          },
+        },
+      ],
       NOT: {
         receivedFeedbacks: {
           some: {
@@ -109,11 +141,16 @@ async function getSupervisorProposals({ ctx, filters }) {
   if (filters.status === ProposalStatusFilter.MY_PROPOSALS) {
     where = {
       ...where,
-      supervisedBy: {
-        some: {
-          supervisorEmail: ctx.user?.email,
+      OR: [
+        { ownedByUserEmail: ctx.user?.email },
+        {
+          supervisedBy: {
+            some: {
+              supervisorEmail: ctx.user?.email,
+            },
+          },
         },
-      },
+      ],
     }
   }
 
@@ -156,6 +193,7 @@ async function getSupervisorProposals({ ctx, filters }) {
       receivedFeedbacks,
     },
   })
+
   return proposals
 }
 
@@ -244,6 +282,28 @@ export const appRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const res = await axios.post(process.env.APPLICATION_URL as string, input)
+    }),
+
+  acceptProposalApplication: publicProcedure
+    .input(
+      z.object({
+        proposalId: z.string(),
+        proposalApplicationId: z.string(),
+        applicantEmail: z.string().email(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const res = await axios.post(
+        process.env.APPLICATION_ACCEPTANCE_URL as string,
+        input,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            secretkey: process.env.FLOW_SECRET as string,
+          },
+        }
+      )
+      return res.data
     }),
 })
 

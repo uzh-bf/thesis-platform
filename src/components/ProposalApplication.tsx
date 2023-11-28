@@ -1,20 +1,33 @@
 import { H2, Table } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
+import { useState } from 'react'
+import { trpc } from 'src/lib/trpc'
 import { ApplicationDetails, ProposalDetails } from 'src/types/app'
 import ApplicationDetailsModal from './ApplicationDetailsModal'
 import ApplicationForm from './ApplicationForm'
+import ConfirmationModal from './ConfirmationModal'
 
 interface ProposalApplicationProps {
   proposalDetails: ProposalDetails
   isStudent: boolean
   isSupervisor: boolean
+  refetch: () => void
+  setFilters: (filters: { status: string }) => void
 }
 
 export default function ProposalApplication({
   proposalDetails,
   isStudent,
   isSupervisor,
+  refetch,
+  setFilters,
 }: ProposalApplicationProps) {
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(true)
+  const [isConfirmationModalOpen, setIsConfirmationModalOpen] =
+    useState<boolean>(false)
+
+  const acceptApplication = trpc.acceptProposalApplication.useMutation()
+
   if (proposalDetails?.typeKey === 'SUPERVISOR') {
     return (
       <div className="p-4">
@@ -66,11 +79,30 @@ export default function ProposalApplication({
                     label: 'Details',
                     accessor: 'details',
                     transformer: ({ row }) => (
-                      <ApplicationDetailsModal row={row} />
+                      <ApplicationDetailsModal
+                        row={row}
+                        isModalOpen={isModalOpen}
+                        setIsModalOpen={setIsModalOpen}
+                      />
+                    ),
+                  },
+                  {
+                    label: 'Action',
+                    accessor: 'action',
+                    transformer: ({ row }) => (
+                      <ConfirmationModal
+                        row={row}
+                        isConfirmationModalOpen={isConfirmationModalOpen}
+                        setIsConfirmationModalOpen={setIsConfirmationModalOpen}
+                        acceptApplication={acceptApplication}
+                        proposalDetails={proposalDetails}
+                        refetch={refetch}
+                        setFilters={setFilters}
+                      />
                     ),
                   },
                 ]}
-                data={proposalDetails.applications}
+                data={proposalDetails?.applications}
               />
             )}
           </div>
