@@ -1,0 +1,10 @@
+<environmentvariabledefinition schemaname="uzhbf_thesisplatform_flow_secret_env_var">
+  <displayname default="Flow Secret">
+    <label description="Flow Secret" languagecode="1033" />
+  </displayname>
+  <introducedversion>0.0.0.4</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>
