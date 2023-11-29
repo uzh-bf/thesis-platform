@@ -262,7 +262,13 @@ export const appRouter = router({
     .mutation(async ({ ctx, input }) => {
       const res = await axios.post(
         process.env.PROPOSAL_FEEDBACK_URL as string,
-        input
+        input,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            secretkey: process.env.FLOW_SECRET as string,
+          },
+        }
       )
     }),
 
@@ -281,7 +287,16 @@ export const appRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const res = await axios.post(process.env.APPLICATION_URL as string, input)
+      const res = await axios.post(
+        process.env.APPLICATION_URL as string,
+        input,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            secretkey: process.env.FLOW_SECRET as string,
+          },
+        }
+      )
     }),
 
   acceptProposalApplication: publicProcedure
