@@ -19,6 +19,7 @@ database:
 appSecret: ""
 
 flows:
+  secret: ""
   application: ""
   proposalFeedback: ""
 
