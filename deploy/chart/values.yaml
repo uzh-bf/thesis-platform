@@ -22,6 +22,7 @@ flows:
   secret: ""
   application: ""
   proposalFeedback: ""
+  applicationAcceptance: ""
 
 replicaCount: 1
 
