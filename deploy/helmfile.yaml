@@ -8,7 +8,7 @@ releases:
     kubeContext: bf-k8s463ba113
     values:
       - appSecret: '{{ requiredEnv "NEXTAUTH_SECRET" }}'
-        appUrl: '{{ requiredEnv "NEXT_PUBLIC_APP_URL" }}'
+        appUrl: '{{ requiredEnv "APP_URL" }}'
 
         image:
           tag: '{{ requiredEnv "APP_VERSION" }}'
