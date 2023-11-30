@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0-beta.3](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2023-11-30)
+
+
+### Bug Fixes
+
+* add rollback migration for timestamps ([d012897](https://github.com/uzh-bf/thesis-platform/commit/d012897468c674bb46ae8bad9483e3c58a55c1e8))
+
 ## [1.0.0-beta.2](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2023-11-30)
 
 
