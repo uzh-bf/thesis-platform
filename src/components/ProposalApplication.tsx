@@ -43,7 +43,7 @@ export default function ProposalApplication({
         {isSupervisor &&
         (session?.user?.email === proposalDetails?.ownedByUserEmail ||
           session?.user.email ===
-            proposalDetails.supervisedBy[0].supervisorEmail) ? (
+            proposalDetails?.supervisedBy?.[0].supervisorEmail) ? (
           <div className="pt-4">
             <H2>Applications</H2>
             {proposalDetails?.applications?.length === 0 &&
