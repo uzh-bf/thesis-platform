@@ -55,6 +55,27 @@ async function getSupervisorProposals({ ctx, filters }) {
       },
     }
     applications = {
+      where: {
+        proposal: {
+          OR: [
+            {
+              typeKey: {
+                in: ['STUDENT'],
+              },
+            },
+            {
+              ownedByUserEmail: ctx.user?.email,
+            },
+            {
+              supervisedBy: {
+                some: {
+                  supervisorEmail: ctx.user?.email,
+                },
+              },
+            },
+          ],
+        },
+      },
       include: {
         attachments: true,
         status: true,
@@ -83,7 +104,7 @@ async function getSupervisorProposals({ ctx, filters }) {
         {
           statusKey: ProposalStatus.OPEN,
           typeKey: {
-            in: ['STUDENT'],
+            in: ['STUDENT', 'SUPERVISOR'],
           },
         },
         { ownedByUserEmail: ctx.user?.email },
@@ -108,26 +129,7 @@ async function getSupervisorProposals({ ctx, filters }) {
   if (filters.status === ProposalStatusFilter.OPEN_PROPOSALS) {
     where = {
       ...where,
-      OR: [
-        {
-          statusKey: ProposalStatus.OPEN,
-          typeKey: {
-            in: ['STUDENT'],
-          },
-        },
-        {
-          statusKey: ProposalStatus.OPEN,
-          ownedByUserEmail: ctx.user?.email,
-        },
-        {
-          statusKey: ProposalStatus.OPEN,
-          supervisedBy: {
-            some: {
-              supervisorEmail: ctx.user?.email,
-            },
-          },
-        },
-      ],
+      statusKey: ProposalStatus.OPEN,
       NOT: {
         receivedFeedbacks: {
           some: {
