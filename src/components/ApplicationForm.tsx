@@ -183,6 +183,7 @@ export default function ApplicationForm({
             onDrop={handleFileFieldChange('cvFile', 'cv', formikProps)}
             multiple={false}
             accept={{ 'application/pdf': ['.pdf'] }}
+            disabled={!formikProps.values.uzhemail.endsWith('uzh.ch')}
           >
             {({ getRootProps, getInputProps }) => (
               <section>
@@ -192,7 +193,9 @@ export default function ApplicationForm({
                 >
                   <input type="file" {...getInputProps()} />
                   <p className="p-2 text-base">
-                    {cv.length > 0
+                    {!formikProps.values.uzhemail.endsWith('uzh.ch')
+                      ? 'Enter your UZH Email before uploading files ⚠️'
+                      : cv.length > 0
                       ? `Attached File 📄: '${cv[0].name}'`
                       : 'Drag and drop your file 🗃️ here, or click to select the file'}
                   </p>
@@ -212,6 +215,7 @@ export default function ApplicationForm({
             )}
             multiple={false}
             accept={{ 'application/pdf': ['.pdf'] }}
+            disabled={!formikProps.values.uzhemail.endsWith('uzh.ch')}
           >
             {({ getRootProps, getInputProps }) => (
               <section>
@@ -221,7 +225,9 @@ export default function ApplicationForm({
                 >
                   <input type="file" {...getInputProps()} />
                   <p className="p-2 text-base">
-                    {transcript.length > 0
+                    {!formikProps.values.uzhemail.endsWith('uzh.ch')
+                      ? 'Enter your UZH Email before uploading files ⚠️'
+                      : transcript.length > 0
                       ? `Attached File 📄: '${transcript[0].name}'`
                       : 'Drag and drop your file 🗃️ here, or click to select the file'}
                   </p>

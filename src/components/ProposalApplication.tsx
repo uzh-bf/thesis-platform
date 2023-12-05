@@ -1,5 +1,6 @@
 import { H2, Table } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
+import { useSession } from 'next-auth/react'
 import { useState } from 'react'
 import { trpc } from 'src/lib/trpc'
 import { ApplicationDetails, ProposalDetails } from 'src/types/app'
@@ -26,6 +27,7 @@ export default function ProposalApplication({
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] =
     useState<boolean>(false)
 
+  const { data: session } = useSession()
   const acceptApplication = trpc.acceptProposalApplication.useMutation()
 
   if (proposalDetails?.typeKey === 'SUPERVISOR') {
@@ -38,7 +40,10 @@ export default function ProposalApplication({
             proposalId={proposalDetails.id}
           />
         )}
-        {isSupervisor && (
+        {isSupervisor &&
+        (session?.user?.email === proposalDetails?.ownedByUserEmail ||
+          session?.user.email ===
+            proposalDetails?.supervisedBy?.[0].supervisorEmail) ? (
           <div className="pt-4">
             <H2>Applications</H2>
             {proposalDetails?.applications?.length === 0 &&
@@ -106,6 +111,12 @@ export default function ProposalApplication({
               />
             )}
           </div>
+        ) : (
+          isSupervisor && (
+            <div className="bg-yellow-100">
+              You are not allowed to see any applications to this proposal.
+            </div>
+          )
         )}
       </div>
     )
