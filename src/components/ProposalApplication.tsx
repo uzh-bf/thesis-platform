@@ -112,9 +112,11 @@ export default function ProposalApplication({
             )}
           </div>
         ) : (
-          <div className="bg-yellow-100">
-            You are not allowed to see any applications to this proposal.
-          </div>
+          isSupervisor && (
+            <div className="bg-yellow-100">
+              You are not allowed to see any applications to this proposal.
+            </div>
+          )
         )}
       </div>
     )
