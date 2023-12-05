@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0-beta.4](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.3...v1.0.0-beta.4) (2023-12-05)
+
+
+### Enhancements
+
+* **app:** show supervisor proposals for all Supervisors but only show applications for owner/supervisor  ([#16](https://github.com/uzh-bf/thesis-platform/issues/16)) ([1ea8187](https://github.com/uzh-bf/thesis-platform/commit/1ea818728d5c23f3c376a9a3b049575fbdfe6a8f))
+
 ## [1.0.0-beta.3](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2023-11-30)
 
 
