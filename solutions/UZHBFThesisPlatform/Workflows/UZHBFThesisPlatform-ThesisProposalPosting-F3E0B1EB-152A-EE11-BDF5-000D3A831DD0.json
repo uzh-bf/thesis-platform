@@ -96,13 +96,6 @@
             "schemaName": "uzhbf_thesisplatform_thesis_inbox_env_var"
           }
         },
-        "Topic Areas List Name (uzhbf_thesisplatform_topic_areas_list_name_env_var)": {
-          "defaultValue": "Topic Areas",
-          "type": "String",
-          "metadata": {
-            "schemaName": "uzhbf_thesisplatform_topic_areas_list_name_env_var"
-          }
-        },
         "Supervisors List Name (uzhbf_thesisplatform_supervisors_list_name_env_var)": {
           "defaultValue": "Thesis Supervisors",
           "type": "String",
@@ -187,7 +180,7 @@
             ]
           }
         },
-        "InitializeTopicAreaDetails": {
+        "InitializeTopicArea": {
           "runAfter": {
             "InitializeSupervisorEmail": [
               "Succeeded"
@@ -200,15 +193,15 @@
           "inputs": {
             "variables": [
               {
-                "name": "TopicAreaDetails",
-                "type": "object"
+                "name": "TopicArea",
+                "type": "string"
               }
             ]
           }
         },
         "InitializeProposalPdfName": {
           "runAfter": {
-            "InitializeTopicAreaDetails": [
+            "InitializeTopicArea": [
               "Succeeded"
             ]
           },
@@ -311,11 +304,11 @@
                         "server": "default",
                         "database": "default",
                         "table": "[main].[user]",
-                        "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-                        "item/email": "@outputs('GetResponseDetails')?['body/responder']",
                         "item/id": "@guid()",
                         "item/name": "Anonymous",
+                        "item/email": "@outputs('GetResponseDetails')?['body/responder']",
                         "item/role": "SUPERVISOR",
+                        "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                         "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
                       },
                       "authentication": "@parameters('$authentication')"
@@ -333,21 +326,6 @@
                 "operationMetadataId": "c3ab16c6-9dd8-4538-bc92-c9281ec2ed1d"
               },
               "type": "If"
-            },
-            "SetTopicAreaDetails": {
-              "runAfter": {
-                "GetTopicAreas": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "e71bf2e5-143e-4c24-a190-83399d562950"
-              },
-              "type": "SetVariable",
-              "inputs": {
-                "name": "TopicAreaDetails",
-                "value": "@first(body('GetTopicAreas')['value'])"
-              }
             },
             "GetSupervisors": {
               "runAfter": {
@@ -387,31 +365,6 @@
               "inputs": {
                 "name": "SupervisorEmail",
                 "value": "@{first(body('GetSupervisors')['value'])['Title']}"
-              }
-            },
-            "GetTopicAreas": {
-              "runAfter": {
-                "SetProposalId": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "48306085-4df9-4c51-b4b1-2d6de6dc0395"
-              },
-              "type": "OpenApiConnection",
-              "inputs": {
-                "host": {
-                  "connectionName": "shared_sharepointonline",
-                  "operationId": "GetItems",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
-                },
-                "parameters": {
-                  "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
-                  "table": "@parameters('Topic Areas List Name (uzhbf_thesisplatform_topic_areas_list_name_env_var)')",
-                  "$filter": "Title eq '@{outputs('GetResponseDetails')?['body/r2a41d1ed540f418caa89f10a35cdb069']}'",
-                  "$top": 1
-                },
-                "authentication": "@parameters('$authentication')"
               }
             },
             "IsProposalPdfAttached": {
@@ -582,12 +535,12 @@
                       "server": "default",
                       "database": "default",
                       "table": "[main].[proposalattachment]",
-                      "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-                      "item/href": "@outputs('CreateShareLinkProposalPDF')?['body/link/webUrl']",
                       "item/id": "@{guid()}",
                       "item/name": "Proposal",
-                      "item/proposalId": "@variables('ProposalId')",
+                      "item/href": "@outputs('CreateShareLinkProposalPDF')?['body/link/webUrl']",
                       "item/type": "@outputs('PersistProposalPDF')?['body/MediaType']",
+                      "item/proposalId": "@variables('ProposalId')",
+                      "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                       "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
                     },
                     "authentication": "@parameters('$authentication')"
@@ -666,11 +619,11 @@
                         "server": "default",
                         "database": "default",
                         "table": "[main].[user]",
-                        "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-                        "item/email": "@variables('SupervisorEmail')",
                         "item/id": "@guid()",
                         "item/name": "@outputs('GetResponseDetails')?['body/ra234958191ee49a28a4fc68389dd0ce2']",
+                        "item/email": "@variables('SupervisorEmail')",
                         "item/role": "SUPERVISOR",
+                        "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                         "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
                       },
                       "authentication": "@parameters('$authentication')"
@@ -691,10 +644,7 @@
             },
             "PersistProposal": {
               "runAfter": {
-                "IfSupervisorExists": [
-                  "Succeeded"
-                ],
-                "SetTopicAreaDetails": [
+                "SetTopicArea": [
                   "Succeeded"
                 ]
               },
@@ -712,18 +662,18 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[proposal]",
-                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-                  "item/description": "@outputs('GetResponseDetails')?['body/rc6188bd68e4d4ab19206e5e06dd703be']",
                   "item/id": "@variables('ProposalId')",
-                  "item/language": "@outputs('GetResponseDetails')?['body/rb26c844ff536435a9abf2fae9d962082']",
-                  "item/statusKey": "OPEN",
-                  "item/studyLevel": "@outputs('GetResponseDetails')?['body/r93c920c31aaf4b8f8ca5e55bb9a0bf87']",
                   "item/title": "@outputs('GetResponseDetails')?['body/r2b3875d21899474a988a886e0d5b3621']",
-                  "item/topicAreaSlug": "@variables('TopicAreaDetails')['Slug']",
+                  "item/description": "@outputs('GetResponseDetails')?['body/rc6188bd68e4d4ab19206e5e06dd703be']",
+                  "item/language": "@outputs('GetResponseDetails')?['body/rb26c844ff536435a9abf2fae9d962082']",
+                  "item/studyLevel": "@outputs('GetResponseDetails')?['body/r93c920c31aaf4b8f8ca5e55bb9a0bf87']",
+                  "item/topicAreaSlug": "@replace(toLower(variables('TopicArea')),' ','_')",
                   "item/typeKey": "SUPERVISOR",
+                  "item/statusKey": "OPEN",
+                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                   "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-                  "item/ownedByUserEmail": "@outputs('GetResponseDetails')?['body/responder']",
-                  "item/timeFrame": "@outputs('GetResponseDetails')?['body/r564b7a6cc5bf42ffb900990d26246c80']"
+                  "item/timeFrame": "@outputs('GetResponseDetails')?['body/r564b7a6cc5bf42ffb900990d26246c80']",
+                  "item/ownedByUserEmail": "@outputs('GetResponseDetails')?['body/responder']"
                 },
                 "authentication": "@parameters('$authentication')"
               }
@@ -750,8 +700,8 @@
                   "table": "[main].[userproposalsupervision]",
                   "item/id": "@variables('ProposalId')",
                   "item/proposalId": "@variables('ProposalId')",
-                  "item/studyLevel": "@outputs('GetResponseDetails')?['body/r93c920c31aaf4b8f8ca5e55bb9a0bf87']",
-                  "item/supervisorEmail": "@variables('SupervisorEmail')"
+                  "item/supervisorEmail": "@variables('SupervisorEmail')",
+                  "item/studyLevel": "@outputs('GetResponseDetails')?['body/r93c920c31aaf4b8f8ca5e55bb9a0bf87']"
                 },
                 "authentication": "@parameters('$authentication')"
               }
@@ -786,6 +736,21 @@
                   "emailMessage/Importance": "Normal"
                 },
                 "authentication": "@parameters('$authentication')"
+              }
+            },
+            "SetTopicArea": {
+              "runAfter": {
+                "IfSupervisorExists": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "e71bf2e5-143e-4c24-a190-83399d562950"
+              },
+              "type": "SetVariable",
+              "inputs": {
+                "name": "TopicArea",
+                "value": "@outputs('GetResponseDetails')?['body/r2a41d1ed540f418caa89f10a35cdb069']"
               }
             }
           },

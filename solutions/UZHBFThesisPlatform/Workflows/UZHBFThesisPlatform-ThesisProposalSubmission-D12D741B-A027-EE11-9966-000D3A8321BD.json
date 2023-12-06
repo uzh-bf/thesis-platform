@@ -110,13 +110,6 @@
             "schemaName": "uzhbf_thesisplatform_http_trigger_thesis_proposal_feedback_env_var"
           }
         },
-        "Topic Areas List Name (uzhbf_thesisplatform_topic_areas_list_name_env_var)": {
-          "defaultValue": "Topic Areas",
-          "type": "String",
-          "metadata": {
-            "schemaName": "uzhbf_thesisplatform_topic_areas_list_name_env_var"
-          }
-        },
         "Supervisors List Name (uzhbf_thesisplatform_supervisors_list_name_env_var)": {
           "defaultValue": "Thesis Supervisors",
           "type": "String",
@@ -143,6 +136,13 @@
           "type": "String",
           "metadata": {
             "schemaName": "uzhbf_thesisplatform_email_failure_env_var"
+          }
+        },
+        "Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)": {
+          "defaultValue": "abcd",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_flow_secret_env_var"
           }
         }
       },
@@ -239,7 +239,7 @@
             ]
           }
         },
-        "InitializeTopicAreaDetails": {
+        "InitializeTopicArea": {
           "runAfter": {
             "InitializeWasSpecificRequest": [
               "Succeeded"
@@ -252,15 +252,15 @@
           "inputs": {
             "variables": [
               {
-                "name": "TopicAreaDetails",
-                "type": "object"
+                "name": "TopicArea",
+                "type": "string"
               }
             ]
           }
         },
         "InitializeProposalPdfName": {
           "runAfter": {
-            "InitializeTopicAreaDetails": [
+            "InitializeTopicArea": [
               "Succeeded"
             ]
           },
@@ -381,7 +381,7 @@
                 "value": false
               }
             },
-            "TopicAreas": {
+            "SupervisorList": {
               "runAfter": {
                 "SetWasSpecificRequest": [
                   "Succeeded"
@@ -399,16 +399,14 @@
                 },
                 "parameters": {
                   "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
-                  "table": "@parameters('Topic Areas List Name (uzhbf_thesisplatform_topic_areas_list_name_env_var)')",
-                  "$filter": "Title eq '@{outputs('GetResponseDetails')?['body/r975d59f3f5114998b6e30c56c035334b']}'",
-                  "$top": 1
+                  "table": "@parameters('Supervisors List Name (uzhbf_thesisplatform_supervisors_list_name_env_var)')"
                 },
                 "authentication": "@parameters('$authentication')"
               }
             },
-            "SetTopicAreaDetails": {
+            "SetTopicArea": {
               "runAfter": {
-                "TopicAreas": [
+                "SupervisorList": [
                   "Succeeded"
                 ]
               },
@@ -417,63 +415,15 @@
               },
               "type": "SetVariable",
               "inputs": {
-                "name": "TopicAreaDetails",
-                "value": "@first(body('TopicAreas')?['value'])"
+                "name": "TopicArea",
+                "value": "@outputs('GetResponseDetails')?['body/r975d59f3f5114998b6e30c56c035334b']"
               }
-            },
-            "ForEachAreaSupervisor": {
-              "foreach": "@variables('TopicAreaDetails')['Supervisors']",
-              "actions": {
-                "AreaSupervisorDetails": {
-                  "runAfter": {},
-                  "metadata": {
-                    "operationMetadataId": "a0f45886-9e62-403b-9c5f-06ceb176d88f"
-                  },
-                  "type": "OpenApiConnection",
-                  "inputs": {
-                    "host": {
-                      "connectionName": "shared_sharepointonline_1",
-                      "operationId": "GetItem",
-                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
-                    },
-                    "parameters": {
-                      "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
-                      "table": "@parameters('Supervisors List Name (uzhbf_thesisplatform_supervisors_list_name_env_var)')",
-                      "id": "@items('ForEachAreaSupervisor')?['ID']"
-                    },
-                    "authentication": "@parameters('$authentication')"
-                  }
-                },
-                "AppendToMatchingSupervisors": {
-                  "runAfter": {
-                    "AreaSupervisorDetails": [
-                      "Succeeded"
-                    ]
-                  },
-                  "metadata": {
-                    "operationMetadataId": "718cf67d-b738-474b-8492-0cdc54dde8fb"
-                  },
-                  "type": "AppendToArrayVariable",
-                  "inputs": {
-                    "name": "MatchingSupervisors",
-                    "value": "@outputs('AreaSupervisorDetails')?['body/Title']"
-                  }
-                }
-              },
-              "runAfter": {
-                "SetTopicAreaDetails": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "64a45e69-b386-4d4f-b93b-538eea74fc79"
-              },
-              "type": "Foreach"
             },
             "PersistProposalToDB": {
               "runAfter": {
-                "ForEachAreaSupervisor": [
-                  "Succeeded"
+                "ForEachSupervisor": [
+                  "Succeeded",
+                  "TimedOut"
                 ]
               },
               "metadata": {
@@ -490,15 +440,15 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[proposal]",
-                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-                  "item/description": "@outputs('GetResponseDetails')?['body/r7425856917f245efbd0c4cb2a7f0c434']",
                   "item/id": "@variables('ProposalId')",
-                  "item/language": "@outputs('GetResponseDetails')?['body/r8b7f3f4a7502459598d155e9b31eb25e']",
-                  "item/statusKey": "OPEN",
-                  "item/studyLevel": "@outputs('GetResponseDetails')?['body/rc797ecd1491b44a0ac091174abbac9f6']",
                   "item/title": "@outputs('GetResponseDetails')?['body/r7240915136fb41e8b884a045d08f39ce']",
-                  "item/topicAreaSlug": "@variables('TopicAreaDetails')['Slug']",
+                  "item/description": "@outputs('GetResponseDetails')?['body/r7425856917f245efbd0c4cb2a7f0c434']",
+                  "item/language": "@outputs('GetResponseDetails')?['body/r8b7f3f4a7502459598d155e9b31eb25e']",
+                  "item/studyLevel": "@outputs('GetResponseDetails')?['body/rc797ecd1491b44a0ac091174abbac9f6']",
+                  "item/topicAreaSlug": "@replace(toLower(variables('TopicArea')),' ','_')",
                   "item/typeKey": "STUDENT",
+                  "item/statusKey": "OPEN",
+                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                   "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
                 },
                 "authentication": "@parameters('$authentication')"
@@ -524,15 +474,15 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[proposalapplication]",
-                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-                  "item/email": "@outputs('GetResponseDetails')?['body/responder']",
-                  "item/fullName": "@outputs('GetResponseDetails')?['body/r7844031f633e4dd49368b0c116ad148d']",
                   "item/id": "@outputs('PersistProposalToDB')?['body/id']",
-                  "item/matriculationNumber": "@outputs('GetResponseDetails')?['body/r6c3b387342aa4bd0b5f423aa43662850']",
-                  "item/motivation": "@outputs('GetResponseDetails')?['body/r60d760e8828645cc84d8fde2a6fe3b27']",
-                  "item/plannedStartAt": "@outputs('GetResponseDetails')?['body/r837fec8c113c4851a217e947217c5b7f']",
-                  "item/proposalId": "@outputs('PersistProposalToDB')?['body/id']",
                   "item/statusKey": "OPEN",
+                  "item/email": "@outputs('GetResponseDetails')?['body/responder']",
+                  "item/matriculationNumber": "@outputs('GetResponseDetails')?['body/r6c3b387342aa4bd0b5f423aa43662850']",
+                  "item/fullName": "@outputs('GetResponseDetails')?['body/r7844031f633e4dd49368b0c116ad148d']",
+                  "item/plannedStartAt": "@outputs('GetResponseDetails')?['body/r837fec8c113c4851a217e947217c5b7f']",
+                  "item/motivation": "@outputs('GetResponseDetails')?['body/r60d760e8828645cc84d8fde2a6fe3b27']",
+                  "item/proposalId": "@outputs('PersistProposalToDB')?['body/id']",
+                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                   "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
                 },
                 "authentication": "@parameters('$authentication')"
@@ -1008,12 +958,12 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[proposalattachment]",
-                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-                  "item/href": "@outputs('ShareLinkProposalFile')?['body/link/webUrl']",
                   "item/id": "@{guid()}",
                   "item/name": "Proposal",
-                  "item/proposalId": "@variables('ProposalId')",
+                  "item/href": "@outputs('ShareLinkProposalFile')?['body/link/webUrl']",
                   "item/type": "@outputs('PersistProposalFile')?['body/MediaType']",
+                  "item/proposalId": "@variables('ProposalId')",
+                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                   "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
                 },
                 "authentication": "@parameters('$authentication')"
@@ -1039,12 +989,12 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[applicationattachment]",
-                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-                  "item/href": "@outputs('ShareLinkCVPDF')?['body/link/webUrl']",
                   "item/id": "@{guid()}",
                   "item/name": "CV",
-                  "item/proposalApplicationId": "@outputs('PersistApplicationToDB')?['body/id']",
+                  "item/href": "@outputs('ShareLinkCVPDF')?['body/link/webUrl']",
                   "item/type": "@outputs('PersistCVPDF')?['body/MediaType']",
+                  "item/proposalApplicationId": "@outputs('PersistApplicationToDB')?['body/id']",
+                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                   "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
                 },
                 "authentication": "@parameters('$authentication')"
@@ -1070,12 +1020,12 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[applicationattachment]",
-                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-                  "item/href": "@outputs('ShareLinkTranscriptPDF')?['body/link/webUrl']",
                   "item/id": "@{guid()}",
                   "item/name": "Transcript",
-                  "item/proposalApplicationId": "@outputs('PersistApplicationToDB')?['body/id']",
+                  "item/href": "@outputs('ShareLinkTranscriptPDF')?['body/link/webUrl']",
                   "item/type": "@outputs('PersistTranscriptPDF')?['body/MediaType']",
+                  "item/proposalApplicationId": "@outputs('PersistApplicationToDB')?['body/id']",
+                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                   "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
                 },
                 "authentication": "@parameters('$authentication')"
@@ -1180,6 +1130,10 @@
                                 {
                                   "name": "Content-type",
                                   "value": "application/json"
+                                },
+                                {
+                                  "name": "secretkey",
+                                  "value": "@{parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')}"
                                 }
                               ]
                             }
@@ -1222,6 +1176,10 @@
                                 {
                                   "name": "Content-type",
                                   "value": "application/json"
+                                },
+                                {
+                                  "name": "secretkey",
+                                  "value": "@{parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')}"
                                 }
                               ]
                             }
@@ -1294,6 +1252,10 @@
                                 {
                                   "name": "Content-type",
                                   "value": "application/json"
+                                },
+                                {
+                                  "name": "secretkey",
+                                  "value": "@{parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')}"
                                 }
                               ]
                             }
@@ -1358,6 +1320,10 @@
                                 {
                                   "name": "Content-type",
                                   "value": "application/json"
+                                },
+                                {
+                                  "name": "secretkey",
+                                  "value": "@{parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')}"
                                 }
                               ]
                             }
@@ -1378,6 +1344,10 @@
                         {
                           "name": "Content-type",
                           "value": "application/json"
+                        },
+                        {
+                          "name": "secretkey",
+                          "value": "@{parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')}"
                         }
                       ]
                     }
@@ -1494,6 +1464,56 @@
                 },
                 "authentication": "@parameters('$authentication')"
               }
+            },
+            "ForEachSupervisor": {
+              "foreach": "@outputs('SupervisorList')?['body/value']",
+              "actions": {
+                "ForEachAreaOfInterest": {
+                  "foreach": "@items('ForEachSupervisor')?['AreasOfInterest']",
+                  "actions": {
+                    "IsSupervisingTopicArea": {
+                      "actions": {
+                        "AppendToMatchingSupervisors": {
+                          "runAfter": {},
+                          "metadata": {
+                            "operationMetadataId": "c2e44021-c939-4132-a7da-e0d1b23020cd"
+                          },
+                          "type": "AppendToArrayVariable",
+                          "inputs": {
+                            "name": "MatchingSupervisors",
+                            "value": "@items('ForEachSupervisor')?['Title']"
+                          }
+                        }
+                      },
+                      "runAfter": {},
+                      "expression": {
+                        "equals": [
+                          "@items('ForEachAreaOfinterest')?['Value']",
+                          "@variables('TopicArea')"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "0b3c57ab-9365-4f2e-88e1-09f66daff6f0"
+                      },
+                      "type": "If"
+                    }
+                  },
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "3cdcdaa5-8261-4fbc-9cc8-80f431b3c204"
+                  },
+                  "type": "Foreach"
+                }
+              },
+              "runAfter": {
+                "SetTopicArea": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "2a8c2544-f8b6-40be-8842-9a8104fc0fc1"
+              },
+              "type": "Foreach"
             }
           },
           "runAfter": {
