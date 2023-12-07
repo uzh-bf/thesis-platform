@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0-beta.6](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.5...v1.0.0-beta.6) (2023-12-07)
+
+
+### Bug Fixes
+
+* **solutions:** AreasOfInterestV2 instead of col AreasOfInterest ([#19](https://github.com/uzh-bf/thesis-platform/issues/19)) ([7ea2467](https://github.com/uzh-bf/thesis-platform/commit/7ea246709564405385acdb3a9e0ed81d59ef70af))
+
 ## [1.0.0-beta.5](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.4...v1.0.0-beta.5) (2023-12-07)
 
 
