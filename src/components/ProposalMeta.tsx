@@ -1,6 +1,7 @@
 import { IconDefinition, faFilePdf } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { format, parseISO } from 'date-fns'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { ProposalDetails } from 'src/types/app'
 
@@ -12,7 +13,19 @@ const FileTypeIconMap: Record<string, IconDefinition> = {
   'application/pdf': faFilePdf,
 }
 export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
+  const { data: session } = useSession()
+
   if (!proposalDetails) return null
+
+  const getSupervisedBy = () => {
+    if (session?.user?.email && proposalDetails.supervisedBy.length > 0) {
+      return proposalDetails.supervisedBy[0].supervisor.name
+    } else if (proposalDetails.supervisedBy.name) {
+      return proposalDetails.supervisedBy.name
+    } else {
+      return 'Unassigned'
+    }
+  }
   return (
     <div className="p-4">
       <h1 className="text-base font-bold">{proposalDetails.title}</h1>
@@ -51,7 +64,7 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
         )}
         <div className="text-base">
           <div className="font-bold">Supervised By</div>
-          <div>{proposalDetails.supervisedBy?.name ?? 'Unassigned'}</div>
+          <div>{getSupervisedBy()}</div>
         </div>
 
         {proposalDetails.typeKey === 'STUDENT' && (
@@ -68,7 +81,7 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
       </div>
 
       {proposalDetails.typeKey === 'STUDENT' && (
-        <div className="text-sm flex flex-row gap-6 mt-4">
+        <div className="flex flex-row gap-6 mt-4 text-sm">
           {proposalDetails.attachments.map((attachment: any) => (
             <Link
               key={attachment.id}
