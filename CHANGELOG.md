@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0-beta.5](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.4...v1.0.0-beta.5) (2023-12-07)
+
+
+### Enhancements
+
+* **solutions:** new thesisMarket topic areas structure and flow secret added to actionable messages ([#17](https://github.com/uzh-bf/thesis-platform/issues/17)) ([b29bc5f](https://github.com/uzh-bf/thesis-platform/commit/b29bc5fbaecf7228133b8a1f09ba3686af5d1945))
+
 ## [1.0.0-beta.4](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.3...v1.0.0-beta.4) (2023-12-05)
 
 
