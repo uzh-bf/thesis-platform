@@ -1469,7 +1469,7 @@
               "foreach": "@outputs('SupervisorList')?['body/value']",
               "actions": {
                 "ForEachAreaOfInterest": {
-                  "foreach": "@items('ForEachSupervisor')?['AreasOfInterest']",
+                  "foreach": "@items('ForEachSupervisor')?['AreasOfInterestV2']",
                   "actions": {
                     "IsSupervisingTopicArea": {
                       "actions": {
