@@ -700,6 +700,8 @@
                   "table": "[main].[userproposalsupervision]",
                   "item/id": "@variables('ProposalId')",
                   "item/proposalId": "@variables('ProposalId')",
+                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+                  "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                   "item/supervisorEmail": "@variables('SupervisorEmail')",
                   "item/studyLevel": "@outputs('GetResponseDetails')?['body/r93c920c31aaf4b8f8ca5e55bb9a0bf87']"
                 },

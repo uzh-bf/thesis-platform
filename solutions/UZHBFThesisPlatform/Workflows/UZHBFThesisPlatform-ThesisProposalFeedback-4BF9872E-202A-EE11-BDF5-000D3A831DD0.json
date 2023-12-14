@@ -592,15 +592,15 @@
                           "database": "default",
                           "table": "[main].[proposal]",
                           "id": "@triggerBody()?['proposalid']",
-                          "item/createdAt": "@outputs('ProposalDetails')['createdAt']",
+                          "item/title": "@outputs('ProposalDetails')['title']",
                           "item/description": "@outputs('ProposalDetails')['description']",
                           "item/language": "@outputs('ProposalDetails')['language']",
-                          "item/statusKey": "MATCHED",
                           "item/studyLevel": "@outputs('ProposalDetails')['studyLevel']",
-                          "item/title": "@outputs('ProposalDetails')['title']",
                           "item/topicAreaSlug": "@outputs('ProposalDetails')['topicAreaSlug']",
                           "item/typeKey": "@outputs('ProposalDetails')['typeKey']",
-                          "item/updatedAt": "@outputs('ProposalDetails')['updatedAt']"
+                          "item/statusKey": "MATCHED",
+                          "item/createdAt": "@outputs('ProposalDetails')['createdAt']",
+                          "item/updatedAt": "@utcNow()"
                         },
                         "authentication": "@parameters('$authentication')"
                       }
@@ -626,15 +626,15 @@
                           "database": "default",
                           "table": "[main].[proposalapplication]",
                           "id": "@triggerBody()?['proposalId']",
-                          "item/createdAt": "@outputs('ApplicationDetails')['createdAt']",
-                          "item/email": "@outputs('ApplicationDetails')['email']",
-                          "item/fullName": "@outputs('ApplicationDetails')['fullName']",
-                          "item/matriculationNumber": "@outputs('ApplicationDetails')['matriculationNumber']",
-                          "item/motivation": "@outputs('ApplicationDetails')['motivation']",
-                          "item/plannedStartAt": "@outputs('ApplicationDetails')['plannedStartAt']",
-                          "item/proposalId": "@outputs('ApplicationDetails')['proposalId']",
                           "item/statusKey": "ACCEPTED",
-                          "item/updatedAt": "@outputs('ApplicationDetails')['updatedAt']"
+                          "item/email": "@outputs('ApplicationDetails')['email']",
+                          "item/matriculationNumber": "@outputs('ApplicationDetails')['matriculationNumber']",
+                          "item/fullName": "@outputs('ApplicationDetails')['fullName']",
+                          "item/plannedStartAt": "@outputs('ApplicationDetails')['plannedStartAt']",
+                          "item/motivation": "@outputs('ApplicationDetails')['motivation']",
+                          "item/proposalId": "@outputs('ApplicationDetails')['proposalId']",
+                          "item/createdAt": "@outputs('ApplicationDetails')['createdAt']",
+                          "item/updatedAt": "@utcNow()"
                         },
                         "authentication": "@parameters('$authentication')"
                       }
@@ -731,6 +731,8 @@
                               "table": "[main].[userproposalsupervision]",
                               "item/id": "@triggerBody()?['proposalId']",
                               "item/proposalId": "@triggerBody()?['proposalId']",
+                              "item/createdAt": "@utcNow()",
+                              "item/updatedAt": "@utcNow()",
                               "item/supervisorEmail": "@triggerBody()?['supervisorEmail']"
                             },
                             "authentication": "@parameters('$authentication')"
@@ -775,15 +777,15 @@
                           "database": "default",
                           "table": "[main].[proposal]",
                           "id": "@triggerBody()?['proposalId']",
-                          "item/createdAt": "@outputs('ProposalDetails')['createdAt']",
+                          "item/title": "@outputs('ProposalDetails')['title']",
                           "item/description": "@outputs('ProposalDetails')['description']",
                           "item/language": "@outputs('ProposalDetails')['language']",
-                          "item/statusKey": "MATCHED_TENTATIVE",
                           "item/studyLevel": "@outputs('ProposalDetails')['studyLevel']",
-                          "item/title": "@outputs('ProposalDetails')['title']",
                           "item/topicAreaSlug": "@outputs('ProposalDetails')['topicAreaSlug']",
                           "item/typeKey": "@outputs('ProposalDetails')['typeKey']",
-                          "item/updatedAt": "@outputs('ProposalDetails')['updatedAt']"
+                          "item/statusKey": "MATCHED_TENTATIVE",
+                          "item/createdAt": "@outputs('ProposalDetails')['createdAt']",
+                          "item/updatedAt": "@utcNow()"
                         },
                         "authentication": "@parameters('$authentication')"
                       }
@@ -810,6 +812,8 @@
                           "table": "[main].[userproposalsupervision]",
                           "item/id": "@triggerBody()?['proposalId']",
                           "item/proposalId": "@triggerBody()?['proposalId']",
+                          "item/createdAt": "@utcNow()",
+                          "item/updatedAt": "@utcNow()",
                           "item/supervisorEmail": "@triggerBody()?['supervisorEmail']"
                         },
                         "authentication": "@parameters('$authentication')"
@@ -836,15 +840,15 @@
                           "database": "default",
                           "table": "[main].[proposalapplication]",
                           "id": "@triggerBody()?['proposalId']",
-                          "item/createdAt": "@outputs('ApplicationDetails')['createdAt']",
-                          "item/email": "@outputs('ApplicationDetails')['email']",
-                          "item/fullName": "@outputs('ApplicationDetails')['fullName']",
-                          "item/matriculationNumber": "@outputs('ApplicationDetails')['matriculationNumber']",
-                          "item/motivation": "@outputs('ApplicationDetails')['motivation']",
-                          "item/plannedStartAt": "@outputs('ApplicationDetails')['plannedStartAt']",
-                          "item/proposalId": "@outputs('ApplicationDetails')['proposalId']",
                           "item/statusKey": "ACCEPTED_TENTATIVE",
-                          "item/updatedAt": "@outputs('ApplicationDetails')['updatedAt']"
+                          "item/email": "@outputs('ApplicationDetails')['email']",
+                          "item/matriculationNumber": "@outputs('ApplicationDetails')['matriculationNumber']",
+                          "item/fullName": "@outputs('ApplicationDetails')['fullName']",
+                          "item/plannedStartAt": "@outputs('ApplicationDetails')['plannedStartAt']",
+                          "item/motivation": "@outputs('ApplicationDetails')['motivation']",
+                          "item/proposalId": "@outputs('ApplicationDetails')['proposalId']",
+                          "item/createdAt": "@outputs('ApplicationDetails')['createdAt']",
+                          "item/updatedAt": "@utcNow()"
                         },
                         "authentication": "@parameters('$authentication')"
                       }
@@ -942,12 +946,14 @@
                           "server": "default",
                           "database": "default",
                           "table": "[main].[userproposalfeedback]",
-                          "item/comment": "@triggerBody()?['comment']",
                           "item/id": "@guid()",
                           "item/proposalId": "@triggerBody()?['proposalId']",
-                          "item/reason": "@triggerBody()?['reason']",
+                          "item/userEmail": "@triggerBody()?['supervisorEmail']",
                           "item/typeKey": "DECLINED_@{triggerBody()?['reason']}",
-                          "item/userEmail": "@triggerBody()?['supervisorEmail']"
+                          "item/reason": "@triggerBody()?['reason']",
+                          "item/comment": "@triggerBody()?['comment']",
+                          "item/createdAt": "@utcNow()",
+                          "item/updatedAt": "@utcNow()"
                         },
                         "authentication": "@parameters('$authentication')"
                       }
@@ -1139,15 +1145,15 @@
                               "database": "default",
                               "table": "[main].[proposal]",
                               "id": "@triggerBody()?['proposalId']",
-                              "item/createdAt": "@outputs('ProposalDetails')['createdAt']",
+                              "item/title": "@outputs('ProposalDetails')['title']",
                               "item/description": "@outputs('ProposalDetails')['description']",
                               "item/language": "@outputs('ProposalDetails')['language']",
-                              "item/statusKey": "OPEN",
                               "item/studyLevel": "@outputs('ProposalDetails')['studyLevel']",
-                              "item/title": "@outputs('ProposalDetails')['title']",
                               "item/topicAreaSlug": "@outputs('ProposalDetails')['topicAreaSlug']",
                               "item/typeKey": "@outputs('ProposalDetails')['typeKey']",
-                              "item/updatedAt": "@outputs('ProposalDetails')['updatedAt']"
+                              "item/statusKey": "OPEN",
+                              "item/createdAt": "@outputs('ProposalDetails')['createdAt']",
+                              "item/updatedAt": "@utcNow()"
                             },
                             "authentication": "@parameters('$authentication')"
                           }
@@ -1173,15 +1179,15 @@
                               "database": "default",
                               "table": "[main].[proposalapplication]",
                               "id": "@triggerBody()?['proposalId']",
-                              "item/createdAt": "@outputs('ApplicationDetails')['createdAt']",
-                              "item/email": "@outputs('ApplicationDetails')['email']",
-                              "item/fullName": "@outputs('ApplicationDetails')['fullName']",
-                              "item/matriculationNumber": "@outputs('ApplicationDetails')['matriculationNumber']",
-                              "item/motivation": "@outputs('ApplicationDetails')['motivation']",
-                              "item/plannedStartAt": "@outputs('ApplicationDetails')['plannedStartAt']",
-                              "item/proposalId": "@triggerBody()?['proposalId']",
                               "item/statusKey": "OPEN",
-                              "item/updatedAt": "@outputs('ApplicationDetails')['updatedAt']"
+                              "item/email": "@outputs('ApplicationDetails')['email']",
+                              "item/matriculationNumber": "@outputs('ApplicationDetails')['matriculationNumber']",
+                              "item/fullName": "@outputs('ApplicationDetails')['fullName']",
+                              "item/plannedStartAt": "@outputs('ApplicationDetails')['plannedStartAt']",
+                              "item/motivation": "@outputs('ApplicationDetails')['motivation']",
+                              "item/proposalId": "@triggerBody()?['proposalId']",
+                              "item/createdAt": "@outputs('ApplicationDetails')['createdAt']",
+                              "item/updatedAt": "@utcNow()"
                             },
                             "authentication": "@parameters('$authentication')"
                           }
@@ -1219,12 +1225,14 @@
                           "server": "default",
                           "database": "default",
                           "table": "[main].[userproposalfeedback]",
-                          "item/comment": "@triggerBody()?['comment']",
                           "item/id": "@guid()",
                           "item/proposalId": "@triggerBody()?['proposalId']",
-                          "item/reason": "@triggerBody()?['reason']",
+                          "item/userEmail": "@triggerBody()?['supervisorEmail']",
                           "item/typeKey": "REJECTED_@{triggerBody()?['reason']}",
-                          "item/userEmail": "@triggerBody()?['supervisorEmail']"
+                          "item/reason": "@triggerBody()?['reason']",
+                          "item/comment": "@triggerBody()?['comment']",
+                          "item/createdAt": "@utcNow()",
+                          "item/updatedAt": "@utcNow()"
                         },
                         "authentication": "@parameters('$authentication')"
                       }

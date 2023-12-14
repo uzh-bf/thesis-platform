@@ -400,15 +400,15 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[proposalapplication]",
-                  "item/createdAt": "@utcNow()",
-                  "item/email": "@triggerBody()?['uzhemail']",
-                  "item/fullName": "@triggerBody()?['fullname']",
                   "item/id": "@guid()",
-                  "item/matriculationNumber": "@triggerBody()?['matriculationnumber']",
-                  "item/motivation": "@triggerBody()?['motivation']",
-                  "item/plannedStartAt": "@triggerBody()?['startingdate']",
-                  "item/proposalId": "@triggerBody()?['proposalid']",
                   "item/statusKey": "OPEN",
+                  "item/email": "@triggerBody()?['uzhemail']",
+                  "item/matriculationNumber": "@triggerBody()?['matriculationnumber']",
+                  "item/fullName": "@triggerBody()?['fullname']",
+                  "item/plannedStartAt": "@triggerBody()?['startingdate']",
+                  "item/motivation": "@triggerBody()?['motivation']",
+                  "item/proposalId": "@triggerBody()?['proposalid']",
+                  "item/createdAt": "@utcNow()",
                   "item/updatedAt": "@utcNow()"
                 },
                 "authentication": "@parameters('$authentication')"
@@ -434,13 +434,13 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[applicationattachment]",
-                  "item/createdAt": "@outputs('PersistApplication')?['body/createdAt']",
-                  "item/href": "@outputs('CreateSharingLinkCv')?['body/link/webUrl']",
                   "item/id": "@guid()",
                   "item/name": "CV",
-                  "item/proposalApplicationId": "@outputs('PersistApplication')?['body/id']",
+                  "item/href": "@outputs('CreateSharingLinkCv')?['body/link/webUrl']",
                   "item/type": "application/pdf",
-                  "item/updatedAt": "@outputs('PersistApplication')?['body/updatedAt']"
+                  "item/proposalApplicationId": "@outputs('PersistApplication')?['body/id']",
+                  "item/createdAt": "@utcNow()",
+                  "item/updatedAt": "@utcNow()"
                 },
                 "authentication": "@parameters('$authentication')"
               }
@@ -465,13 +465,13 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[applicationattachment]",
-                  "item/createdAt": "@outputs('PersistApplication')?['body/createdAt']",
-                  "item/href": "@outputs('CreateSharingLinkTranscript')?['body/link/webUrl']",
                   "item/id": "@guid()",
                   "item/name": "Transcript",
-                  "item/proposalApplicationId": "@outputs('PersistApplication')?['body/id']",
+                  "item/href": "@outputs('CreateSharingLinkTranscript')?['body/link/webUrl']",
                   "item/type": "application/pdf",
-                  "item/updatedAt": "@outputs('PersistApplication')?['body/updatedAt']"
+                  "item/proposalApplicationId": "@outputs('PersistApplication')?['body/id']",
+                  "item/createdAt": "@utcNow()",
+                  "item/updatedAt": "@utcNow()"
                 },
                 "authentication": "@parameters('$authentication')"
               }
