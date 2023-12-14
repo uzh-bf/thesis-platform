@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0-beta.8](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.7...v1.0.0-beta.8) (2023-12-14)
+
+
+### Enhancements
+
+* **prisma:** Timestamps added for UserProposalSupervision and UserProposalFeedback ([#20](https://github.com/uzh-bf/thesis-platform/issues/20)) ([ee99961](https://github.com/uzh-bf/thesis-platform/commit/ee99961454ee7634ce10a6a9a1b94f4b1f09bab2))
+
 ## [1.0.0-beta.7](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.6...v1.0.0-beta.7) (2023-12-13)
 
 
