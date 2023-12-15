@@ -1,10 +1,10 @@
 import { H2 } from '@uzh-bf/design-system'
 import { RefObject } from 'react'
+import useUserRole from 'src/lib/hooks/useUserRole'
 import { ProposalDetails } from 'src/types/app'
 import ProposalCard from './ProposalCard'
 
 interface SupervisorProposalsProps {
-  isSupervisor: boolean
   data: ProposalDetails[]
   selectedProposal: string | null
   setSelectedProposal: (proposalId: string | null) => void
@@ -12,15 +12,16 @@ interface SupervisorProposalsProps {
 }
 
 export default function SupervisorProposals({
-  isSupervisor,
   data,
   selectedProposal,
   setSelectedProposal,
   buttonRef,
 }: SupervisorProposalsProps) {
+  const { isSupervisor, isDeveloper } = useUserRole()
+
   return (
     <div>
-      {isSupervisor && (
+      {(isSupervisor || isDeveloper) && (
         <H2 className={{ root: 'mt-2' }}>Supervisor Proposals</H2>
       )}
       <div className="flex flex-row flex-wrap grid-cols-3 gap-2">

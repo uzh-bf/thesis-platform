@@ -88,6 +88,26 @@ async function getSupervisorProposals({ ctx, filters }) {
         },
       },
     }
+  } else if (ctx.user?.role === UserRole.DEVELOPER) {
+    where = {
+      ...where,
+      typeKey: {
+        in: ['SUPERVISOR', 'STUDENT'],
+      },
+    }
+    applications = {
+      include: {
+        attachments: true,
+        status: true,
+      },
+    }
+    receivedFeedbacks = {
+      where: {
+        user: {
+          email: ctx.user.email,
+        },
+      },
+    }
   } else {
     where = {
       ...where,
@@ -242,7 +262,9 @@ export const appRouter = router({
     .query(({ input, ctx }) => {
       if (
         ctx.user?.role &&
-        [UserRole.ADMIN, UserRole.SUPERVISOR].includes(ctx.user.role)
+        [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.DEVELOPER].includes(
+          ctx.user.role
+        )
       ) {
         return getSupervisorProposals({ ctx, filters: input.filters })
       }

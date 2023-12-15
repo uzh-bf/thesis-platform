@@ -2,6 +2,7 @@ import { H2, Table } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
 import { useSession } from 'next-auth/react'
 import { useState } from 'react'
+import useUserRole from 'src/lib/hooks/useUserRole'
 import { trpc } from 'src/lib/trpc'
 import { ApplicationDetails, ProposalDetails } from 'src/types/app'
 import ApplicationDetailsModal from './ApplicationDetailsModal'
@@ -10,16 +11,12 @@ import ConfirmationModal from './ConfirmationModal'
 
 interface ProposalApplicationProps {
   proposalDetails: ProposalDetails
-  isStudent: boolean
-  isSupervisor: boolean
   refetch: () => void
   setFilters: (filters: { status: string }) => void
 }
 
 export default function ProposalApplication({
   proposalDetails,
-  isStudent,
-  isSupervisor,
   refetch,
   setFilters,
 }: ProposalApplicationProps) {
@@ -28,8 +25,8 @@ export default function ProposalApplication({
     useState<boolean>(false)
 
   const { data: session } = useSession()
+  const { isStudent, isSupervisor, isDeveloper } = useUserRole()
   const acceptApplication = trpc.acceptProposalApplication.useMutation()
-
   if (proposalDetails?.typeKey === 'SUPERVISOR') {
     return (
       <div className="p-4">
@@ -40,10 +37,11 @@ export default function ProposalApplication({
             proposalId={proposalDetails.id}
           />
         )}
-        {isSupervisor &&
-        (session?.user?.email === proposalDetails?.ownedByUserEmail ||
-          session?.user.email ===
-            proposalDetails?.supervisedBy?.[0].supervisorEmail) ? (
+        {isDeveloper ||
+        (isSupervisor &&
+          (session?.user?.email === proposalDetails?.ownedByUserEmail ||
+            session?.user.email ===
+              proposalDetails?.supervisedBy?.[0].supervisorEmail)) ? (
           <div className="pt-4">
             <H2>Applications</H2>
             {proposalDetails?.applications?.length === 0 &&

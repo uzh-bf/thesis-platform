@@ -8,14 +8,16 @@ import NewProposalButton from './NewProposalButton'
 export default function Header() {
   const { data: session } = useSession()
 
-  const isSupervisor = session?.user?.role === UserRole.SUPERVISOR
+  const isSupervisor =
+    session?.user?.role === UserRole.SUPERVISOR ||
+    session?.user?.role === UserRole.DEVELOPER
 
   return (
-    <header className="bg-slate-100 flex flex-col p-4 text-gray-600 md:justify-between md:flex-row flex-none">
+    <header className="flex flex-col flex-none p-4 text-gray-600 bg-slate-100 md:justify-between md:flex-row">
       <div>
         <NewProposalButton isSupervisor={isSupervisor} />
       </div>
-      <div className="flex flex-col md:flex-row md:items-center gap-2">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center">
         {session?.user && (
           <div className="text-sm md:pr-2">
             Signed in as {session.user.email} ({session.user.role})

@@ -27,12 +27,11 @@ export default function Index() {
     status: ProposalStatusFilter.OPEN_PROPOSALS,
   })
 
-  const { isAdmin, isStudent, isSupervisor } = useUserRole()
+  const { isSupervisor, isDeveloper } = useUserRole()
 
-  const { data, isLoading, isError, isFetching, refetch } =
-    trpc.proposals.useQuery({
-      filters,
-    })
+  const { data, isLoading, refetch } = trpc.proposals.useQuery({
+    filters,
+  })
 
   useEffect(() => {
     if (!router.query.proposalId && data?.[0]?.id) {
@@ -67,7 +66,7 @@ export default function Index() {
   return (
     <div className="grid flex-1 grid-cols-1 gap-2 m-4 md:grid-cols-2">
       <div className="flex-initial pb-4 space-y-4 md:flex-1">
-        {isSupervisor && (
+        {(isSupervisor || isDeveloper) && (
           <StudentProposals
             data={data}
             selectedProposal={proposalId}
@@ -79,7 +78,6 @@ export default function Index() {
         )}
 
         <SupervisorProposals
-          isSupervisor={isSupervisor}
           data={data}
           selectedProposal={proposalId}
           setSelectedProposal={setSelectedProposal}
@@ -94,16 +92,10 @@ export default function Index() {
             <ProposalMeta proposalDetails={proposalDetails} />
             <ProposalApplication
               proposalDetails={proposalDetails}
-              isStudent={isStudent}
-              isSupervisor={isSupervisor}
               refetch={refetch}
               setFilters={setFilters}
             />
-            <ProposalFeedback
-              proposalDetails={proposalDetails}
-              isSupervisor={isSupervisor}
-              isAdmin={isAdmin}
-            />
+            <ProposalFeedback proposalDetails={proposalDetails} />
             <ProposalStatusForm proposalDetails={proposalDetails} />
           </>
         )}

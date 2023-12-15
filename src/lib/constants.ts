@@ -39,6 +39,7 @@ export enum ProposalFeedbackType {
 export enum UserRole {
   STUDENT = 'STUDENT',
   SUPERVISOR = 'SUPERVISOR',
+  DEVELOPER = 'DEVELOPER',
   ADMIN = 'ADMIN',
 }
 
