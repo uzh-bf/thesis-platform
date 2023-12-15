@@ -55,6 +55,27 @@ async function getSupervisorProposals({ ctx, filters }) {
       },
     }
     applications = {
+      where: {
+        proposal: {
+          OR: [
+            {
+              typeKey: {
+                in: ['STUDENT'],
+              },
+            },
+            {
+              ownedByUserEmail: ctx.user?.email,
+            },
+            {
+              supervisedBy: {
+                some: {
+                  supervisorEmail: ctx.user?.email,
+                },
+              },
+            },
+          ],
+        },
+      },
       include: {
         attachments: true,
         status: true,
@@ -80,11 +101,24 @@ async function getSupervisorProposals({ ctx, filters }) {
     where = {
       ...where,
       OR: [
-        { statusKey: ProposalStatus.OPEN },
+        {
+          statusKey: ProposalStatus.OPEN,
+          typeKey: {
+            in: ['STUDENT', 'SUPERVISOR'],
+          },
+        },
+        { ownedByUserEmail: ctx.user?.email },
         {
           supervisedBy: {
             some: {
               supervisorEmail: ctx.user?.email,
+            },
+          },
+        },
+        {
+          receivedFeedbacks: {
+            some: {
+              userEmail: ctx.user?.email,
             },
           },
         },
@@ -109,11 +143,16 @@ async function getSupervisorProposals({ ctx, filters }) {
   if (filters.status === ProposalStatusFilter.MY_PROPOSALS) {
     where = {
       ...where,
-      supervisedBy: {
-        some: {
-          supervisorEmail: ctx.user?.email,
+      OR: [
+        { ownedByUserEmail: ctx.user?.email },
+        {
+          supervisedBy: {
+            some: {
+              supervisorEmail: ctx.user?.email,
+            },
+          },
         },
-      },
+      ],
     }
   }
 
@@ -156,6 +195,7 @@ async function getSupervisorProposals({ ctx, filters }) {
       receivedFeedbacks,
     },
   })
+
   return proposals
 }
 
@@ -200,7 +240,10 @@ export const appRouter = router({
       })
     )
     .query(({ input, ctx }) => {
-      if ([UserRole.ADMIN, UserRole.SUPERVISOR].includes(ctx.user?.role)) {
+      if (
+        ctx.user?.role &&
+        [UserRole.ADMIN, UserRole.SUPERVISOR].includes(ctx.user.role)
+      ) {
         return getSupervisorProposals({ ctx, filters: input.filters })
       }
 
@@ -221,7 +264,13 @@ export const appRouter = router({
     .mutation(async ({ ctx, input }) => {
       const res = await axios.post(
         process.env.PROPOSAL_FEEDBACK_URL as string,
-        input
+        input,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            secretkey: process.env.FLOW_SECRET as string,
+          },
+        }
       )
     }),
 
@@ -240,7 +289,38 @@ export const appRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const res = await axios.post(process.env.APPLICATION_URL as string, input)
+      const res = await axios.post(
+        process.env.APPLICATION_URL as string,
+        input,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            secretkey: process.env.FLOW_SECRET as string,
+          },
+        }
+      )
+    }),
+
+  acceptProposalApplication: publicProcedure
+    .input(
+      z.object({
+        proposalId: z.string(),
+        proposalApplicationId: z.string(),
+        applicantEmail: z.string().email(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const res = await axios.post(
+        process.env.APPLICATION_ACCEPTANCE_URL as string,
+        input,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            secretkey: process.env.FLOW_SECRET as string,
+          },
+        }
+      )
+      return res.data
     }),
 })
 

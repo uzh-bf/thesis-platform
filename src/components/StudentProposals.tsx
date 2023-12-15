@@ -63,7 +63,7 @@ export default function StudentProposals({
           ]}
           onChange={(newStatus: string) => {
             setFilters({ status: newStatus as ProposalStatusFilter })
-            setSelectedProposal(null)
+            setSelectedProposal('')
           }}
         />
       </div>

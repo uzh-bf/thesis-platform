@@ -2,6 +2,70 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0-beta.8](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.7...v1.0.0-beta.8) (2023-12-14)
+
+
+### Enhancements
+
+* **prisma:** Timestamps added for UserProposalSupervision and UserProposalFeedback ([#20](https://github.com/uzh-bf/thesis-platform/issues/20)) ([ee99961](https://github.com/uzh-bf/thesis-platform/commit/ee99961454ee7634ce10a6a9a1b94f4b1f09bab2))
+
+## [1.0.0-beta.7](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.6...v1.0.0-beta.7) (2023-12-13)
+
+
+### Bug Fixes
+
+* **app:** supervisedBy unassigned resolved ([#18](https://github.com/uzh-bf/thesis-platform/issues/18)) ([3f16447](https://github.com/uzh-bf/thesis-platform/commit/3f16447d32921fff9f31d888f86319db054cf50a))
+
+## [1.0.0-beta.6](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.5...v1.0.0-beta.6) (2023-12-07)
+
+
+### Bug Fixes
+
+* **solutions:** AreasOfInterestV2 instead of col AreasOfInterest ([#19](https://github.com/uzh-bf/thesis-platform/issues/19)) ([7ea2467](https://github.com/uzh-bf/thesis-platform/commit/7ea246709564405385acdb3a9e0ed81d59ef70af))
+
+## [1.0.0-beta.5](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.4...v1.0.0-beta.5) (2023-12-07)
+
+
+### Enhancements
+
+* **solutions:** new thesisMarket topic areas structure and flow secret added to actionable messages ([#17](https://github.com/uzh-bf/thesis-platform/issues/17)) ([b29bc5f](https://github.com/uzh-bf/thesis-platform/commit/b29bc5fbaecf7228133b8a1f09ba3686af5d1945))
+
+## [1.0.0-beta.4](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.3...v1.0.0-beta.4) (2023-12-05)
+
+
+### Enhancements
+
+* **app:** show supervisor proposals for all Supervisors but only show applications for owner/supervisor  ([#16](https://github.com/uzh-bf/thesis-platform/issues/16)) ([1ea8187](https://github.com/uzh-bf/thesis-platform/commit/1ea818728d5c23f3c376a9a3b049575fbdfe6a8f))
+
+## [1.0.0-beta.3](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2023-11-30)
+
+
+### Bug Fixes
+
+* add rollback migration for timestamps ([d012897](https://github.com/uzh-bf/thesis-platform/commit/d012897468c674bb46ae8bad9483e3c58a55c1e8))
+
+## [1.0.0-beta.2](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2023-11-30)
+
+
+### Features
+
+* implement Proposal Application Acceptance Workflow ([#12](https://github.com/uzh-bf/thesis-platform/issues/12)) ([3cae829](https://github.com/uzh-bf/thesis-platform/commit/3cae829516e416ad8db423d9b37f0b79be4b9f99))
+
+
+### Bug Fixes
+
+* **deploy:** env config added ([35607ed](https://github.com/uzh-bf/thesis-platform/commit/35607ed7d6a777a82f499f6b0b528126f40a5365))
+* **deploy:** env config updated ([669a00b](https://github.com/uzh-bf/thesis-platform/commit/669a00bd863697c14763259323ba12b84a60fa90))
+* **deploy:** use APP_URL instead of NEXT_PUBLIC_APP_URL ([2ff4483](https://github.com/uzh-bf/thesis-platform/commit/2ff4483ab9afa37246d13ffff251990001d7ca3f))
+* **prisma:** [@id](https://github.com/id) instead of [@unique](https://github.com/unique) for VerificationToken ([d4d842a](https://github.com/uzh-bf/thesis-platform/commit/d4d842a8ddc89411858c162276dd8da76b86a5af))
+
+
+### Enhancements
+
+* **app:** filter & proposalId to url ([#11](https://github.com/uzh-bf/thesis-platform/issues/11)) ([b73f12a](https://github.com/uzh-bf/thesis-platform/commit/b73f12a8b783ae1a6500f06c86d6ef3e82b07f95))
+* **prisma:** timestamps added for feedbacks and supervision ([62cbf0b](https://github.com/uzh-bf/thesis-platform/commit/62cbf0b1e46930cca5fa71e1e76a4e74d9a45c22))
+* **solution:** FlowSecret added for flows with HTTP request and updated solutions folder ([#15](https://github.com/uzh-bf/thesis-platform/issues/15)) ([20815d1](https://github.com/uzh-bf/thesis-platform/commit/20815d11d8813b7360e55c3089ce0b1f5978441e))
+
 ## [1.0.0-beta.1](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.0...v1.0.0-beta.1) (2023-11-09)
 
 ## 1.0.0-beta.0 (2023-11-09)

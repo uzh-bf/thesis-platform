@@ -1,3 +1,8 @@
+import {
+  faCircleCheck,
+  faHourglassHalf,
+} from '@fortawesome/free-regular-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { inferProcedureOutput } from '@trpc/server'
 import { Button } from '@uzh-bf/design-system'
 import { useSession } from 'next-auth/react'
@@ -36,6 +41,13 @@ export default function ProposalCard({
       active={isActive}
       onClick={onClick}
     >
+      {proposal.statusKey === 'MATCHED_TENTATIVE' &&
+      proposal.supervisedBy[0].supervisorEmail === session?.user?.email ? (
+        <FontAwesomeIcon icon={faHourglassHalf} />
+      ) : proposal.statusKey === 'MATCHED' &&
+        proposal.supervisedBy[0].supervisorEmail === session?.user?.email ? (
+        <FontAwesomeIcon icon={faCircleCheck} />
+      ) : null}
       <div className="font-bold">{proposal.title}</div>
       <div className="mt-1 space-y-1 text-xs">
         <div>{proposal.studyLevel}</div>

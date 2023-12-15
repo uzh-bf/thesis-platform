@@ -19,14 +19,16 @@ database:
 appSecret: ""
 
 flows:
+  secret: ""
   application: ""
   proposalFeedback: ""
+  applicationAcceptance: ""
 
 replicaCount: 1
 
 image:
   repository: ghcr.io/uzh-bf/thesis-platform
-  tag: main
+  tag: dev
   pullPolicy: Always
 
 service:

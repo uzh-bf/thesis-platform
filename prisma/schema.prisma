@@ -55,7 +55,7 @@ model VerificationToken {
   token      String   @unique
   expires    DateTime
 
-  @@unique([identifier, token])
+  @@id([identifier, token])
 }
 
 model User {
@@ -186,6 +186,9 @@ model UserProposalSupervision {
 
   studentEmail String?
   studyLevel   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model UserProposalFeedback {
@@ -202,6 +205,9 @@ model UserProposalFeedback {
 
   reason  String
   comment String @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([proposalId, userEmail])
 }
