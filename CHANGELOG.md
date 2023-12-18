@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0-beta.9](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.8...v1.0.0-beta.9) (2023-12-18)
+
+
+### Features
+
+* **app:** Developer role added that can see applications on all supervisor proposals ([#21](https://github.com/uzh-bf/thesis-platform/issues/21)) ([d61fabd](https://github.com/uzh-bf/thesis-platform/commit/d61fabd2479b063882ad05ed3d8ffc1a0b9ebe21))
+
+
+### Bug Fixes
+
+* **app:** check against all emails on multiple feedbacks ([2219cfe](https://github.com/uzh-bf/thesis-platform/commit/2219cfe8949a27121dfdd28812810f4617507d45))
+
 ## [1.0.0-beta.8](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.7...v1.0.0-beta.8) (2023-12-14)
 
 
