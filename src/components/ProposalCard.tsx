@@ -24,7 +24,8 @@ export default function ProposalCard({
   const { data: session } = useSession()
 
   const hasFeedback =
-    session?.user?.role === UserRole.SUPERVISOR &&
+    (session?.user?.role === UserRole.SUPERVISOR ||
+      session?.user?.role === UserRole.DEVELOPER) &&
     proposal.receivedFeedbacks?.length > 0
 
   return (
