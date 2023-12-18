@@ -40,7 +40,6 @@ export enum UserRole {
   STUDENT = 'STUDENT',
   SUPERVISOR = 'SUPERVISOR',
   DEVELOPER = 'DEVELOPER',
-  ADMIN = 'ADMIN',
 }
 
 export enum TopicAreas {

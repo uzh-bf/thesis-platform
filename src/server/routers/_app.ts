@@ -262,9 +262,7 @@ export const appRouter = router({
     .query(({ input, ctx }) => {
       if (
         ctx.user?.role &&
-        [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.DEVELOPER].includes(
-          ctx.user.role
-        )
+        [UserRole.SUPERVISOR, UserRole.DEVELOPER].includes(ctx.user.role)
       ) {
         return getSupervisorProposals({ ctx, filters: input.filters })
       }

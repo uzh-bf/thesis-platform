@@ -10,11 +10,11 @@ interface ProposalFeedbackProps {
 export default function ProposalFeedback({
   proposalDetails,
 }: ProposalFeedbackProps) {
-  const { isSupervisor, isAdmin, isDeveloper } = useUserRole()
+  const { isSupervisor, isDeveloper } = useUserRole()
 
   if (
     proposalDetails?.receivedFeedbacks?.length > 0 &&
-    (isSupervisor || isAdmin || isDeveloper)
+    (isSupervisor || isDeveloper)
   ) {
     return (
       <div>
