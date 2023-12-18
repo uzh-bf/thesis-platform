@@ -75,7 +75,9 @@ export default function ProposalStatusForm({
   } else if (
     (proposalDetails?.typeKey === 'STUDENT' &&
       proposalDetails?.statusKey === 'MATCHED') ||
-    proposalDetails?.receivedFeedbacks?.length > 0 ||
+    (proposalDetails?.receivedFeedbacks?.length > 0 &&
+      proposalDetails?.receivedFeedbacks?.user?.[0].userEmail ===
+        session?.user?.email) ||
     providedFeedback
   ) {
     return (

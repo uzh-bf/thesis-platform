@@ -101,13 +101,7 @@ async function getSupervisorProposals({ ctx, filters }) {
         status: true,
       },
     }
-    receivedFeedbacks = {
-      where: {
-        user: {
-          email: ctx.user.email,
-        },
-      },
-    }
+    receivedFeedbacks = {}
   } else {
     where = {
       ...where,
