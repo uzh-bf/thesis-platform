@@ -1,21 +1,20 @@
 import { faComment } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import useUserRole from 'src/lib/hooks/useUserRole'
 import { ProposalDetails } from 'src/types/app'
 
 interface ProposalFeedbackProps {
   proposalDetails: ProposalDetails
-  isSupervisor: boolean
-  isAdmin: boolean
 }
 
 export default function ProposalFeedback({
   proposalDetails,
-  isSupervisor,
-  isAdmin,
 }: ProposalFeedbackProps) {
+  const { isSupervisor, isDeveloper } = useUserRole()
+
   if (
     proposalDetails?.receivedFeedbacks?.length > 0 &&
-    (isSupervisor || isAdmin)
+    (isSupervisor || isDeveloper)
   ) {
     return (
       <div>

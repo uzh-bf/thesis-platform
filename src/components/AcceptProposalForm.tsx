@@ -12,12 +12,14 @@ interface AcceptProposalFormProps {
   proposalName: string
   proposalId: string
   supervisorEmail: string
+  setProvidedFeedback: (value: string) => void
 }
 
 export default function AcceptProposalForm({
   proposalName,
   proposalId,
   supervisorEmail,
+  setProvidedFeedback,
 }: AcceptProposalFormProps) {
   const SignupSchema = Yup.object().shape({
     comment: Yup.string().required('Required'),
@@ -36,9 +38,9 @@ export default function AcceptProposalForm({
       }}
       validationSchema={SignupSchema}
       onSubmit={async (values, { resetForm }) => {
-        await submitFeedback.mutateAsync(values)
-
+        setProvidedFeedback('ACCEPT')
         resetForm()
+        await submitFeedback.mutateAsync(values)
         toast.success('Proposal accepted successfully!')
       }}
     >
@@ -49,7 +51,7 @@ export default function AcceptProposalForm({
           assigned to you for supervision. You will work directly with the
           student to finalize the proposal and get the thesis process started.
         </div>
-        <div className="grid mt-4 place-items-lef">
+        <div className="flex flex-col gap-3 mt-4">
           <FormikTextField
             disabled={true}
             name="proposalName"
@@ -68,7 +70,7 @@ export default function AcceptProposalForm({
               field: 'flex-col',
             }}
           />
-          <div className="mt-2 italic">
+          <div className="italic">
             Your message will be sent to the student alongside your acceptance
             notification.
           </div>

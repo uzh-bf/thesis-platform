@@ -13,12 +13,14 @@ interface DeclineProposalFormProps {
   proposalName: string
   proposalId: string
   supervisorEmail: string
+  setProvidedFeedback: (value: string) => void
 }
 
 export default function DeclineProposalForm({
   proposalName,
   proposalId,
   supervisorEmail,
+  setProvidedFeedback,
 }: DeclineProposalFormProps) {
   const SignupSchema = Yup.object().shape({
     reason: Yup.string().required('Required'),
@@ -31,7 +33,7 @@ export default function DeclineProposalForm({
     <Formik
       initialValues={{
         proposalName: proposalName,
-        reason: '',
+        reason: undefined,
         comment: '',
         proposalId: proposalId,
         supervisorEmail: supervisorEmail,
@@ -39,9 +41,9 @@ export default function DeclineProposalForm({
       }}
       validationSchema={SignupSchema}
       onSubmit={async (values, { resetForm }) => {
-        await submitFeedback.mutateAsync(values)
-
         resetForm()
+        setProvidedFeedback('DECLINE')
+        await submitFeedback.mutateAsync(values)
         toast.success('Proposal declined successfully!')
       }}
     >
@@ -50,7 +52,7 @@ export default function DeclineProposalForm({
           Declining this proposal because of a mismatch of interests or a high
           workload on your side will keep it available for other supervisors.
         </div>
-        <div className="grid mt-4 place-items-lef">
+        <div className="flex flex-col gap-3 mt-4">
           <FormikTextField
             disabled={true}
             name="proposalName"
@@ -78,7 +80,7 @@ export default function DeclineProposalForm({
               },
             ]}
             label="Reason"
-            placeholder="Select a name"
+            placeholder="Select a reason..."
             className={{
               label: 'font-sans text-lg',
               root: 'flex-col',
@@ -93,7 +95,7 @@ export default function DeclineProposalForm({
               field: 'flex-col',
             }}
           />
-          <div className="mt-2 italic">
+          <div className="italic">
             Why do you decline this proposal specifically? Your comment will not
             be shown to the student.
           </div>

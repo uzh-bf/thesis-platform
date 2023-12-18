@@ -45,19 +45,28 @@
         "api": {
           "name": "shared_office365"
         }
+      },
+      "shared_sendmail-2": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "uzhbf_thesisplatform_mail_ref"
+        },
+        "api": {
+          "name": "shared_sendmail"
+        }
       }
     },
     "definition": {
       "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
       "contentVersion": "1.0.0.0",
       "parameters": {
-        "$authentication": {
-          "defaultValue": {},
-          "type": "SecureObject"
-        },
         "$connections": {
           "defaultValue": {},
           "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
         },
         "Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)": {
           "defaultValue": "https://uzh.sharepoint.com/sites/UZHBFThesisPlatformDEV",
@@ -101,13 +110,6 @@
             "schemaName": "uzhbf_thesisplatform_http_trigger_thesis_proposal_feedback_env_var"
           }
         },
-        "Topic Areas List Name (uzhbf_thesisplatform_topic_areas_list_name_env_var)": {
-          "defaultValue": "Topic Areas",
-          "type": "String",
-          "metadata": {
-            "schemaName": "uzhbf_thesisplatform_topic_areas_list_name_env_var"
-          }
-        },
         "Supervisors List Name (uzhbf_thesisplatform_supervisors_list_name_env_var)": {
           "defaultValue": "Thesis Supervisors",
           "type": "String",
@@ -121,6 +123,27 @@
           "metadata": {
             "schemaName": "uzhbf_thesisplatform_proposals_document_library_name_env_var"
           }
+        },
+        "Environment (uzhbf_thesisplatform_environment_env_var)": {
+          "defaultValue": "DEV",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_environment_env_var"
+          }
+        },
+        "Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)": {
+          "defaultValue": "flow@bf.uzh.ch",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_email_failure_env_var"
+          }
+        },
+        "Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)": {
+          "defaultValue": "abcd",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_flow_secret_env_var"
+          }
         }
       },
       "triggers": {
@@ -131,42 +154,21 @@
           },
           "type": "OpenApiConnectionWebhook",
           "inputs": {
+            "host": {
+              "connectionName": "shared_microsoftforms",
+              "operationId": "CreateFormWebhook",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_microsoftforms"
+            },
             "parameters": {
               "form_id": "@parameters('Submit Thesis Proposal Forms Id (uzhbf_thesisplatform_submit_thesis_proposal_forms_id_env_var)')"
             },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_microsoftforms",
-              "operationId": "CreateFormWebhook",
-              "connectionName": "shared_microsoftforms"
-            }
+            "authentication": "@parameters('$authentication')"
           }
         }
       },
       "actions": {
-        "GetResponseDetails": {
-          "runAfter": {},
-          "metadata": {
-            "operationMetadataId": "d7a6dd06-5c53-41d1-966b-2d312f30fe3a"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "form_id": "@parameters('Submit Thesis Proposal Forms Id (uzhbf_thesisplatform_submit_thesis_proposal_forms_id_env_var)')",
-              "response_id": "@triggerOutputs()?['body/resourceData/responseId']"
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_microsoftforms",
-              "operationId": "GetFormResponseById",
-              "connectionName": "shared_microsoftforms"
-            }
-          }
-        },
         "InitializeProposalId": {
-          "runAfter": {
-            "GetResponseDetails": [
-              "Succeeded"
-            ]
-          },
+          "runAfter": {},
           "metadata": {
             "operationMetadataId": "4ae19faf-62a6-4fcd-a3ef-8c80f977ec92"
           },
@@ -175,8 +177,7 @@
             "variables": [
               {
                 "name": "ProposalId",
-                "type": "string",
-                "value": "@{guid()}"
+                "type": "string"
               }
             ]
           }
@@ -195,13 +196,12 @@
             "variables": [
               {
                 "name": "Originator",
-                "type": "string",
-                "value": "@parameters('Originator (uzhbf_thesisplatform_originator_env_var)')"
+                "type": "string"
               }
             ]
           }
         },
-        "InitializeMatchingSupervisor": {
+        "InitializeMatchingSupervisors": {
           "runAfter": {
             "InitializeOriginator": [
               "Succeeded"
@@ -222,7 +222,7 @@
         },
         "InitializeWasSpecificRequest": {
           "runAfter": {
-            "InitializeMatchingSupervisor": [
+            "InitializeMatchingSupervisors": [
               "Succeeded"
             ]
           },
@@ -234,39 +234,14 @@
             "variables": [
               {
                 "name": "WasSpecificRequest",
-                "type": "boolean",
-                "value": false
+                "type": "boolean"
               }
             ]
           }
         },
-        "TopicAreas": {
+        "InitializeTopicArea": {
           "runAfter": {
             "InitializeWasSpecificRequest": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "ea08e293-d266-49aa-b9e6-adced5938564"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
-              "table": "@parameters('Topic Areas List Name (uzhbf_thesisplatform_topic_areas_list_name_env_var)')",
-              "$filter": "Title eq '@{outputs('GetResponseDetails')?['body/r975d59f3f5114998b6e30c56c035334b']}'",
-              "$top": 1
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
-              "operationId": "GetItems",
-              "connectionName": "shared_sharepointonline_1"
-            }
-          }
-        },
-        "InitializeTopicAreaDetails": {
-          "runAfter": {
-            "TopicAreas": [
               "Succeeded"
             ]
           },
@@ -277,750 +252,1199 @@
           "inputs": {
             "variables": [
               {
-                "name": "TopicAreaDetails",
-                "type": "object",
-                "value": "@first(body('TopicAreas')?['value'])"
+                "name": "TopicArea",
+                "type": "string"
               }
             ]
           }
         },
-        "ForEachAreaSupervisor": {
-          "foreach": "@variables('TopicAreaDetails')['Supervisors']",
-          "actions": {
-            "AreaSupervisorDetails": {
-              "metadata": {
-                "operationMetadataId": "6e7a457b-5766-48ec-87c8-8f473fdd327c"
-              },
-              "type": "OpenApiConnection",
-              "inputs": {
-                "parameters": {
-                  "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
-                  "table": "@parameters('Supervisors List Name (uzhbf_thesisplatform_supervisors_list_name_env_var)')",
-                  "id": "@items('ForEachAreaSupervisor')?['ID']"
-                },
-                "host": {
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
-                  "operationId": "GetItem",
-                  "connectionName": "shared_sharepointonline_1"
-                }
-              }
-            },
-            "Append_to_array_variable": {
-              "runAfter": {
-                "AreaSupervisorDetails": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "718cf67d-b738-474b-8492-0cdc54dde8fb"
-              },
-              "type": "AppendToArrayVariable",
-              "inputs": {
-                "name": "MatchingSupervisors",
-                "value": "@outputs('AreaSupervisorDetails')?['body/Title']"
-              }
-            }
-          },
+        "InitializeProposalPdfName": {
           "runAfter": {
-            "InitializeTopicAreaDetails": [
+            "InitializeTopicArea": [
               "Succeeded"
             ]
           },
           "metadata": {
-            "operationMetadataId": "c8b1bdac-53b0-4199-9748-0e5884e131ab"
-          },
-          "type": "Foreach"
-        },
-        "PersistProposalToDB": {
-          "runAfter": {
-            "ForEachAreaSupervisor": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "7d90cba3-0cba-448a-a6f3-1bd130f7eed9"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "server": "default",
-              "database": "default",
-              "table": "[main].[proposal]",
-              "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-              "item/description": "@outputs('GetResponseDetails')?['body/r7425856917f245efbd0c4cb2a7f0c434']",
-              "item/id": "@variables('ProposalId')",
-              "item/language": "@outputs('GetResponseDetails')?['body/r8b7f3f4a7502459598d155e9b31eb25e']",
-              "item/statusKey": "OPEN",
-              "item/studyLevel": "@outputs('GetResponseDetails')?['body/rc797ecd1491b44a0ac091174abbac9f6']",
-              "item/title": "@outputs('GetResponseDetails')?['body/r7240915136fb41e8b884a045d08f39ce']",
-              "item/topicAreaSlug": "@variables('TopicAreaDetails')['Slug']",
-              "item/typeKey": "STUDENT",
-              "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
-              "operationId": "PostItem",
-              "connectionName": "shared_azuremysql"
-            }
-          }
-        },
-        "PersistApplicationToDB": {
-          "runAfter": {
-            "PersistProposalToDB": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "fdff0e9f-8f24-4928-bc5f-18b23777b378"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "server": "default",
-              "database": "default",
-              "table": "[main].[proposalapplication]",
-              "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-              "item/email": "@outputs('GetResponseDetails')?['body/responder']",
-              "item/fullName": "@outputs('GetResponseDetails')?['body/r7844031f633e4dd49368b0c116ad148d']",
-              "item/id": "@outputs('PersistProposalToDB')?['body/id']",
-              "item/matriculationNumber": "@outputs('GetResponseDetails')?['body/r6c3b387342aa4bd0b5f423aa43662850']",
-              "item/motivation": "@outputs('GetResponseDetails')?['body/r60d760e8828645cc84d8fde2a6fe3b27']",
-              "item/plannedStartAt": "@outputs('GetResponseDetails')?['body/r837fec8c113c4851a217e947217c5b7f']",
-              "item/proposalId": "@outputs('PersistProposalToDB')?['body/id']",
-              "item/statusKey": "OPEN",
-              "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
-              "operationId": "PostItem",
-              "connectionName": "shared_azuremysql"
-            }
-          }
-        },
-        "ParseFileUploadProposalPDF": {
-          "runAfter": {
-            "PersistApplicationToDB": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "5702afa2-f3b2-4293-85b7-c1c553782920"
-          },
-          "type": "ParseJson",
-          "inputs": {
-            "content": "@outputs('GetResponseDetails')?['body/r97c7d5dddc1c46149360e60cee1c31b2']",
-            "schema": {
-              "items": {
-                "properties": {
-                  "driveId": {
-                    "type": "string"
-                  },
-                  "id": {
-                    "type": "string"
-                  },
-                  "link": {
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string"
-                  },
-                  "referenceId": {
-                    "type": "string"
-                  },
-                  "size": {
-                    "type": "integer"
-                  },
-                  "status": {
-                    "type": "integer"
-                  },
-                  "type": {},
-                  "uploadSessionUrl": {}
-                },
-                "required": [
-                  "name",
-                  "link",
-                  "id",
-                  "type",
-                  "size",
-                  "referenceId",
-                  "driveId",
-                  "status",
-                  "uploadSessionUrl"
-                ],
-                "type": "object"
-              },
-              "type": "array"
-            }
-          }
-        },
-        "ParsePersonalCVPDF": {
-          "runAfter": {
-            "PersistApplicationToDB": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "eae9f188-4fd6-450d-a4f1-4bb6b0efb139"
-          },
-          "type": "ParseJson",
-          "inputs": {
-            "content": "@outputs('GetResponseDetails')?['body/r36080bd39649467ca994ab4b0435ebbe']",
-            "schema": {
-              "items": {
-                "properties": {
-                  "driveId": {
-                    "type": "string"
-                  },
-                  "id": {
-                    "type": "string"
-                  },
-                  "link": {
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string"
-                  },
-                  "referenceId": {
-                    "type": "string"
-                  },
-                  "size": {
-                    "type": "integer"
-                  },
-                  "status": {
-                    "type": "integer"
-                  },
-                  "type": {},
-                  "uploadSessionUrl": {}
-                },
-                "required": [
-                  "name",
-                  "link",
-                  "id",
-                  "type",
-                  "size",
-                  "referenceId",
-                  "driveId",
-                  "status",
-                  "uploadSessionUrl"
-                ],
-                "type": "object"
-              },
-              "type": "array"
-            }
-          }
-        },
-        "ParseTranscriptPDF": {
-          "runAfter": {
-            "PersistApplicationToDB": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "c48ec50d-be41-451e-881b-564d5026744c"
-          },
-          "type": "ParseJson",
-          "inputs": {
-            "content": "@outputs('GetResponseDetails')?['body/rd29a58b86f3541de8de84ed702dd0eec']",
-            "schema": {
-              "items": {
-                "properties": {
-                  "driveId": {
-                    "type": "string"
-                  },
-                  "id": {
-                    "type": "string"
-                  },
-                  "link": {
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string"
-                  },
-                  "referenceId": {
-                    "type": "string"
-                  },
-                  "size": {
-                    "type": "integer"
-                  },
-                  "status": {
-                    "type": "integer"
-                  },
-                  "type": {},
-                  "uploadSessionUrl": {}
-                },
-                "required": [
-                  "name",
-                  "link",
-                  "id",
-                  "type",
-                  "size",
-                  "referenceId",
-                  "driveId",
-                  "status",
-                  "uploadSessionUrl"
-                ],
-                "type": "object"
-              },
-              "type": "array"
-            }
-          }
-        },
-        "ExtractProposalPDFName": {
-          "runAfter": {
-            "ParseFileUploadProposalPDF": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "35adc576-9010-4690-9d76-81a40985f436"
+            "operationMetadataId": "081090d7-8e0f-4a42-a33d-3ef0a55f02b7"
           },
           "type": "InitializeVariable",
           "inputs": {
             "variables": [
               {
                 "name": "ProposalPDFName",
-                "type": "string",
-                "value": "@{first(body('ParseFileUploadProposalPDF'))?['name']}"
+                "type": "string"
               }
             ]
           }
         },
-        "GetFileUploadProposalPDF": {
+        "InitializePersonalCvPdfName": {
           "runAfter": {
-            "ExtractProposalPDFName": [
+            "InitializeProposalPdfName": [
               "Succeeded"
             ]
           },
           "metadata": {
-            "operationMetadataId": "fc42a6f8-0ab5-470e-9768-b94ffce6ecbf"
+            "operationMetadataId": "8c4d455b-8d02-48e8-9d61-0adb91880fa7"
           },
-          "type": "OpenApiConnection",
+          "type": "InitializeVariable",
           "inputs": {
-            "parameters": {
-              "path": "/Apps/Microsoft Forms/Submit Thesis Proposal/Research Proposal (MS Word or PDF)/@{variables('ProposalPDFName')}",
-              "inferContentType": true
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
-              "operationId": "GetFileContentByPath",
-              "connectionName": "shared_onedriveforbusiness_1"
-            }
+            "variables": [
+              {
+                "name": "PersonalCVPDFName",
+                "type": "string"
+              }
+            ]
           }
         },
-        "PersistProposalFile": {
+        "InitializeTranscriptPdfName": {
           "runAfter": {
-            "GetFileUploadProposalPDF": [
+            "InitializePersonalCvPdfName": [
               "Succeeded"
             ]
           },
           "metadata": {
-            "operationMetadataId": "14d5659d-ec2a-4436-a3e4-164bf6e1422e"
+            "operationMetadataId": "f133a716-39de-4de8-b3bc-bb87b070eacd"
           },
-          "type": "OpenApiConnection",
+          "type": "InitializeVariable",
           "inputs": {
-            "parameters": {
-              "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
-              "folderPath": "/@{parameters('Proposals Document Library Name (uzhbf_thesisplatform_proposals_document_library_name_env_var)')}/Proposals/@{outputs('GetResponseDetails')?['body/responder']}",
-              "name": "@{variables('ProposalId')}_proposal_@{variables('ProposalPDFName')}",
-              "body": "@body('GetFileUploadProposalPDF')"
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
-              "operationId": "CreateFile",
-              "connectionName": "shared_sharepointonline_1"
-            }
-          },
-          "runtimeConfiguration": {
-            "contentTransfer": {
-              "transferMode": "Chunked"
-            }
-          }
-        },
-        "ShareLinkProposalFile": {
-          "runAfter": {
-            "PersistProposalFile": [
-              "Succeeded"
+            "variables": [
+              {
+                "name": "TranscriptPDFName",
+                "type": "string"
+              }
             ]
-          },
-          "metadata": {
-            "operationMetadataId": "97073148-ecee-4222-bc02-d5463a009fb0"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
-              "table": "@parameters('Proposals Document Library Name (uzhbf_thesisplatform_proposals_document_library_name_env_var)')",
-              "id": "@outputs('PersistProposalFile')?['body/ItemId']",
-              "permission/type": "view",
-              "permission/scope": "organization"
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
-              "operationId": "CreateSharingLink",
-              "connectionName": "shared_sharepointonline_1"
-            }
           }
         },
-        "CreateProposalAttachment": {
-          "runAfter": {
-            "ShareLinkProposalFile": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "e3eb6ad7-b695-48b4-8f21-2c10c4ab6b96"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "server": "default",
-              "database": "default",
-              "table": "[main].[proposalattachment]",
-              "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-              "item/href": "@outputs('ShareLinkProposalFile')?['body/link/webUrl']",
-              "item/id": "@{guid()}",
-              "item/name": "Proposal",
-              "item/proposalId": "@variables('ProposalId')",
-              "item/type": "@outputs('PersistProposalFile')?['body/MediaType']",
-              "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
-              "operationId": "PostItem",
-              "connectionName": "shared_azuremysql"
-            }
-          }
-        },
-        "EmailToSupervisors": {
-          "foreach": "@variables('MatchingSupervisors')",
+        "Try": {
           "actions": {
-            "AdaptiveCard": {
+            "GetResponseDetails": {
+              "runAfter": {},
               "metadata": {
-                "operationMetadataId": "fe7ccff6-5733-4c75-8c50-ce0674dbd1b1"
-              },
-              "type": "Compose",
-              "inputs": {
-                "type": "AdaptiveCard",
-                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                "version": "1.0",
-                "originator": "@{variables('Originator')}",
-                "body": [
-                  {
-                    "type": "TextBlock",
-                    "text": "@{outputs('GetResponseDetails')?['body/r7240915136fb41e8b884a045d08f39ce']}",
-                    "wrap": true,
-                    "weight": "Bolder",
-                    "size": "Medium"
-                  },
-                  {
-                    "type": "TextBlock",
-                    "text": "@{outputs('GetResponseDetails')?['body/r7425856917f245efbd0c4cb2a7f0c434']}",
-                    "wrap": true
-                  },
-                  {
-                    "type": "TextBlock",
-                    "text": "@{outputs('GetResponseDetails')?['body/r60d760e8828645cc84d8fde2a6fe3b27']}",
-                    "wrap": true
-                  },
-                  {
-                    "type": "FactSet",
-                    "facts": [
-                      {
-                        "title": "Submitted By",
-                        "value": "@{outputs('GetResponseDetails')?['body/r7844031f633e4dd49368b0c116ad148d']} (@{outputs('GetResponseDetails')?['body/r6c3b387342aa4bd0b5f423aa43662850']}, @{outputs('GetResponseDetails')?['body/responder']})"
-                      },
-                      {
-                        "title": "Proposed Title",
-                        "value": "@{outputs('GetResponseDetails')?['body/r7240915136fb41e8b884a045d08f39ce']}"
-                      },
-                      {
-                        "title": "Type of Proposal",
-                        "value": "@{outputs('GetResponseDetails')?['body/rc797ecd1491b44a0ac091174abbac9f6']}"
-                      },
-                      {
-                        "title": "Field of Research",
-                        "value": "@{outputs('GetResponseDetails')?['body/r975d59f3f5114998b6e30c56c035334b']}"
-                      },
-                      {
-                        "title": "Proposal Language",
-                        "value": "@{outputs('GetResponseDetails')?['body/r8b7f3f4a7502459598d155e9b31eb25e']}"
-                      },
-                      {
-                        "title": "Planned Start Date",
-                        "value": "@{outputs('GetResponseDetails')?['body/r837fec8c113c4851a217e947217c5b7f']}"
-                      }
-                    ],
-                    "separator": true
-                  }
-                ],
-                "actions": [
-                  {
-                    "type": "Action.ShowCard",
-                    "title": "Accept",
-                    "card": {
-                      "type": "AdaptiveCard",
-                      "body": [
-                        {
-                          "type": "TextBlock",
-                          "text": "Once you accept this proposal, the student will be asked to verify the matching. The proposal will be removed from the proposal market and assigned to you for supervision.",
-                          "wrap": true
-                        },
-                        {
-                          "type": "Input.Text",
-                          "placeholder": "Your message will be sent to the student alongside your acceptance notification.",
-                          "id": "acceptComment",
-                          "isRequired": true,
-                          "errorMessage": "Field required",
-                          "label": "Comment"
-                        }
-                      ],
-                      "actions": [
-                        {
-                          "type": "Action.Http",
-                          "title": "Submit",
-                          "method": "POST",
-                          "url": "@{parameters('Http Trigger Thesis Proposal Feedback (uzhbf_thesisplatform_http_trigger_thesis_proposal_feedback_env_var)')}",
-                          "body": "{\"actionType\": \"ACCEPT\", \"comment\": \"{{acceptComment.value}}\", \"proposalId\": \"@{variables('ProposalId')}\",\"supervisorEmail\": \"@{items('EmailToSupervisors')}\"}",
-                          "headers": [
-                            {
-                              "name": "Authorization",
-                              "value": ""
-                            },
-                            {
-                              "name": "Content-type",
-                              "value": "application/json"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "Action.ShowCard",
-                    "title": "Accept (Tentative)",
-                    "card": {
-                      "type": "AdaptiveCard",
-                      "body": [
-                        {
-                          "type": "TextBlock",
-                          "text": "When you accept the proposal tentatively, the student will receive your feedback and is required to improve the proposal before you finally accept the proposal for supervision.",
-                          "wrap": true
-                        },
-                        {
-                          "type": "Input.Text",
-                          "placeholder": "Your message will be sent to the student alongside your notification of interest.",
-                          "id": "tentativeComment",
-                          "label": "Comment",
-                          "isMultiline": true,
-                          "isRequired": true,
-                          "errorMessage": "Field required"
-                        }
-                      ],
-                      "actions": [
-                        {
-                          "type": "Action.Http",
-                          "title": "Submit",
-                          "method": "POST",
-                          "url": "@{parameters('Http Trigger Thesis Proposal Feedback (uzhbf_thesisplatform_http_trigger_thesis_proposal_feedback_env_var)')}",
-                          "body": "{\"actionType\": \"ACCEPT_TENTATIVE\", \"comment\": \"{{tentativeComment.value}}\", \"proposalId\": \"@{variables('ProposalId')}\",\"supervisorEmail\": \"@{items('EmailToSupervisors')}\"}",
-                          "headers": [
-                            {
-                              "name": "Authorization",
-                              "value": ""
-                            },
-                            {
-                              "name": "Content-type",
-                              "value": "application/json"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "Action.ShowCard",
-                    "title": "Reject",
-                    "card": {
-                      "type": "AdaptiveCard",
-                      "body": [
-                        {
-                          "type": "TextBlock",
-                          "text": "Rejecting this proposal because of lacking content quality or format requirements will cause review by the thesis coordinator. The student will need to improve and resubmit the proposal.",
-                          "wrap": true
-                        },
-                        {
-                          "type": "Input.ChoiceSet",
-                          "choices": [
-                            {
-                              "title": "Proposal too broad",
-                              "value": "TOO_BROAD"
-                            },
-                            {
-                              "title": "Proposal not sufficiently scientific",
-                              "value": "NOT_SCIENTIFIC"
-                            },
-                            {
-                              "title": "Proposal or scope not clear",
-                              "value": "NOT_CLEAR"
-                            },
-                            {
-                              "title": "Format unsuitable",
-                              "value": "FORMAT_UNSUITABLE"
-                            },
-                            {
-                              "title": "Mismatch in topic area",
-                              "value": "TOPIC_AREA_INVALID"
-                            }
-                          ],
-                          "placeholder": "Why should this proposal be rejected?",
-                          "isRequired": true,
-                          "id": "rejectReason",
-                          "errorMessage": "Field required",
-                          "label": "Reason"
-                        },
-                        {
-                          "type": "Input.Text",
-                          "placeholder": "Why do you recommend this proposal for rejection? Your comment will not be shown to the student.",
-                          "id": "rejectComment",
-                          "isRequired": true,
-                          "errorMessage": "Field required",
-                          "label": "Comment",
-                          "isMultiline": true
-                        }
-                      ],
-                      "actions": [
-                        {
-                          "type": "Action.Http",
-                          "title": "Submit",
-                          "method": "POST",
-                          "url": "@{parameters('Http Trigger Thesis Proposal Feedback (uzhbf_thesisplatform_http_trigger_thesis_proposal_feedback_env_var)')}",
-                          "body": "{\"actionType\": \"REJECT\", \"comment\": \"{{rejectComment.value}}\", \n\"reason\": \"{{rejectReason.value}}\", \"proposalId\": \"@{variables('ProposalId')}\",\"supervisorEmail\": \"@{items('EmailToSupervisors')}\"}",
-                          "headers": [
-                            {
-                              "name": "Authorization",
-                              "value": ""
-                            },
-                            {
-                              "name": "Content-type",
-                              "value": "application/json"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "Action.ShowCard",
-                    "title": "Decline",
-                    "card": {
-                      "type": "AdaptiveCard",
-                      "body": [
-                        {
-                          "type": "TextBlock",
-                          "text": "Declining this proposal because of a mismatch of interests or a high workload on your side will keep it available for other supervisors.",
-                          "wrap": true
-                        },
-                        {
-                          "type": "Input.ChoiceSet",
-                          "choices": [
-                            {
-                              "title": "Lack of interest in specific topic",
-                              "value": "LACKING_INTEREST"
-                            },
-                            {
-                              "title": "Personal workload too high",
-                              "value": "PERSONAL_WORKLOAD"
-                            },
-                            {
-                              "title": "Mismatch in language",
-                              "value": "LANGUAGE"
-                            }
-                          ],
-                          "placeholder": "Why do you want to decline this proposal?",
-                          "id": "declineReason",
-                          "label": "Reason",
-                          "isRequired": true,
-                          "errorMessage": "Field required"
-                        },
-                        {
-                          "type": "Input.Text",
-                          "placeholder": "Why do you decline this proposal specifically? Your comment will not be shown to the student.",
-                          "id": "declineComment",
-                          "label": "Comment",
-                          "isMultiline": true,
-                          "isRequired": true,
-                          "errorMessage": "Field required"
-                        }
-                      ],
-                      "actions": [
-                        {
-                          "type": "Action.Http",
-                          "title": "Submit",
-                          "method": "POST",
-                          "url": "@{parameters('Http Trigger Thesis Proposal Feedback (uzhbf_thesisplatform_http_trigger_thesis_proposal_feedback_env_var)')}",
-                          "body": "{\"actionType\": \"DECLINE\", \"comment\": \"{{declineComment.value}}\", \n\"reason\": \"{{declineReason.value}}\", \"proposalId\": \"@{variables('ProposalId')}\",\"supervisorEmail\": \"@{items('EmailToSupervisors')}\"}",
-                          "headers": [
-                            {
-                              "name": "Authorization",
-                              "value": ""
-                            },
-                            {
-                              "name": "Content-type",
-                              "value": "application/json"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  }
-                ],
-                "autoInvokeAction": {
-                  "type": "Action.Http",
-                  "method": "POST",
-                  "url": "@{parameters('Http Trigger Thesis Proposal Feedback (uzhbf_thesisplatform_http_trigger_thesis_proposal_feedback_env_var)')}",
-                  "body": "{\"actionType\": \"REFETCH\",\"proposalId\": \"@{variables('ProposalId')}\"}",
-                  "headers": [
-                    {
-                      "name": "Authorization",
-                      "value": ""
-                    },
-                    {
-                      "name": "Content-type",
-                      "value": "application/json"
-                    }
-                  ]
-                }
-              }
-            },
-            "EmailContents": {
-              "runAfter": {
-                "AdaptiveCard": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "4a75e677-4358-4992-a664-ffe5b41e0922"
-              },
-              "type": "Compose",
-              "inputs": "<script type=\"application/adaptivecard+json\">\n@{outputs('AdaptiveCard')}\n</script>"
-            },
-            "SupervisorInformationEmail": {
-              "runAfter": {
-                "EmailContents": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "ca5e164f-cb5e-4a62-9467-189c5311ca33"
+                "operationMetadataId": "d7a6dd06-5c53-41d1-966b-2d312f30fe3a"
               },
               "type": "OpenApiConnection",
               "inputs": {
+                "host": {
+                  "connectionName": "shared_microsoftforms",
+                  "operationId": "GetFormResponseById",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_microsoftforms"
+                },
+                "parameters": {
+                  "form_id": "@parameters('Submit Thesis Proposal Forms Id (uzhbf_thesisplatform_submit_thesis_proposal_forms_id_env_var)')",
+                  "response_id": "@triggerOutputs()?['body/resourceData/responseId']"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "SetProposalId": {
+              "runAfter": {
+                "GetResponseDetails": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "a9bc3897-2eca-441e-b401-0ef359b2ffcb"
+              },
+              "type": "SetVariable",
+              "inputs": {
+                "name": "ProposalId",
+                "value": "@{guid()}"
+              }
+            },
+            "SetOriginator": {
+              "runAfter": {
+                "SetProposalId": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "b85d8d03-1af3-43cf-9f22-e42b942ff725"
+              },
+              "type": "SetVariable",
+              "inputs": {
+                "name": "Originator",
+                "value": "@parameters('Originator (uzhbf_thesisplatform_originator_env_var)')"
+              }
+            },
+            "SetWasSpecificRequest": {
+              "runAfter": {
+                "SetOriginator": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "0b047e5f-a866-4479-b0a4-5d90658c0cfe"
+              },
+              "type": "SetVariable",
+              "inputs": {
+                "name": "WasSpecificRequest",
+                "value": false
+              }
+            },
+            "SupervisorList": {
+              "runAfter": {
+                "SetWasSpecificRequest": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "ea08e293-d266-49aa-b9e6-adced5938564"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline_1",
+                  "operationId": "GetItems",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
+                  "table": "@parameters('Supervisors List Name (uzhbf_thesisplatform_supervisors_list_name_env_var)')"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "SetTopicArea": {
+              "runAfter": {
+                "SupervisorList": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "193e9122-5159-45ea-9788-9348d2f829ad"
+              },
+              "type": "SetVariable",
+              "inputs": {
+                "name": "TopicArea",
+                "value": "@outputs('GetResponseDetails')?['body/r975d59f3f5114998b6e30c56c035334b']"
+              }
+            },
+            "PersistProposalToDB": {
+              "runAfter": {
+                "ForEachSupervisor": [
+                  "Succeeded",
+                  "TimedOut"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "7d90cba3-0cba-448a-a6f3-1bd130f7eed9"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_azuremysql",
+                  "operationId": "PostItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+                },
+                "parameters": {
+                  "server": "default",
+                  "database": "default",
+                  "table": "[main].[proposal]",
+                  "item/id": "@variables('ProposalId')",
+                  "item/title": "@outputs('GetResponseDetails')?['body/r7240915136fb41e8b884a045d08f39ce']",
+                  "item/description": "@outputs('GetResponseDetails')?['body/r7425856917f245efbd0c4cb2a7f0c434']",
+                  "item/language": "@outputs('GetResponseDetails')?['body/r8b7f3f4a7502459598d155e9b31eb25e']",
+                  "item/studyLevel": "@outputs('GetResponseDetails')?['body/rc797ecd1491b44a0ac091174abbac9f6']",
+                  "item/topicAreaSlug": "@replace(toLower(variables('TopicArea')),' ','_')",
+                  "item/typeKey": "STUDENT",
+                  "item/statusKey": "OPEN",
+                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+                  "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "PersistApplicationToDB": {
+              "runAfter": {
+                "PersistProposalToDB": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "fdff0e9f-8f24-4928-bc5f-18b23777b378"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_azuremysql",
+                  "operationId": "PostItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+                },
+                "parameters": {
+                  "server": "default",
+                  "database": "default",
+                  "table": "[main].[proposalapplication]",
+                  "item/id": "@outputs('PersistProposalToDB')?['body/id']",
+                  "item/statusKey": "OPEN",
+                  "item/email": "@outputs('GetResponseDetails')?['body/responder']",
+                  "item/matriculationNumber": "@outputs('GetResponseDetails')?['body/r6c3b387342aa4bd0b5f423aa43662850']",
+                  "item/fullName": "@outputs('GetResponseDetails')?['body/r7844031f633e4dd49368b0c116ad148d']",
+                  "item/plannedStartAt": "@outputs('GetResponseDetails')?['body/r837fec8c113c4851a217e947217c5b7f']",
+                  "item/motivation": "@outputs('GetResponseDetails')?['body/r60d760e8828645cc84d8fde2a6fe3b27']",
+                  "item/proposalId": "@outputs('PersistProposalToDB')?['body/id']",
+                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+                  "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "ParseFileUploadProposalPDF": {
+              "runAfter": {
+                "PersistApplicationToDB": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "5702afa2-f3b2-4293-85b7-c1c553782920"
+              },
+              "type": "ParseJson",
+              "inputs": {
+                "content": "@outputs('GetResponseDetails')?['body/r97c7d5dddc1c46149360e60cee1c31b2']",
+                "schema": {
+                  "items": {
+                    "properties": {
+                      "driveId": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "link": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "referenceId": {
+                        "type": "string"
+                      },
+                      "size": {
+                        "type": "integer"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "type": {},
+                      "uploadSessionUrl": {}
+                    },
+                    "required": [
+                      "name",
+                      "link",
+                      "id",
+                      "type",
+                      "size",
+                      "referenceId",
+                      "driveId",
+                      "status",
+                      "uploadSessionUrl"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "ParsePersonalCVPDF": {
+              "runAfter": {
+                "PersistApplicationToDB": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "eae9f188-4fd6-450d-a4f1-4bb6b0efb139"
+              },
+              "type": "ParseJson",
+              "inputs": {
+                "content": "@outputs('GetResponseDetails')?['body/r36080bd39649467ca994ab4b0435ebbe']",
+                "schema": {
+                  "items": {
+                    "properties": {
+                      "driveId": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "link": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "referenceId": {
+                        "type": "string"
+                      },
+                      "size": {
+                        "type": "integer"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "type": {},
+                      "uploadSessionUrl": {}
+                    },
+                    "required": [
+                      "name",
+                      "link",
+                      "id",
+                      "type",
+                      "size",
+                      "referenceId",
+                      "driveId",
+                      "status",
+                      "uploadSessionUrl"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "ParseTranscriptPDF": {
+              "runAfter": {
+                "PersistApplicationToDB": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "c48ec50d-be41-451e-881b-564d5026744c"
+              },
+              "type": "ParseJson",
+              "inputs": {
+                "content": "@outputs('GetResponseDetails')?['body/rd29a58b86f3541de8de84ed702dd0eec']",
+                "schema": {
+                  "items": {
+                    "properties": {
+                      "driveId": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "link": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "referenceId": {
+                        "type": "string"
+                      },
+                      "size": {
+                        "type": "integer"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "type": {},
+                      "uploadSessionUrl": {}
+                    },
+                    "required": [
+                      "name",
+                      "link",
+                      "id",
+                      "type",
+                      "size",
+                      "referenceId",
+                      "driveId",
+                      "status",
+                      "uploadSessionUrl"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "SetProposalPdfName": {
+              "runAfter": {
+                "ParseFileUploadProposalPDF": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "74877f03-bb0b-44eb-afcb-5d1a8d91c64d"
+              },
+              "type": "SetVariable",
+              "inputs": {
+                "name": "ProposalPDFName",
+                "value": "@{first(body('ParseFileUploadProposalPDF'))?['name']}"
+              }
+            },
+            "GetFileUploadProposalPDF": {
+              "runAfter": {
+                "SetProposalPdfName": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "fc42a6f8-0ab5-470e-9768-b94ffce6ecbf"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_onedriveforbusiness_1",
+                  "operationId": "GetFileContentByPath",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+                },
+                "parameters": {
+                  "path": "/Apps/Microsoft Forms/Submit Thesis Proposal/Research Proposal (MS Word or PDF)/@{variables('ProposalPDFName')}",
+                  "inferContentType": true
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "PersistProposalFile": {
+              "runAfter": {
+                "GetFileUploadProposalPDF": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "14d5659d-ec2a-4436-a3e4-164bf6e1422e"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline_1",
+                  "operationId": "CreateFile",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
+                  "folderPath": "/@{parameters('Proposals Document Library Name (uzhbf_thesisplatform_proposals_document_library_name_env_var)')}/Proposals/@{outputs('GetResponseDetails')?['body/responder']}",
+                  "name": "@{variables('ProposalId')}_proposal_@{variables('ProposalPDFName')}",
+                  "body": "@body('GetFileUploadProposalPDF')"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            },
+            "ShareLinkProposalFile": {
+              "runAfter": {
+                "PersistProposalFile": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "97073148-ecee-4222-bc02-d5463a009fb0"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline_1",
+                  "operationId": "CreateSharingLink",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
+                  "table": "@parameters('Proposals Document Library Name (uzhbf_thesisplatform_proposals_document_library_name_env_var)')",
+                  "id": "@outputs('PersistProposalFile')?['body/ItemId']",
+                  "permission/type": "view",
+                  "permission/scope": "organization"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "SetPersonalCvPdfName": {
+              "runAfter": {
+                "ParsePersonalCVPDF": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "1f71a2b8-c445-4495-8bfd-f06d5d687972"
+              },
+              "type": "SetVariable",
+              "inputs": {
+                "name": "PersonalCVPDFName",
+                "value": "@{first(body('ParsePersonalCVPDF'))?['name']}"
+              }
+            },
+            "GetFileUploadCVPDF": {
+              "runAfter": {
+                "SetPersonalCvPdfName": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "907d739d-ea78-479a-9b6a-03d3b381ed25"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_onedriveforbusiness_1",
+                  "operationId": "GetFileContentByPath",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+                },
+                "parameters": {
+                  "path": "/Apps/Microsoft Forms/Submit Thesis Proposal/Personal CV (PDF)/@{variables('PersonalCVPDFName')}",
+                  "inferContentType": true
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "PersistCVPDF": {
+              "runAfter": {
+                "GetFileUploadCVPDF": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "5addcee8-04fe-48e5-aa5b-e73aa3bf0b27"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline_1",
+                  "operationId": "CreateFile",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
+                  "folderPath": "/@{parameters('Proposals Document Library Name (uzhbf_thesisplatform_proposals_document_library_name_env_var)')}/Proposals/@{outputs('GetResponseDetails')?['body/responder']}",
+                  "name": "@{variables('ProposalId')}_cv_@{variables('PersonalCVPDFName')}",
+                  "body": "@body('GetFileUploadCVPDF')"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            },
+            "ShareLinkCVPDF": {
+              "runAfter": {
+                "PersistCVPDF": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "f98fbe3a-7eae-42a9-9aec-2a4950006e98"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline_1",
+                  "operationId": "CreateSharingLink",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
+                  "table": "@parameters('Proposals Document Library Name (uzhbf_thesisplatform_proposals_document_library_name_env_var)')",
+                  "id": "@outputs('PersistCVPDF')?['body/ItemId']",
+                  "permission/type": "view",
+                  "permission/scope": "organization"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "SetTranscriptPdfName": {
+              "runAfter": {
+                "ParseTranscriptPDF": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "748c8af6-c8e9-4914-a67c-7900bc26e727"
+              },
+              "type": "SetVariable",
+              "inputs": {
+                "name": "TranscriptPDFName",
+                "value": "@{first(body('ParseTranscriptPDF'))?['name']}"
+              }
+            },
+            "GetFileUploadTranscriptPDF": {
+              "runAfter": {
+                "SetTranscriptPdfName": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "4ba05d15-c466-44b5-956a-92142a49e468"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_onedriveforbusiness_1",
+                  "operationId": "GetFileContentByPath",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+                },
+                "parameters": {
+                  "path": "/Apps/Microsoft Forms/Submit Thesis Proposal/Transcript of Records (PDF)/@{variables('TranscriptPDFName')}",
+                  "inferContentType": true
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "PersistTranscriptPDF": {
+              "runAfter": {
+                "GetFileUploadTranscriptPDF": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "c15d6cd9-aa79-4e96-bab0-c70a00a42518"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline_1",
+                  "operationId": "CreateFile",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
+                  "folderPath": "/@{parameters('Proposals Document Library Name (uzhbf_thesisplatform_proposals_document_library_name_env_var)')}/Proposals/@{outputs('GetResponseDetails')?['body/responder']}",
+                  "name": "@{variables('ProposalId')}_transcript_@{variables('TranscriptPDFName')}",
+                  "body": "@body('GetFileUploadTranscriptPDF')"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            },
+            "ShareLinkTranscriptPDF": {
+              "runAfter": {
+                "PersistTranscriptPDF": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "5aa84c0a-2fdd-4b42-a54a-9d0e05c65856"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline_1",
+                  "operationId": "CreateSharingLink",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
+                  "table": "@parameters('Proposals Document Library Name (uzhbf_thesisplatform_proposals_document_library_name_env_var)')",
+                  "id": "@outputs('PersistTranscriptPDF')?['body/ItemId']",
+                  "permission/type": "view",
+                  "permission/scope": "organization"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "CreateProposalAttachment": {
+              "runAfter": {
+                "ShareLinkProposalFile": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "e3eb6ad7-b695-48b4-8f21-2c10c4ab6b96"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_azuremysql",
+                  "operationId": "PostItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+                },
+                "parameters": {
+                  "server": "default",
+                  "database": "default",
+                  "table": "[main].[proposalattachment]",
+                  "item/id": "@{guid()}",
+                  "item/name": "Proposal",
+                  "item/href": "@outputs('ShareLinkProposalFile')?['body/link/webUrl']",
+                  "item/type": "@outputs('PersistProposalFile')?['body/MediaType']",
+                  "item/proposalId": "@variables('ProposalId')",
+                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+                  "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "CreateCVAttachment": {
+              "runAfter": {
+                "ShareLinkCVPDF": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "edca8bce-6316-4cee-b027-83094e1b5a19"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_azuremysql",
+                  "operationId": "PostItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+                },
+                "parameters": {
+                  "server": "default",
+                  "database": "default",
+                  "table": "[main].[applicationattachment]",
+                  "item/id": "@{guid()}",
+                  "item/name": "CV",
+                  "item/href": "@outputs('ShareLinkCVPDF')?['body/link/webUrl']",
+                  "item/type": "@outputs('PersistCVPDF')?['body/MediaType']",
+                  "item/proposalApplicationId": "@outputs('PersistApplicationToDB')?['body/id']",
+                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+                  "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "CreateTranscriptAttachment": {
+              "runAfter": {
+                "ShareLinkTranscriptPDF": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "6023d5d8-64fd-4511-812e-c3f1f0b1bd8f"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_azuremysql",
+                  "operationId": "PostItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+                },
+                "parameters": {
+                  "server": "default",
+                  "database": "default",
+                  "table": "[main].[applicationattachment]",
+                  "item/id": "@{guid()}",
+                  "item/name": "Transcript",
+                  "item/href": "@outputs('ShareLinkTranscriptPDF')?['body/link/webUrl']",
+                  "item/type": "@outputs('PersistTranscriptPDF')?['body/MediaType']",
+                  "item/proposalApplicationId": "@outputs('PersistApplicationToDB')?['body/id']",
+                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+                  "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "EmailToSupervisors": {
+              "foreach": "@variables('MatchingSupervisors')",
+              "actions": {
+                "AdaptiveCard": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "fe7ccff6-5733-4c75-8c50-ce0674dbd1b1"
+                  },
+                  "type": "Compose",
+                  "inputs": {
+                    "type": "AdaptiveCard",
+                    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                    "version": "1.0",
+                    "originator": "@{variables('Originator')}",
+                    "body": [
+                      {
+                        "type": "TextBlock",
+                        "text": "@{outputs('GetResponseDetails')?['body/r7240915136fb41e8b884a045d08f39ce']}",
+                        "wrap": true,
+                        "weight": "Bolder",
+                        "size": "Medium"
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "@{outputs('GetResponseDetails')?['body/r7425856917f245efbd0c4cb2a7f0c434']}",
+                        "wrap": true
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "@{outputs('GetResponseDetails')?['body/r60d760e8828645cc84d8fde2a6fe3b27']}",
+                        "wrap": true
+                      },
+                      {
+                        "type": "FactSet",
+                        "facts": [
+                          {
+                            "title": "Submitted By",
+                            "value": "@{outputs('GetResponseDetails')?['body/r7844031f633e4dd49368b0c116ad148d']} (@{outputs('GetResponseDetails')?['body/r6c3b387342aa4bd0b5f423aa43662850']}, @{outputs('GetResponseDetails')?['body/responder']})"
+                          },
+                          {
+                            "title": "Proposed Title",
+                            "value": "@{outputs('GetResponseDetails')?['body/r7240915136fb41e8b884a045d08f39ce']}"
+                          },
+                          {
+                            "title": "Type of Proposal",
+                            "value": "@{outputs('GetResponseDetails')?['body/rc797ecd1491b44a0ac091174abbac9f6']}"
+                          },
+                          {
+                            "title": "Field of Research",
+                            "value": "@{outputs('GetResponseDetails')?['body/r975d59f3f5114998b6e30c56c035334b']}"
+                          },
+                          {
+                            "title": "Proposal Language",
+                            "value": "@{outputs('GetResponseDetails')?['body/r8b7f3f4a7502459598d155e9b31eb25e']}"
+                          },
+                          {
+                            "title": "Planned Start Date",
+                            "value": "@{outputs('GetResponseDetails')?['body/r837fec8c113c4851a217e947217c5b7f']}"
+                          }
+                        ],
+                        "separator": true
+                      }
+                    ],
+                    "actions": [
+                      {
+                        "type": "Action.ShowCard",
+                        "title": "Accept",
+                        "card": {
+                          "type": "AdaptiveCard",
+                          "body": [
+                            {
+                              "type": "TextBlock",
+                              "text": "Once you accept this proposal, the student will be asked to verify the matching. The proposal will be removed from the proposal market and assigned to you for supervision.",
+                              "wrap": true
+                            },
+                            {
+                              "type": "Input.Text",
+                              "placeholder": "Your message will be sent to the student alongside your acceptance notification.",
+                              "id": "acceptComment",
+                              "isRequired": true,
+                              "errorMessage": "Field required",
+                              "label": "Comment"
+                            }
+                          ],
+                          "actions": [
+                            {
+                              "type": "Action.Http",
+                              "title": "Submit",
+                              "method": "POST",
+                              "url": "@{parameters('Http Trigger Thesis Proposal Feedback (uzhbf_thesisplatform_http_trigger_thesis_proposal_feedback_env_var)')}",
+                              "body": "{\"actionType\": \"ACCEPT\", \"comment\": \"{{acceptComment.value}}\", \"proposalId\": \"@{variables('ProposalId')}\",\"supervisorEmail\": \"@{items('EmailToSupervisors')}\"}",
+                              "headers": [
+                                {
+                                  "name": "Authorization",
+                                  "value": ""
+                                },
+                                {
+                                  "name": "Content-type",
+                                  "value": "application/json"
+                                },
+                                {
+                                  "name": "secretkey",
+                                  "value": "@{parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')}"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "Action.ShowCard",
+                        "title": "Accept (Tentative)",
+                        "card": {
+                          "type": "AdaptiveCard",
+                          "body": [
+                            {
+                              "type": "TextBlock",
+                              "text": "When you accept the proposal tentatively, the student will receive your feedback and is required to improve the proposal before you finally accept the proposal for supervision.",
+                              "wrap": true
+                            },
+                            {
+                              "type": "Input.Text",
+                              "placeholder": "Your message will be sent to the student alongside your notification of interest.",
+                              "id": "tentativeComment",
+                              "label": "Comment",
+                              "isMultiline": true,
+                              "isRequired": true,
+                              "errorMessage": "Field required"
+                            }
+                          ],
+                          "actions": [
+                            {
+                              "type": "Action.Http",
+                              "title": "Submit",
+                              "method": "POST",
+                              "url": "@{parameters('Http Trigger Thesis Proposal Feedback (uzhbf_thesisplatform_http_trigger_thesis_proposal_feedback_env_var)')}",
+                              "body": "{\"actionType\": \"ACCEPT_TENTATIVE\", \"comment\": \"{{tentativeComment.value}}\", \"proposalId\": \"@{variables('ProposalId')}\",\"supervisorEmail\": \"@{items('EmailToSupervisors')}\"}",
+                              "headers": [
+                                {
+                                  "name": "Authorization",
+                                  "value": ""
+                                },
+                                {
+                                  "name": "Content-type",
+                                  "value": "application/json"
+                                },
+                                {
+                                  "name": "secretkey",
+                                  "value": "@{parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')}"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "Action.ShowCard",
+                        "title": "Reject",
+                        "card": {
+                          "type": "AdaptiveCard",
+                          "body": [
+                            {
+                              "type": "TextBlock",
+                              "text": "Rejecting this proposal because of lacking content quality or format requirements will cause review by the thesis coordinator. The student will need to improve and resubmit the proposal.",
+                              "wrap": true
+                            },
+                            {
+                              "type": "Input.ChoiceSet",
+                              "choices": [
+                                {
+                                  "title": "Proposal too broad",
+                                  "value": "TOO_BROAD"
+                                },
+                                {
+                                  "title": "Proposal not sufficiently scientific",
+                                  "value": "NOT_SCIENTIFIC"
+                                },
+                                {
+                                  "title": "Proposal or scope not clear",
+                                  "value": "NOT_CLEAR"
+                                },
+                                {
+                                  "title": "Format unsuitable",
+                                  "value": "FORMAT_UNSUITABLE"
+                                },
+                                {
+                                  "title": "Mismatch in topic area",
+                                  "value": "TOPIC_AREA_INVALID"
+                                }
+                              ],
+                              "placeholder": "Why should this proposal be rejected?",
+                              "isRequired": true,
+                              "id": "rejectReason",
+                              "errorMessage": "Field required",
+                              "label": "Reason"
+                            },
+                            {
+                              "type": "Input.Text",
+                              "placeholder": "Why do you recommend this proposal for rejection? Your comment will not be shown to the student.",
+                              "id": "rejectComment",
+                              "isRequired": true,
+                              "errorMessage": "Field required",
+                              "label": "Comment",
+                              "isMultiline": true
+                            }
+                          ],
+                          "actions": [
+                            {
+                              "type": "Action.Http",
+                              "title": "Submit",
+                              "method": "POST",
+                              "url": "@{parameters('Http Trigger Thesis Proposal Feedback (uzhbf_thesisplatform_http_trigger_thesis_proposal_feedback_env_var)')}",
+                              "body": "{\"actionType\": \"REJECT\", \"comment\": \"{{rejectComment.value}}\", \n\"reason\": \"{{rejectReason.value}}\", \"proposalId\": \"@{variables('ProposalId')}\",\"supervisorEmail\": \"@{items('EmailToSupervisors')}\"}",
+                              "headers": [
+                                {
+                                  "name": "Authorization",
+                                  "value": ""
+                                },
+                                {
+                                  "name": "Content-type",
+                                  "value": "application/json"
+                                },
+                                {
+                                  "name": "secretkey",
+                                  "value": "@{parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')}"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "Action.ShowCard",
+                        "title": "Decline",
+                        "card": {
+                          "type": "AdaptiveCard",
+                          "body": [
+                            {
+                              "type": "TextBlock",
+                              "text": "Declining this proposal because of a mismatch of interests or a high workload on your side will keep it available for other supervisors.",
+                              "wrap": true
+                            },
+                            {
+                              "type": "Input.ChoiceSet",
+                              "choices": [
+                                {
+                                  "title": "Lack of interest in specific topic",
+                                  "value": "LACKING_INTEREST"
+                                },
+                                {
+                                  "title": "Personal workload too high",
+                                  "value": "PERSONAL_WORKLOAD"
+                                },
+                                {
+                                  "title": "Mismatch in language",
+                                  "value": "LANGUAGE"
+                                }
+                              ],
+                              "placeholder": "Why do you want to decline this proposal?",
+                              "id": "declineReason",
+                              "label": "Reason",
+                              "isRequired": true,
+                              "errorMessage": "Field required"
+                            },
+                            {
+                              "type": "Input.Text",
+                              "placeholder": "Why do you decline this proposal specifically? Your comment will not be shown to the student.",
+                              "id": "declineComment",
+                              "label": "Comment",
+                              "isMultiline": true,
+                              "isRequired": true,
+                              "errorMessage": "Field required"
+                            }
+                          ],
+                          "actions": [
+                            {
+                              "type": "Action.Http",
+                              "title": "Submit",
+                              "method": "POST",
+                              "url": "@{parameters('Http Trigger Thesis Proposal Feedback (uzhbf_thesisplatform_http_trigger_thesis_proposal_feedback_env_var)')}",
+                              "body": "{\"actionType\": \"DECLINE\", \"comment\": \"{{declineComment.value}}\", \n\"reason\": \"{{declineReason.value}}\", \"proposalId\": \"@{variables('ProposalId')}\",\"supervisorEmail\": \"@{items('EmailToSupervisors')}\"}",
+                              "headers": [
+                                {
+                                  "name": "Authorization",
+                                  "value": ""
+                                },
+                                {
+                                  "name": "Content-type",
+                                  "value": "application/json"
+                                },
+                                {
+                                  "name": "secretkey",
+                                  "value": "@{parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')}"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    ],
+                    "autoInvokeAction": {
+                      "type": "Action.Http",
+                      "method": "POST",
+                      "url": "@{parameters('Http Trigger Thesis Proposal Feedback (uzhbf_thesisplatform_http_trigger_thesis_proposal_feedback_env_var)')}",
+                      "body": "{\"actionType\": \"REFETCH\",\"proposalId\": \"@{variables('ProposalId')}\",\"supervisorEmail\": \"@{items('EmailToSupervisors')}\"}",
+                      "headers": [
+                        {
+                          "name": "Authorization",
+                          "value": ""
+                        },
+                        {
+                          "name": "Content-type",
+                          "value": "application/json"
+                        },
+                        {
+                          "name": "secretkey",
+                          "value": "@{parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')}"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "EmailContents": {
+                  "runAfter": {
+                    "AdaptiveCard": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "4a75e677-4358-4992-a664-ffe5b41e0922"
+                  },
+                  "type": "Compose",
+                  "inputs": "<script type=\"application/adaptivecard+json\">\n@{outputs('AdaptiveCard')}\n</script>"
+                },
+                "SupervisorInformationEmail": {
+                  "runAfter": {
+                    "EmailContents": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "ca5e164f-cb5e-4a62-9467-189c5311ca33"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_office365_1",
+                      "operationId": "SharedMailboxSendEmailV2",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                    },
+                    "parameters": {
+                      "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
+                      "emailMessage/To": "@items('EmailToSupervisors')",
+                      "emailMessage/Subject": "DBF Theses - New Proposal for Review (@{outputs('GetResponseDetails')?['body/r7240915136fb41e8b884a045d08f39ce']})",
+                      "emailMessage/Body": "@outputs('EmailContents')",
+                      "emailMessage/Bcc": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
+                      "emailMessage/Attachments": [
+                        {
+                          "Name": "@variables('PersonalCVPDFName')",
+                          "ContentBytes": "@body('GetFileUploadCVPDF')"
+                        },
+                        {
+                          "Name": "@variables('TranscriptPDFName')",
+                          "ContentBytes": "@body('GetFileUploadTranscriptPDF')"
+                        },
+                        {
+                          "Name": "@variables('ProposalPDFName')",
+                          "ContentBytes": "@body('GetFileUploadProposalPDF')"
+                        }
+                      ],
+                      "emailMessage/ReplyTo": "@outputs('GetResponseDetails')?['body/responder']",
+                      "emailMessage/Importance": "High"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              },
+              "runAfter": {
+                "CreateCVAttachment": [
+                  "Succeeded"
+                ],
+                "CreateProposalAttachment": [
+                  "Succeeded"
+                ],
+                "CreateTranscriptAttachment": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "59fc0f49-7782-4696-b7cb-f1b30f3402ea"
+              },
+              "type": "Foreach"
+            },
+            "StudentConfirmationEmail": {
+              "runAfter": {
+                "EmailToSupervisors": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "956b2cfb-109b-4b96-b61d-4431cd5de8f4"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_office365_1",
+                  "operationId": "SharedMailboxSendEmailV2",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                },
                 "parameters": {
                   "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
-                  "emailMessage/To": "@items('EmailToSupervisors')",
-                  "emailMessage/Subject": "DBF Theses - New Proposal for Review (@{outputs('GetResponseDetails')?['body/r7240915136fb41e8b884a045d08f39ce']})",
-                  "emailMessage/Body": "@outputs('EmailContents')",
-                  "emailMessage/Bcc": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
+                  "emailMessage/To": "@outputs('GetResponseDetails')?['body/responder']",
+                  "emailMessage/Subject": "DBF Theses - Your Proposal has been received (@{outputs('GetResponseDetails')?['body/r7240915136fb41e8b884a045d08f39ce']})",
+                  "emailMessage/Body": "<p>Dear @{outputs('GetResponseDetails')?['body/r7844031f633e4dd49368b0c116ad148d']},<br>\n<br>\nWe have received your thesis proposal with the information as provided below. Please keep in mind that the thesis matching process usually takes about one month, but might take less or more depending on the workload of our supervisors. You will hear from us as soon as the proposal has been matched to a supervisor or if any further action from your side should be required.<br>\n<br>\nIf you have any <strong>urgent</strong> questions, please contact our DBF Thesis Coordinator by replying to this email.<br>\n<br>\nBest regards,<br>\nDBF Thesis Coordinator<br>\n<br>\n---<br>\n<br>\n<strong>Submitted By:</strong> @{outputs('GetResponseDetails')?['body/submitDate']} (@{outputs('GetResponseDetails')?['body/responder']})<br>\n<br>\n<strong>Proposed</strong> <strong>Title:</strong> @{outputs('GetResponseDetails')?['body/r7240915136fb41e8b884a045d08f39ce']}<br>\n<strong>Thesis Language:</strong> @{outputs('GetResponseDetails')?['body/r8b7f3f4a7502459598d155e9b31eb25e']}<br>\n<strong>Field of Research:</strong> @{outputs('GetResponseDetails')?['body/r975d59f3f5114998b6e30c56c035334b']}<br>\n<strong>Planned Start Date:</strong> @{outputs('GetResponseDetails')?['body/r837fec8c113c4851a217e947217c5b7f']}<br>\n<br>\n<strong>Summary:</strong> @{outputs('GetResponseDetails')?['body/r7425856917f245efbd0c4cb2a7f0c434']}<br>\n<strong>Motivation:</strong> @{outputs('GetResponseDetails')?['body/r60d760e8828645cc84d8fde2a6fe3b27']}</p>",
                   "emailMessage/Attachments": [
                     {
                       "Name": "@variables('PersonalCVPDFName')",
@@ -1035,328 +1459,172 @@
                       "ContentBytes": "@body('GetFileUploadProposalPDF')"
                     }
                   ],
-                  "emailMessage/ReplyTo": "@outputs('GetResponseDetails')?['body/responder']",
+                  "emailMessage/ReplyTo": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
                   "emailMessage/Importance": "High"
                 },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "ForEachSupervisor": {
+              "foreach": "@outputs('SupervisorList')?['body/value']",
+              "actions": {
+                "ForEachAreaOfInterest": {
+                  "foreach": "@items('ForEachSupervisor')?['AreasOfInterestV2']",
+                  "actions": {
+                    "IsSupervisingTopicArea": {
+                      "actions": {
+                        "AppendToMatchingSupervisors": {
+                          "runAfter": {},
+                          "metadata": {
+                            "operationMetadataId": "c2e44021-c939-4132-a7da-e0d1b23020cd"
+                          },
+                          "type": "AppendToArrayVariable",
+                          "inputs": {
+                            "name": "MatchingSupervisors",
+                            "value": "@items('ForEachSupervisor')?['Title']"
+                          }
+                        }
+                      },
+                      "runAfter": {},
+                      "expression": {
+                        "equals": [
+                          "@items('ForEachAreaOfinterest')?['Value']",
+                          "@variables('TopicArea')"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "0b3c57ab-9365-4f2e-88e1-09f66daff6f0"
+                      },
+                      "type": "If"
+                    }
+                  },
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "3cdcdaa5-8261-4fbc-9cc8-80f431b3c204"
+                  },
+                  "type": "Foreach"
+                }
+              },
+              "runAfter": {
+                "SetTopicArea": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "2a8c2544-f8b6-40be-8842-9a8104fc0fc1"
+              },
+              "type": "Foreach"
+            }
+          },
+          "runAfter": {
+            "InitializeTranscriptPdfName": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "a5c29fcb-cfb0-47b5-98db-caba000d824f"
+          },
+          "type": "Scope"
+        },
+        "Catch": {
+          "actions": {
+            "FilterForFailedOrTimedOutStatus": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "ca1bedd8-7555-4a99-a290-1c22c2e6e229"
+              },
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Try')",
+                "where": "@or(equals(item()?['Status'], 'Failed'), equals(item()?['Status'], 'TimedOut'))"
+              }
+            },
+            "CreateHtmlTable": {
+              "runAfter": {
+                "FilterForFailedOrTimedOutStatus": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "34b6a96f-64c6-43fd-89a3-fe7d5ef245ff"
+              },
+              "type": "Table",
+              "inputs": {
+                "from": "@body('FilterForFailedOrTimedOutStatus')",
+                "format": "HTML",
+                "columns": [
+                  {
+                    "header": "ProposalId",
+                    "value": "@triggerBody()?['proposalId']"
+                  },
+                  {
+                    "header": "ProposalTitle",
+                    "value": "@outputs('GetResponseDetails')?['body/r7240915136fb41e8b884a045d08f39ce']"
+                  },
+                  {
+                    "header": "SubmittedBy",
+                    "value": "@outputs('GetResponseDetails')?['body/responder']"
+                  },
+                  {
+                    "header": "ErrorCode",
+                    "value": "@item()?['code']"
+                  }
+                ]
+              }
+            },
+            "Terminate": {
+              "runAfter": {
+                "SendFailureNotification": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "0f41eff7-41db-4eae-8e12-46f64d545e8b"
+              },
+              "type": "Terminate",
+              "inputs": {
+                "runStatus": "Cancelled"
+              }
+            },
+            "SendFailureNotification": {
+              "runAfter": {
+                "CreateHtmlTable": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "e7c370de-36de-45b2-ae99-b7d0e7013242"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
                 "host": {
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
-                  "operationId": "SharedMailboxSendEmailV2",
-                  "connectionName": "shared_office365_1"
-                }
-              }
-            }
-          },
-          "runAfter": {
-            "CreateProposalAttachment": [
-              "Succeeded"
-            ],
-            "CreateCVAttachment": [
-              "Succeeded"
-            ],
-            "CreateTranscriptAttachment": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "59fc0f49-7782-4696-b7cb-f1b30f3402ea"
-          },
-          "type": "Foreach"
-        },
-        "ExtractPersonalCVPDFName": {
-          "runAfter": {
-            "ParsePersonalCVPDF": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "1e85d048-5c8e-4877-b685-55bed992f515"
-          },
-          "type": "InitializeVariable",
-          "inputs": {
-            "variables": [
-              {
-                "name": "PersonalCVPDFName",
-                "type": "string",
-                "value": "@{first(body('ParsePersonalCVPDF'))?['name']}"
-              }
-            ]
-          }
-        },
-        "GetFileUploadCVPDF": {
-          "runAfter": {
-            "ExtractPersonalCVPDFName": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "907d739d-ea78-479a-9b6a-03d3b381ed25"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "path": "/Apps/Microsoft Forms/Submit Thesis Proposal/Personal CV (PDF)/@{variables('PersonalCVPDFName')}",
-              "inferContentType": true
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
-              "operationId": "GetFileContentByPath",
-              "connectionName": "shared_onedriveforbusiness_1"
-            }
-          }
-        },
-        "PersistCVPDF": {
-          "runAfter": {
-            "GetFileUploadCVPDF": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "5addcee8-04fe-48e5-aa5b-e73aa3bf0b27"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
-              "folderPath": "/@{parameters('Proposals Document Library Name (uzhbf_thesisplatform_proposals_document_library_name_env_var)')}/Proposals/@{outputs('GetResponseDetails')?['body/responder']}",
-              "name": "@{variables('ProposalId')}_cv_@{variables('PersonalCVPDFName')}",
-              "body": "@body('GetFileUploadCVPDF')"
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
-              "operationId": "CreateFile",
-              "connectionName": "shared_sharepointonline_1"
-            }
-          },
-          "runtimeConfiguration": {
-            "contentTransfer": {
-              "transferMode": "Chunked"
-            }
-          }
-        },
-        "ShareLinkCVPDF": {
-          "runAfter": {
-            "PersistCVPDF": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "f98fbe3a-7eae-42a9-9aec-2a4950006e98"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
-              "table": "@parameters('Proposals Document Library Name (uzhbf_thesisplatform_proposals_document_library_name_env_var)')",
-              "id": "@outputs('PersistCVPDF')?['body/ItemId']",
-              "permission/type": "view",
-              "permission/scope": "organization"
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
-              "operationId": "CreateSharingLink",
-              "connectionName": "shared_sharepointonline_1"
-            }
-          }
-        },
-        "CreateCVAttachment": {
-          "runAfter": {
-            "ShareLinkCVPDF": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "edca8bce-6316-4cee-b027-83094e1b5a19"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "server": "default",
-              "database": "default",
-              "table": "[main].[applicationattachment]",
-              "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-              "item/href": "@outputs('ShareLinkCVPDF')?['body/link/webUrl']",
-              "item/id": "@{guid()}",
-              "item/name": "CV",
-              "item/proposalApplicationId": "@outputs('PersistApplicationToDB')?['body/id']",
-              "item/type": "@outputs('PersistCVPDF')?['body/MediaType']",
-              "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
-              "operationId": "PostItem",
-              "connectionName": "shared_azuremysql"
-            }
-          }
-        },
-        "ExtractTranscriptPDFName": {
-          "runAfter": {
-            "ParseTranscriptPDF": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "98af1222-c483-473f-a5a5-1c90bd4de1e9"
-          },
-          "type": "InitializeVariable",
-          "inputs": {
-            "variables": [
-              {
-                "name": "TranscriptPDFName",
-                "type": "string",
-                "value": "@{first(body('ParseTranscriptPDF'))?['name']}"
-              }
-            ]
-          }
-        },
-        "GetFileUploadTranscriptPDF": {
-          "runAfter": {
-            "ExtractTranscriptPDFName": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "4ba05d15-c466-44b5-956a-92142a49e468"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "path": "/Apps/Microsoft Forms/Submit Thesis Proposal/Transcript of Records (PDF)/@{variables('TranscriptPDFName')}",
-              "inferContentType": true
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
-              "operationId": "GetFileContentByPath",
-              "connectionName": "shared_onedriveforbusiness_1"
-            }
-          }
-        },
-        "PersistTranscriptPDF": {
-          "runAfter": {
-            "GetFileUploadTranscriptPDF": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "c15d6cd9-aa79-4e96-bab0-c70a00a42518"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
-              "folderPath": "/@{parameters('Proposals Document Library Name (uzhbf_thesisplatform_proposals_document_library_name_env_var)')}/Proposals/@{outputs('GetResponseDetails')?['body/responder']}",
-              "name": "@{variables('ProposalId')}_transcript_@{variables('TranscriptPDFName')}",
-              "body": "@body('GetFileUploadTranscriptPDF')"
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
-              "operationId": "CreateFile",
-              "connectionName": "shared_sharepointonline_1"
-            }
-          },
-          "runtimeConfiguration": {
-            "contentTransfer": {
-              "transferMode": "Chunked"
-            }
-          }
-        },
-        "ShareLinkTranscriptPDF": {
-          "runAfter": {
-            "PersistTranscriptPDF": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "5aa84c0a-2fdd-4b42-a54a-9d0e05c65856"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
-              "table": "@parameters('Proposals Document Library Name (uzhbf_thesisplatform_proposals_document_library_name_env_var)')",
-              "id": "@outputs('PersistTranscriptPDF')?['body/ItemId']",
-              "permission/type": "view",
-              "permission/scope": "organization"
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
-              "operationId": "CreateSharingLink",
-              "connectionName": "shared_sharepointonline_1"
-            }
-          }
-        },
-        "CreateTranscriptAttachment": {
-          "runAfter": {
-            "ShareLinkTranscriptPDF": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "6023d5d8-64fd-4511-812e-c3f1f0b1bd8f"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "server": "default",
-              "database": "default",
-              "table": "[main].[applicationattachment]",
-              "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-              "item/href": "@outputs('ShareLinkTranscriptPDF')?['body/link/webUrl']",
-              "item/id": "@{guid()}",
-              "item/name": "Transcript",
-              "item/proposalApplicationId": "@outputs('PersistApplicationToDB')?['body/id']",
-              "item/type": "@outputs('PersistTranscriptPDF')?['body/MediaType']",
-              "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
-              "operationId": "PostItem",
-              "connectionName": "shared_azuremysql"
-            }
-          }
-        },
-        "StudentConfirmationEmail": {
-          "runAfter": {
-            "EmailToSupervisors": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "956b2cfb-109b-4b96-b61d-4431cd5de8f4"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
-              "emailMessage/To": "@outputs('GetResponseDetails')?['body/responder']",
-              "emailMessage/Subject": "DBF Theses - Your Proposal has been received (@{outputs('GetResponseDetails')?['body/r7240915136fb41e8b884a045d08f39ce']})",
-              "emailMessage/Body": "<p>Dear @{outputs('GetResponseDetails')?['body/r7844031f633e4dd49368b0c116ad148d']},<br>\n<br>\nWe have received your thesis proposal with the information as provided below. Please keep in mind that the thesis matching process usually takes about one month, but might take less or more depending on the workload of our supervisors. You will hear from us as soon as the proposal has been matched to a supervisor or if any further action from your side should be required.<br>\n<br>\nIf you have any <strong>urgent</strong> questions, please contact our DBF Thesis Coordinator by replying to this email.<br>\n<br>\nBest regards,<br>\nDBF Thesis Coordinator<br>\n<br>\n---<br>\n<br>\n<strong>Submitted By:</strong> @{outputs('GetResponseDetails')?['body/submitDate']} (@{outputs('GetResponseDetails')?['body/responder']})<br>\n<br>\n<strong>Proposed</strong> <strong>Title:</strong> @{outputs('GetResponseDetails')?['body/r7240915136fb41e8b884a045d08f39ce']}<br>\n<strong>Thesis Language:</strong> @{outputs('GetResponseDetails')?['body/r8b7f3f4a7502459598d155e9b31eb25e']}<br>\n<strong>Field of Research:</strong> @{outputs('GetResponseDetails')?['body/r975d59f3f5114998b6e30c56c035334b']}<br>\n<strong>Planned Start Date:</strong> @{outputs('GetResponseDetails')?['body/r837fec8c113c4851a217e947217c5b7f']}<br>\n<br>\n<strong>Summary:</strong> @{outputs('GetResponseDetails')?['body/r7425856917f245efbd0c4cb2a7f0c434']}<br>\n<strong>Motivation:</strong> @{outputs('GetResponseDetails')?['body/r60d760e8828645cc84d8fde2a6fe3b27']}</p>",
-              "emailMessage/Attachments": [
-                {
-                  "Name": "@variables('PersonalCVPDFName')",
-                  "ContentBytes": "@body('GetFileUploadCVPDF')"
+                  "connectionName": "shared_sendmail-2",
+                  "operationId": "SendEmailV3",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sendmail"
                 },
-                {
-                  "Name": "@variables('TranscriptPDFName')",
-                  "ContentBytes": "@body('GetFileUploadTranscriptPDF')"
+                "parameters": {
+                  "request/to": "@{parameters('Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)')};",
+                  "request/subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Thesis Platform - Thesis Proposal Submission",
+                  "request/text": "<p>@{body('CreateHtmlTable')}</p>"
                 },
-                {
-                  "Name": "@variables('ProposalPDFName')",
-                  "ContentBytes": "@body('GetFileUploadProposalPDF')"
-                }
-              ],
-              "emailMessage/ReplyTo": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
-              "emailMessage/Importance": "High"
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
-              "operationId": "SharedMailboxSendEmailV2",
-              "connectionName": "shared_office365_1"
+                "authentication": "@parameters('$authentication')"
+              }
             }
-          }
+          },
+          "runAfter": {
+            "Try": [
+              "Failed",
+              "TimedOut"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "054f28a3-080c-4f8a-9529-1183121f12f9"
+          },
+          "type": "Scope"
         }
       }
     },
-    "templateName": null
+    "templateName": ""
   },
   "schemaVersion": "1.0.0.0"
 }

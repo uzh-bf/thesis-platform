@@ -8,19 +8,21 @@ releases:
     kubeContext: bf-k8s463ba113
     values:
       - appSecret: '{{ requiredEnv "NEXTAUTH_SECRET" }}'
-        appUrl: '{{ requiredEnv "NEXT_PUBLIC_APP_URL" }}'
+        appUrl: '{{ requiredEnv "APP_URL" }}'
 
         image:
           tag: '{{ requiredEnv "APP_VERSION" }}'
 
         flows:
+          secret: '{{ requiredEnv "FLOW_SECRET" }}'
           application: '{{ requiredEnv "APPLICATION_URL" }}'
           proposalFeedback: '{{ requiredEnv "PROPOSAL_FEEDBACK_URL" }}'
+          applicationAcceptance: '{{ requiredEnv "APPLICATION_ACCEPTANCE_URL" }}'
 
         azureAd:
-          clientId: '{{ requiredEnv "AZURE_AD_CLIENT_ID" }}'
-          clientSecret: '{{ requiredEnv "AZURE_AD_CLIENT_SECRET" }}'
-          tenantId: '{{ requiredEnv "AZURE_AD_TENANT_ID" }}'
+          clientId: '{{ env "AZURE_AD_CLIENT_ID" }}'
+          clientSecret: '{{ env "AZURE_AD_CLIENT_SECRET" }}'
+          tenantId: '{{ env "AZURE_AD_TENANT_ID" }}'
 
         auth0:
           clientId: '{{ env "AUTH0_CLIENT_ID" }}'
