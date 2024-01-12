@@ -15,10 +15,14 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ARG NODE_ENV production
-# Next.js collects completely anonymous telemetry data about general usage.
-# Learn more here: https://nextjs.org/telemetry
-# Uncomment the following line in case you want to disable telemetry during the build.
-# ENV NEXT_TELEMETRY_DISABLED 1
+ARG NEXT_PUBLIC_APP_URL theses.bf.uzh.ch
+ARG NEXT_PUBLIC_FORMS_URL_PUBLISH "https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAs_TeTD3rkXtGpbExdNgeYCZUMkpSRUdOUUYxMlU4SEI3MDk4OUw5T0QzTS4u"
+ARG NEXT_PUBLIC_FORMS_URL_SUBMIT "https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAs_TeTD3rkXtGpbExdNgeYCZUNkpHOVo4MlREUTJPNE9LV0lVUEVSOElJVC4u"
+ARG NEXT_PUBLIC_BLOBSERVICECLIENT_URL "https://thesisplatformdev.blob.core.windows.net/uploads?"
+ARG NEXT_PUBLIC_CONTAINER_NAME
+ARG NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME thesisplatformdev
+
+ENV NEXT_TELEMETRY_DISABLED 1
 
 RUN npm run build
 
@@ -30,8 +34,7 @@ FROM node:18.12.0-alpine AS runner
 WORKDIR /app
 
 ARG NODE_ENV production
-# Uncomment the following line in case you want to disable telemetry during runtime.
-# ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED 1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
