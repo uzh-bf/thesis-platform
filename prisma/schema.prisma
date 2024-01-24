@@ -211,3 +211,21 @@ model UserProposalFeedback {
 
   @@unique([proposalId, userEmail])
 }
+
+model AdminInfo {
+  id String @id @unique @default(uuid())
+
+  mailReceived String?
+  supervisor String?
+  student String?
+  title String?
+  type String?
+  status String?
+  olatCapturedDate DateTime?
+  submissionDate DateTime?
+  grade Float?
+  olatGradeDate DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
