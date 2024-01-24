@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0-beta.10](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.9...v1.0.0-beta.10) (2024-01-24)
+
+
+### Features
+
+* **prisma:** extended db by admin info table ([#23](https://github.com/uzh-bf/thesis-platform/issues/23)) ([867dc63](https://github.com/uzh-bf/thesis-platform/commit/867dc631fa31da71f854608eaea9f9798c4bc3c1))
+
 ## [1.0.0-beta.9](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.8...v1.0.0-beta.9) (2023-12-18)
 
 
