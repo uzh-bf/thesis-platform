@@ -106,6 +106,7 @@ export default function ProposalApplication({
                   },
                 ]}
                 data={proposalDetails?.applications}
+                defaultSortField="createdAt"
               />
             )}
           </div>
