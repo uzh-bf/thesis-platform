@@ -107,6 +107,13 @@
           "metadata": {
             "schemaName": "uzhbf_thesisplatform_flow_secret_env_var"
           }
+        },
+        "Department (uzhbf_thesisplatform_department_env_var)": {
+          "defaultValue": "DBF",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_department_env_var"
+          }
         }
       },
       "triggers": {
@@ -400,15 +407,15 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[proposalapplication]",
-                  "item/id": "@guid()",
-                  "item/statusKey": "OPEN",
-                  "item/email": "@triggerBody()?['uzhemail']",
-                  "item/matriculationNumber": "@triggerBody()?['matriculationnumber']",
-                  "item/fullName": "@triggerBody()?['fullname']",
-                  "item/plannedStartAt": "@triggerBody()?['startingdate']",
-                  "item/motivation": "@triggerBody()?['motivation']",
-                  "item/proposalId": "@triggerBody()?['proposalid']",
                   "item/createdAt": "@utcNow()",
+                  "item/email": "@triggerBody()?['uzhemail']",
+                  "item/fullName": "@triggerBody()?['fullname']",
+                  "item/id": "@guid()",
+                  "item/matriculationNumber": "@triggerBody()?['matriculationnumber']",
+                  "item/motivation": "@triggerBody()?['motivation']",
+                  "item/plannedStartAt": "@triggerBody()?['startingdate']",
+                  "item/proposalId": "@triggerBody()?['proposalid']",
+                  "item/statusKey": "OPEN",
                   "item/updatedAt": "@utcNow()"
                 },
                 "authentication": "@parameters('$authentication')"
@@ -434,12 +441,12 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[applicationattachment]",
+                  "item/createdAt": "@utcNow()",
+                  "item/href": "@outputs('CreateSharingLinkCv')?['body/link/webUrl']",
                   "item/id": "@guid()",
                   "item/name": "CV",
-                  "item/href": "@outputs('CreateSharingLinkCv')?['body/link/webUrl']",
-                  "item/type": "application/pdf",
                   "item/proposalApplicationId": "@outputs('PersistApplication')?['body/id']",
-                  "item/createdAt": "@utcNow()",
+                  "item/type": "application/pdf",
                   "item/updatedAt": "@utcNow()"
                 },
                 "authentication": "@parameters('$authentication')"
@@ -465,12 +472,12 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[applicationattachment]",
+                  "item/createdAt": "@utcNow()",
+                  "item/href": "@outputs('CreateSharingLinkTranscript')?['body/link/webUrl']",
                   "item/id": "@guid()",
                   "item/name": "Transcript",
-                  "item/href": "@outputs('CreateSharingLinkTranscript')?['body/link/webUrl']",
-                  "item/type": "application/pdf",
                   "item/proposalApplicationId": "@outputs('PersistApplication')?['body/id']",
-                  "item/createdAt": "@utcNow()",
+                  "item/type": "application/pdf",
                   "item/updatedAt": "@utcNow()"
                 },
                 "authentication": "@parameters('$authentication')"
@@ -548,7 +555,7 @@
                 "parameters": {
                   "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
                   "emailMessage/To": "@outputs('GetSupervisionDetails')?['body/supervisorEmail']",
-                  "emailMessage/Subject": "DBF Theses - New Application for Proposal \"@{outputs('GetProposalDetails')?['body/title']}\"",
+                  "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - New Application for Proposal \"@{outputs('GetProposalDetails')?['body/title']}\"",
                   "emailMessage/Body": "<p><strong>Fullname: </strong>@{triggerBody()?['fullname']}<br>\n<strong>Matriculation Number: </strong>@{triggerBody()?['matriculationnumber']}<br>\n<strong>Start Date: </strong>@{triggerBody()?['startingdate']}<br>\n<strong>Motivation: </strong>@{triggerBody()?['motivation']}<br>\n<br>\n<strong>Transcript: <br>\n</strong><strong>@{outputs('CreateSharingLinkTranscript')?['body/link/webUrl']}</strong><br>\n<strong>Pe</strong><strong>rsonal CV: <br>\n</strong><strong>@{outputs('CreateSharingLinkCv')?['body/link/webUrl']}</strong><strong></strong></p>",
                   "emailMessage/Cc": "@outputs('GetProposalDetails')?['body/ownedByUserEmail']",
                   "emailMessage/Bcc": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
@@ -577,8 +584,8 @@
                 "parameters": {
                   "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
                   "emailMessage/To": "@triggerBody()?['uzhemail']",
-                  "emailMessage/Subject": "BF Theses - Confirmation Mail",
-                  "emailMessage/Body": "<p>Dear @{triggerBody()?['fullname']},<br>\n<br>\nThank you for applying to the following proposal: \"@{outputs('GetProposalDetails')?['body/title']}\".<br>\n<br>\nBest regards,<br>\nDBF Thesis Coordinator<br>\n<br>\n---<br>\n<br>\nFullname: @{triggerBody()?['fullname']}<br>\nMatriculation Number: @{triggerBody()?['matriculationnumber']}<br>\nStart Date: @{triggerBody()?['startingdate']}<br>\nMotivation: @{triggerBody()?['motivation']}</p>",
+                  "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Confirmation Mail",
+                  "emailMessage/Body": "<p>Dear @{triggerBody()?['fullname']},<br>\n<br>\nThank you for applying to the following proposal: \"@{outputs('GetProposalDetails')?['body/title']}\".<br>\n<br>\nBest regards,<br>\n@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Thesis Coordinator<br>\n<br>\n---<br>\n<br>\nFullname: @{triggerBody()?['fullname']}<br>\nMatriculation Number: @{triggerBody()?['matriculationnumber']}<br>\nStart Date: @{triggerBody()?['startingdate']}<br>\nMotivation: @{triggerBody()?['motivation']}</p>",
                   "emailMessage/Bcc": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
                   "emailMessage/Importance": "Normal"
                 },

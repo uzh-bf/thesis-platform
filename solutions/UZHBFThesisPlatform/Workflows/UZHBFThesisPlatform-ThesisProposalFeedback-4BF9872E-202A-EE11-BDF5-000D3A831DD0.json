@@ -98,6 +98,13 @@
           "metadata": {
             "schemaName": "uzhbf_thesisplatform_flow_secret_env_var"
           }
+        },
+        "Department (uzhbf_thesisplatform_department_env_var)": {
+          "defaultValue": "DBF",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_department_env_var"
+          }
         }
       },
       "triggers": {
@@ -592,14 +599,14 @@
                           "database": "default",
                           "table": "[main].[proposal]",
                           "id": "@triggerBody()?['proposalid']",
-                          "item/title": "@outputs('ProposalDetails')['title']",
+                          "item/createdAt": "@outputs('ProposalDetails')['createdAt']",
                           "item/description": "@outputs('ProposalDetails')['description']",
                           "item/language": "@outputs('ProposalDetails')['language']",
+                          "item/statusKey": "MATCHED",
                           "item/studyLevel": "@outputs('ProposalDetails')['studyLevel']",
+                          "item/title": "@outputs('ProposalDetails')['title']",
                           "item/topicAreaSlug": "@outputs('ProposalDetails')['topicAreaSlug']",
                           "item/typeKey": "@outputs('ProposalDetails')['typeKey']",
-                          "item/statusKey": "MATCHED",
-                          "item/createdAt": "@outputs('ProposalDetails')['createdAt']",
                           "item/updatedAt": "@utcNow()"
                         },
                         "authentication": "@parameters('$authentication')"
@@ -626,14 +633,14 @@
                           "database": "default",
                           "table": "[main].[proposalapplication]",
                           "id": "@triggerBody()?['proposalId']",
-                          "item/statusKey": "ACCEPTED",
-                          "item/email": "@outputs('ApplicationDetails')['email']",
-                          "item/matriculationNumber": "@outputs('ApplicationDetails')['matriculationNumber']",
-                          "item/fullName": "@outputs('ApplicationDetails')['fullName']",
-                          "item/plannedStartAt": "@outputs('ApplicationDetails')['plannedStartAt']",
-                          "item/motivation": "@outputs('ApplicationDetails')['motivation']",
-                          "item/proposalId": "@outputs('ApplicationDetails')['proposalId']",
                           "item/createdAt": "@outputs('ApplicationDetails')['createdAt']",
+                          "item/email": "@outputs('ApplicationDetails')['email']",
+                          "item/fullName": "@outputs('ApplicationDetails')['fullName']",
+                          "item/matriculationNumber": "@outputs('ApplicationDetails')['matriculationNumber']",
+                          "item/motivation": "@outputs('ApplicationDetails')['motivation']",
+                          "item/plannedStartAt": "@outputs('ApplicationDetails')['plannedStartAt']",
+                          "item/proposalId": "@outputs('ApplicationDetails')['proposalId']",
+                          "item/statusKey": "ACCEPTED",
                           "item/updatedAt": "@utcNow()"
                         },
                         "authentication": "@parameters('$authentication')"
@@ -658,8 +665,8 @@
                         "parameters": {
                           "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
                           "emailMessage/To": "@{outputs('ApplicationDetails')['email']};@{triggerBody()?['supervisorEmail']}",
-                          "emailMessage/Subject": "DBF Theses - Your Proposal has been accepted",
-                          "emailMessage/Body": "<p>Dear @{outputs('ApplicationDetails')['fullName']},<br>\n<br>\nYour proposal on \"@{outputs('ProposalDetails')['title']}\" has been accepted by a supervisor. Please get in touch with your supervisor \"@{triggerBody()?['supervisorEmail']}\" to get started with the thesis process (just reply to this email).<br>\n<br>\nBest regards,<br>\nDBF Thesis Coordinator<br>\n<br>\n---<br>\n<br>\nMessage of your supervisor: @{triggerBody()?['comment']}</p>",
+                          "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Your Proposal has been accepted",
+                          "emailMessage/Body": "<p>Dear @{outputs('ApplicationDetails')['fullName']},<br>\n<br>\nYour proposal on \"@{outputs('ProposalDetails')['title']}\" has been accepted by a supervisor. Please get in touch with your supervisor \"@{triggerBody()?['supervisorEmail']}\" to get started with the thesis process (just reply to this email).<br>\n<br>\nBest regards,<br>\n@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Thesis Coordinator<br>\n<br>\n---<br>\n<br>\nMessage of your supervisor: @{triggerBody()?['comment']}</p>",
                           "emailMessage/Cc": "@outputs('CreateAcceptSupervision')?['body/supervisorEmail']",
                           "emailMessage/Bcc": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
                           "emailMessage/ReplyTo": "@triggerBody()?['supervisorEmail']",
@@ -729,9 +736,9 @@
                               "server": "default",
                               "database": "default",
                               "table": "[main].[userproposalsupervision]",
+                              "item/createdAt": "@utcNow()",
                               "item/id": "@triggerBody()?['proposalId']",
                               "item/proposalId": "@triggerBody()?['proposalId']",
-                              "item/createdAt": "@utcNow()",
                               "item/updatedAt": "@utcNow()",
                               "item/supervisorEmail": "@triggerBody()?['supervisorEmail']"
                             },
@@ -777,14 +784,14 @@
                           "database": "default",
                           "table": "[main].[proposal]",
                           "id": "@triggerBody()?['proposalId']",
-                          "item/title": "@outputs('ProposalDetails')['title']",
+                          "item/createdAt": "@outputs('ProposalDetails')['createdAt']",
                           "item/description": "@outputs('ProposalDetails')['description']",
                           "item/language": "@outputs('ProposalDetails')['language']",
+                          "item/statusKey": "MATCHED_TENTATIVE",
                           "item/studyLevel": "@outputs('ProposalDetails')['studyLevel']",
+                          "item/title": "@outputs('ProposalDetails')['title']",
                           "item/topicAreaSlug": "@outputs('ProposalDetails')['topicAreaSlug']",
                           "item/typeKey": "@outputs('ProposalDetails')['typeKey']",
-                          "item/statusKey": "MATCHED_TENTATIVE",
-                          "item/createdAt": "@outputs('ProposalDetails')['createdAt']",
                           "item/updatedAt": "@utcNow()"
                         },
                         "authentication": "@parameters('$authentication')"
@@ -810,9 +817,9 @@
                           "server": "default",
                           "database": "default",
                           "table": "[main].[userproposalsupervision]",
+                          "item/createdAt": "@utcNow()",
                           "item/id": "@triggerBody()?['proposalId']",
                           "item/proposalId": "@triggerBody()?['proposalId']",
-                          "item/createdAt": "@utcNow()",
                           "item/updatedAt": "@utcNow()",
                           "item/supervisorEmail": "@triggerBody()?['supervisorEmail']"
                         },
@@ -840,14 +847,14 @@
                           "database": "default",
                           "table": "[main].[proposalapplication]",
                           "id": "@triggerBody()?['proposalId']",
-                          "item/statusKey": "ACCEPTED_TENTATIVE",
-                          "item/email": "@outputs('ApplicationDetails')['email']",
-                          "item/matriculationNumber": "@outputs('ApplicationDetails')['matriculationNumber']",
-                          "item/fullName": "@outputs('ApplicationDetails')['fullName']",
-                          "item/plannedStartAt": "@outputs('ApplicationDetails')['plannedStartAt']",
-                          "item/motivation": "@outputs('ApplicationDetails')['motivation']",
-                          "item/proposalId": "@outputs('ApplicationDetails')['proposalId']",
                           "item/createdAt": "@outputs('ApplicationDetails')['createdAt']",
+                          "item/email": "@outputs('ApplicationDetails')['email']",
+                          "item/fullName": "@outputs('ApplicationDetails')['fullName']",
+                          "item/matriculationNumber": "@outputs('ApplicationDetails')['matriculationNumber']",
+                          "item/motivation": "@outputs('ApplicationDetails')['motivation']",
+                          "item/plannedStartAt": "@outputs('ApplicationDetails')['plannedStartAt']",
+                          "item/proposalId": "@outputs('ApplicationDetails')['proposalId']",
+                          "item/statusKey": "ACCEPTED_TENTATIVE",
                           "item/updatedAt": "@utcNow()"
                         },
                         "authentication": "@parameters('$authentication')"
@@ -872,8 +879,8 @@
                         "parameters": {
                           "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
                           "emailMessage/To": "@{outputs('ApplicationDetails')['email']};@{triggerBody()?['supervisorEmail']}",
-                          "emailMessage/Subject": "DBF Theses - Your Proposal has attracted interest",
-                          "emailMessage/Body": "<p>Dear @{outputs('ApplicationDetails')['fullName']},<br>\n<br>\nYour proposal on \"@{outputs('ProposalDetails')['title']}\" has attracted the interest of a supervisor on the condition that the proposal is improved in certain areas. Please review the supervisor feedback, adjust your proposal as needed, and get in touch with your potential supervisor \"@{triggerBody()?['supervisorEmail']}\" (just reply to this email).<br>\n<br>\nBest regards,<br>\nDBF Thesis Coordinator<br>\n<br>\n---<br>\n<br>\nFeedback of your potential supervisor: @{triggerBody()?['comment']}</p>",
+                          "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Your Proposal has attracted interest",
+                          "emailMessage/Body": "<p>Dear @{outputs('ApplicationDetails')['fullName']},<br>\n<br>\nYour proposal on \"@{outputs('ProposalDetails')['title']}\" has attracted the interest of a supervisor on the condition that the proposal is improved in certain areas. Please review the supervisor feedback, adjust your proposal as needed, and get in touch with your potential supervisor \"@{triggerBody()?['supervisorEmail']}\" (just reply to this email).<br>\n<br>\nBest regards,<br>\n@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Thesis Coordinator<br>\n<br>\n---<br>\n<br>\nFeedback of your potential supervisor: @{triggerBody()?['comment']}</p>",
                           "emailMessage/Cc": "@triggerBody()?['supervisorEmail']",
                           "emailMessage/Bcc": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
                           "emailMessage/ReplyTo": "@triggerBody()?['supervisorEmail']",
@@ -946,14 +953,14 @@
                           "server": "default",
                           "database": "default",
                           "table": "[main].[userproposalfeedback]",
-                          "item/id": "@guid()",
-                          "item/proposalId": "@triggerBody()?['proposalId']",
-                          "item/userEmail": "@triggerBody()?['supervisorEmail']",
-                          "item/typeKey": "DECLINED_@{triggerBody()?['reason']}",
-                          "item/reason": "@triggerBody()?['reason']",
                           "item/comment": "@triggerBody()?['comment']",
                           "item/createdAt": "@utcNow()",
-                          "item/updatedAt": "@utcNow()"
+                          "item/id": "@guid()",
+                          "item/proposalId": "@triggerBody()?['proposalId']",
+                          "item/reason": "@triggerBody()?['reason']",
+                          "item/typeKey": "DECLINED_@{triggerBody()?['reason']}",
+                          "item/updatedAt": "@utcNow()",
+                          "item/userEmail": "@triggerBody()?['supervisorEmail']"
                         },
                         "authentication": "@parameters('$authentication')"
                       }
@@ -977,7 +984,7 @@
                         "parameters": {
                           "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
                           "emailMessage/To": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
-                          "emailMessage/Subject": "DBF Theses - Proposal declined (@{outputs('ProposalDetails')['title']})",
+                          "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Proposal declined (@{outputs('ProposalDetails')['title']})",
                           "emailMessage/Body": "<p>The proposal \"@{outputs('ProposalDetails')['title']}\" has been declined by \"@{triggerBody()?['supervisorEmail']}\".<br>\n<br>\n<strong>Reason: </strong>@{triggerBody()?['reason']}<br>\n<strong>Comment:</strong> @{triggerBody()?['comment']}</p>",
                           "emailMessage/Importance": "Normal"
                         },
@@ -1051,7 +1058,7 @@
                         "parameters": {
                           "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
                           "emailMessage/To": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
-                          "emailMessage/Subject": "DBF Theses - Proposal rejected (@{outputs('ProposalDetails')['title']})",
+                          "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Proposal rejected (@{outputs('ProposalDetails')['title']})",
                           "emailMessage/Body": "<p>The proposal \"@{outputs('ProposalDetails')['title']}\" has been rejected by \"@{triggerBody()?['supervisorEmail']}\".<br>\n<br>\nReason: @{triggerBody()?['reason']}<br>\nComment: @{triggerBody()?['comment']}</p>",
                           "emailMessage/Importance": "Normal"
                         },
@@ -1145,14 +1152,14 @@
                               "database": "default",
                               "table": "[main].[proposal]",
                               "id": "@triggerBody()?['proposalId']",
-                              "item/title": "@outputs('ProposalDetails')['title']",
+                              "item/createdAt": "@outputs('ProposalDetails')['createdAt']",
                               "item/description": "@outputs('ProposalDetails')['description']",
                               "item/language": "@outputs('ProposalDetails')['language']",
+                              "item/statusKey": "OPEN",
                               "item/studyLevel": "@outputs('ProposalDetails')['studyLevel']",
+                              "item/title": "@outputs('ProposalDetails')['title']",
                               "item/topicAreaSlug": "@outputs('ProposalDetails')['topicAreaSlug']",
                               "item/typeKey": "@outputs('ProposalDetails')['typeKey']",
-                              "item/statusKey": "OPEN",
-                              "item/createdAt": "@outputs('ProposalDetails')['createdAt']",
                               "item/updatedAt": "@utcNow()"
                             },
                             "authentication": "@parameters('$authentication')"
@@ -1179,14 +1186,14 @@
                               "database": "default",
                               "table": "[main].[proposalapplication]",
                               "id": "@triggerBody()?['proposalId']",
-                              "item/statusKey": "OPEN",
-                              "item/email": "@outputs('ApplicationDetails')['email']",
-                              "item/matriculationNumber": "@outputs('ApplicationDetails')['matriculationNumber']",
-                              "item/fullName": "@outputs('ApplicationDetails')['fullName']",
-                              "item/plannedStartAt": "@outputs('ApplicationDetails')['plannedStartAt']",
-                              "item/motivation": "@outputs('ApplicationDetails')['motivation']",
-                              "item/proposalId": "@triggerBody()?['proposalId']",
                               "item/createdAt": "@outputs('ApplicationDetails')['createdAt']",
+                              "item/email": "@outputs('ApplicationDetails')['email']",
+                              "item/fullName": "@outputs('ApplicationDetails')['fullName']",
+                              "item/matriculationNumber": "@outputs('ApplicationDetails')['matriculationNumber']",
+                              "item/motivation": "@outputs('ApplicationDetails')['motivation']",
+                              "item/plannedStartAt": "@outputs('ApplicationDetails')['plannedStartAt']",
+                              "item/proposalId": "@triggerBody()?['proposalId']",
+                              "item/statusKey": "OPEN",
                               "item/updatedAt": "@utcNow()"
                             },
                             "authentication": "@parameters('$authentication')"
@@ -1225,14 +1232,14 @@
                           "server": "default",
                           "database": "default",
                           "table": "[main].[userproposalfeedback]",
-                          "item/id": "@guid()",
-                          "item/proposalId": "@triggerBody()?['proposalId']",
-                          "item/userEmail": "@triggerBody()?['supervisorEmail']",
-                          "item/typeKey": "REJECTED_@{triggerBody()?['reason']}",
-                          "item/reason": "@triggerBody()?['reason']",
                           "item/comment": "@triggerBody()?['comment']",
                           "item/createdAt": "@utcNow()",
-                          "item/updatedAt": "@utcNow()"
+                          "item/id": "@guid()",
+                          "item/proposalId": "@triggerBody()?['proposalId']",
+                          "item/reason": "@triggerBody()?['reason']",
+                          "item/typeKey": "REJECTED_@{triggerBody()?['reason']}",
+                          "item/updatedAt": "@utcNow()",
+                          "item/userEmail": "@triggerBody()?['supervisorEmail']"
                         },
                         "authentication": "@parameters('$authentication')"
                       }

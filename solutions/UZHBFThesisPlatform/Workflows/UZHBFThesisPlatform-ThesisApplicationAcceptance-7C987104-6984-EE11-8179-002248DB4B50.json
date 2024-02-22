@@ -75,6 +75,13 @@
           "metadata": {
             "schemaName": "uzhbf_thesisplatform_flow_secret_env_var"
           }
+        },
+        "Department (uzhbf_thesisplatform_department_env_var)": {
+          "defaultValue": "DBF",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_department_env_var"
+          }
         }
       },
       "triggers": {
@@ -128,18 +135,18 @@
                   "database": "default",
                   "table": "[main].[proposal]",
                   "id": "@triggerBody()?['proposalId']",
-                  "item/title": "@outputs('GetProposalInfo')?['body/title']",
+                  "item/createdAt": "@outputs('GetProposalInfo')?['body/createdAt']",
                   "item/description": "@outputs('GetProposalInfo')?['body/description']",
                   "item/language": "@outputs('GetProposalInfo')?['body/language']",
+                  "item/statusKey": "MATCHED",
                   "item/studyLevel": "@outputs('GetProposalInfo')?['body/studyLevel']",
+                  "item/title": "@outputs('GetProposalInfo')?['body/title']",
                   "item/topicAreaSlug": "@outputs('GetProposalInfo')?['body/topicAreaSlug']",
                   "item/typeKey": "@outputs('GetProposalInfo')?['body/typeKey']",
-                  "item/statusKey": "MATCHED",
-                  "item/createdAt": "@outputs('GetProposalInfo')?['body/createdAt']",
                   "item/updatedAt": "@utcNow()",
-                  "item/timeFrame": "@outputs('GetProposalInfo')?['body/timeFrame']",
+                  "item/ownedByStudent": "@outputs('GetProposalInfo')?['body/ownedByStudent']",
                   "item/ownedByUserEmail": "@outputs('GetProposalInfo')?['body/ownedByUserEmail']",
-                  "item/ownedByStudent": "@outputs('GetProposalInfo')?['body/ownedByStudent']"
+                  "item/timeFrame": "@outputs('GetProposalInfo')?['body/timeFrame']"
                 },
                 "authentication": "@parameters('$authentication')"
               }
@@ -190,12 +197,12 @@
                   "database": "default",
                   "table": "[main].[userproposalsupervision]",
                   "id": "@triggerBody()?['proposalId']",
-                  "item/proposalId": "@outputs('GetUserProposalSupervisionInfo')?['body/proposalId']",
                   "item/createdAt": "@outputs('GetUserProposalSupervisionInfo')?['body/createdAt']",
+                  "item/proposalId": "@outputs('GetUserProposalSupervisionInfo')?['body/proposalId']",
                   "item/updatedAt": "@utcNow()",
-                  "item/supervisorEmail": "@outputs('GetUserProposalSupervisionInfo')?['body/supervisorEmail']",
                   "item/studentEmail": "@triggerBody()?['applicantEmail']",
-                  "item/studyLevel": "@outputs('GetUserProposalSupervisionInfo')?['body/studyLevel']"
+                  "item/studyLevel": "@outputs('GetUserProposalSupervisionInfo')?['body/studyLevel']",
+                  "item/supervisorEmail": "@outputs('GetUserProposalSupervisionInfo')?['body/supervisorEmail']"
                 },
                 "authentication": "@parameters('$authentication')"
               }
@@ -246,14 +253,14 @@
                   "database": "default",
                   "table": "[main].[proposalapplication]",
                   "id": "@triggerBody()?['proposalApplicationId']",
-                  "item/statusKey": "ACCEPTED",
-                  "item/email": "@outputs('GetProposalApplicationInfo')?['body/email']",
-                  "item/matriculationNumber": "@outputs('GetProposalApplicationInfo')?['body/matriculationNumber']",
-                  "item/fullName": "@outputs('GetProposalApplicationInfo')?['body/fullName']",
-                  "item/plannedStartAt": "@outputs('GetProposalApplicationInfo')?['body/plannedStartAt']",
-                  "item/motivation": "@outputs('GetProposalApplicationInfo')?['body/motivation']",
-                  "item/proposalId": "@outputs('GetProposalApplicationInfo')?['body/proposalId']",
                   "item/createdAt": "@outputs('GetProposalApplicationInfo')?['body/createdAt']",
+                  "item/email": "@outputs('GetProposalApplicationInfo')?['body/email']",
+                  "item/fullName": "@outputs('GetProposalApplicationInfo')?['body/fullName']",
+                  "item/matriculationNumber": "@outputs('GetProposalApplicationInfo')?['body/matriculationNumber']",
+                  "item/motivation": "@outputs('GetProposalApplicationInfo')?['body/motivation']",
+                  "item/plannedStartAt": "@outputs('GetProposalApplicationInfo')?['body/plannedStartAt']",
+                  "item/proposalId": "@outputs('GetProposalApplicationInfo')?['body/proposalId']",
+                  "item/statusKey": "ACCEPTED",
                   "item/updatedAt": "@utcNow()",
                   "item/supervisionId": "@triggerBody()?['proposalId']"
                 },
@@ -305,14 +312,14 @@
                       "database": "default",
                       "table": "[main].[proposalapplication]",
                       "id": "@items('Apply_to_each')?['id']",
-                      "item/statusKey": "DECLINED",
-                      "item/email": "@items('Apply_to_each')?['email']",
-                      "item/matriculationNumber": "@items('Apply_to_each')?['matriculationNumber']",
-                      "item/fullName": "@items('Apply_to_each')?['fullName']",
-                      "item/plannedStartAt": "@items('Apply_to_each')?['plannedStartAt']",
-                      "item/motivation": "@items('Apply_to_each')?['motivation']",
-                      "item/proposalId": "@items('Apply_to_each')?['proposalId']",
                       "item/createdAt": "@items('Apply_to_each')?['createdAt']",
+                      "item/email": "@items('Apply_to_each')?['email']",
+                      "item/fullName": "@items('Apply_to_each')?['fullName']",
+                      "item/matriculationNumber": "@items('Apply_to_each')?['matriculationNumber']",
+                      "item/motivation": "@items('Apply_to_each')?['motivation']",
+                      "item/plannedStartAt": "@items('Apply_to_each')?['plannedStartAt']",
+                      "item/proposalId": "@items('Apply_to_each')?['proposalId']",
+                      "item/statusKey": "DECLINED",
                       "item/updatedAt": "@utcNow()",
                       "item/supervisionId": "@null"
                     },
@@ -337,8 +344,8 @@
                     },
                     "parameters": {
                       "emailMessage/To": "@outputs('UpdateProposalApplicationDeclined')?['body/email']",
-                      "emailMessage/Subject": "BF Theses - Proposal Application Declined",
-                      "emailMessage/Body": "<p>Dear @{outputs('UpdateProposalApplicationDeclined')?['body/fullName']},<br>\n<br>\nWe are sorry to inform you, that your application on the proposal \"@{outputs('GetProposalInfo')?['body/title']}\" was declined.<br>\n<br>\nBest regards,<br>\nDBF Thesis Coordinator</p>",
+                      "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Proposal Application Declined",
+                      "emailMessage/Body": "<p>Dear @{outputs('UpdateProposalApplicationDeclined')?['body/fullName']},<br>\n<br>\nWe are sorry to inform you, that your application on the proposal \"@{outputs('GetProposalInfo')?['body/title']}\" was declined.<br>\n<br>\nBest regards,<br>\n@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Thesis Coordinator</p>",
                       "emailMessage/From": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
                       "emailMessage/Importance": "Normal"
                     },
@@ -377,7 +384,7 @@
                 "authentication": "@parameters('$authentication')"
               }
             },
-            "AccepApplicantNotification": {
+            "AcceptApplicantNotification": {
               "runAfter": {
                 "Apply_to_each": [
                   "Succeeded"
@@ -395,10 +402,10 @@
                 },
                 "parameters": {
                   "emailMessage/To": "@triggerBody()?['applicantEmail']",
-                  "emailMessage/Subject": "BF Theses - Proposal Application Accepted",
-                  "emailMessage/Body": "<p>Dear @{outputs('UpdateProposalApplicationAccepted')?['body/fullName']},<br>\n<br>\nYour application to the proposal \"@{outputs('UpdateProposalMatched')?['body/title']}\", was accepted.<br>\nKindly get in touch with your supervisor by replying to this email within one week.<br>\n<br>\nBest regards,<br>\nDBF Thesis Coordinator</p>",
+                  "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Proposal Application Accepted",
+                  "emailMessage/Body": "<p>Dear @{outputs('UpdateProposalApplicationAccepted')?['body/fullName']},<br>\n<br>\nYour application to the proposal \"@{outputs('UpdateProposalMatched')?['body/title']}\", was accepted.<br>\nKindly get in touch with your supervisor by replying to this email within one week.<br>\n<br>\nBest regards,<br>\n@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Thesis Coordinator</p>",
                   "emailMessage/From": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
-                  "emailMessage/Cc": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
+                  "emailMessage/Cc": "@{parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')};@{outputs('UpdateUserProposalSupervisionStudentEmail')?['body/supervisorEmail']}",
                   "emailMessage/ReplyTo": "@outputs('UpdateUserProposalSupervisionStudentEmail')?['body/supervisorEmail']",
                   "emailMessage/Importance": "Normal"
                 },
@@ -407,7 +414,7 @@
             },
             "Response": {
               "runAfter": {
-                "AccepApplicantNotification": [
+                "AcceptApplicantNotification": [
                   "Succeeded"
                 ]
               },
