@@ -80,6 +80,13 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
           <div className="font-bold">Submitted On</div>
           <div>{format(parseISO(proposalDetails.createdAt), 'dd.MM.Y')}</div>
         </div>
+
+        {proposalDetails.typeKey === 'STUDENT' && (
+          <div className="text-base">
+            <div className="font-bold">Email</div>
+            <div>{proposalDetails.applications[0].email}</div>
+          </div>
+        )}
       </div>
 
       {proposalDetails.typeKey === 'STUDENT' && (
