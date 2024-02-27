@@ -123,6 +123,7 @@ model Proposal {
   language    String
   studyLevel  String
   timeFrame   String?
+  additionalStudentComment String? @db.Text
 
   topicArea     TopicArea @relation(fields: [topicAreaSlug], references: [slug])
   topicAreaSlug String

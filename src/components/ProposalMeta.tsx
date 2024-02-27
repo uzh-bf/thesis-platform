@@ -89,6 +89,16 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
         )}
       </div>
 
+      {proposalDetails.typeKey === 'STUDENT' &&
+        proposalDetails.additionalStudentComment && (
+          <div className="text-base">
+            <div className="font-bold">Additional Comment</div>
+            <p className="pb-4 text-base">
+              {proposalDetails.additionalStudentComment}
+            </p>
+          </div>
+        )}
+
       {proposalDetails.typeKey === 'STUDENT' && (
         <div className="flex flex-row gap-6 mt-4 text-sm">
           {proposalDetails.attachments.map((attachment: any) => (
