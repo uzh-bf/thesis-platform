@@ -1,7 +1,9 @@
 import { IconDefinition, faFilePdf } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { format, parseISO } from 'date-fns'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
+import { useMemo } from 'react'
 import { ProposalDetails } from 'src/types/app'
 
 interface ProposalMetaProps {
@@ -12,7 +14,20 @@ const FileTypeIconMap: Record<string, IconDefinition> = {
   'application/pdf': faFilePdf,
 }
 export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
+  const { data: session } = useSession()
+
+  const supervisedBy = useMemo(() => {
+    if (session?.user?.email && proposalDetails?.supervisedBy?.length > 0) {
+      return proposalDetails.supervisedBy[0].supervisor.name
+    } else if (proposalDetails?.supervisedBy.name) {
+      return proposalDetails.supervisedBy.name
+    } else {
+      return 'Unassigned'
+    }
+  }, [session, proposalDetails])
+
   if (!proposalDetails) return null
+
   return (
     <div className="p-4">
       <h1 className="text-base font-bold">{proposalDetails.title}</h1>
@@ -51,7 +66,7 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
         )}
         <div className="text-base">
           <div className="font-bold">Supervised By</div>
-          <div>{proposalDetails.supervisedBy?.name ?? 'Unassigned'}</div>
+          <div>{supervisedBy}</div>
         </div>
 
         {proposalDetails.typeKey === 'STUDENT' && (
@@ -65,10 +80,27 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
           <div className="font-bold">Submitted On</div>
           <div>{format(parseISO(proposalDetails.createdAt), 'dd.MM.Y')}</div>
         </div>
+
+        {proposalDetails.typeKey === 'STUDENT' && (
+          <div className="text-base">
+            <div className="font-bold">Email</div>
+            <div>{proposalDetails.applications[0].email}</div>
+          </div>
+        )}
       </div>
 
+      {proposalDetails.typeKey === 'STUDENT' &&
+        proposalDetails.additionalStudentComment && (
+          <div className="text-base">
+            <div className="font-bold">Additional Comment</div>
+            <p className="pb-4 text-base">
+              {proposalDetails.additionalStudentComment}
+            </p>
+          </div>
+        )}
+
       {proposalDetails.typeKey === 'STUDENT' && (
-        <div className="text-sm">
+        <div className="flex flex-row gap-6 mt-4 text-sm">
           {proposalDetails.attachments.map((attachment: any) => (
             <Link
               key={attachment.id}

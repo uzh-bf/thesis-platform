@@ -1,0 +1,577 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_azuremysql": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "uzhbf_thesisplatform_sql_ref"
+        },
+        "api": {
+          "name": "shared_azuremysql"
+        }
+      },
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "uzhbf_thesisplatform_outlook365_ref"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_sendmail-2": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "uzhbf_thesisplatform_mail_ref"
+        },
+        "api": {
+          "name": "shared_sendmail"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "Environment (uzhbf_thesisplatform_environment_env_var)": {
+          "defaultValue": "DEV",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_environment_env_var"
+          }
+        },
+        "Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)": {
+          "defaultValue": "flow@bf.uzh.ch",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_email_failure_env_var"
+          }
+        },
+        "Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)": {
+          "defaultValue": "maximilian.weber@bf.uzh.ch",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_outlook_from_address_env_var"
+          }
+        },
+        "Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)": {
+          "defaultValue": "maximilian.weber@bf.uzh.ch",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_thesis_inbox_env_var"
+          }
+        },
+        "Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)": {
+          "defaultValue": "abcd",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_flow_secret_env_var"
+          }
+        },
+        "Department (uzhbf_thesisplatform_department_env_var)": {
+          "defaultValue": "DBF",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_department_env_var"
+          }
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "1c77e3d6-3094-4200-b0d9-961cba7869ca"
+          },
+          "type": "Request",
+          "kind": "Http",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "proposalId": {
+                  "type": "string"
+                },
+                "proposalApplicationId": {
+                  "type": "string"
+                },
+                "applicantEmail": {
+                  "type": "string"
+                }
+              }
+            },
+            "triggerAuthenticationType": "All"
+          },
+          "conditions": []
+        }
+      },
+      "actions": {
+        "Try": {
+          "actions": {
+            "UpdateProposalMatched": {
+              "runAfter": {
+                "GetProposalInfo": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "b16d2167-065d-479e-bb4d-9792c4e41f51"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_azuremysql",
+                  "operationId": "PatchItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+                },
+                "parameters": {
+                  "server": "default",
+                  "database": "default",
+                  "table": "[main].[proposal]",
+                  "id": "@triggerBody()?['proposalId']",
+                  "item/createdAt": "@outputs('GetProposalInfo')?['body/createdAt']",
+                  "item/description": "@outputs('GetProposalInfo')?['body/description']",
+                  "item/language": "@outputs('GetProposalInfo')?['body/language']",
+                  "item/statusKey": "MATCHED",
+                  "item/studyLevel": "@outputs('GetProposalInfo')?['body/studyLevel']",
+                  "item/title": "@outputs('GetProposalInfo')?['body/title']",
+                  "item/topicAreaSlug": "@outputs('GetProposalInfo')?['body/topicAreaSlug']",
+                  "item/typeKey": "@outputs('GetProposalInfo')?['body/typeKey']",
+                  "item/updatedAt": "@utcNow()",
+                  "item/ownedByStudent": "@outputs('GetProposalInfo')?['body/ownedByStudent']",
+                  "item/ownedByUserEmail": "@outputs('GetProposalInfo')?['body/ownedByUserEmail']",
+                  "item/timeFrame": "@outputs('GetProposalInfo')?['body/timeFrame']"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "GetUserProposalSupervisionInfo": {
+              "runAfter": {
+                "UpdateProposalMatched": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "63daa442-83a1-4ed0-95fa-d8b2ed6fe0f4"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_azuremysql",
+                  "operationId": "GetItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+                },
+                "parameters": {
+                  "server": "default",
+                  "database": "default",
+                  "table": "[main].[userproposalsupervision]",
+                  "id": "@triggerBody()?['proposalId']"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "UpdateUserProposalSupervisionStudentEmail": {
+              "runAfter": {
+                "GetUserProposalSupervisionInfo": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "a946287f-1a21-4d92-95e7-a21dc927e738"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_azuremysql",
+                  "operationId": "PatchItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+                },
+                "parameters": {
+                  "server": "default",
+                  "database": "default",
+                  "table": "[main].[userproposalsupervision]",
+                  "id": "@triggerBody()?['proposalId']",
+                  "item/createdAt": "@outputs('GetUserProposalSupervisionInfo')?['body/createdAt']",
+                  "item/proposalId": "@outputs('GetUserProposalSupervisionInfo')?['body/proposalId']",
+                  "item/updatedAt": "@utcNow()",
+                  "item/studentEmail": "@triggerBody()?['applicantEmail']",
+                  "item/studyLevel": "@outputs('GetUserProposalSupervisionInfo')?['body/studyLevel']",
+                  "item/supervisorEmail": "@outputs('GetUserProposalSupervisionInfo')?['body/supervisorEmail']"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "GetProposalApplicationInfo": {
+              "runAfter": {
+                "UpdateUserProposalSupervisionStudentEmail": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "bd966497-1196-4e6d-a954-bcac82c25a74"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_azuremysql",
+                  "operationId": "GetItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+                },
+                "parameters": {
+                  "server": "default",
+                  "database": "default",
+                  "table": "[main].[proposalapplication]",
+                  "id": "@triggerBody()?['proposalApplicationId']"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "UpdateProposalApplicationAccepted": {
+              "runAfter": {
+                "GetProposalApplicationInfo": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "6120af66-b299-4cd8-acd2-88a3d16d415d"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_azuremysql",
+                  "operationId": "PatchItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+                },
+                "parameters": {
+                  "server": "default",
+                  "database": "default",
+                  "table": "[main].[proposalapplication]",
+                  "id": "@triggerBody()?['proposalApplicationId']",
+                  "item/createdAt": "@outputs('GetProposalApplicationInfo')?['body/createdAt']",
+                  "item/email": "@outputs('GetProposalApplicationInfo')?['body/email']",
+                  "item/fullName": "@outputs('GetProposalApplicationInfo')?['body/fullName']",
+                  "item/matriculationNumber": "@outputs('GetProposalApplicationInfo')?['body/matriculationNumber']",
+                  "item/motivation": "@outputs('GetProposalApplicationInfo')?['body/motivation']",
+                  "item/plannedStartAt": "@outputs('GetProposalApplicationInfo')?['body/plannedStartAt']",
+                  "item/proposalId": "@outputs('GetProposalApplicationInfo')?['body/proposalId']",
+                  "item/statusKey": "ACCEPTED",
+                  "item/updatedAt": "@utcNow()",
+                  "item/supervisionId": "@triggerBody()?['proposalId']"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "GetProposalApplicationsToDecline": {
+              "runAfter": {
+                "UpdateProposalApplicationAccepted": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "f242d66b-b23c-4821-a6e9-102375f81242"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_azuremysql",
+                  "operationId": "GetItems",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+                },
+                "parameters": {
+                  "server": "default",
+                  "database": "default",
+                  "table": "[main].[proposalapplication]",
+                  "$filter": "proposalId eq '@{triggerBody()?['proposalId']}' and email ne '@{triggerBody()?['applicantEmail']}'"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Apply_to_each": {
+              "foreach": "@outputs('GetProposalApplicationsToDecline')?['body/value']",
+              "actions": {
+                "UpdateProposalApplicationDeclined": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "2598e0d2-d6a3-496b-acf6-eb2f24cc1acd"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_azuremysql",
+                      "operationId": "PatchItem",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+                    },
+                    "parameters": {
+                      "server": "default",
+                      "database": "default",
+                      "table": "[main].[proposalapplication]",
+                      "id": "@items('Apply_to_each')?['id']",
+                      "item/createdAt": "@items('Apply_to_each')?['createdAt']",
+                      "item/email": "@items('Apply_to_each')?['email']",
+                      "item/fullName": "@items('Apply_to_each')?['fullName']",
+                      "item/matriculationNumber": "@items('Apply_to_each')?['matriculationNumber']",
+                      "item/motivation": "@items('Apply_to_each')?['motivation']",
+                      "item/plannedStartAt": "@items('Apply_to_each')?['plannedStartAt']",
+                      "item/proposalId": "@items('Apply_to_each')?['proposalId']",
+                      "item/statusKey": "DECLINED",
+                      "item/updatedAt": "@utcNow()",
+                      "item/supervisionId": "@null"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "DeclineApplicantNotification": {
+                  "runAfter": {
+                    "UpdateProposalApplicationDeclined": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "33021eda-e781-4cdf-838e-7280251ec03f"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_office365",
+                      "operationId": "SendEmailV2",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                    },
+                    "parameters": {
+                      "emailMessage/To": "@outputs('UpdateProposalApplicationDeclined')?['body/email']",
+                      "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Proposal Application Declined",
+                      "emailMessage/Body": "<p>Dear @{outputs('UpdateProposalApplicationDeclined')?['body/fullName']},<br>\n<br>\nWe are sorry to inform you, that your application on the proposal \"@{outputs('GetProposalInfo')?['body/title']}\" was declined.<br>\n<br>\nBest regards,<br>\n@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Thesis Coordinator</p>",
+                      "emailMessage/From": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
+                      "emailMessage/Importance": "Normal"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              },
+              "runAfter": {
+                "GetProposalApplicationsToDecline": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "5ae870fc-77a2-4074-844a-5d1ef4da9f2b"
+              },
+              "type": "Foreach"
+            },
+            "GetProposalInfo": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "8db4975b-3fdf-4b60-a02f-5781177d3524"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_azuremysql",
+                  "operationId": "GetItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+                },
+                "parameters": {
+                  "server": "default",
+                  "database": "default",
+                  "table": "[main].[proposal]",
+                  "id": "@triggerBody()?['proposalId']"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "AcceptApplicantNotification": {
+              "runAfter": {
+                "Apply_to_each": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "c770ade3-7921-45b3-802e-c0c6af531b87"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_office365",
+                  "operationId": "SendEmailV2",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                },
+                "parameters": {
+                  "emailMessage/To": "@triggerBody()?['applicantEmail']",
+                  "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Proposal Application Accepted",
+                  "emailMessage/Body": "<p>Dear @{outputs('UpdateProposalApplicationAccepted')?['body/fullName']},<br>\n<br>\nYour application to the proposal \"@{outputs('UpdateProposalMatched')?['body/title']}\", was accepted by @{outputs('UpdateUserProposalSupervisionStudentEmail')?['body/supervisorEmail']}.<br>\nKindly get in touch with your supervisor by replying to this email within one week.<br>\n<br>\nBest regards,<br>\n@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Thesis Coordinator</p>",
+                  "emailMessage/From": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
+                  "emailMessage/Cc": "@{parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')};@{outputs('UpdateUserProposalSupervisionStudentEmail')?['body/supervisorEmail']}",
+                  "emailMessage/ReplyTo": "@outputs('UpdateUserProposalSupervisionStudentEmail')?['body/supervisorEmail']",
+                  "emailMessage/Importance": "Normal"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Response": {
+              "runAfter": {
+                "AcceptApplicantNotification": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "683d1d81-839c-4789-b0f5-5246ea53241d"
+              },
+              "type": "Response",
+              "kind": "Http",
+              "inputs": {
+                "statusCode": 200,
+                "headers": {
+                  "Content-Type": "application/json"
+                },
+                "body": {
+                  "message": "success"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "IsFLowSecretCorrect": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e7d8a472-e6f6-4fed-9b99-4c9f7109fc71"
+          },
+          "type": "Scope"
+        },
+        "Catch": {
+          "actions": {
+            "FilterForFailedOrTimedOutStatus": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "ca1bedd8-7555-4a99-a290-1c22c2e6e229"
+              },
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Try')",
+                "where": "@or(equals(item()?['Status'], 'Failed'), equals(item()?['Status'], 'TimedOut'))"
+              }
+            },
+            "CreateHtmlTable": {
+              "runAfter": {
+                "FilterForFailedOrTimedOutStatus": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "34b6a96f-64c6-43fd-89a3-fe7d5ef245ff"
+              },
+              "type": "Table",
+              "inputs": {
+                "from": "@body('FilterForFailedOrTimedOutStatus')",
+                "format": "HTML",
+                "columns": [
+                  {
+                    "header": "ProposalId",
+                    "value": "@triggerBody()?['proposalId']"
+                  },
+                  {
+                    "header": "proposalApplicationId",
+                    "value": "@triggerBody()?['proposalApplicationId']"
+                  },
+                  {
+                    "header": "applicantEmail",
+                    "value": "@triggerBody()?['applicantEmail']"
+                  },
+                  {
+                    "header": "ErrorCode",
+                    "value": "@item()?['code']"
+                  }
+                ]
+              }
+            },
+            "Terminate": {
+              "runAfter": {
+                "SendFailureNotification": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "0f41eff7-41db-4eae-8e12-46f64d545e8b"
+              },
+              "type": "Terminate",
+              "inputs": {
+                "runStatus": "Cancelled"
+              }
+            },
+            "SendFailureNotification": {
+              "runAfter": {
+                "CreateHtmlTable": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "e7c370de-36de-45b2-ae99-b7d0e7013242"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sendmail-2",
+                  "operationId": "SendEmailV3",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sendmail"
+                },
+                "parameters": {
+                  "request/to": "@{parameters('Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)')};",
+                  "request/subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Thesis Platform - Thesis Application Acceptance",
+                  "request/text": "<p>@{body('CreateHtmlTable')}</p>"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "Try": [
+              "TimedOut",
+              "Failed"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "054f28a3-080c-4f8a-9529-1183121f12f9"
+          },
+          "type": "Scope"
+        },
+        "IsFLowSecretCorrect": {
+          "actions": {},
+          "runAfter": {},
+          "else": {
+            "actions": {
+              "Terminate_2": {
+                "runAfter": {},
+                "metadata": {
+                  "operationMetadataId": "b0e5bdca-638d-4f99-bf6a-88e22b939ecb"
+                },
+                "type": "Terminate",
+                "inputs": {
+                  "runStatus": "Cancelled"
+                }
+              }
+            }
+          },
+          "expression": {
+            "equals": [
+              "@triggerOutputs()['headers']['secretKey']",
+              "@parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "2e8497de-b65d-41bd-bc3e-8d913d2aba3c"
+          },
+          "type": "If"
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}

@@ -55,7 +55,7 @@ model VerificationToken {
   token      String   @unique
   expires    DateTime
 
-  @@unique([identifier, token])
+  @@id([identifier, token])
 }
 
 model User {
@@ -123,6 +123,7 @@ model Proposal {
   language    String
   studyLevel  String
   timeFrame   String?
+  additionalStudentComment String? @db.Text
 
   topicArea     TopicArea @relation(fields: [topicAreaSlug], references: [slug])
   topicAreaSlug String
@@ -186,6 +187,9 @@ model UserProposalSupervision {
 
   studentEmail String?
   studyLevel   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model UserProposalFeedback {
@@ -203,5 +207,26 @@ model UserProposalFeedback {
   reason  String
   comment String @db.Text
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
   @@unique([proposalId, userEmail])
+}
+
+model AdminInfo {
+  id String @id @unique @default(uuid())
+
+  mailReceived String?
+  supervisor String?
+  student String?
+  title String?
+  type String?
+  status String?
+  olatCapturedDate DateTime?
+  submissionDate DateTime?
+  grade Float?
+  olatGradeDate DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }

@@ -1,27 +1,72 @@
-import { H2, H3 } from '@uzh-bf/design-system'
-import { RefObject } from 'react'
+import { H2, H3, Select } from '@uzh-bf/design-system'
+import * as R from 'ramda'
+import { RefObject, useMemo } from 'react'
+import { ProposalDetails, ProposalStatusFilter } from 'src/types/app'
 import ProposalCard from './ProposalCard'
 
 interface StudentProposalsProps {
-  data: any
-  groupedStudentProposals: any
+  data: ProposalDetails[]
   selectedProposal: string | null
   setSelectedProposal: (proposalId: string | null) => void
-  setDisplayMode: (displayMode: string) => void
   buttonRef: RefObject<HTMLButtonElement>
+  filters: {
+    status: ProposalStatusFilter
+  }
+  setFilters: (filters: { status: ProposalStatusFilter }) => void
 }
 
 export default function StudentProposals({
   data,
-  groupedStudentProposals,
   selectedProposal,
   setSelectedProposal,
-  setDisplayMode,
   buttonRef,
+  filters,
+  setFilters,
 }: StudentProposalsProps) {
+  const groupedStudentProposals = useMemo(() => {
+    if (!data) return {}
+
+    return R.groupBy<ProposalDetails>(
+      (p) => p.topicArea.name,
+      R.sortBy(
+        R.prop('title'),
+        data.filter(
+          (proposal: ProposalDetails) => proposal.typeKey === 'STUDENT'
+        )
+      )
+    )
+  }, [data])
+
   return (
     <div>
-      <H2>Student Proposals</H2>
+      <div className="flex items-center justify-between">
+        <H2>Student Proposals</H2>
+        <Select
+          value={filters.status}
+          items={[
+            {
+              value: ProposalStatusFilter.OPEN_PROPOSALS,
+              label: 'Open Proposals',
+            },
+            {
+              value: ProposalStatusFilter.MY_PROPOSALS,
+              label: 'My Proposals',
+            },
+            {
+              value: ProposalStatusFilter.REJECTED_AND_DECLINED_PROPOSALS,
+              label: 'Rejected / Declined Proposals',
+            },
+            {
+              value: ProposalStatusFilter.ALL_PROPOSALS,
+              label: 'All Proposals',
+            },
+          ]}
+          onChange={(newStatus: string) => {
+            setFilters({ status: newStatus as ProposalStatusFilter })
+            setSelectedProposal('')
+          }}
+        />
+      </div>
       <div className="text-base">
         {data?.filter((proposal: any) => proposal.typeKey === 'STUDENT')
           .length === 0 && <div>No student proposals available...</div>}
@@ -46,8 +91,7 @@ export default function StudentProposals({
                     proposal={proposal}
                     isActive={selectedProposal === proposal.id}
                     onClick={() => {
-                      setSelectedProposal(proposal.id),
-                        setDisplayMode('details')
+                      setSelectedProposal(proposal.id)
                       buttonRef?.current?.scrollIntoView({
                         behavior: 'smooth',
                       })

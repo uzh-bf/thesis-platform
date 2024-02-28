@@ -1,27 +1,27 @@
 import { H2 } from '@uzh-bf/design-system'
 import { RefObject } from 'react'
+import useUserRole from 'src/lib/hooks/useUserRole'
+import { ProposalDetails } from 'src/types/app'
 import ProposalCard from './ProposalCard'
 
 interface SupervisorProposalsProps {
-  isSupervisor: boolean
-  data: any
+  data: ProposalDetails[]
   selectedProposal: string | null
   setSelectedProposal: (proposalId: string | null) => void
-  setDisplayMode: (displayMode: string) => void
   buttonRef: RefObject<HTMLButtonElement>
 }
 
 export default function SupervisorProposals({
-  isSupervisor,
   data,
   selectedProposal,
   setSelectedProposal,
-  setDisplayMode,
   buttonRef,
 }: SupervisorProposalsProps) {
+  const { isSupervisor, isDeveloper } = useUserRole()
+
   return (
     <div>
-      {isSupervisor && (
+      {(isSupervisor || isDeveloper) && (
         <H2 className={{ root: 'mt-2' }}>Supervisor Proposals</H2>
       )}
       <div className="flex flex-row flex-wrap grid-cols-3 gap-2">
@@ -35,7 +35,7 @@ export default function SupervisorProposals({
               proposal={proposal}
               isActive={selectedProposal === proposal.id}
               onClick={() => {
-                setSelectedProposal(proposal.id), setDisplayMode('details')
+                setSelectedProposal(proposal.id)
                 buttonRef.current?.scrollIntoView({
                   behavior: 'smooth',
                 })

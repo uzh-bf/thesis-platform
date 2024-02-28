@@ -12,12 +12,14 @@ interface TentativeAcceptProposalFormProps {
   proposalName: string
   proposalId: string
   supervisorEmail: string
+  setProvidedFeedback: (value: string) => void
 }
 
 export default function TentativeAcceptProposalForm({
   proposalName,
   proposalId,
   supervisorEmail,
+  setProvidedFeedback,
 }: TentativeAcceptProposalFormProps) {
   const SignupSchema = Yup.object().shape({
     comment: Yup.string().required('Required'),
@@ -36,9 +38,9 @@ export default function TentativeAcceptProposalForm({
       }}
       validationSchema={SignupSchema}
       onSubmit={async (values, { resetForm }) => {
-        await submitFeedback.mutateAsync(values)
-
         resetForm()
+        setProvidedFeedback('ACCEPT_TENTATIVE')
+        await submitFeedback.mutateAsync(values)
         toast.success('Proposal tentatively accepted successfully!')
       }}
     >
@@ -48,7 +50,7 @@ export default function TentativeAcceptProposalForm({
           your feedback and is required to improve the proposal before you
           finally accept the proposal for supervision.
         </div>
-        <div className="grid mt-4 place-items-lef">
+        <div className="flex flex-col gap-3 mt-4">
           <FormikTextField
             disabled={true}
             name="proposalName"
@@ -67,7 +69,7 @@ export default function TentativeAcceptProposalForm({
               field: 'flex-col',
             }}
           />
-          <div className="mt-2 italic">
+          <div className="italic">
             Your message will be sent to the student alongside your notification
             of interest.
           </div>

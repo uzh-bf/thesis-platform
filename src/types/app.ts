@@ -35,8 +35,18 @@ declare module 'next-auth' {
   }
 }
 
-type RouterInput = inferRouterInputs<AppRouter>
-type RouterOutput = inferRouterOutputs<AppRouter>
+export type RouterInput = inferRouterInputs<AppRouter>
+export type RouterOutput = inferRouterOutputs<AppRouter>
 
-type ProposalsOutput = RouterOutput['proposals']
-type ProposalDetails = IterableElement<ProposalsOutput>
+export type ProposalsOutput = RouterOutput['proposals']
+export type ProposalDetails = IterableElement<ProposalsOutput>
+export type ApplicationDetails = IterableElement<
+  ProposalDetails['applications']
+>
+
+export enum ProposalStatusFilter {
+  OPEN_PROPOSALS = 'OPEN_PROPOSALS',
+  ALL_PROPOSALS = 'ALL_PROPOSALS',
+  MY_PROPOSALS = 'MY_PROPOSALS',
+  REJECTED_AND_DECLINED_PROPOSALS = 'REJECTED_AND_DECLINED_PROPOSALS',
+}
