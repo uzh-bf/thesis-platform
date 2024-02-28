@@ -403,7 +403,7 @@
                 "parameters": {
                   "emailMessage/To": "@triggerBody()?['applicantEmail']",
                   "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Proposal Application Accepted",
-                  "emailMessage/Body": "<p>Dear @{outputs('UpdateProposalApplicationAccepted')?['body/fullName']},<br>\n<br>\nYour application to the proposal \"@{outputs('UpdateProposalMatched')?['body/title']}\", was accepted.<br>\nKindly get in touch with your supervisor by replying to this email within one week.<br>\n<br>\nBest regards,<br>\n@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Thesis Coordinator</p>",
+                  "emailMessage/Body": "<p>Dear @{outputs('UpdateProposalApplicationAccepted')?['body/fullName']},<br>\n<br>\nYour application to the proposal \"@{outputs('UpdateProposalMatched')?['body/title']}\", was accepted by @{outputs('UpdateUserProposalSupervisionStudentEmail')?['body/supervisorEmail']}.<br>\nKindly get in touch with your supervisor by replying to this email within one week.<br>\n<br>\nBest regards,<br>\n@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Thesis Coordinator</p>",
                   "emailMessage/From": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
                   "emailMessage/Cc": "@{parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')};@{outputs('UpdateUserProposalSupervisionStudentEmail')?['body/supervisorEmail']}",
                   "emailMessage/ReplyTo": "@outputs('UpdateUserProposalSupervisionStudentEmail')?['body/supervisorEmail']",
