@@ -32,7 +32,7 @@
 ### Thesis Proposal Feedback:
 
 - Email Subject/Body: Department variable added
-- Email Body: Replaced field_1 with email in earlier deployments
+- Email Body: Replaced field_1 with Email
 
 ### Thesis Proposal Posting:
 
