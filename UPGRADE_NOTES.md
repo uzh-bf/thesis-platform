@@ -5,6 +5,7 @@
 - Made every column consistent with their real ("deep") column name --> see [Thesis Supervisors List](https://uzh.sharepoint.com/sites/UZHBFThesisPlatformDEV/Lists/Thesis%20Supervisors/AllItems.aspx) + removed Topic Areas List:
   - Show "ID" column
   - Email (Title) -> Email
+    - Hide old Title column -> see https://medium.com/jumpto365/removing-the-title-field-from-a-sharepoint-list-d58283fbbe67
   - Name (field_1) -> Name
   - SupervisionMandatory (field_2) -> SupervisionMandatory
   - Languages (field_3) -> Languages
