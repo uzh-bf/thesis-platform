@@ -7,8 +7,7 @@ function Footer() {
 
       <p className="py-4 m-0 text-xs leading-5 text-center text-gray-400">
         &copy;
-        {new Date().getFullYear()} Department of Banking and Finance, University
-        of Zurich. All rights reserved.
+        {new Date().getFullYear()} {process.env.NEXT_PUBLIC_FOOTER_COPYRIGHT}
       </p>
     </footer>
   )
