@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-rc.0...v1.0.0) (2024-03-04)
+
+
+### Enhancements
+
+* add NEXT_PUBLIC_FOOTER_COPYRIGHT to customize footer text, add UPGRADE_NOTES.md ([#26](https://github.com/uzh-bf/thesis-platform/issues/26)) ([e7165c9](https://github.com/uzh-bf/thesis-platform/commit/e7165c9837fd6b41b7c7289d81f4813e0a1db49a))
+
 ## [1.0.0-rc.0](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.12...v1.0.0-rc.0) (2024-02-28)
 
 ## [1.0.0-beta.12](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0-beta.11...v1.0.0-beta.12) (2024-02-27)
