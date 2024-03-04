@@ -1,6 +1,8 @@
 # Upgrade Notes
 
-## Sharepoint-Changes
+## Version 1.0.0
+
+### Sharepoint-Changes
 
 - Made every column consistent with their real ("deep") column name --> see [Thesis Supervisors List](https://uzh.sharepoint.com/sites/UZHBFThesisPlatformDEV/Lists/Thesis%20Supervisors/AllItems.aspx) + removed Topic Areas List:
   - Show "ID" column
