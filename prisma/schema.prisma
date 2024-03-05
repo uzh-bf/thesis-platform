@@ -118,11 +118,11 @@ model ApplicationAttachment {
 model Proposal {
   id String @id @unique @default(uuid())
 
-  title       String
-  description String  @db.Text
-  language    String
-  studyLevel  String
-  timeFrame   String?
+  title                    String
+  description              String  @db.Text
+  language                 String
+  studyLevel               String
+  timeFrame                String?
   additionalStudentComment String? @db.Text
 
   topicArea     TopicArea @relation(fields: [topicAreaSlug], references: [slug])
@@ -143,6 +143,7 @@ model Proposal {
   supervisedBy      UserProposalSupervision[]
   applications      ProposalApplication[]
   receivedFeedbacks UserProposalFeedback[]
+  AdminInfo         AdminInfo[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -180,7 +181,9 @@ model UserProposalSupervision {
   proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
   proposalId String   @unique
 
-  supervisor      User?   @relation(fields: [supervisorEmail], references: [email], onUpdate: NoAction, onDelete: NoAction)
+  responsible     Responsible? @relation(fields: [responsibleId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  responsibleId   String?
+  supervisor      User?        @relation(fields: [supervisorEmail], references: [email], onUpdate: NoAction, onDelete: NoAction)
   supervisorEmail String?
 
   application ProposalApplication[]
@@ -216,17 +219,27 @@ model UserProposalFeedback {
 model AdminInfo {
   id String @id @unique @default(uuid())
 
-  mailReceived String?
-  supervisor String?
-  student String?
-  title String?
-  type String?
-  status String?
+  proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  proposalId String
+
+  mailReceived     String?
+  status           String?
   olatCapturedDate DateTime?
-  submissionDate DateTime?
-  grade Float?
-  olatGradeDate DateTime?
+  submissionDate   DateTime?
+  grade            Float?
+  olatGradeDate    DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+}
+
+model Responsible {
+  id String @id @unique @default(uuid())
+
+  name  String
+  email String @unique
+
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @default(now()) @updatedAt
+  UserProposalSupervisions UserProposalSupervision[]
 }
