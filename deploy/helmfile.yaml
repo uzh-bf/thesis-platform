@@ -34,13 +34,3 @@ releases:
 
         database:
           url: '{{ requiredEnv "DATABASE_URL" }}'
-
-        ingress:
-          hosts:
-            - host: '{{ requiredEnv "APP_DOMAIN" }}'
-              paths:
-                - /
-          tls:
-            - secretName: thesis-platform-tls
-              hosts:
-                - '{{ requiredEnv "APP_DOMAIN" }}'

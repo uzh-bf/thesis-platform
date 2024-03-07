@@ -44,10 +44,14 @@ ingress:
     - host: theses.bf.uzh.ch
       paths:
         - /
+    - host: theses.df.uzh.ch
+      paths:
+        - /
   tls:
     - secretName: thesis-platform-tls
       hosts:
         - theses.bf.uzh.ch
+        - theses.df.uzh.ch
 
 resources:
   requests:
