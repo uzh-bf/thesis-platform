@@ -299,11 +299,11 @@
                         "server": "default",
                         "database": "default",
                         "table": "[main].[user]",
-                        "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-                        "item/email": "@outputs('GetResponseDetails')?['body/responder']",
                         "item/id": "@guid()",
                         "item/name": "Anonymous",
+                        "item/email": "@outputs('GetResponseDetails')?['body/responder']",
                         "item/role": "SUPERVISOR",
+                        "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                         "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
                       },
                       "host": {
@@ -502,12 +502,12 @@
                       "server": "default",
                       "database": "default",
                       "table": "[main].[proposalattachment]",
-                      "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-                      "item/href": "@outputs('CreateShareLinkProposalPDF')?['body/link/webUrl']",
                       "item/id": "@{guid()}",
                       "item/name": "Proposal",
-                      "item/proposalId": "@variables('ProposalId')",
+                      "item/href": "@outputs('CreateShareLinkProposalPDF')?['body/link/webUrl']",
                       "item/type": "@outputs('PersistProposalPDF')?['body/MediaType']",
+                      "item/proposalId": "@variables('ProposalId')",
+                      "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                       "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
                     },
                     "host": {
@@ -609,11 +609,11 @@
                         "server": "default",
                         "database": "default",
                         "table": "[main].[user]",
-                        "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-                        "item/email": "@variables('SupervisorEmail')",
                         "item/id": "@guid()",
                         "item/name": "@outputs('GetResponseDetails')?['body/ra234958191ee49a28a4fc68389dd0ce2']",
+                        "item/email": "@variables('SupervisorEmail')",
                         "item/role": "SUPERVISOR",
+                        "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                         "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
                       },
                       "host": {
@@ -651,18 +651,18 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[proposal]",
-                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-                  "item/description": "@outputs('GetResponseDetails')?['body/rc6188bd68e4d4ab19206e5e06dd703be']",
                   "item/id": "@variables('ProposalId')",
-                  "item/language": "@outputs('GetResponseDetails')?['body/rb26c844ff536435a9abf2fae9d962082']",
-                  "item/statusKey": "OPEN",
-                  "item/studyLevel": "@outputs('GetResponseDetails')?['body/r93c920c31aaf4b8f8ca5e55bb9a0bf87']",
                   "item/title": "@outputs('GetResponseDetails')?['body/r2b3875d21899474a988a886e0d5b3621']",
+                  "item/description": "@outputs('GetResponseDetails')?['body/rc6188bd68e4d4ab19206e5e06dd703be']",
+                  "item/language": "@outputs('GetResponseDetails')?['body/rb26c844ff536435a9abf2fae9d962082']",
+                  "item/studyLevel": "@outputs('GetResponseDetails')?['body/r93c920c31aaf4b8f8ca5e55bb9a0bf87']",
                   "item/topicAreaSlug": "@replace(toLower(variables('TopicArea')),' ','_')",
                   "item/typeKey": "SUPERVISOR",
+                  "item/statusKey": "OPEN",
+                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                   "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-                  "item/ownedByUserEmail": "@outputs('GetResponseDetails')?['body/responder']",
-                  "item/timeFrame": "@outputs('GetResponseDetails')?['body/r564b7a6cc5bf42ffb900990d26246c80']"
+                  "item/timeFrame": "@outputs('GetResponseDetails')?['body/r564b7a6cc5bf42ffb900990d26246c80']",
+                  "item/ownedByUserEmail": "@outputs('GetResponseDetails')?['body/responder']"
                 },
                 "host": {
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
@@ -673,7 +673,7 @@
             },
             "PersistProposalSupervision": {
               "runAfter": {
-                "PersistProposal": [
+                "GetPersonResponsible": [
                   "Succeeded"
                 ]
               },
@@ -686,12 +686,13 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[userproposalsupervision]",
-                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                   "item/id": "@variables('ProposalId')",
                   "item/proposalId": "@variables('ProposalId')",
+                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                   "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+                  "item/supervisorEmail": "@variables('SupervisorEmail')",
                   "item/studyLevel": "@outputs('GetResponseDetails')?['body/r93c920c31aaf4b8f8ca5e55bb9a0bf87']",
-                  "item/supervisorEmail": "@variables('SupervisorEmail')"
+                  "item/responsibleId": "@{outputs('GetPersonResponsible')?['body/value'][0]['id']}"
                 },
                 "host": {
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
@@ -865,12 +866,12 @@
                           "server": "default",
                           "database": "default",
                           "table": "[main].[proposalattachment]",
-                          "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-                          "item/href": "@outputs('CreateShareLinkAttachment')?['body/link/webUrl']",
                           "item/id": "@{guid()}",
                           "item/name": "Attachment",
-                          "item/proposalId": "@variables('ProposalId')",
+                          "item/href": "@outputs('CreateShareLinkAttachment')?['body/link/webUrl']",
                           "item/type": "@outputs('PersistAdditionalFile')?['body/MediaType']",
+                          "item/proposalId": "@variables('ProposalId')",
+                          "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                           "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
                         },
                         "host": {
@@ -963,6 +964,31 @@
                 "operationMetadataId": "5c34f61b-22b4-4ea3-9b2e-1dc34152a758"
               },
               "type": "If"
+            },
+            "GetPersonResponsible": {
+              "runAfter": {
+                "PersistProposal": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "f463d7b1-66c0-453d-8560-92373d1aef22"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "server": "default",
+                  "database": "default",
+                  "table": "[main].[responsible]",
+                  "$filter": "name eq '@{body('GetResponseDetails')?['rfd6d24d707bd4479a93e210e3d85e89c']}'",
+                  "$top": 1
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
+                  "operationId": "GetItems",
+                  "connectionName": "shared_azuremysql"
+                }
+              }
             }
           },
           "runAfter": {
