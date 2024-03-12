@@ -1,5 +1,6 @@
 import {
   Button,
+  FormikSelectField,
   FormikTextField,
   FormikTextareaField,
 } from '@uzh-bf/design-system'
@@ -26,6 +27,7 @@ export default function AcceptProposalForm({
   })
 
   const submitFeedback = trpc.submitProposalFeedback.useMutation()
+  const allPersonsResponsible = trpc.getAllPersonsResponsible.useQuery()
 
   return (
     <Formik
@@ -60,6 +62,24 @@ export default function AcceptProposalForm({
               label: 'font-sans text-lg',
               field: 'flex-col',
             }}
+          />
+          <FormikSelectField
+            required
+            tooltip="Select a name from the list of Professors."
+            name="Person Responsible"
+            items={
+              allPersonsResponsible.data
+                ? allPersonsResponsible.data.map((person) => ({
+                    label: person.name,
+                    value: person.name,
+                  }))
+                : []
+            }
+            className={{
+              label: 'font-sans text-lg',
+            }}
+            label="Person Responsible"
+            placeholder="Select a person"
           />
           <FormikTextareaField
             required
