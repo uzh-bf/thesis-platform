@@ -24,6 +24,7 @@ export default function AcceptProposalForm({
 }: AcceptProposalFormProps) {
   const SignupSchema = Yup.object().shape({
     comment: Yup.string().required('Required'),
+    personResponsible: Yup.string().required('Required'),
   })
 
   const submitFeedback = trpc.submitProposalFeedback.useMutation()
@@ -33,6 +34,7 @@ export default function AcceptProposalForm({
     <Formik
       initialValues={{
         proposalName: proposalName,
+        personResponsible: undefined,
         comment: '',
         proposalId: proposalId,
         supervisorEmail: supervisorEmail,
@@ -66,7 +68,7 @@ export default function AcceptProposalForm({
           <FormikSelectField
             required
             tooltip="Select a name from the list of Professors."
-            name="Person Responsible"
+            name="personResponsible"
             items={
               allPersonsResponsible.data
                 ? allPersonsResponsible.data.map((person) => ({

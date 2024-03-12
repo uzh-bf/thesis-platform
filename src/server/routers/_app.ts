@@ -276,6 +276,7 @@ export const appRouter = router({
     .input(
       z.object({
         proposalName: z.string(),
+        personResponsible: z.string(),
         comment: z.string(),
         proposalId: z.string(),
         supervisorEmail: z.string().email(),
