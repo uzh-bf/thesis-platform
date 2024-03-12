@@ -1,6 +1,6 @@
 {
   "name": "@uzh-bf/thesis-platform",
-  "version": "1.0.1-beta.0",
+  "version": "1.0.1-beta.1",
   "private": true,
   "scripts": {
     "prebuild": "npm run prisma:generate",
