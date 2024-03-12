@@ -67,6 +67,7 @@ export default function AcceptProposalForm({
           />
           <FormikSelectField
             required
+            labelType="small"
             tooltip="Select a name from the list of Professors."
             name="personResponsible"
             items={
@@ -78,7 +79,7 @@ export default function AcceptProposalForm({
                 : []
             }
             className={{
-              label: 'font-sans text-lg',
+              label: 'font-sans text-lg font-bold text-black',
             }}
             label="Person Responsible"
             placeholder="Select a person"
