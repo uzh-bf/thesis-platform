@@ -240,6 +240,14 @@ export const appRouter = router({
 
   healthcheck: publicProcedure.query(() => 'OK'),
 
+  getAllPersonsResponsible: optionalAuthedProcedure.query(() => {
+    return prisma.responsible.findMany({
+      select:{
+        name: true,
+      }
+    })
+  }),
+
   proposals: optionalAuthedProcedure
     .input(
       z.object({
