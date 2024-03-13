@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.2](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.1...v1.1.0-beta.2) (2024-03-13)
+
+
+### Features
+
+* **app/solutions:** add proposal info to admin table on accept - application & proposal ([#31](https://github.com/uzh-bf/thesis-platform/issues/31)) ([6805004](https://github.com/uzh-bf/thesis-platform/commit/68050049c09da818e44baaaba6a8fe8ef4eabcb9))
+
 ## [1.1.0-beta.1](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.0...v1.1.0-beta.1) (2024-03-13)
 
 ## [1.1.0-beta.0](https://github.com/uzh-bf/thesis-platform/compare/v1.0.1-beta.2...v1.1.0-beta.0) (2024-03-13)
