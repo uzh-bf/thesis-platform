@@ -1,5 +1,6 @@
 import {
   Button,
+  FormikSelectField,
   FormikTextField,
   FormikTextareaField,
 } from '@uzh-bf/design-system'
@@ -23,14 +24,17 @@ export default function AcceptProposalForm({
 }: AcceptProposalFormProps) {
   const SignupSchema = Yup.object().shape({
     comment: Yup.string().required('Required'),
+    personResponsible: Yup.string().required('Required'),
   })
 
   const submitFeedback = trpc.submitProposalFeedback.useMutation()
+  const allPersonsResponsible = trpc.getAllPersonsResponsible.useQuery()
 
   return (
     <Formik
       initialValues={{
         proposalName: proposalName,
+        personResponsible: undefined,
         comment: '',
         proposalId: proposalId,
         supervisorEmail: supervisorEmail,
@@ -60,6 +64,25 @@ export default function AcceptProposalForm({
               label: 'font-sans text-lg',
               field: 'flex-col',
             }}
+          />
+          <FormikSelectField
+            required
+            labelType="small"
+            tooltip="Select a name from the list of Professors."
+            name="personResponsible"
+            items={
+              allPersonsResponsible.data
+                ? allPersonsResponsible.data.map((person) => ({
+                    label: person.name,
+                    value: person.name,
+                  }))
+                : []
+            }
+            className={{
+              label: 'font-sans text-lg font-bold text-black',
+            }}
+            label="Person Responsible"
+            placeholder="Select a person"
           />
           <FormikTextareaField
             required
