@@ -33,13 +33,13 @@
       "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
       "contentVersion": "1.0.0.0",
       "parameters": {
-        "$connections": {
-          "defaultValue": {},
-          "type": "Object"
-        },
         "$authentication": {
           "defaultValue": {},
           "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
         },
         "Environment (uzhbf_thesisplatform_environment_env_var)": {
           "defaultValue": "DEV",
@@ -92,6 +92,7 @@
           "type": "Request",
           "kind": "Http",
           "inputs": {
+            "triggerAuthenticationType": "All",
             "schema": {
               "type": "object",
               "properties": {
@@ -105,8 +106,7 @@
                   "type": "string"
                 }
               }
-            },
-            "triggerAuthenticationType": "All"
+            }
           },
           "conditions": []
         }
@@ -125,30 +125,29 @@
               },
               "type": "OpenApiConnection",
               "inputs": {
-                "host": {
-                  "connectionName": "shared_azuremysql",
-                  "operationId": "PatchItem",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                },
                 "parameters": {
                   "server": "default",
                   "database": "default",
                   "table": "[main].[proposal]",
                   "id": "@triggerBody()?['proposalId']",
-                  "item/createdAt": "@outputs('GetProposalInfo')?['body/createdAt']",
+                  "item/title": "@outputs('GetProposalInfo')?['body/title']",
                   "item/description": "@outputs('GetProposalInfo')?['body/description']",
                   "item/language": "@outputs('GetProposalInfo')?['body/language']",
-                  "item/statusKey": "MATCHED",
                   "item/studyLevel": "@outputs('GetProposalInfo')?['body/studyLevel']",
-                  "item/title": "@outputs('GetProposalInfo')?['body/title']",
                   "item/topicAreaSlug": "@outputs('GetProposalInfo')?['body/topicAreaSlug']",
                   "item/typeKey": "@outputs('GetProposalInfo')?['body/typeKey']",
+                  "item/statusKey": "MATCHED",
+                  "item/createdAt": "@outputs('GetProposalInfo')?['body/createdAt']",
                   "item/updatedAt": "@utcNow()",
-                  "item/ownedByStudent": "@outputs('GetProposalInfo')?['body/ownedByStudent']",
+                  "item/timeFrame": "@outputs('GetProposalInfo')?['body/timeFrame']",
                   "item/ownedByUserEmail": "@outputs('GetProposalInfo')?['body/ownedByUserEmail']",
-                  "item/timeFrame": "@outputs('GetProposalInfo')?['body/timeFrame']"
+                  "item/ownedByStudent": "@outputs('GetProposalInfo')?['body/ownedByStudent']"
                 },
-                "authentication": "@parameters('$authentication')"
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
+                  "operationId": "PatchItem",
+                  "connectionName": "shared_azuremysql"
+                }
               }
             },
             "GetUserProposalSupervisionInfo": {
@@ -162,18 +161,17 @@
               },
               "type": "OpenApiConnection",
               "inputs": {
-                "host": {
-                  "connectionName": "shared_azuremysql",
-                  "operationId": "GetItem",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                },
                 "parameters": {
                   "server": "default",
                   "database": "default",
                   "table": "[main].[userproposalsupervision]",
                   "id": "@triggerBody()?['proposalId']"
                 },
-                "authentication": "@parameters('$authentication')"
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
+                  "operationId": "GetItem",
+                  "connectionName": "shared_azuremysql"
+                }
               }
             },
             "UpdateUserProposalSupervisionStudentEmail": {
@@ -187,24 +185,23 @@
               },
               "type": "OpenApiConnection",
               "inputs": {
-                "host": {
-                  "connectionName": "shared_azuremysql",
-                  "operationId": "PatchItem",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                },
                 "parameters": {
                   "server": "default",
                   "database": "default",
                   "table": "[main].[userproposalsupervision]",
                   "id": "@triggerBody()?['proposalId']",
-                  "item/createdAt": "@outputs('GetUserProposalSupervisionInfo')?['body/createdAt']",
                   "item/proposalId": "@outputs('GetUserProposalSupervisionInfo')?['body/proposalId']",
+                  "item/createdAt": "@outputs('GetUserProposalSupervisionInfo')?['body/createdAt']",
                   "item/updatedAt": "@utcNow()",
+                  "item/supervisorEmail": "@outputs('GetUserProposalSupervisionInfo')?['body/supervisorEmail']",
                   "item/studentEmail": "@triggerBody()?['applicantEmail']",
-                  "item/studyLevel": "@outputs('GetUserProposalSupervisionInfo')?['body/studyLevel']",
-                  "item/supervisorEmail": "@outputs('GetUserProposalSupervisionInfo')?['body/supervisorEmail']"
+                  "item/studyLevel": "@outputs('GetUserProposalSupervisionInfo')?['body/studyLevel']"
                 },
-                "authentication": "@parameters('$authentication')"
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
+                  "operationId": "PatchItem",
+                  "connectionName": "shared_azuremysql"
+                }
               }
             },
             "GetProposalApplicationInfo": {
@@ -218,18 +215,17 @@
               },
               "type": "OpenApiConnection",
               "inputs": {
-                "host": {
-                  "connectionName": "shared_azuremysql",
-                  "operationId": "GetItem",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                },
                 "parameters": {
                   "server": "default",
                   "database": "default",
                   "table": "[main].[proposalapplication]",
                   "id": "@triggerBody()?['proposalApplicationId']"
                 },
-                "authentication": "@parameters('$authentication')"
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
+                  "operationId": "GetItem",
+                  "connectionName": "shared_azuremysql"
+                }
               }
             },
             "UpdateProposalApplicationAccepted": {
@@ -243,33 +239,32 @@
               },
               "type": "OpenApiConnection",
               "inputs": {
-                "host": {
-                  "connectionName": "shared_azuremysql",
-                  "operationId": "PatchItem",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                },
                 "parameters": {
                   "server": "default",
                   "database": "default",
                   "table": "[main].[proposalapplication]",
                   "id": "@triggerBody()?['proposalApplicationId']",
-                  "item/createdAt": "@outputs('GetProposalApplicationInfo')?['body/createdAt']",
-                  "item/email": "@outputs('GetProposalApplicationInfo')?['body/email']",
-                  "item/fullName": "@outputs('GetProposalApplicationInfo')?['body/fullName']",
-                  "item/matriculationNumber": "@outputs('GetProposalApplicationInfo')?['body/matriculationNumber']",
-                  "item/motivation": "@outputs('GetProposalApplicationInfo')?['body/motivation']",
-                  "item/plannedStartAt": "@outputs('GetProposalApplicationInfo')?['body/plannedStartAt']",
-                  "item/proposalId": "@outputs('GetProposalApplicationInfo')?['body/proposalId']",
                   "item/statusKey": "ACCEPTED",
+                  "item/email": "@outputs('GetProposalApplicationInfo')?['body/email']",
+                  "item/matriculationNumber": "@outputs('GetProposalApplicationInfo')?['body/matriculationNumber']",
+                  "item/fullName": "@outputs('GetProposalApplicationInfo')?['body/fullName']",
+                  "item/plannedStartAt": "@outputs('GetProposalApplicationInfo')?['body/plannedStartAt']",
+                  "item/motivation": "@outputs('GetProposalApplicationInfo')?['body/motivation']",
+                  "item/proposalId": "@outputs('GetProposalApplicationInfo')?['body/proposalId']",
+                  "item/createdAt": "@outputs('GetProposalApplicationInfo')?['body/createdAt']",
                   "item/updatedAt": "@utcNow()",
                   "item/supervisionId": "@triggerBody()?['proposalId']"
                 },
-                "authentication": "@parameters('$authentication')"
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
+                  "operationId": "PatchItem",
+                  "connectionName": "shared_azuremysql"
+                }
               }
             },
             "GetProposalApplicationsToDecline": {
               "runAfter": {
-                "UpdateProposalApplicationAccepted": [
+                "CreateAdminTableEntry": [
                   "Succeeded"
                 ]
               },
@@ -278,52 +273,49 @@
               },
               "type": "OpenApiConnection",
               "inputs": {
-                "host": {
-                  "connectionName": "shared_azuremysql",
-                  "operationId": "GetItems",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                },
                 "parameters": {
                   "server": "default",
                   "database": "default",
                   "table": "[main].[proposalapplication]",
                   "$filter": "proposalId eq '@{triggerBody()?['proposalId']}' and email ne '@{triggerBody()?['applicantEmail']}'"
                 },
-                "authentication": "@parameters('$authentication')"
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
+                  "operationId": "GetItems",
+                  "connectionName": "shared_azuremysql"
+                }
               }
             },
             "Apply_to_each": {
               "foreach": "@outputs('GetProposalApplicationsToDecline')?['body/value']",
               "actions": {
                 "UpdateProposalApplicationDeclined": {
-                  "runAfter": {},
                   "metadata": {
                     "operationMetadataId": "2598e0d2-d6a3-496b-acf6-eb2f24cc1acd"
                   },
                   "type": "OpenApiConnection",
                   "inputs": {
-                    "host": {
-                      "connectionName": "shared_azuremysql",
-                      "operationId": "PatchItem",
-                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                    },
                     "parameters": {
                       "server": "default",
                       "database": "default",
                       "table": "[main].[proposalapplication]",
                       "id": "@items('Apply_to_each')?['id']",
-                      "item/createdAt": "@items('Apply_to_each')?['createdAt']",
-                      "item/email": "@items('Apply_to_each')?['email']",
-                      "item/fullName": "@items('Apply_to_each')?['fullName']",
-                      "item/matriculationNumber": "@items('Apply_to_each')?['matriculationNumber']",
-                      "item/motivation": "@items('Apply_to_each')?['motivation']",
-                      "item/plannedStartAt": "@items('Apply_to_each')?['plannedStartAt']",
-                      "item/proposalId": "@items('Apply_to_each')?['proposalId']",
                       "item/statusKey": "DECLINED",
+                      "item/email": "@items('Apply_to_each')?['email']",
+                      "item/matriculationNumber": "@items('Apply_to_each')?['matriculationNumber']",
+                      "item/fullName": "@items('Apply_to_each')?['fullName']",
+                      "item/plannedStartAt": "@items('Apply_to_each')?['plannedStartAt']",
+                      "item/motivation": "@items('Apply_to_each')?['motivation']",
+                      "item/proposalId": "@items('Apply_to_each')?['proposalId']",
+                      "item/createdAt": "@items('Apply_to_each')?['createdAt']",
                       "item/updatedAt": "@utcNow()",
                       "item/supervisionId": "@null"
                     },
-                    "authentication": "@parameters('$authentication')"
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
+                      "operationId": "PatchItem",
+                      "connectionName": "shared_azuremysql"
+                    }
                   }
                 },
                 "DeclineApplicantNotification": {
@@ -337,11 +329,6 @@
                   },
                   "type": "OpenApiConnection",
                   "inputs": {
-                    "host": {
-                      "connectionName": "shared_office365",
-                      "operationId": "SendEmailV2",
-                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
-                    },
                     "parameters": {
                       "emailMessage/To": "@outputs('UpdateProposalApplicationDeclined')?['body/email']",
                       "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Proposal Application Declined",
@@ -349,7 +336,11 @@
                       "emailMessage/From": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
                       "emailMessage/Importance": "Normal"
                     },
-                    "authentication": "@parameters('$authentication')"
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                      "operationId": "SendEmailV2",
+                      "connectionName": "shared_office365"
+                    }
                   }
                 }
               },
@@ -364,24 +355,22 @@
               "type": "Foreach"
             },
             "GetProposalInfo": {
-              "runAfter": {},
               "metadata": {
                 "operationMetadataId": "8db4975b-3fdf-4b60-a02f-5781177d3524"
               },
               "type": "OpenApiConnection",
               "inputs": {
-                "host": {
-                  "connectionName": "shared_azuremysql",
-                  "operationId": "GetItem",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                },
                 "parameters": {
                   "server": "default",
                   "database": "default",
                   "table": "[main].[proposal]",
                   "id": "@triggerBody()?['proposalId']"
                 },
-                "authentication": "@parameters('$authentication')"
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
+                  "operationId": "GetItem",
+                  "connectionName": "shared_azuremysql"
+                }
               }
             },
             "AcceptApplicantNotification": {
@@ -395,11 +384,6 @@
               },
               "type": "OpenApiConnection",
               "inputs": {
-                "host": {
-                  "connectionName": "shared_office365",
-                  "operationId": "SendEmailV2",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
-                },
                 "parameters": {
                   "emailMessage/To": "@triggerBody()?['applicantEmail']",
                   "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Proposal Application Accepted",
@@ -409,7 +393,11 @@
                   "emailMessage/ReplyTo": "@outputs('UpdateUserProposalSupervisionStudentEmail')?['body/supervisorEmail']",
                   "emailMessage/Importance": "Normal"
                 },
-                "authentication": "@parameters('$authentication')"
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
               }
             },
             "Response": {
@@ -432,6 +420,31 @@
                   "message": "success"
                 }
               }
+            },
+            "CreateAdminTableEntry": {
+              "runAfter": {
+                "UpdateProposalApplicationAccepted": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "server": "default",
+                  "database": "default",
+                  "table": "[main].[admininfo]",
+                  "item/id": "@{guid()}",
+                  "item/createdAt": "@{utcNow()}",
+                  "item/updatedAt": "@{utcNow()}",
+                  "item/proposalId": "@triggerBody()?['proposalId']",
+                  "item/status": "OPEN"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
+                  "operationId": "PostItem",
+                  "connectionName": "shared_azuremysql"
+                }
+              }
             }
           },
           "runAfter": {
@@ -447,7 +460,6 @@
         "Catch": {
           "actions": {
             "FilterForFailedOrTimedOutStatus": {
-              "runAfter": {},
               "metadata": {
                 "operationMetadataId": "ca1bedd8-7555-4a99-a290-1c22c2e6e229"
               },
@@ -515,17 +527,16 @@
               },
               "type": "OpenApiConnection",
               "inputs": {
-                "host": {
-                  "connectionName": "shared_sendmail-2",
-                  "operationId": "SendEmailV3",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sendmail"
-                },
                 "parameters": {
                   "request/to": "@{parameters('Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)')};",
                   "request/subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Thesis Platform - Thesis Application Acceptance",
                   "request/text": "<p>@{body('CreateHtmlTable')}</p>"
                 },
-                "authentication": "@parameters('$authentication')"
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sendmail",
+                  "operationId": "SendEmailV3",
+                  "connectionName": "shared_sendmail-2"
+                }
               }
             }
           },
@@ -546,7 +557,6 @@
           "else": {
             "actions": {
               "Terminate_2": {
-                "runAfter": {},
                 "metadata": {
                   "operationMetadataId": "b0e5bdca-638d-4f99-bf6a-88e22b939ecb"
                 },
@@ -571,7 +581,7 @@
       },
       "outputs": {}
     },
-    "templateName": ""
+    "templateName": null
   },
   "schemaVersion": "1.0.0.0"
 }

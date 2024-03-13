@@ -639,7 +639,7 @@
                     },
                     "AcceptanceNotification": {
                       "runAfter": {
-                        "UpdateStudentApplicationAccept": [
+                        "CreateAdminTableEntry": [
                           "Succeeded"
                         ]
                       },
@@ -794,6 +794,31 @@
                         "host": {
                           "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
                           "operationId": "GetItems",
+                          "connectionName": "shared_azuremysql"
+                        }
+                      }
+                    },
+                    "CreateAdminTableEntry": {
+                      "runAfter": {
+                        "UpdateStudentApplicationAccept": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "server": "default",
+                          "database": "default",
+                          "table": "[main].[admininfo]",
+                          "item/id": "@{guid()}",
+                          "item/createdAt": "@{utcNow()}",
+                          "item/updatedAt": "@{utcNow()}",
+                          "item/proposalId": "@triggerBody()?['proposalId']",
+                          "item/status": "OPEN"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
+                          "operationId": "PostItem",
                           "connectionName": "shared_azuremysql"
                         }
                       }
