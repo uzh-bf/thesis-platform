@@ -82,7 +82,7 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
         </div>
 
         {proposalDetails.typeKey === 'SUPERVISOR' &&
-          proposalDetails.supervisedBy[0].responsible && (
+          proposalDetails.supervisedBy[0]?.responsible && (
             <div className="text-base">
               <div className="font-bold">Person Responsible</div>
               <div>
