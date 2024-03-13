@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.0](https://github.com/uzh-bf/thesis-platform/compare/v1.0.1-beta.2...v1.1.0-beta.0) (2024-03-13)
+
+
+### Features
+
+* **app:** Add responsible on accept student proposal ([#30](https://github.com/uzh-bf/thesis-platform/issues/30)) ([ec53e01](https://github.com/uzh-bf/thesis-platform/commit/ec53e0162eede4defa31ca629a4f02cfe8b2d00c))
+
 ### [1.0.1-beta.2](https://github.com/uzh-bf/thesis-platform/compare/v1.0.1-beta.1...v1.0.1-beta.2) (2024-03-13)
 
 ### [1.0.1-beta.1](https://github.com/uzh-bf/thesis-platform/compare/v1.0.1-beta.0...v1.0.1-beta.1) (2024-03-12)
