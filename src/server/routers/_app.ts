@@ -244,7 +244,10 @@ export const appRouter = router({
     return prisma.responsible.findMany({
       select:{
         name: true,
-      }
+      },
+      orderBy: {
+        name: 'asc',
+      },
     })
   }),
 
