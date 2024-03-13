@@ -85,7 +85,12 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
           proposalDetails.supervisedBy[0].responsible && (
             <div className="text-base">
               <div className="font-bold">Person Responsible</div>
-              <div>{proposalDetails.supervisedBy[0].responsible.name}</div>
+              <div>
+                {proposalDetails.supervisedBy[0].responsible.name
+                  .split(' ')
+                  .reverse()
+                  .join(' ')}
+              </div>
             </div>
           )}
 
