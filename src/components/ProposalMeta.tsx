@@ -81,6 +81,13 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
           <div>{format(parseISO(proposalDetails.createdAt), 'dd.MM.Y')}</div>
         </div>
 
+        {proposalDetails.typeKey === 'SUPERVISOR' && (
+          <div className="text-base">
+            <div className="font-bold">Person Responsible</div>
+            <div>{proposalDetails.supervisedBy[0].responsible.name}</div>
+          </div>
+        )}
+
         {proposalDetails.typeKey === 'STUDENT' && (
           <div className="text-base">
             <div className="font-bold">Email</div>

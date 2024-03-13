@@ -203,6 +203,7 @@ async function getSupervisorProposals({ ctx, filters }) {
       supervisedBy: {
         include: {
           supervisor: true,
+          responsible: true,
         },
       },
       applications,
