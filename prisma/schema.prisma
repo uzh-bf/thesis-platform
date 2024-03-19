@@ -169,6 +169,9 @@ model ProposalApplication {
   supervision   UserProposalSupervision? @relation(fields: [supervisionId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   supervisionId String?
 
+  allowPublication Boolean?
+  allowUsage       Boolean?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -220,7 +223,8 @@ enum Status {
   OPEN
   SUBMITTED
   IN_PROGRESS
-  UNDER_REVIEW
+  GRADING
+  WITHDRAWN
   COMPLETED
 }
 
