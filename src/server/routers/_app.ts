@@ -313,6 +313,8 @@ export const appRouter = router({
         proposalId: z.string(),
         cvFile: z.any(),
         transcriptFile: z.any(),
+        allowUsage: z.boolean(),
+        allowPublication: z.boolean(),
       })
     )
     .mutation(async ({ ctx, input }) => {

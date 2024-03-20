@@ -76,7 +76,7 @@
           }
         },
         "Submit Thesis Proposal Forms Id (uzhbf_thesisplatform_submit_thesis_proposal_forms_id_env_var)": {
-          "defaultValue": "2zjkx2LkIkypCsNYsWmAs0LFaOQJoXlHrbsK8Pa1si9URUhYTFNWUUdTT0lVUFRCVkJUVEsyWTdBMSQlQCN0PWcu",
+          "defaultValue": "2zjkx2LkIkypCsNYsWmAs0LFaOQJoXlHrbsK8Pa1si9UMlJPNEE1SFFVU004RkhMSEVERUlWV1ZKTyQlQCN0PWcu",
           "type": "String",
           "metadata": {
             "schemaName": "uzhbf_thesisplatform_submit_thesis_proposal_forms_id_env_var"
@@ -370,24 +370,9 @@
                 "value": "@parameters('Originator (uzhbf_thesisplatform_originator_env_var)')"
               }
             },
-            "SetWasSpecificRequest": {
-              "runAfter": {
-                "SetOriginator": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "0b047e5f-a866-4479-b0a4-5d90658c0cfe"
-              },
-              "type": "SetVariable",
-              "inputs": {
-                "name": "WasSpecificRequest",
-                "value": false
-              }
-            },
             "SupervisorList": {
               "runAfter": {
-                "SetWasSpecificRequest": [
+                "SetOriginator": [
                   "Succeeded"
                 ]
               },
@@ -438,15 +423,15 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[proposal]",
-                  "item/id": "@variables('ProposalId')",
-                  "item/title": "@outputs('GetResponseDetails')?['body/r7240915136fb41e8b884a045d08f39ce']",
+                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                   "item/description": "@outputs('GetResponseDetails')?['body/r7425856917f245efbd0c4cb2a7f0c434']",
+                  "item/id": "@variables('ProposalId')",
                   "item/language": "@outputs('GetResponseDetails')?['body/r8b7f3f4a7502459598d155e9b31eb25e']",
+                  "item/statusKey": "OPEN",
                   "item/studyLevel": "@outputs('GetResponseDetails')?['body/rc797ecd1491b44a0ac091174abbac9f6']",
+                  "item/title": "@outputs('GetResponseDetails')?['body/r7240915136fb41e8b884a045d08f39ce']",
                   "item/topicAreaSlug": "@replace(toLower(variables('TopicArea')),' ','_')",
                   "item/typeKey": "STUDENT",
-                  "item/statusKey": "OPEN",
-                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                   "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']",
                   "item/additionalStudentComment": "@body('GetResponseDetails')?['r036f3f6320bc47e5b8c3694816ffe095']"
                 },
@@ -472,16 +457,18 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[proposalapplication]",
-                  "item/id": "@outputs('PersistProposalToDB')?['body/id']",
-                  "item/statusKey": "OPEN",
-                  "item/email": "@outputs('GetResponseDetails')?['body/responder']",
-                  "item/matriculationNumber": "@outputs('GetResponseDetails')?['body/r6c3b387342aa4bd0b5f423aa43662850']",
-                  "item/fullName": "@outputs('GetResponseDetails')?['body/r7844031f633e4dd49368b0c116ad148d']",
-                  "item/plannedStartAt": "@outputs('GetResponseDetails')?['body/r837fec8c113c4851a217e947217c5b7f']",
-                  "item/motivation": "@outputs('GetResponseDetails')?['body/r60d760e8828645cc84d8fde2a6fe3b27']",
-                  "item/proposalId": "@outputs('PersistProposalToDB')?['body/id']",
                   "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
-                  "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
+                  "item/email": "@outputs('GetResponseDetails')?['body/responder']",
+                  "item/fullName": "@outputs('GetResponseDetails')?['body/r7844031f633e4dd49368b0c116ad148d']",
+                  "item/id": "@outputs('PersistProposalToDB')?['body/id']",
+                  "item/matriculationNumber": "@outputs('GetResponseDetails')?['body/r6c3b387342aa4bd0b5f423aa43662850']",
+                  "item/motivation": "@outputs('GetResponseDetails')?['body/r60d760e8828645cc84d8fde2a6fe3b27']",
+                  "item/plannedStartAt": "@outputs('GetResponseDetails')?['body/r837fec8c113c4851a217e947217c5b7f']",
+                  "item/proposalId": "@outputs('PersistProposalToDB')?['body/id']",
+                  "item/statusKey": "OPEN",
+                  "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+                  "item/allowPublication": "@if(equals(body('GetResponseDetails')?['r4d6d36c9c1e149b38ca966fb8c1b2ce7'],'Yes'),true,false)",
+                  "item/allowUsage": "@if(equals(body('GetResponseDetails')?['r46ae0e17913b477bba57bf90cf6910be'],'Yes'),true,false)"
                 },
                 "host": {
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql",
@@ -880,12 +867,12 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[proposalattachment]",
+                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+                  "item/href": "@outputs('ShareLinkProposalFile')?['body/link/webUrl']",
                   "item/id": "@{guid()}",
                   "item/name": "Proposal",
-                  "item/href": "@outputs('ShareLinkProposalFile')?['body/link/webUrl']",
-                  "item/type": "@outputs('PersistProposalFile')?['body/MediaType']",
                   "item/proposalId": "@variables('ProposalId')",
-                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+                  "item/type": "@outputs('PersistProposalFile')?['body/MediaType']",
                   "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
                 },
                 "host": {
@@ -910,12 +897,12 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[applicationattachment]",
+                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+                  "item/href": "@outputs('ShareLinkCVPDF')?['body/link/webUrl']",
                   "item/id": "@{guid()}",
                   "item/name": "CV",
-                  "item/href": "@outputs('ShareLinkCVPDF')?['body/link/webUrl']",
-                  "item/type": "@outputs('PersistCVPDF')?['body/MediaType']",
                   "item/proposalApplicationId": "@outputs('PersistApplicationToDB')?['body/id']",
-                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+                  "item/type": "@outputs('PersistCVPDF')?['body/MediaType']",
                   "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
                 },
                 "host": {
@@ -940,12 +927,12 @@
                   "server": "default",
                   "database": "default",
                   "table": "[main].[applicationattachment]",
+                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+                  "item/href": "@outputs('ShareLinkTranscriptPDF')?['body/link/webUrl']",
                   "item/id": "@{guid()}",
                   "item/name": "Transcript",
-                  "item/href": "@outputs('ShareLinkTranscriptPDF')?['body/link/webUrl']",
-                  "item/type": "@outputs('PersistTranscriptPDF')?['body/MediaType']",
                   "item/proposalApplicationId": "@outputs('PersistApplicationToDB')?['body/id']",
-                  "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+                  "item/type": "@outputs('PersistTranscriptPDF')?['body/MediaType']",
                   "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
                 },
                 "host": {
@@ -1260,12 +1247,12 @@
                           "server": "default",
                           "database": "default",
                           "table": "[main].[applicationattachment]",
+                          "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+                          "item/href": "@outputs('ShareLinkAttachment')?['body/link/webUrl']",
                           "item/id": "@{guid()}",
                           "item/name": "Attachment",
-                          "item/href": "@outputs('ShareLinkAttachment')?['body/link/webUrl']",
-                          "item/type": "@outputs('PersistAdditionalFile')?['body/MediaType']",
                           "item/proposalApplicationId": "@outputs('PersistApplicationToDB')?['body/id']",
-                          "item/createdAt": "@outputs('GetResponseDetails')?['body/submitDate']",
+                          "item/type": "@outputs('PersistAdditionalFile')?['body/MediaType']",
                           "item/updatedAt": "@outputs('GetResponseDetails')?['body/submitDate']"
                         },
                         "host": {
