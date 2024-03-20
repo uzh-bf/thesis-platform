@@ -280,7 +280,7 @@ export const appRouter = router({
     .input(
       z.object({
         proposalName: z.string(),
-        personResponsible: z.string(),
+        personResponsible: z.string().optional(),
         comment: z.string(),
         proposalId: z.string(),
         supervisorEmail: z.string().email(),
@@ -289,6 +289,7 @@ export const appRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+
       const res = await axios.post(
         process.env.PROPOSAL_FEEDBACK_URL as string,
         input,
