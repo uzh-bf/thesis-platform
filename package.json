@@ -33,7 +33,7 @@
     "release:dry": "standard-version --dry-run"
   },
   "dependencies": {
-    "@azure/identity": "3.3.0",
+    "@azure/identity": "4.2.1",
     "@azure/storage-blob": "12.15.0",
     "@fortawesome/fontawesome-svg-core": "6.4.2",
     "@fortawesome/free-regular-svg-icons": "6.4.2",
