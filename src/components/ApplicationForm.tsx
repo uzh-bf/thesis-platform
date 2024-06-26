@@ -245,7 +245,7 @@ export default function ApplicationForm({
               <FormikSwitchField
                 name="allowUsage"
                 label="Allow Usage"
-                tooltip="I, hereby consent and grant the University of Zurich, represented by the Department of Banking and Finance, the rights of use to my written work and all artifacts under copyright protection created in the context of my academic work."
+                tooltip="I hereby consent and grant the University of Zurich, represented by the Department of Finance, the rights of use to my written work and all artifacts under copyright protection created in the context of my academic work."
                 standardLabel
                 required
                 size="sm"
@@ -256,7 +256,7 @@ export default function ApplicationForm({
               <FormikSwitchField
                 name="allowPublication"
                 label="Allow Publication"
-                tooltip="I agree to allow the Department of Banking and Finance to publish my work in its entirety or in part on the Internet and distribute printed versions to interested parties."
+                tooltip="I agree to allow the Department of Finance to publish my work in its entirety or in part on the Internet and distribute printed versions to interested parties."
                 standardLabel
                 required
                 size="sm"
