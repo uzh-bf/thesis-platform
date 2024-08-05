@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.13](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.12...v1.1.0-beta.13) (2024-08-05)
+
+
+### Enhancements
+
+* add feedback mechanism in openapi endpoints ([70c7c11](https://github.com/uzh-bf/thesis-platform/commit/70c7c1175752915bee5187449e734023eb4f6d9b))
+
 ## [1.1.0-beta.12](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.11...v1.1.0-beta.12) (2024-08-05)
 
 
