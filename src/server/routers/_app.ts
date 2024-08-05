@@ -374,7 +374,7 @@ export const appRouter = router({
           email: z.string(),
           matriculationNumber: z.string(),
           fullName: z.string(),
-          plannedStartAt: z.date(),
+          plannedStartAt: z.string(),
           motivation: z.string(),
           allowUsage: z.boolean(),
           allowPublication: z.boolean(),
