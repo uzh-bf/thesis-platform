@@ -10,6 +10,7 @@ import {
 import { TRPCError } from '@trpc/server'
 import axios from 'axios'
 import 'cross-fetch/polyfill'
+import dayjs from 'dayjs'
 import { prisma } from 'src/server/prisma'
 import {
   authedProcedure,
@@ -431,7 +432,9 @@ export const appRouter = router({
                 email: input.application.email,
                 matriculationNumber: input.application.matriculationNumber,
                 fullName: input.application.fullName,
-                plannedStartAt: input.application.plannedStartAt,
+                plannedStartAt: dayjs(
+                  input.application.plannedStartAt
+                ).toDate(),
                 motivation: input.application.motivation,
                 proposalId: input.proposal.id,
                 allowUsage: input.application.allowUsage,
