@@ -492,6 +492,9 @@ export const appRouter = router({
     }),
 
   persistProposalFeedbackAccept: publicProcedure
+    .meta({
+      openapi: { method: 'POST', path: '/persistProposalFeedbackAccept' },
+    })
     .input(
       z.object({
         flowSecret: z.string(),
@@ -553,6 +556,12 @@ export const appRouter = router({
     }),
 
   persistProposalFeedbackAcceptTentative: publicProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/persistProposalFeedbackAcceptTentative',
+      },
+    })
     .input(
       z.object({
         flowSecret: z.string(),
@@ -601,6 +610,12 @@ export const appRouter = router({
     }),
 
   persistProposalFeedbackDecline: publicProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/persistProposalFeedbackDecline',
+      },
+    })
     .input(
       z.object({
         flowSecret: z.string(),
@@ -641,6 +656,12 @@ export const appRouter = router({
     }),
 
   persistProposalFeedbackReject: publicProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/persistProposalFeedbackReject',
+      },
+    })
     .input(
       z.object({
         flowSecret: z.string(),
