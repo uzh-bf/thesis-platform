@@ -354,6 +354,9 @@ export const appRouter = router({
     }),
 
   persistProposalSubmission: publicProcedure
+    .meta({
+      openapi: { method: 'POST', path: '/persistProposalSubmission' },
+    })
     .input(
       z.object({
         flowSecret: z.string(),
@@ -398,6 +401,7 @@ export const appRouter = router({
         }),
       })
     )
+    .output(z.object({ success: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
       if (input.flowSecret !== process.env.FLOW_SECRET) {
         throw new TRPCError({ code: 'UNAUTHORIZED' })
@@ -473,10 +477,14 @@ export const appRouter = router({
           }
         })
       } catch {
-        return false
+        return {
+          success: false,
+        }
       }
 
-      return true
+      return {
+        success: true,
+      }
     }),
 })
 
