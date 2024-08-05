@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.10](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.9...v1.1.0-beta.10) (2024-08-05)
+
+
+### Bug Fixes
+
+* date parsing for plannedStartAt ([516097f](https://github.com/uzh-bf/thesis-platform/commit/516097f64cf2b2211174748b013efff5326d16a3))
+
 ## [1.1.0-beta.9](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.8...v1.1.0-beta.9) (2024-08-05)
 
 
