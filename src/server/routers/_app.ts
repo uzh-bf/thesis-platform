@@ -490,6 +490,224 @@ export const appRouter = router({
         success: true,
       }
     }),
+
+  persistProposalFeedbackAccept: publicProcedure
+    .input(
+      z.object({
+        flowSecret: z.string(),
+        proposalId: z.string(),
+        supervisorEmail: z.string().email(),
+        responsibleId: z.string(),
+      })
+    )
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.flowSecret !== process.env.FLOW_SECRET) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' })
+      }
+
+      try {
+        await prisma.$transaction([
+          prisma.proposal.update({
+            where: { id: input.proposalId },
+            data: {
+              statusKey: 'MATCHED',
+            },
+          }),
+          prisma.userProposalSupervision.upsert({
+            where: { id: input.proposalId },
+            create: {
+              id: input.proposalId,
+              proposalId: input.proposalId,
+              supervisorEmail: input.supervisorEmail,
+              responsibleId: input.responsibleId,
+            },
+            update: {
+              supervisorEmail: input.supervisorEmail,
+              responsibleId: input.responsibleId,
+            },
+          }),
+          prisma.proposalApplication.update({
+            where: { id: input.proposalId },
+            data: {
+              statusKey: 'ACCEPTED',
+            },
+          }),
+          prisma.adminInfo.create({
+            data: {
+              proposalId: input.proposalId,
+              status: 'OPEN',
+            },
+          }),
+        ])
+      } catch (e) {
+        console.error(e)
+        return {
+          success: false,
+        }
+      }
+
+      return {
+        success: true,
+      }
+    }),
+
+  persistProposalFeedbackAcceptTentative: publicProcedure
+    .input(
+      z.object({
+        flowSecret: z.string(),
+        proposalId: z.string(),
+        supervisorEmail: z.string().email(),
+      })
+    )
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.flowSecret !== process.env.FLOW_SECRET) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' })
+      }
+
+      try {
+        await prisma.$transaction([
+          prisma.proposal.update({
+            where: { id: input.proposalId },
+            data: {
+              statusKey: 'MATCHED_TENTATIVE',
+            },
+          }),
+          prisma.userProposalSupervision.create({
+            data: {
+              id: input.proposalId,
+              proposalId: input.proposalId,
+              supervisorEmail: input.supervisorEmail,
+            },
+          }),
+          prisma.proposalApplication.update({
+            where: { id: input.proposalId },
+            data: {
+              statusKey: 'ACCEPTED_TENTATIVE',
+            },
+          }),
+        ])
+      } catch (e) {
+        console.error(e)
+        return {
+          success: false,
+        }
+      }
+
+      return {
+        success: true,
+      }
+    }),
+
+  persistProposalFeedbackDecline: publicProcedure
+    .input(
+      z.object({
+        flowSecret: z.string(),
+        proposalId: z.string(),
+        supervisorEmail: z.string().email(),
+        reason: z.string(),
+        comment: z.string(),
+      })
+    )
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.flowSecret !== process.env.FLOW_SECRET) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' })
+      }
+
+      try {
+        await prisma.$transaction([
+          prisma.userProposalFeedback.create({
+            data: {
+              proposalId: input.proposalId,
+              userEmail: input.supervisorEmail,
+              reason: `DECLINED_${input.reason}`,
+              typeKey: 'DECLINED',
+              comment: input.comment,
+            },
+          }),
+        ])
+      } catch (e) {
+        console.error(e)
+        return {
+          success: false,
+        }
+      }
+
+      return {
+        success: true,
+      }
+    }),
+
+  persistProposalFeedbackReject: publicProcedure
+    .input(
+      z.object({
+        flowSecret: z.string(),
+        proposalId: z.string(),
+        supervisorEmail: z.string().email(),
+        reason: z.string(),
+        comment: z.string(),
+      })
+    )
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.flowSecret !== process.env.FLOW_SECRET) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' })
+      }
+
+      try {
+        const proposal = await prisma.proposal.findUnique({
+          where: { id: input.proposalId },
+        })
+
+        if (!proposal) {
+          throw new TRPCError({ code: 'NOT_FOUND' })
+        }
+
+        await prisma.$transaction(
+          [
+            proposal.statusKey === 'MATCHED_TENTATIVE'
+              ? [
+                  prisma.userProposalSupervision.delete({
+                    where: { id: input.proposalId },
+                  }),
+                  prisma.proposalApplication.update({
+                    where: { id: input.proposalId },
+                    data: {
+                      statusKey: 'OPEN',
+                    },
+                  }),
+                  prisma.proposal.update({
+                    where: { id: input.proposalId },
+                    data: {
+                      statusKey: 'OPEN',
+                    },
+                  }),
+                ]
+              : [],
+            prisma.userProposalFeedback.create({
+              data: {
+                proposalId: input.proposalId,
+                userEmail: input.supervisorEmail,
+                reason: `REJECTED_${input.reason}`,
+                typeKey: 'REJECTED',
+                comment: input.comment,
+              },
+            }),
+          ].flat()
+        )
+      } catch (e) {
+        console.error(e)
+        return {
+          success: false,
+        }
+      }
+
+      return {
+        success: true,
+      }
+    }),
 })
 
 export type AppRouter = typeof appRouter
