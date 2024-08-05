@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.8](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.7...v1.1.0-beta.8) (2024-08-05)
+
+
+### Bug Fixes
+
+* add openapi for trpc ([c2e90c2](https://github.com/uzh-bf/thesis-platform/commit/c2e90c2a6a0592b45d162114387cf70b4e7cfd14))
+
 ## [1.1.0-beta.7](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.6...v1.1.0-beta.7) (2024-08-05)
 
 ### Bug Fixes
