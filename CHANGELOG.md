@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.7](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.6...v1.1.0-beta.7) (2024-08-05)
+
+
+### Bug Fixes
+
+* add api endpoint for persisting a submission ([c649712](https://github.com/uzh-bf/thesis-platform/commit/c64971220353796e69efd85e045d357d50d75a36))
+
 ## [1.1.0-beta.6](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.5...v1.1.0-beta.6) (2024-03-21)
 
 ## [1.1.0-beta.5](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.4...v1.1.0-beta.5) (2024-03-21)
