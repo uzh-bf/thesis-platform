@@ -479,7 +479,8 @@ export const appRouter = router({
               : [],
           ].flat()
         )
-      } catch {
+      } catch (e) {
+        console.error(e)
         return {
           success: false,
         }
