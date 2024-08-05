@@ -367,34 +367,34 @@ export const appRouter = router({
           language: z.string(),
           studyLevel: z.string(),
           topicAreaSlug: z.string(),
-          additionalStudentComment: z.string(),
+          additionalStudentComment: z.string().optional(),
         }),
         application: z.object({
           email: z.string(),
           matriculationNumber: z.string(),
           fullName: z.string(),
-          plannedStartAt: z.string(),
+          plannedStartAt: z.date(),
           motivation: z.string(),
           allowUsage: z.boolean(),
           allowPublication: z.boolean(),
         }),
         attachments: z.object({
           proposalFile: z.object({
-            href: z.string(),
+            href: z.string().url(),
             type: z.string(),
           }),
           cvFile: z.object({
-            href: z.string(),
+            href: z.string().url(),
             type: z.string(),
           }),
           transcriptFile: z.object({
-            href: z.string(),
+            href: z.string().url(),
             type: z.string(),
           }),
           other: z.array(
             z.object({
               name: z.string(),
-              href: z.string(),
+              href: z.string().url(),
               type: z.string(),
             })
           ),
@@ -408,74 +408,74 @@ export const appRouter = router({
       }
 
       try {
-        await prisma.$transaction(async (prisma) => {
-          const proposal = await prisma.proposal.create({
-            data: {
-              id: input.proposal.id,
-              title: input.proposal.title,
-              description: input.proposal.description,
-              language: input.proposal.language,
-              studyLevel: input.proposal.studyLevel,
-              topicAreaSlug: input.proposal.topicAreaSlug,
-              additionalStudentComment: input.proposal.additionalStudentComment,
-              typeKey: 'STUDENT',
-              statusKey: 'OPEN',
-            },
-          })
-
-          await prisma.proposalApplication.create({
-            data: {
-              id: proposal.id,
-              statusKey: 'OPEN',
-              email: input.application.email,
-              matriculationNumber: input.application.matriculationNumber,
-              fullName: input.application.fullName,
-              plannedStartAt: input.application.plannedStartAt,
-              motivation: input.application.motivation,
-              proposalId: proposal.id,
-              allowUsage: input.application.allowUsage,
-              allowPublication: input.application.allowPublication,
-            },
-          })
-
-          await prisma.proposalAttachment.create({
-            data: {
-              name: 'Proposal',
-              href: input.attachments.proposalFile.href,
-              type: input.attachments.proposalFile.type,
-              proposalId: proposal.id,
-            },
-          })
-
-          await prisma.proposalAttachment.create({
-            data: {
-              name: 'CV',
-              href: input.attachments.cvFile.href,
-              type: input.attachments.cvFile.type,
-              proposalId: proposal.id,
-            },
-          })
-
-          await prisma.proposalAttachment.create({
-            data: {
-              name: 'Transcript',
-              href: input.attachments.transcriptFile.href,
-              type: input.attachments.transcriptFile.type,
-              proposalId: proposal.id,
-            },
-          })
-
-          if (input.attachments.other.length > 0) {
-            await prisma.proposalAttachment.createMany({
-              data: input.attachments.other.map((attachment) => ({
-                name: 'Attachment',
-                href: attachment.href,
-                type: attachment.type,
-                proposalId: proposal.id,
-              })),
-            })
-          }
-        })
+        await prisma.$transaction(
+          [
+            prisma.proposal.create({
+              data: {
+                id: input.proposal.id,
+                title: input.proposal.title,
+                description: input.proposal.description,
+                language: input.proposal.language,
+                studyLevel: input.proposal.studyLevel,
+                topicAreaSlug: input.proposal.topicAreaSlug,
+                additionalStudentComment:
+                  input.proposal.additionalStudentComment,
+                typeKey: 'STUDENT',
+                statusKey: 'OPEN',
+              },
+            }),
+            prisma.proposalApplication.create({
+              data: {
+                id: input.proposal.id,
+                statusKey: 'OPEN',
+                email: input.application.email,
+                matriculationNumber: input.application.matriculationNumber,
+                fullName: input.application.fullName,
+                plannedStartAt: input.application.plannedStartAt,
+                motivation: input.application.motivation,
+                proposalId: input.proposal.id,
+                allowUsage: input.application.allowUsage,
+                allowPublication: input.application.allowPublication,
+              },
+            }),
+            prisma.proposalAttachment.create({
+              data: {
+                name: 'Proposal',
+                href: input.attachments.proposalFile.href,
+                type: input.attachments.proposalFile.type,
+                proposalId: input.proposal.id,
+              },
+            }),
+            prisma.proposalAttachment.create({
+              data: {
+                name: 'CV',
+                href: input.attachments.cvFile.href,
+                type: input.attachments.cvFile.type,
+                proposalId: input.proposal.id,
+              },
+            }),
+            prisma.proposalAttachment.create({
+              data: {
+                name: 'Transcript',
+                href: input.attachments.transcriptFile.href,
+                type: input.attachments.transcriptFile.type,
+                proposalId: input.proposal.id,
+              },
+            }),
+            input.attachments.other?.length > 0
+              ? [
+                  prisma.proposalAttachment.createMany({
+                    data: input.attachments.other.map((attachment) => ({
+                      name: 'Attachment',
+                      href: attachment.href,
+                      type: attachment.type,
+                      proposalId: input.proposal.id,
+                    })),
+                  }),
+                ]
+              : [],
+          ].flat()
+        )
       } catch {
         return {
           success: false,
