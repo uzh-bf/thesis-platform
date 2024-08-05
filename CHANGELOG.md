@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.9](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.8...v1.1.0-beta.9) (2024-08-05)
+
+
+### Bug Fixes
+
+* date parsing and url validation for proposal submission ([b66e0d6](https://github.com/uzh-bf/thesis-platform/commit/b66e0d6ecb9deea3ebd36c3c835b7df96726aeb0))
+
 ## [1.1.0-beta.8](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.7...v1.1.0-beta.8) (2024-08-05)
 
 
