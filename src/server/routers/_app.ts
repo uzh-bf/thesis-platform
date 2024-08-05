@@ -7,6 +7,7 @@ import {
   StorageSharedKeyCredential,
   generateBlobSASQueryParameters,
 } from '@azure/storage-blob'
+import { TRPCError } from '@trpc/server'
 import axios from 'axios'
 import 'cross-fetch/polyfill'
 import { prisma } from 'src/server/prisma'
@@ -243,7 +244,7 @@ export const appRouter = router({
 
   getAllPersonsResponsible: optionalAuthedProcedure.query(() => {
     return prisma.responsible.findMany({
-      select:{
+      select: {
         name: true,
       },
       orderBy: {
@@ -289,7 +290,6 @@ export const appRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-
       const res = await axios.post(
         process.env.PROPOSAL_FEEDBACK_URL as string,
         input,
@@ -351,6 +351,132 @@ export const appRouter = router({
         }
       )
       return res.data
+    }),
+
+  persistProposalSubmission: publicProcedure
+    .input(
+      z.object({
+        flowSecret: z.string(),
+        proposal: z.object({
+          id: z.string(),
+          title: z.string(),
+          description: z.string(),
+          language: z.string(),
+          studyLevel: z.string(),
+          topicAreaSlug: z.string(),
+          additionalStudentComment: z.string(),
+        }),
+        application: z.object({
+          email: z.string(),
+          matriculationNumber: z.string(),
+          fullName: z.string(),
+          plannedStartAt: z.string(),
+          motivation: z.string(),
+          allowUsage: z.boolean(),
+          allowPublication: z.boolean(),
+        }),
+        attachments: z.object({
+          proposalFile: z.object({
+            href: z.string(),
+            type: z.string(),
+          }),
+          cvFile: z.object({
+            href: z.string(),
+            type: z.string(),
+          }),
+          transcriptFile: z.object({
+            href: z.string(),
+            type: z.string(),
+          }),
+          other: z.array(
+            z.object({
+              name: z.string(),
+              href: z.string(),
+              type: z.string(),
+            })
+          ),
+        }),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.flowSecret !== process.env.FLOW_SECRET) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' })
+      }
+
+      try {
+        await prisma.$transaction(async (prisma) => {
+          const proposal = await prisma.proposal.create({
+            data: {
+              id: input.proposal.id,
+              title: input.proposal.title,
+              description: input.proposal.description,
+              language: input.proposal.language,
+              studyLevel: input.proposal.studyLevel,
+              topicAreaSlug: input.proposal.topicAreaSlug,
+              additionalStudentComment: input.proposal.additionalStudentComment,
+              typeKey: 'STUDENT',
+              statusKey: 'OPEN',
+            },
+          })
+
+          await prisma.proposalApplication.create({
+            data: {
+              id: proposal.id,
+              statusKey: 'OPEN',
+              email: input.application.email,
+              matriculationNumber: input.application.matriculationNumber,
+              fullName: input.application.fullName,
+              plannedStartAt: input.application.plannedStartAt,
+              motivation: input.application.motivation,
+              proposalId: proposal.id,
+              allowUsage: input.application.allowUsage,
+              allowPublication: input.application.allowPublication,
+            },
+          })
+
+          await prisma.proposalAttachment.create({
+            data: {
+              name: 'Proposal',
+              href: input.attachments.proposalFile.href,
+              type: input.attachments.proposalFile.type,
+              proposalId: proposal.id,
+            },
+          })
+
+          await prisma.proposalAttachment.create({
+            data: {
+              name: 'CV',
+              href: input.attachments.cvFile.href,
+              type: input.attachments.cvFile.type,
+              proposalId: proposal.id,
+            },
+          })
+
+          await prisma.proposalAttachment.create({
+            data: {
+              name: 'Transcript',
+              href: input.attachments.transcriptFile.href,
+              type: input.attachments.transcriptFile.type,
+              proposalId: proposal.id,
+            },
+          })
+
+          if (input.attachments.other.length > 0) {
+            await prisma.proposalAttachment.createMany({
+              data: input.attachments.other.map((attachment) => ({
+                name: 'Attachment',
+                href: attachment.href,
+                type: attachment.type,
+                proposalId: proposal.id,
+              })),
+            })
+          }
+        })
+      } catch {
+        return false
+      }
+
+      return true
     }),
 })
 
