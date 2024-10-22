@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.15](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.14...v1.1.0-beta.15) (2024-10-22)
+
+
+### Bug Fixes
+
+* FAQ page link ([7c6e33e](https://github.com/uzh-bf/thesis-platform/commit/7c6e33e072dffcf2006077302222a4a235a81930))
+
 ## [1.1.0-beta.14](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.13...v1.1.0-beta.14) (2024-08-05)
 
 
