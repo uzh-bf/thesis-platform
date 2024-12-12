@@ -60,6 +60,10 @@ async function seed(prisma: PrismaClient) {
       }
     ]
   })
+
+  console.log({applicationStatus, proposalStatus, proposalType, topicArea, proposalFeedbackType, responsible})
+
+  console.log('> finished prisma seed')
 }
 
 seed(prismaClient)
