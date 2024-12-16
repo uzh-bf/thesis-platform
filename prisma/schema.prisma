@@ -226,6 +226,7 @@ enum Status {
   GRADING
   WITHDRAWN
   COMPLETED
+  ARCHIVED
 }
 
 model AdminInfo {
