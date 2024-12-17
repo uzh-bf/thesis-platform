@@ -29,7 +29,8 @@
     "prisma:studio": "doppler run --config dev -- prisma studio",
     "prisma:studio:stage": "doppler run --config stg -- prisma studio",
     "prisma:studio:prod": "doppler run --config prd -- prisma studio",
-    "prisma:seed": "doppler run --config dev -- ts-node --project tsconfig.tsnode.json --esm prisma/seed.ts",
+    "prisma:seedNotWorking": "doppler run --config dev -- ts-node --project tsconfig.tsnode.json --esm prisma/seed.ts",
+    "prisma:seed": "doppler run --config dev -- tsx prisma/seed.ts",
     "prisma:setup": "run-s prisma:reset prisma:push prisma:seed",
     "start": "doppler run --config dev -- next start",
     "release:alpha": "standard-version --prerelease alpha --no-verify",
@@ -105,6 +106,7 @@
     "tailwindcss-radix": "2.8.0",
     "ts-node": "10.9.1",
     "ts-node-dev": "2.0.0",
+    "tsx": "^4.19.2",
     "type-fest": "4.5.0",
     "typescript": "5.2.2"
   },
