@@ -1,56 +1,57 @@
 # Install dependencies only when needed
 FROM node:18.12.0-alpine AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
 
-# Install dependencies based on the preferred package manager
-COPY package.json package-lock.json* ./
-RUN npm ci
+# Install pnpm globally
+RUN npm install -g pnpm@9.14.3
+
+# Set the working directory and copy dependency files
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies with pnpm
+RUN pnpm install --frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM node:18.12.0-alpine AS builder
+
+# Install pnpm again in the builder stage
+RUN npm install -g pnpm@9.14.3
+
+# Install any additional system dependencies
+RUN apk add --no-cache libc6-compat
+
+# Set the working directory and copy files
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-ARG NODE_ENV production
-ARG NEXT_PUBLIC_APP_URL
-ARG NEXT_PUBLIC_FORMS_URL_PUBLISH
-ARG NEXT_PUBLIC_FORMS_URL_SUBMIT
-ARG NEXT_PUBLIC_BLOBSERVICECLIENT_URL
-ARG NEXT_PUBLIC_CONTAINER_NAME "uploads"
-ARG NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME
-ARG NEXT_PUBLIC_FOOTER_COPYRIGHT
+# Build the application
+RUN pnpm run build
 
-ENV NEXT_TELEMETRY_DISABLED 1
-
-RUN npm run build
-
-# If using npm comment out above and use below instead
-# RUN npm run build
-
-# Production image, copy all the files and run next
+# Production image, copy all the built files and run the app
 FROM node:18.12.0-alpine AS runner
+
+# Set the working directory
 WORKDIR /app
 
-ARG NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
-
+# Create a non-root user for running the application
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Copy the build output and static files from the builder stage
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Set environment variables
+ARG NODE_ENV=production
+ENV NODE_ENV=$NODE_ENV
+ENV NEXT_TELEMETRY_DISABLED=1
 
+# Set user and expose the port
 USER nextjs
-
 EXPOSE 3000
+ENV PORT=3000
 
-ENV PORT 3000
-
+# Start the application
 CMD ["node", "server.js"]
