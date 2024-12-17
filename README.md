@@ -18,7 +18,7 @@ git clone https://github.com/uzh-bf/thesis-platform.git
 cd thesis-platform
 
 # Install dependencies
-npm install
+pnpm install
 ```
 
 ❗️Make sure your IP address has access to the database (include IP for Azure DB on [Azure](https://portal.azure.com)).❗️
@@ -27,7 +27,7 @@ npm install
 
 ```bash
 # Run the web app in developer mode
-npm run dev
+pnpm run dev
 ```
 
 The web app should now be visible on <https://localhost:5000>.
@@ -56,18 +56,18 @@ Here are the steps you'll need to follow for deployment:
 
 1. Start in the development environment:
 
-   Run the command `npm run release:beta:dry` to test the setup.
+   Run the command `pnpm run release:beta:dry` to test the setup.
 
    ```bash
-   npm run release:beta:dry
+   pnpm run release:beta:dry
    ```
 
 2. Continue in the development environment:
 
-   Run `npm run release:beta` to start the deployment.
+   Run `pnpm run release:beta` to start the deployment.
 
    ```bash
-   npm run release:beta
+   pnpm run release:beta
    ```
 
 3. Still within the development environment:
