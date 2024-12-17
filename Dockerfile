@@ -14,11 +14,8 @@ RUN pnpm install --ignore-scripts --frozen-lockfile
 # Rebuild the source code only when needed
 FROM node:18.12.0-alpine AS builder
 
-# Install pnpm again in the builder stage
-RUN npm install -g --ignore-scripts pnpm@9.14.3
-
-# Install any additional system dependencies
-RUN apk add --no-cache libc6-compat
+# Install pnpm and any additional system dependencies
+RUN npm install -g --ignore-scripts pnpm@9.14.3 && apk add --no-cache libc6-compat
 
 # Set the working directory and copy files
 WORKDIR /app
