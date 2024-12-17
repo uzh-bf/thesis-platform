@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.16](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.15...v1.1.0-beta.16) (2024-12-17)
+
+
+### Enhancements
+
+* add ARCHIVED status to prisma schema, clean up seed ([#37](https://github.com/uzh-bf/thesis-platform/issues/37)) ([221716e](https://github.com/uzh-bf/thesis-platform/commit/221716e0997d251522128fe9e67a60aa09bb6198))
+* add latest package-lock.json ([96b7646](https://github.com/uzh-bf/thesis-platform/commit/96b7646248649ee141ac16fc3c01fab68f54bd08))
+
 ## [1.1.0-beta.15](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.14...v1.1.0-beta.15) (2024-10-22)
 
 
