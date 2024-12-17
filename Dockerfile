@@ -2,20 +2,20 @@
 FROM node:18.12.0-alpine AS deps
 
 # Install pnpm globally
-RUN npm install -g pnpm@9.14.3
+RUN npm install -g --ignore-scripts pnpm@9.14.3
 
 # Set the working directory and copy dependency files
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies with pnpm
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --ignore-scripts --frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM node:18.12.0-alpine AS builder
 
 # Install pnpm again in the builder stage
-RUN npm install -g pnpm@9.14.3
+RUN npm install -g --ignore-scripts pnpm@9.14.3
 
 # Install any additional system dependencies
 RUN apk add --no-cache libc6-compat
