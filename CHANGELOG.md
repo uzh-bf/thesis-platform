@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.17](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.16...v1.1.0-beta.17) (2025-01-10)
+
+
+### Features
+
+* **prisma:** add latestSubmissionDate to admin info table ([#39](https://github.com/uzh-bf/thesis-platform/issues/39)) ([d5728d8](https://github.com/uzh-bf/thesis-platform/commit/d5728d82b5df558185f795c0bde08e45e0335f3d))
+
 ## [1.1.0-beta.16](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.15...v1.1.0-beta.16) (2024-12-17)
 
 
