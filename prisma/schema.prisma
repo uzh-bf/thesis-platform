@@ -227,6 +227,7 @@ enum Status {
   WITHDRAWN
   COMPLETED
   ARCHIVED
+  OVERDUE
 }
 
 model AdminInfo {
