@@ -227,6 +227,7 @@ enum Status {
   WITHDRAWN
   COMPLETED
   ARCHIVED
+  OVERDUE
 }
 
 model AdminInfo {
@@ -238,6 +239,7 @@ model AdminInfo {
   mailReceived     String?
   status           Status?
   olatCapturedDate DateTime?
+  latestSubmissionDate DateTime?
   submissionDate   DateTime?
   grade            Float?
   olatGradeDate    DateTime?
