@@ -730,11 +730,11 @@ export const appRouter = router({
       }
     }),
 
-    getEmailsForOpenStudentProposalsOlderThan8Weeks: publicProcedure
+    getOpenStudentProposalsOlderThan8Weeks: publicProcedure
     .meta({
       openapi: {
         method: 'GET',
-        path: '/getEmailsForOpenStudentProposalsOlderThan8Weeks',
+        path: '/getOpenStudentProposalsOlderThan8Weeks',
       },
     })
     .input(z.object({})) // No input required
