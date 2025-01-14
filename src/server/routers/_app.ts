@@ -739,10 +739,10 @@ export const appRouter = router({
     })
     .input(z.object({})) // No input required
     .output(z.object({ emails: z.array(z.string()) })) // Expect an array of email strings
-    .query(async ({ ctx }) => {
+    .query(async () => {
       // Calculate the date 8 weeks ago
-      const eightWeeksAgo = new Date();
-      eightWeeksAgo.setDate(eightWeeksAgo.getDate() - 8 * 7); // 8 x 7 Days = 56 days
+      const eightWeeksAgo = new Date()
+      eightWeeksAgo.setDate(eightWeeksAgo.getDate() - 8 * 7) // 8 x 7 Days = 56 days
 
       try {
         // Fetch data from Prisma
