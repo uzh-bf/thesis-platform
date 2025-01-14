@@ -738,7 +738,7 @@ export const appRouter = router({
       },
     })
     .input(z.object({})) // No input required
-    .output(z.array(z.object({ id: z.string(), email: z.string() }))) // Expect an array of objects with id and email fields
+    .output(z.array(z.object({ id: z.string(), email: z.string(), proposalTitle: z.string() }))) // Expect an array of objects with id, email, and proposalTitle
     .query(async () => {
       // Calculate the date 8 weeks ago
       const eightWeeksAgo = new Date();
@@ -759,10 +759,22 @@ export const appRouter = router({
           select: {
             id: true,
             email: true,
+            proposal: {
+              select: {
+                title: true,
+              },
+            },
           },
         });
-        // Return the result directly as it already matches the required structure
-        return result;
+
+        // Map the result to restructure it
+        const transformedResult = result.map((application) => ({
+          id: application.id,
+          email: application.email,
+          proposalTitle: application.proposal.title, // Extract title from the nested proposal object
+        }));
+
+        return transformedResult;
       } catch (error) {
         console.error("Error fetching proposals:", error);
         throw new Error("Failed to fetch proposals");
