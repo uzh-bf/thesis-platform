@@ -784,7 +784,7 @@ export const appRouter = router({
     updateProposalUpdatedAt: publicProcedure
   .meta({
     openapi: {
-      method: 'GET', // GET request to handle URL parameter
+      method: 'POST', // GET request to handle URL parameter
       path: '/updateProposalUpdatedAt/{id}', // Accept id in the URL
     },
   })
