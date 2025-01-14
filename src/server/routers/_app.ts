@@ -784,7 +784,7 @@ export const appRouter = router({
     updateProposalUpdatedAt: publicProcedure
   .meta({
     openapi: {
-      method: 'POST', // GET request to handle URL parameter
+      method: 'GET', // GET request to handle URL parameter
       path: '/updateProposalUpdatedAt/{id}', // Accept id in the URL
     },
   })
@@ -797,7 +797,10 @@ export const appRouter = router({
   .query(async ({ input }) => {
     try {
       // Update the `updatedAt` field for the proposal with the provided `id`
-      await prisma.proposal.update({
+      const proposal = await prisma.proposal.update({
+        select: {
+          title: true,
+        },
         where: {
           id: input.id, // Use the `id` from the URL path parameter
         },
@@ -807,7 +810,7 @@ export const appRouter = router({
       });
 
       return {
-        response: 'The Proposal with the id: ' + input.id + 'was updated successfully! ✌️😊',
+        response: `The Proposal with the title: '${proposal.title}' was updated successfully! ✌️😊`,
       };
     } catch (error) {
       console.error("Error updating proposal:", error);
