@@ -729,6 +729,49 @@ export const appRouter = router({
         success: true,
       }
     }),
+
+  getEmailsForOpenStudentProposalsOlderThan8Weeks: publicProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/getEmailsForOpenStudentProposalsOlderThan8Weeks',
+      },
+    })
+    .input(z.object({})) // No input required
+    .output(z.object({ emails: z.array(z.string()) })) // Expect an array of email strings
+    .query(async ({ ctx }) => {
+      // Calculate the date 8 weeks ago
+      const eightWeeksAgo = new Date();
+      eightWeeksAgo.setDate(eightWeeksAgo.getDate() - 8 * 7); // 8 x 7 Days = 56 days
+
+      try {
+        // Fetch data from Prisma
+        const result = await prisma.proposalApplication.findMany({
+          where: {
+            proposal: {
+              statusKey: 'OPEN',
+              createdAt: {
+                lt: eightWeeksAgo, // Proposals created more than 8 weeks ago
+              },
+              ownedByUserEmail: null, // Proposal must not be owned by a user (Student Proposal | otherwise it is a Supervisor Proposal)
+            },
+          },
+          select: {
+            email: true, // Select only the email field
+          },
+        });
+
+        // Extract email addresses
+        const emails = result.map((application) => application.email);
+
+        // Return the emails only
+        return { emails };
+      } catch (error) {
+        console.error("Error fetching proposals:", error);
+        throw new Error("Failed to fetch proposals");
+      }
+  }),
+
 })
 
 export type AppRouter = typeof appRouter
