@@ -750,7 +750,7 @@ export const appRouter = router({
           where: {
             proposal: {
               statusKey: 'OPEN',
-              createdAt: {
+              updatedAt: {
                 lt: eightWeeksAgo, // Proposals created more than 8 weeks ago
               },
               ownedByUserEmail: null, // Proposal must not be owned by a user (Student Proposal | otherwise it is a Supervisor Proposal)
@@ -768,7 +768,7 @@ export const appRouter = router({
         throw new Error("Failed to fetch proposals");
       }
     }),
-  
+
 
 })
 
