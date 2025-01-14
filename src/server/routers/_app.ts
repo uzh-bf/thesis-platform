@@ -797,7 +797,7 @@ export const appRouter = router({
   .query(async ({ input }) => {
     try {
       // Update the `updatedAt` field for the proposal with the provided `id`
-      const updatedProposal = await prisma.proposal.update({
+      await prisma.proposal.update({
         where: {
           id: input.id, // Use the `id` from the URL path parameter
         },
