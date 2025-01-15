@@ -817,6 +817,40 @@ export const appRouter = router({
       throw new Error("Failed to update proposal");
     }
   }),
-})
+
+updateProposalStatus: publicProcedure
+  .meta({
+    openapi: {
+      method: 'GET', // GET request to handle URL parameter
+      path: '/updateProposalStatus/{id}', // Accept id in the URL
+    },
+  })
+  .input(z.object({
+    id: z.string(), // Extract id from the URL
+  }))
+  .output(z.object({
+    response: z.string(),
+  }))
+  .query(async ({ input }) => {
+    try {
+      // Update the `statusKey` and `updatedAt` fields for the proposal with the provided `id`
+      await prisma.proposal.update({
+        where: {
+          id: input.id, // Use the `id` from the URL path parameter
+        },
+        data: {
+          statusKey: "WAITING_FOR_STUDENT", // Update the statusKey
+        },
+      });
+      return {
+        response: `The Proposal with the id: '${input.id}' was updated successfully! ✌️😊`,
+      };
+    } catch (error) {
+      console.error("Error updating proposal:", error);
+      throw new Error("Failed to update proposal");
+    }
+  }),
+});
+
 
 export type AppRouter = typeof appRouter
