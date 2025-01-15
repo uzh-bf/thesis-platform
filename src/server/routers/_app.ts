@@ -805,6 +805,7 @@ export const appRouter = router({
           id: input.id, // Use the `id` from the URL path parameter
         },
         data: {
+          statusKey: "OPEN",
           updatedAt: new Date(), // Set `updatedAt` to the current date/time
         },
       });
