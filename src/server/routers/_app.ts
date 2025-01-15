@@ -850,6 +850,56 @@ updateProposalStatus: publicProcedure
       throw new Error("Failed to update proposal");
     }
   }),
+
+  updateWaitingForStudentProposalsOlderThan9Weeks: publicProcedure
+  .meta({
+    openapi: {
+      method: 'POST',
+      path: '/updateWaitingForStudentProposalsOlderThan9Weeks',
+    },
+  })
+  .input(z.object({})) // No input required
+  .output(z.object({ ids: z.array(z.string()) })) // Return updated proposal IDs
+  .query(async () => {
+    // Calculate the date 9 weeks ago
+    const nineWeeksAgo = new Date();
+    nineWeeksAgo.setDate(nineWeeksAgo.getDate() - 9 * 7); // 9 x 7 Days = 63 days
+
+    try {
+      // Find proposals to update
+      const proposalsToUpdate = await prisma.proposal.findMany({
+        where: {
+          statusKey: 'WAITING_FOR_STUDENT',
+          updatedAt: {
+            lt: nineWeeksAgo,
+          },
+          ownedByUserEmail: null,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      const updatedIds = proposalsToUpdate.map(proposal => proposal.id);
+
+      // Update the statusKey to "WITHDRAWN"
+      await prisma.proposal.updateMany({
+        where: {
+          id: { in: updatedIds },
+        },
+        data: {
+          statusKey: 'WITHDRAWN',
+        },
+      });
+
+      return {
+        ids: updatedIds, // Return the IDs of updated proposals
+      };
+    } catch (error) {
+      console.error("Error updating proposals:", error);
+      throw new Error("Failed to update proposals");
+    }
+  }),
 });
 
 
