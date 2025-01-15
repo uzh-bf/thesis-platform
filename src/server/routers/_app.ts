@@ -859,7 +859,7 @@ updateProposalStatus: publicProcedure
     },
   })
   .input(z.object({})) // No input required
-  .output(z.object({ ids: z.array(z.string()) })) // Return updated proposal IDs
+  .output(z.object({ withdrawn_proposal_ids: z.array(z.string()) })) // Return updated proposal IDs
   .query(async () => {
     // Calculate the date 9 weeks ago
     const nineWeeksAgo = new Date();
@@ -893,7 +893,7 @@ updateProposalStatus: publicProcedure
       });
 
       return {
-        ids: updatedIds, // Return the IDs of updated proposals
+        withdrawn_proposal_ids: updatedIds, // Return the IDs of updated proposals
       };
     } catch (error) {
       console.error("Error updating proposals:", error);
