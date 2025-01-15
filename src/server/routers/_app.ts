@@ -800,12 +800,10 @@ export const appRouter = router({
   .query(async ({ input }) => {
     try {
       // Update the `updatedAt` field for the proposal with the provided `id`
-      const proposal = await prisma.proposal.update({
-        select: {
-          title: true,
-        },
+      const proposal = await prisma.proposal.updateMany({
         where: {
           id: input.id, // Use the `id` from the URL path parameter
+          statusKey: 'WAITING_FOR_STUDENT', // Only update if the status is 'WAITING_FOR_STUDENT'
         },
         data: {
           statusKey: "OPEN",
@@ -813,8 +811,14 @@ export const appRouter = router({
         },
       });
 
+      if (proposal.count === 0) {
+        return {
+          response: "No Proposal was updated.",
+        };
+      }
+
       return {
-        response: `The Proposal with the title: '${proposal.title}' was updated successfully! ✌️😊`,
+        response: `Your Proposal was updated successfully! ✌️😊`,
       };
     } catch (error) {
       console.error("Error updating proposal:", error);
