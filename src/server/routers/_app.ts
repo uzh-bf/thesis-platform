@@ -733,13 +733,16 @@ export const appRouter = router({
     getOpenStudentProposalsOlderThan8Weeks: publicProcedure
     .meta({
       openapi: {
-        method: 'GET',
+        method: 'POST',
         path: '/getOpenStudentProposalsOlderThan8Weeks',
       },
     })
-    .input(z.object({})) // No input required
+    .input(z.object({ flowSecret: z.string() })) // No input required
     .output(z.array(z.object({ id: z.string(), email: z.string(), proposalTitle: z.string() }))) // Expect an array of objects with id, email, and proposalTitle
-    .query(async () => {
+    .query(async ({ input }) => {
+      if (input.flowSecret !== process.env.FLOW_SECRET) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' })
+      }
       // Calculate the date 8 weeks ago
       const eightWeeksAgo = new Date();
       eightWeeksAgo.setDate(eightWeeksAgo.getDate() - 8 * 7); // 8 x 7 Days = 56 days
@@ -822,17 +825,21 @@ export const appRouter = router({
 updateProposalStatus: publicProcedure
   .meta({
     openapi: {
-      method: 'GET', // GET request to handle URL parameter
+      method: 'POST', // GET request to handle URL parameter
       path: '/updateProposalStatus/{id}', // Accept id in the URL
     },
   })
   .input(z.object({
+    flowSecret: z.string(),
     id: z.string(), // Extract id from the URL
   }))
   .output(z.object({
     response: z.string(),
   }))
   .query(async ({ input }) => {
+    if (input.flowSecret !== process.env.FLOW_SECRET) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' })
+    }
     try {
       // Update the `statusKey` and `updatedAt` fields for the proposal with the provided `id`
       await prisma.proposal.update({
@@ -859,13 +866,16 @@ updateProposalStatus: publicProcedure
       path: '/updateWaitingForStudentProposalsOlderThan1Week',
     },
   })
-  .input(z.object({})) // No input required
+  .input(z.object({ flowSecret: z.string() })) // flowSecret as input
   .output(z.object({ withdrawn_proposal_ids: z.array(z.string()) })) // Return updated proposal IDs
-  .query(async () => {
+  .query(async ({ input }) => {
+
     // Calculate the date 9 weeks ago
     const oneWeeksAgo = new Date();
     oneWeeksAgo.setDate(oneWeeksAgo.getDate() - 7); // 7 Days
-
+    if (input.flowSecret !== process.env.FLOW_SECRET) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' })
+    }
     try {
       // Find proposals to update
       const proposalsToUpdate = await prisma.proposal.findMany({
