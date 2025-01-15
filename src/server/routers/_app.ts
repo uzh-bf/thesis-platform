@@ -851,19 +851,19 @@ updateProposalStatus: publicProcedure
     }
   }),
 
-  updateWaitingForStudentProposalsOlderThan9Weeks: publicProcedure
+  updateWaitingForStudentProposalsOlderThan1Week: publicProcedure
   .meta({
     openapi: {
       method: 'POST',
-      path: '/updateWaitingForStudentProposalsOlderThan9Weeks',
+      path: '/updateWaitingForStudentProposalsOlderThan1Week',
     },
   })
   .input(z.object({})) // No input required
   .output(z.object({ withdrawn_proposal_ids: z.array(z.string()) })) // Return updated proposal IDs
   .query(async () => {
     // Calculate the date 9 weeks ago
-    const nineWeeksAgo = new Date();
-    nineWeeksAgo.setDate(nineWeeksAgo.getDate() - 9 * 7); // 9 x 7 Days = 63 days
+    const oneWeeksAgo = new Date();
+    oneWeeksAgo.setDate(oneWeeksAgo.getDate() - 7); // 7 Days
 
     try {
       // Find proposals to update
@@ -871,7 +871,7 @@ updateProposalStatus: publicProcedure
         where: {
           statusKey: 'WAITING_FOR_STUDENT',
           updatedAt: {
-            lt: nineWeeksAgo,
+            lt: oneWeeksAgo,
           },
           ownedByUserEmail: null,
         },
