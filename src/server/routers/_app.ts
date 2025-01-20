@@ -729,6 +729,193 @@ export const appRouter = router({
         success: true,
       }
     }),
-})
+
+    getOpenStudentProposalsOlderThan8Weeks: publicProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/getOpenStudentProposalsOlderThan8Weeks',
+      },
+    })
+    .input(z.object({ flowSecret: z.string() })) // No input required
+    .output(z.array(z.object({ id: z.string(), email: z.string(), proposalTitle: z.string() }))) // Expect an array of objects with id, email, and proposalTitle
+    .query(async ({ input }) => {
+      if (input.flowSecret !== process.env.FLOW_SECRET) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' })
+      }
+      // Calculate the date 8 weeks ago
+      const eightWeeksAgo = new Date();
+      eightWeeksAgo.setDate(eightWeeksAgo.getDate() - 8 * 7); // 8 x 7 Days = 56 days
+  
+      try {
+        // Fetch data from Prisma
+        const result = await prisma.proposalApplication.findMany({
+          where: {
+            proposal: {
+              statusKey: 'OPEN',
+              updatedAt: {
+                lt: eightWeeksAgo, // Proposals created more than 8 weeks ago
+              },
+              ownedByUserEmail: null, // Proposal must not be owned by a user (Student Proposal | otherwise it is a Supervisor Proposal)
+            },
+          },
+          select: {
+            id: true,
+            email: true,
+            proposal: {
+              select: {
+                title: true,
+              },
+            },
+          },
+        });
+
+        // Map the result to restructure it
+        const transformedResult = result.map((application) => ({
+          id: application.id,
+          email: application.email,
+          proposalTitle: application.proposal.title, // Extract title from the nested proposal object
+        }));
+
+        return transformedResult;
+      } catch (error) {
+        console.error("Error fetching proposals:", error);
+        throw new Error("Failed to fetch proposals");
+      }
+    }),
+
+    updateProposalUpdatedAt: publicProcedure
+  .meta({
+    openapi: {
+      method: 'GET', // GET request to handle URL parameter
+      path: '/updateProposalUpdatedAt/{id}', // Accept id in the URL
+    },
+  })
+  .input(z.object({
+    id: z.string(), // Extract id from the URL
+  }))
+  .output(z.object({
+    response: z.string(),
+  }))
+  .query(async ({ input }) => {
+    try {
+      // Update the `updatedAt` field for the proposal with the provided `id`
+      const proposal = await prisma.proposal.updateMany({
+        where: {
+          id: input.id, // Use the `id` from the URL path parameter
+          statusKey: 'WAITING_FOR_STUDENT', // Only update if the status is 'WAITING_FOR_STUDENT'
+        },
+        data: {
+          statusKey: "OPEN",
+          updatedAt: new Date(), // Set `updatedAt` to the current date/time
+        },
+      });
+
+      if (proposal.count === 0) {
+        return {
+          response: "No Proposal was updated.",
+        };
+      }
+
+      return {
+        response: `Your Proposal was updated successfully! ✌️😊`,
+      };
+    } catch (error) {
+      console.error("Error updating proposal:", error);
+      throw new Error("Failed to update proposal");
+    }
+  }),
+
+updateProposalStatus: publicProcedure
+  .meta({
+    openapi: {
+      method: 'POST', // GET request to handle URL parameter
+      path: '/updateProposalStatus/{id}', // Accept id in the URL
+    },
+  })
+  .input(z.object({
+    flowSecret: z.string(),
+    id: z.string(), // Extract id from the URL
+  }))
+  .output(z.object({
+    response: z.string(),
+  }))
+  .query(async ({ input }) => {
+    if (input.flowSecret !== process.env.FLOW_SECRET) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' })
+    }
+    try {
+      // Update the `statusKey` and `updatedAt` fields for the proposal with the provided `id`
+      await prisma.proposal.update({
+        where: {
+          id: input.id, // Use the `id` from the URL path parameter
+        },
+        data: {
+          statusKey: "WAITING_FOR_STUDENT", // Update the statusKey
+        },
+      });
+      return {
+        response: `The Proposal with the id: '${input.id}' was updated successfully! ✌️😊`,
+      };
+    } catch (error) {
+      console.error("Error updating proposal:", error);
+      throw new Error("Failed to update proposal");
+    }
+  }),
+
+  updateWaitingForStudentProposalsOlderThan1Week: publicProcedure
+  .meta({
+    openapi: {
+      method: 'POST',
+      path: '/updateWaitingForStudentProposalsOlderThan1Week',
+    },
+  })
+  .input(z.object({ flowSecret: z.string() })) // flowSecret as input
+  .output(z.object({ withdrawn_proposal_ids: z.array(z.string()) })) // Return updated proposal IDs
+  .query(async ({ input }) => {
+
+    // Calculate the date 9 weeks ago
+    const oneWeeksAgo = new Date();
+    oneWeeksAgo.setDate(oneWeeksAgo.getDate() - 7); // 7 Days
+    if (input.flowSecret !== process.env.FLOW_SECRET) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' })
+    }
+    try {
+      // Find proposals to update
+      const proposalsToUpdate = await prisma.proposal.findMany({
+        where: {
+          statusKey: 'WAITING_FOR_STUDENT',
+          updatedAt: {
+            lt: oneWeeksAgo,
+          },
+          ownedByUserEmail: null,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      const updatedIds = proposalsToUpdate.map(proposal => proposal.id);
+
+      // Update the statusKey to "WITHDRAWN"
+      await prisma.proposal.updateMany({
+        where: {
+          id: { in: updatedIds },
+        },
+        data: {
+          statusKey: 'WITHDRAWN',
+        },
+      });
+
+      return {
+        withdrawn_proposal_ids: updatedIds, // Return the IDs of updated proposals
+      };
+    } catch (error) {
+      console.error("Error updating proposals:", error);
+      throw new Error("Failed to update proposals");
+    }
+  }),
+});
+
 
 export type AppRouter = typeof appRouter
