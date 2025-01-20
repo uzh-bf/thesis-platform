@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.18](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.17...v1.1.0-beta.18) (2025-01-20)
+
+
+### Enhancements
+
+* Student Email Reminder ([#40](https://github.com/uzh-bf/thesis-platform/issues/40)) ([161f88c](https://github.com/uzh-bf/thesis-platform/commit/161f88caa57803e438f2cd3a4df26d82c9a90701))
+
 ## [1.1.0-beta.17](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.16...v1.1.0-beta.17) (2025-01-10)
 
 
