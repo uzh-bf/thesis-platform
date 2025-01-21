@@ -13,7 +13,7 @@
     "build": "npm-run-all build:next",
     "build:next": "next build",
     "predev": "npm-run-all prisma:generate",
-    "dev": "doppler run --config dev -- next dev",
+    "dev": "doppler run --config dev -- next dev & lt --port 3000 --subdomain thesis-platform-df-uzh-dev",
     "format": "prettier --write .",
     "lint": "next lint",
     "script:dev": "doppler run --config dev --",
