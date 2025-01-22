@@ -21,7 +21,6 @@ import {
 import { ProposalStatusFilter } from 'src/types/app'
 import { z } from 'zod'
 import { v4 as uuidv4 } from 'uuid'
-import { parseISO } from 'date-fns'
 
 async function getStudentProposals({ ctx, filters }) {
   const proposals = await prisma.proposal.findMany({
@@ -1100,13 +1099,15 @@ updateProposalStatus: publicProcedure
       // Create the application with attachments in a transaction
       await prisma.$transaction(async (tx) => {
         // Create the main application
+        console.log("TEST1",input.proposalApplication.plannedStartAt)
+        console.log("TEST2",new Date(input.proposalApplication.plannedStartAt + "T00:00:00Z"))
         const application = await tx.proposalApplication.create({
           data: {
             statusKey: "OPEN",
             email: input.proposalApplication.email,
             matriculationNumber: input.proposalApplication.matriculationNumber,
             fullName: input.proposalApplication.fullName,
-            plannedStartAt: parseISO(input.proposalApplication.plannedStartAt),
+            plannedStartAt: new Date(input.proposalApplication.plannedStartAt + "T00:00:00Z"),
             motivation: input.proposalApplication.motivation,
             proposalId: input.proposalApplication.proposalId,
             createdAt: new Date(),
