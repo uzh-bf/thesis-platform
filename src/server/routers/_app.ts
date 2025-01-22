@@ -1099,8 +1099,6 @@ updateProposalStatus: publicProcedure
       // Create the application with attachments in a transaction
       await prisma.$transaction(async (tx) => {
         // Create the main application
-        console.log("TEST1",input.proposalApplication.plannedStartAt)
-        console.log("TEST2",new Date(input.proposalApplication.plannedStartAt + "T00:00:00Z"))
         const application = await tx.proposalApplication.create({
           data: {
             statusKey: "OPEN",
