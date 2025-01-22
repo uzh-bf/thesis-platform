@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.19](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.18...v1.1.0-beta.19) (2025-01-22)
+
+
+### Enhancements
+
+* replace DB connectors through http requests for Thesis Application Acceptance ([#41](https://github.com/uzh-bf/thesis-platform/issues/41)) ([8d254cf](https://github.com/uzh-bf/thesis-platform/commit/8d254cfb8ccca4a873ca416dba78fea063b90a89))
+
 ## [1.1.0-beta.18](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.17...v1.1.0-beta.18) (2025-01-20)
 
 
