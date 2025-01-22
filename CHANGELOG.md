@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.20](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.19...v1.1.0-beta.20) (2025-01-22)
+
+
+### Enhancements
+
+* createProposalApplication procedure with http ([#42](https://github.com/uzh-bf/thesis-platform/issues/42)) ([0c2e23a](https://github.com/uzh-bf/thesis-platform/commit/0c2e23ab399e4469e488fb833046dd750211f0fa))
+
 ## [1.1.0-beta.19](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.18...v1.1.0-beta.19) (2025-01-22)
 
 
