@@ -1043,6 +1043,114 @@ updateProposalStatus: publicProcedure
     // return all user information of proposals that have been declined as well as the one that has been accepted with the info from above (no new prisma call needed)
     return { proposal: { proposal_title: proposal?.title, supervisor_email: supervisionInfo?.supervisorEmail }, accepted_user: {accepted_email: application?.email, accepted_fullName: application?.fullName }, declined_users: applicationsToDecline.map(app => ({declined_email: app.email, declined_fullName: app.fullName })) }
   }),
+
+  createProposalApplication: publicProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/createProposalApplication',
+      },
+    })
+    .input(
+      z.object({
+        proposalApplication: z.object({
+          email: z.string(),
+          matriculationNumber: z.string(),
+          fullName: z.string(),
+          plannedStartAt: z.string(),
+          motivation: z.string(),
+          proposalId: z.string(),
+          allowPublication: z.boolean(),
+          allowUsage: z.boolean(),
+        }),
+        applicationAttachment: z.object({
+          href_cv: z.string(),
+          href_transcript: z.string(),
+        }),
+      })
+    )
+    .output(
+      z.object({
+        proposal: z.object({ title: z.string(), ownedByUserEmail: z.string() }),
+        supervisor: z.object({ email: z.string() }),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Get proposal and supervision details first
+      const proposal = await prisma.proposal.findUnique({
+        where: { id: input.proposalApplication.proposalId },
+        include: {
+          supervisedBy: {
+            include: {
+              supervisor: true,
+              responsible: true,
+            },
+          },
+        },
+      });
+
+      if (!proposal) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Proposal not found',
+        });
+      }
+
+      // Create the application with attachments in a transaction
+      await prisma.$transaction(async (tx) => {
+        // Create the main application
+        const application = await tx.proposalApplication.create({
+          data: {
+            statusKey: "OPEN",
+            email: input.proposalApplication.email,
+            matriculationNumber: input.proposalApplication.matriculationNumber,
+            fullName: input.proposalApplication.fullName,
+            plannedStartAt: new Date(input.proposalApplication.plannedStartAt + "T00:00:00Z"),
+            motivation: input.proposalApplication.motivation,
+            proposalId: input.proposalApplication.proposalId,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            allowPublication: input.proposalApplication.allowPublication,
+            allowUsage: input.proposalApplication.allowUsage,
+          },
+        });
+
+        // Create CV attachment
+        await tx.applicationAttachment.create({
+          data: {
+            name: 'CV',
+            href: input.applicationAttachment.href_cv,
+            type: 'application/pdf',
+            proposalApplicationId: application.id,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        });
+
+        // Create transcript attachment
+        await tx.applicationAttachment.create({
+          data: {
+            name: 'Transcript',
+            href: input.applicationAttachment.href_transcript,
+            type: 'application/pdf',
+            proposalApplicationId: application.id,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        });
+      });
+
+      return {
+        proposal: {
+          title: proposal?.title,
+          ownedByUserEmail: proposal?.ownedByUserEmail,
+        },
+        supervisor: {
+          email: proposal?.supervisedBy?.[0]?.supervisorEmail,
+        },
+      };
+    }),
+
 });
 
 export type AppRouter = typeof appRouter
