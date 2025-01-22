@@ -13,7 +13,7 @@
     "build": "npm-run-all build:next",
     "build:next": "next build",
     "predev": "npm-run-all prisma:generate",
-    "dev": "doppler run --config dev -- next dev",
+    "dev": "doppler run --config dev -- next dev & lt --port 3000 --subdomain thesis-platform-df-uzh-dev",
     "format": "prettier --write .",
     "lint": "next lint",
     "script:dev": "doppler run --config dev --",
@@ -57,6 +57,7 @@
     "@trpc/next": "10.37.1",
     "@trpc/react-query": "10.37.1",
     "@trpc/server": "10.37.1",
+    "@types/uuid": "^10.0.0",
     "@uidotdev/usehooks": "2.4.1",
     "@uzh-bf/design-system": "2.4.3",
     "axios": "1.5.1",
@@ -78,6 +79,7 @@
     "react-hot-toast": "2.4.1",
     "tailwind-merge": "1.14.0",
     "trpc-openapi": "1.2.0",
+    "uuid": "^11.0.5",
     "yup": "1.2.0"
   },
   "devDependencies": {
