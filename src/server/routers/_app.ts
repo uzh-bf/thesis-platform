@@ -1,5 +1,5 @@
 // import { ClientSecretCredential } from '@azure/identity'
-import { ProposalStatus, ProposalType, UserRole } from 'src/lib/constants'
+import { ProposalStatus, ApplicationStatus, ProposalType, UserRole } from 'src/lib/constants'
 // import { Client } from '@microsoft/microsoft-graph-client'
 // import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials'
 import {
@@ -20,6 +20,7 @@ import {
 } from 'src/server/trpc'
 import { ProposalStatusFilter } from 'src/types/app'
 import { z } from 'zod'
+import { v4 as uuidv4 } from 'uuid'
 
 async function getStudentProposals({ ctx, filters }) {
   const proposals = await prisma.proposal.findMany({
@@ -847,9 +848,7 @@ updateProposalStatus: publicProcedure
     try {
       // Update the `statusKey` and `updatedAt` fields for the proposal with the provided `id`
       await prisma.proposal.update({
-        where: {
-          id: input.id, // Use the `id` from the URL path parameter
-        },
+        where: { id: input.id }, // Use the `id` from the URL path parameter
         data: {
           statusKey: "WAITING_FOR_STUDENT", // Update the statusKey
         },
@@ -915,7 +914,135 @@ updateProposalStatus: publicProcedure
       throw new Error("Failed to update proposals");
     }
   }),
-});
 
+  processProposalAcceptance: publicProcedure
+  .meta({
+    openapi: {
+      method: 'POST',
+      path: '/processProposalAcceptance',
+    },
+  })
+  .input(
+    z.object({
+      proposalId: z.string(),
+      proposalApplicationId: z.string(),
+      applicantEmail: z.string(),
+    })
+  )
+  .output(
+    z.object({
+      proposal: z.object({ proposal_title: z.string(), supervisor_email: z.string() }),
+      accepted_user: z.object({ accepted_email: z.string(), accepted_fullName: z.string() }),
+      declined_users: z.array(z.object({ declined_email: z.string(), declined_fullName: z.string() })),
+    })
+  )
+  .mutation(async ({ ctx, input }) => {
+    // Step 1: Get Proposal Info
+    const proposal = await prisma.proposal.findUnique({
+      where: { id: input.proposalId },
+      include: {
+        supervisedBy: {
+          include: {
+            supervisor: true,
+          },
+        },
+      },
+    });
+
+    if (!proposal) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Proposal not found',
+      });
+    }
+
+    // Step 2: Update Proposal Matched
+    await prisma.proposal.update({
+      where: { id: input.proposalId },
+      data: {
+        statusKey: ProposalStatus.MATCHED,
+        updatedAt: new Date(),
+      },
+    });
+
+    // Step 3: Get User Proposal Supervision Info
+    const supervisionInfo = proposal.supervisedBy[0];
+    if (!supervisionInfo) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Supervision information not found',
+      });
+    }
+
+    // Step 4: Update User Proposal Supervision Student Email
+    await prisma.userProposalSupervision.update({
+      where: { id: supervisionInfo.id },
+      data: {
+        studentEmail: input.applicantEmail,
+        updatedAt: new Date(),
+      },
+    });
+
+    // Step 5: Get Proposal Application Info
+    const application = await prisma.proposalApplication.findFirst({
+      where: {
+        id: input.proposalApplicationId,
+        email: input.applicantEmail,
+      },
+    });
+
+    if (!application) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Application not found',
+      });
+    }
+
+    // Step 6: Update Proposal Application Accepted
+    await prisma.proposalApplication.update({
+      where: { id: application.id },
+      data: {
+        statusKey: ApplicationStatus.ACCEPTED,
+        updatedAt: new Date(),
+      },
+    });
+
+    // Step 7: Create Admin Table Entry
+    await prisma.adminInfo.create({
+      data: {
+        id: uuidv4(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        proposalId: input.proposalId,
+        status: ProposalStatus.OPEN,
+      },
+    });
+
+    // Step 8: Get Proposal Applications to Decline
+    const applicationsToDecline = await prisma.proposalApplication.findMany({
+      where: {
+        proposalId: input.proposalId,
+        email: { not: input.applicantEmail },
+      },
+    });
+
+    // Update status of other applications to declined
+    if (applicationsToDecline.length > 0) {
+      await prisma.proposalApplication.updateMany({
+        where: {
+          id: { in: applicationsToDecline.map(app => app.id) },
+        },
+        data: {
+          statusKey: ApplicationStatus.DECLINED,
+          updatedAt: new Date(),
+          supervisionId: null,
+        },
+      });
+    }
+
+    // return all user information of proposals that have been declined as well as the one that has been accepted with the info from above (no new prisma call needed)
+    return { proposal: { proposal_title: proposal?.title, supervisor_email: supervisionInfo?.supervisorEmail }, accepted_user: {accepted_email: application?.email, accepted_fullName: application?.fullName }, declined_users: applicationsToDecline.map(app => ({declined_email: app.email, declined_fullName: app.fullName })) }
+  }),
+});
 
 export type AppRouter = typeof appRouter
