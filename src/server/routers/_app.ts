@@ -1308,6 +1308,59 @@ updateProposalStatus: publicProcedure
           email: supervision.supervisorEmail
         }
       }
+    }),
+
+    getProvidedFeedbackEntries: publicProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/getProvidedFeedbackEntries',
+      },
+    })
+    .input(
+      z.object({
+        flowSecret: z.string(),
+        proposalId: z.string(),
+        supervisorEmail: z.string().email(),
+      })
+    )
+    .output(
+      z.object({
+        userEmail: z.string().email()
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Validate flow secret
+      const expectedSecret = process.env.FLOW_SECRET
+      if (!expectedSecret) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Flow secret not configured',
+        })
+      }
+      
+      if (input.flowSecret !== expectedSecret) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Invalid flow secret',
+        })
+      }
+
+      const feedbackEntries = await prisma.userProposalFeedback.findFirst({
+        where: {
+          proposalId: input.proposalId,
+          userEmail: input.supervisorEmail
+        },
+        select: {
+          userEmail: true
+        }
+      })
+      if (!feedbackEntries) {
+        return null
+      }
+      return {
+        userEmail: feedbackEntries.userEmail
+      }
     })
 });
 
