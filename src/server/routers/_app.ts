@@ -1361,6 +1361,56 @@ updateProposalStatus: publicProcedure
       return {
         userEmail: feedbackEntries.userEmail
       }
+    }),
+
+    checkUserExists: publicProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/checkUserExists',
+      },
+    })
+    .input(
+      z.object({
+        flowSecret: z.string(),
+        email: z.string().email(),
+      })
+    )
+    .output(
+      z.object({
+        exists: z.boolean()
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Validate flow secret
+      const expectedSecret = process.env.FLOW_SECRET
+      if (!expectedSecret) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Flow secret not configured',
+        })
+      }
+      
+      if (input.flowSecret !== expectedSecret) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Invalid flow secret',
+        })
+      }
+
+      const user = await prisma.user.findUnique({
+        where: {
+          email: input.email
+        }
+      })
+      if (!user) {
+        return {
+          exists: false
+        }
+      }
+      return {
+        exists: true
+      }
     })
 });
 
