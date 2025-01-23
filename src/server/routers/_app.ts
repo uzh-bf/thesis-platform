@@ -505,13 +505,21 @@ export const appRouter = router({
         flowSecret: z.string(),
         proposalId: z.string(),
         supervisorEmail: z.string().email(),
-        responsibleId: z.string(),
+        personResponsibleName: z.string(),
       })
     )
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
       if (input.flowSecret !== process.env.FLOW_SECRET) {
         throw new TRPCError({ code: 'UNAUTHORIZED' })
+      }
+
+      const responsible = await prisma.responsible.findFirst({
+        where: { name: input.personResponsibleName },
+      })
+
+      if (!responsible) {
+        throw new TRPCError({ code: 'NOT_FOUND' })
       }
 
       try {
@@ -528,11 +536,11 @@ export const appRouter = router({
               id: input.proposalId,
               proposalId: input.proposalId,
               supervisorEmail: input.supervisorEmail,
-              responsibleId: input.responsibleId,
+              responsibleId: responsible.id,
             },
             update: {
               supervisorEmail: input.supervisorEmail,
-              responsibleId: input.responsibleId,
+              responsibleId: responsible.id,
             },
           }),
           prisma.proposalApplication.update({
