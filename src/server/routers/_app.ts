@@ -1155,6 +1155,95 @@ updateProposalStatus: publicProcedure
       };
     }),
 
+    getProposalAndProposalApplication: publicProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/getProposalAndProposalApplication',
+      },
+    })
+    .input(
+      z.object({
+        flowSecret: z.string(),
+        proposalId: z.string(),
+      })
+    )
+    .output(
+      z.object({
+        proposal: z.object({
+          id: z.string(),
+          title: z.string(),
+          description: z.string(),
+          language: z.string(),
+          studyLevel: z.string(),
+          timeFrame: z.string().nullable(),
+          additionalStudentComment: z.string().nullable(),
+          topicAreaSlug: z.string(),
+          typeKey: z.string(),
+          statusKey: z.string(),
+          ownedByUserEmail: z.string().nullable(),
+          ownedByStudent: z.string().nullable(),
+          createdAt: z.date(),
+          updatedAt: z.date()
+        }),
+        proposalApplication: z.object({
+          id: z.string(),
+          statusKey: z.string(),
+          email: z.string(),
+          matriculationNumber: z.string(),
+          fullName: z.string(),
+          plannedStartAt: z.date(),
+          motivation: z.string(),
+          supervisionId: z.string().nullable(),
+          allowPublication: z.boolean().nullable(),
+          allowUsage: z.boolean().nullable(),
+          createdAt: z.date(),
+          updatedAt: z.date()
+        })
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Validate flow secret
+      const expectedSecret = process.env.FLOW_SECRET
+      if (!expectedSecret) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Flow secret not configured',
+        })
+      }
+      
+      if (input.flowSecret !== expectedSecret) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Invalid flow secret',
+        })
+      }
+
+      const proposal = await prisma.proposal.findUnique({
+        where: {
+          id: input.proposalId,
+        },
+      })
+
+      if (!proposal) {
+        throw new Error('Proposal not found')
+      }
+
+      const proposalApplication = await prisma.proposalApplication.findFirst({
+        where: {
+          proposalId: input.proposalId,
+        },
+      })
+
+      if (!proposalApplication) {
+        throw new Error('Proposal application not found')
+      }
+
+      return {
+        proposal,
+        proposalApplication,
+      }
+    })
 });
 
 export type AppRouter = typeof appRouter
