@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.22](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.20...v1.1.0-beta.22) (2025-01-23)
+
+
+### Bug Fixes
+
+* WAITING_FOR_STUDENT status treated the same as OPEN for statusKey ([#43](https://github.com/uzh-bf/thesis-platform/issues/43)) ([8e2a38c](https://github.com/uzh-bf/thesis-platform/commit/8e2a38cf4289ad44a653c4debe7fd658ee2716a8))
+
+## [1.1.0-beta.21](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.20...v1.1.0-beta.21) (2025-01-23)
+
+
+### Bug Fixes
+
+* waiting for student status treated the same as OPEN ([6a1968f](https://github.com/uzh-bf/thesis-platform/commit/6a1968fe77cc78e40e457ce79d5f4cc350e8b2f2))
+
 ## [1.1.0-beta.20](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.19...v1.1.0-beta.20) (2025-01-22)
 
 
