@@ -1243,6 +1243,63 @@ updateProposalStatus: publicProcedure
         proposal,
         proposalApplication,
       }
+    }),
+
+    getAcceptedSupervisor: publicProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/getAcceptedSupervisor',
+      },
+    })
+    .input(
+      z.object({
+        flowSecret: z.string(),
+        proposalId: z.string(),
+      })
+    )
+    .output(
+      z.object({
+        supervisor: z.object({
+          email: z.string(),
+        })
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Validate flow secret
+      const expectedSecret = process.env.FLOW_SECRET
+      if (!expectedSecret) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Flow secret not configured',
+        })
+      }
+      
+      if (input.flowSecret !== expectedSecret) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Invalid flow secret',
+        })
+      }
+
+      const supervision = await prisma.userProposalSupervision.findUnique({
+        where: {
+          proposalId: input.proposalId,
+        },
+        select: {
+          supervisorEmail: true
+        }
+      })
+
+      if (!supervision) {
+        return { supervisor: null }
+      }
+
+      return {
+        supervisor: {
+          email: supervision.supervisorEmail
+        }
+      }
     })
 });
 
