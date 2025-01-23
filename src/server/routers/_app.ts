@@ -1470,6 +1470,68 @@ updateProposalStatus: publicProcedure
           message: 'Failed to create user',
         })
       }
+    }),
+    
+    addFurtherAttachment: publicProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/addFurtherAttachment',
+      },
+    })
+    .input(
+      z.object({
+        flowSecret: z.string(),
+        href: z.string(),
+        type: z.string(),
+        proposalId: z.string(),
+      })
+    )
+    .output(
+      z.object({
+        success: z.boolean()
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Validate flow secret
+      const expectedSecret = process.env.FLOW_SECRET
+      if (!expectedSecret) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Flow secret not configured',
+        })
+      }
+      
+      if (input.flowSecret !== expectedSecret) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Invalid flow secret',
+        })
+      }
+
+      try {
+        await prisma.proposalAttachment.create({
+          data: {
+            id: uuidv4(),
+            name: "Attachment",
+            href: input.href,
+            type: input.type,
+            proposalId: input.proposalId,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }
+        })
+
+        return {
+          success: true
+        }
+      } catch (error) {
+        console.error('Error creating attachment:', error)
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create attachment',
+        })
+      }
     })
 });
 
