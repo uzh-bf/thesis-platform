@@ -119,7 +119,9 @@ async function getSupervisorProposals({ ctx, filters }) {
       ...where,
       OR: [
         {
-          statusKey: ProposalStatus.OPEN,
+          statusKey: {
+            in: [ProposalStatus.OPEN, ProposalStatus.WAITING_FOR_STUDENT],
+          },
           typeKey: {
             in: ['STUDENT', 'SUPERVISOR'],
           },
@@ -146,7 +148,9 @@ async function getSupervisorProposals({ ctx, filters }) {
   if (filters.status === ProposalStatusFilter.OPEN_PROPOSALS) {
     where = {
       ...where,
-      statusKey: ProposalStatus.OPEN,
+      statusKey: {
+        in: [ProposalStatus.OPEN, ProposalStatus.WAITING_FOR_STUDENT],
+      },
       NOT: {
         receivedFeedbacks: {
           some: {
