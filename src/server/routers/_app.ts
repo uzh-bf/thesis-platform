@@ -1411,6 +1411,65 @@ updateProposalStatus: publicProcedure
       return {
         exists: true
       }
+    }),
+
+    addNewUser: publicProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/addNewUser',
+      },
+    })
+    .input(
+      z.object({
+        flowSecret: z.string(),
+        email: z.string().email(),
+      })
+    )
+    .output(
+      z.object({
+        success: z.boolean()
+        })
+    )
+    .mutation(async ({ input }) => {
+      // Validate flow secret
+      const expectedSecret = process.env.FLOW_SECRET
+      if (!expectedSecret) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Flow secret not configured',
+        })
+      }
+      
+      if (input.flowSecret !== expectedSecret) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Invalid flow secret',
+        })
+      }
+
+      try {
+        const user = await prisma.user.create({
+          data: {
+            id: uuidv4(),
+            name: "Anonymous",
+            email: input.email,
+            role: "SUPERVISOR",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        })
+
+        return {
+          success: true,
+        }
+      } catch (error) {
+        console.error('Error creating user:', error)
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create user',
+        })
+      }
     })
 });
 
