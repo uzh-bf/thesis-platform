@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.27](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.26...v1.1.0-beta.27) (2025-01-24)
+
+
+### Bug Fixes
+
+* flowSecret added ([#46](https://github.com/uzh-bf/thesis-platform/issues/46)) ([18e3344](https://github.com/uzh-bf/thesis-platform/commit/18e3344ee66a083998f6f878bc487c3867ec1bf1))
+
 ## [1.1.0-beta.26](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.25...v1.1.0-beta.26) (2025-01-24)
 
 
