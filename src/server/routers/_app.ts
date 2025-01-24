@@ -1535,6 +1535,142 @@ updateProposalStatus: publicProcedure
         })
       }
     }),
+    
+    addProposal: publicProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/addProposal',
+      },
+    })
+      .input(
+        z.object({
+          flowSecret: z.string(),
+          id: z.string().uuid(),
+          title: z.string(),
+          description: z.string(),
+          language: z.string(),
+          studyLevel: z.string(),
+          topicAreaSlug: z.string(),
+          timeFrame: z.string(),
+          ownedByUserEmail: z.string().email(),
+        })
+      )
+      .output(z.object({
+        success: z.boolean()
+      }))
+      .mutation(async ({ input }) => {
+        // Validate flow secret
+        const expectedSecret = process.env.FLOW_SECRET
+        if (!expectedSecret) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Flow secret not configured',
+          })
+        }
+        
+        if (input.flowSecret !== expectedSecret) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Invalid flow secret',
+          })
+        }
+        try {
+          await prisma.proposal.create({
+            data: {
+              id: input.id,
+              title: input.title,
+              description: input.description,
+              language: input.language,
+              studyLevel: input.studyLevel,
+              topicAreaSlug: input.topicAreaSlug,
+              typeKey: ProposalType.SUPERVISOR,
+              statusKey: ProposalStatus.OPEN,
+              timeFrame: input.timeFrame,
+              ownedByUserEmail: input.ownedByUserEmail,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          })
+
+          return { success: true }
+        } catch (error) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to create proposal',
+          })
+        }
+      }),
+    
+    getResponsibleIdAndAddProposalSupervision: publicProcedure
+      .meta({
+        openapi: {
+          method: 'POST',
+          path: '/getResponsibleIdAndAddProposalSupervision',
+        },
+      })
+      .input(
+        z.object({
+          flowSecret: z.string(),
+          proposalId: z.string().uuid(),
+          supervisorEmail: z.string().email(),
+          studyLevel: z.string(),
+          responsibleName: z.string(),
+        })
+      )
+      .output(z.object({
+        success: z.boolean()
+      }))
+      .mutation(async ({input }) => {
+        // Validate flow secret
+        const expectedSecret = process.env.FLOW_SECRET
+        if (!expectedSecret) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Flow secret not configured',
+          })
+        }
+        
+        if (input.flowSecret !== expectedSecret) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Invalid flow secret',
+          })
+        }
+        try {
+          const responsible = await prisma.responsible.findFirst({
+            where: {
+              name: input.responsibleName,
+            }
+          })
+
+          if (!responsible) {
+            throw new TRPCError({
+              code: 'NOT_FOUND',
+              message: 'Responsible person not found',
+            })
+          }
+
+          await prisma.userProposalSupervision.create({
+            data: {
+              id: uuidv4(),
+              proposalId: input.proposalId,
+              supervisorEmail: input.supervisorEmail,
+              studyLevel: input.studyLevel,
+              responsibleId: responsible.id,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          })
+
+          return { success: true }
+        } catch (error) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to get responsible person or create proposal supervision',
+          })
+        }
+      }),
   });
 
 export type AppRouter = typeof appRouter
