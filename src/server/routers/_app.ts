@@ -1472,16 +1472,17 @@ updateProposalStatus: publicProcedure
       }
     }),
     
-    addFurtherAttachment: publicProcedure
+    addAttachment: publicProcedure
     .meta({
       openapi: {
         method: 'POST',
-        path: '/addFurtherAttachment',
+        path: '/addAttachment',
       },
     })
     .input(
       z.object({
         flowSecret: z.string(),
+        name: z.string(),
         href: z.string(),
         type: z.string(),
         proposalId: z.string(),
@@ -1513,7 +1514,7 @@ updateProposalStatus: publicProcedure
         await prisma.proposalAttachment.create({
           data: {
             id: uuidv4(),
-            name: "Attachment",
+            name: input.name,
             href: input.href,
             type: input.type,
             proposalId: input.proposalId,
@@ -1533,6 +1534,6 @@ updateProposalStatus: publicProcedure
         })
       }
     })
-});
+  });
 
 export type AppRouter = typeof appRouter
