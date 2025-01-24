@@ -1423,6 +1423,7 @@ updateProposalStatus: publicProcedure
     .input(
       z.object({
         flowSecret: z.string(),
+        name: z.string(),
         email: z.string().email(),
       })
     )
@@ -1452,7 +1453,7 @@ updateProposalStatus: publicProcedure
         const user = await prisma.user.create({
           data: {
             id: uuidv4(),
-            name: "Anonymous",
+            name: input.name,
             email: input.email,
             role: "SUPERVISOR",
             createdAt: new Date(),
@@ -1533,7 +1534,7 @@ updateProposalStatus: publicProcedure
           message: 'Failed to create attachment',
         })
       }
-    })
+    }),
   });
 
 export type AppRouter = typeof appRouter
