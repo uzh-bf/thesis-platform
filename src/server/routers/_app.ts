@@ -936,6 +936,7 @@ updateProposalStatus: publicProcedure
   })
   .input(
     z.object({
+      flowSecret: z.string(),
       proposalId: z.string(),
       proposalApplicationId: z.string(),
       applicantEmail: z.string(),
@@ -948,7 +949,10 @@ updateProposalStatus: publicProcedure
       declined_users: z.array(z.object({ declined_email: z.string(), declined_fullName: z.string() })),
     })
   )
-  .mutation(async ({ ctx, input }) => {
+  .mutation(async ({ input }) => {
+    if (input.flowSecret !== process.env.FLOW_SECRET) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' })
+    }
     // Step 1: Get Proposal Info
     const proposal = await prisma.proposal.findUnique({
       where: { id: input.proposalId },
@@ -1065,6 +1069,7 @@ updateProposalStatus: publicProcedure
     })
     .input(
       z.object({
+        flowSecret: z.string(),
         proposalApplication: z.object({
           email: z.string(),
           matriculationNumber: z.string(),
@@ -1088,6 +1093,11 @@ updateProposalStatus: publicProcedure
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Step 1: Check if flowSecret is correct
+      if (input.flowSecret !== process.env.FLOW_SECRET) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' })
+      }
+
       // Get proposal and supervision details first
       const proposal = await prisma.proposal.findUnique({
         where: { id: input.proposalApplication.proposalId },
