@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.28](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.27...v1.1.0-beta.28) (2025-01-27)
+
+
+### Enhancements
+
+* further attachments for student working again + design stuff ([#47](https://github.com/uzh-bf/thesis-platform/issues/47)) ([b5e6c26](https://github.com/uzh-bf/thesis-platform/commit/b5e6c261d798bcc3b8468ea14b2216d149869b2f))
+
 ## [1.1.0-beta.27](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.26...v1.1.0-beta.27) (2025-01-24)
 
 
