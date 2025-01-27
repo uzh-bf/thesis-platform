@@ -116,7 +116,13 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
       {proposalDetails.typeKey === 'STUDENT' && (
         <div className="flex flex-col gap-4 mt-4">
           <div className="flex flex-row flex-wrap gap-6 text-sm">
-            {proposalDetails.attachments.map((attachment: any) => (
+            {[...proposalDetails.attachments].sort((a, b) => {
+              const aName = a.name.toLowerCase()
+              const bName = b.name.toLowerCase()
+              if (aName.startsWith('further') && !bName.startsWith('further')) return 1
+              if (!aName.startsWith('further') && bName.startsWith('further')) return -1
+              return aName.localeCompare(bName)
+            }).map((attachment: any) => (
               <Link
                 key={attachment.id}
                 href={attachment.href}
@@ -129,7 +135,13 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
                 </div>
               </Link>
             ))}
-            {proposalDetails.applications[0].attachments.map(
+            {[...proposalDetails.applications[0].attachments].sort((a, b) => {
+              const aName = a.name.toLowerCase()
+              const bName = b.name.toLowerCase()
+              if (aName.startsWith('further') && !bName.startsWith('further')) return 1
+              if (!aName.startsWith('further') && bName.startsWith('further')) return -1
+              return aName.localeCompare(bName)
+            }).map(
               (attachment: any) => (
                 <Link
                   key={attachment.id}
@@ -151,7 +163,13 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
       {proposalDetails.typeKey === 'SUPERVISOR' && (
         <div className="flex flex-col gap-4 mt-4">
           <div className="flex flex-row flex-wrap gap-6 text-sm">
-            {proposalDetails.attachments.map((attachment: any) => (
+            {[...proposalDetails.attachments].sort((a, b) => {
+              const aName = a.name.toLowerCase()
+              const bName = b.name.toLowerCase()
+              if (aName.startsWith('further') && !bName.startsWith('further')) return 1
+              if (!aName.startsWith('further') && bName.startsWith('further')) return -1
+              return aName.localeCompare(bName)
+            }).map((attachment: any) => (
               <Link
                 key={attachment.id}
                 href={attachment.href}
