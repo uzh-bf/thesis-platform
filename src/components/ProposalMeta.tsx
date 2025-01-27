@@ -13,6 +13,7 @@ interface ProposalMetaProps {
 const FileTypeIconMap: Record<string, IconDefinition> = {
   'application/pdf': faFilePdf,
 }
+
 export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
   const { data: session } = useSession()
 
@@ -113,22 +114,12 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
         )}
 
       {proposalDetails.typeKey === 'STUDENT' && (
-        <div className="flex flex-row gap-6 mt-4 text-sm">
-          {proposalDetails.attachments.map((attachment: any) => (
-            <Link
-              key={attachment.id}
-              href={attachment.href}
-              target="_blank"
-              className="hover:text-orange-600"
-            >
-              <div className="flex flex-row items-center gap-2 text-lg">
-                <FontAwesomeIcon icon={FileTypeIconMap[attachment.type]} />
-                <div>{attachment.name}</div>
-              </div>
-            </Link>
-          ))}
-          {proposalDetails.applications[0].attachments.map(
-            (attachment: any) => (
+        <div className="flex flex-col gap-4 mt-4">
+          {/* Main files */}
+          <div className="flex flex-row flex-wrap gap-6 text-sm">
+            {[...proposalDetails.attachments].filter(a => !a.name.toLowerCase().startsWith('attachment')).sort((a, b) => 
+              a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+            ).map((attachment: any) => (
               <Link
                 key={attachment.id}
                 href={attachment.href}
@@ -136,30 +127,91 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
                 className="hover:text-orange-600"
               >
                 <div className="flex flex-row items-center gap-2 text-lg">
-                  <FontAwesomeIcon icon={FileTypeIconMap[attachment.type]} />
+                  <FontAwesomeIcon icon={FileTypeIconMap[attachment.type] || faFilePdf} />
                   <div>{attachment.name}</div>
                 </div>
               </Link>
-            )
-          )}
+            ))}
+            {[...proposalDetails.applications[0].attachments].filter(a => !a.name.toLowerCase().startsWith('attachment')).sort((a, b) => 
+              a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+            ).map(
+              (attachment: any) => (
+                <Link
+                  key={attachment.id}
+                  href={attachment.href}
+                  target="_blank"
+                  className="hover:text-orange-600"
+                >
+                  <div className="flex flex-row items-center gap-2 text-lg">
+                    <FontAwesomeIcon icon={FileTypeIconMap[attachment.type] || faFilePdf} />
+                    <div>{attachment.name}</div>
+                  </div>
+                </Link>
+              )
+            )}
+          </div>
+          {/* Attachment files */}
+          <div className="flex flex-row flex-wrap gap-6 text-sm">
+            {[
+              ...proposalDetails.attachments.filter(a => a.name.toLowerCase().startsWith('attachment')),
+              ...proposalDetails.applications[0].attachments.filter(a => a.name.toLowerCase().startsWith('attachment'))
+            ].sort((a, b) => 
+              a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+            ).map((attachment: any) => (
+              <Link
+                key={attachment.id}
+                href={attachment.href}
+                target="_blank"
+                className="hover:text-orange-600"
+              >
+                <div className="flex flex-row items-center gap-2 text-lg">
+                  <FontAwesomeIcon icon={FileTypeIconMap[attachment.type] || faFilePdf} />
+                  <div>{attachment.name}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 
       {proposalDetails.typeKey === 'SUPERVISOR' && (
-        <div className="flex flex-row gap-6 text-sm">
-          {proposalDetails.attachments.map((attachment: any) => (
-            <Link
-              key={attachment.id}
-              href={attachment.href}
-              target="_blank"
-              className="hover:text-orange-600"
-            >
-              <div className="flex flex-row items-center gap-2 text-lg">
-                <FontAwesomeIcon icon={FileTypeIconMap[attachment.type]} />
-                <div>{attachment.name}</div>
-              </div>
-            </Link>
-          ))}
+        <div className="flex flex-col gap-4 mt-4">
+          {/* Main files */}
+          <div className="flex flex-row flex-wrap gap-6 text-sm">
+            {[...proposalDetails.attachments].filter(a => !a.name.toLowerCase().startsWith('attachment')).sort((a, b) => 
+              a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+            ).map((attachment: any) => (
+              <Link
+                key={attachment.id}
+                href={attachment.href}
+                target="_blank"
+                className="hover:text-orange-600"
+              >
+                <div className="flex flex-row items-center gap-2 text-lg">
+                  <FontAwesomeIcon icon={FileTypeIconMap[attachment.type] || faFilePdf} />
+                  <div>{attachment.name}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+          {/* Attachment files */}
+          <div className="flex flex-row flex-wrap gap-6 text-sm">
+            {[...proposalDetails.attachments].filter(a => a.name.toLowerCase().startsWith('attachment')).sort((a, b) => 
+              a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+            ).map((attachment: any) => (
+              <Link
+                key={attachment.id}
+                href={attachment.href}
+                target="_blank"
+                className="hover:text-orange-600"
+              >
+                <div className="flex flex-row items-center gap-2 text-lg">
+                  <FontAwesomeIcon icon={FileTypeIconMap[attachment.type] || faFilePdf} />
+                  <div>{attachment.name}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
     </div>
