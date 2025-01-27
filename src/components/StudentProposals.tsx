@@ -28,12 +28,13 @@ export default function StudentProposals({
 
     return R.groupBy<ProposalDetails>(
       (p) => p.topicArea.name,
-      R.sortBy(
-        R.prop('title'),
-        data.filter(
-          (proposal: ProposalDetails) => proposal.typeKey === 'STUDENT'
-        )
-      )
+      R.sortWith([
+        R.ascend(R.prop('createdAt')),  // Sort by creation date (oldest first)
+        R.ascend(R.prop('title'))       // Then sort by title alphabetically
+      ],
+      data.filter(
+        (proposal: ProposalDetails) => proposal.typeKey === 'STUDENT'
+      ))
     )
   }, [data])
 
