@@ -6,6 +6,8 @@ import ProposalMeta from 'src/components/ProposalMeta'
 import ProposalStatusForm from 'src/components/ProposalStatusForm'
 import StudentProposals from 'src/components/StudentProposals'
 import SupervisorProposals from 'src/components/SupervisorProposals'
+import LoadingSkeleton from 'src/components/LoadingSkeleton'
+import EmptyState from 'src/components/EmptyState'
 import useUserRole from 'src/lib/hooks/useUserRole'
 import { trpc } from 'src/lib/trpc'
 import { ProposalStatusFilter } from 'src/types/app'
@@ -60,45 +62,71 @@ export default function Index() {
   }, [router.query.filter])
 
   if (isLoading) {
-    return <div className="p-2">Loading 🔄🚀</div>
+    return <LoadingSkeleton />
   }
 
   return (
-    <div className="grid flex-1 grid-cols-1 gap-2 m-4 md:grid-cols-2">
-      <div className="flex-initial pb-4 space-y-4 md:flex-1">
-        {(isSupervisor || isDeveloper) && (
-          <StudentProposals
-            data={data}
-            selectedProposal={proposalId}
-            setSelectedProposal={setSelectedProposal}
-            buttonRef={buttonRef}
-            filters={filters}
-            setFilters={setFilters}
-          />
-        )}
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="space-y-6">
+            {(isSupervisor || isDeveloper) && (
+              <div className="bg-white rounded-lg shadow">
+                <div className="p-6">
+                  <h2 className="text-lg font-medium text-gray-900 mb-4">Student Proposals</h2>
+                  <StudentProposals
+                    data={data}
+                    selectedProposal={proposalId}
+                    setSelectedProposal={setSelectedProposal}
+                    buttonRef={buttonRef}
+                    filters={filters}
+                    setFilters={setFilters}
+                  />
+                </div>
+              </div>
+            )}
 
-        <SupervisorProposals
-          data={data}
-          selectedProposal={proposalId}
-          setSelectedProposal={setSelectedProposal}
-          buttonRef={buttonRef}
-        />
-      </div>
+            <div className="bg-white rounded-lg shadow">
+              <div className="p-6">
+                <h2 className="text-lg font-medium text-gray-900 mb-4">Supervisor Proposals</h2>
+                <SupervisorProposals
+                  data={data}
+                  selectedProposal={proposalId}
+                  setSelectedProposal={setSelectedProposal}
+                  buttonRef={buttonRef}
+                />
+              </div>
+            </div>
+          </div>
 
-      <div className="mb-4 border shadow" ref={buttonRef}>
-        {!proposalDetails && <div className="p-4">No Proposal Selected</div>}
-        {proposalDetails && (
-          <>
-            <ProposalMeta proposalDetails={proposalDetails} />
-            <ProposalApplication
-              proposalDetails={proposalDetails}
-              refetch={refetch}
-              setFilters={setFilters}
-            />
-            <ProposalFeedback proposalDetails={proposalDetails} />
-            <ProposalStatusForm proposalDetails={proposalDetails} />
-          </>
-        )}
+          <div className="bg-white rounded-lg shadow" ref={buttonRef}>
+            {!proposalDetails ? (
+              <EmptyState
+                title="No Proposal Selected"
+                description="Select a proposal from the list to get started."
+              />
+            ) : (
+              <div>
+                <div>
+                  <ProposalMeta proposalDetails={proposalDetails} />
+                </div>
+                <div>
+                  <ProposalApplication
+                    proposalDetails={proposalDetails}
+                    refetch={refetch}
+                    setFilters={setFilters}
+                  />
+                </div>
+                <div>
+                  <ProposalFeedback proposalDetails={proposalDetails} />
+                </div>
+                <div>
+                  <ProposalStatusForm proposalDetails={proposalDetails} />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )
