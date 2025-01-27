@@ -119,8 +119,8 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
             {[...proposalDetails.attachments].sort((a, b) => {
               const aName = a.name.toLowerCase()
               const bName = b.name.toLowerCase()
-              if (aName.startsWith('further') && !bName.startsWith('further')) return 1
-              if (!aName.startsWith('further') && bName.startsWith('further')) return -1
+              if (aName.startsWith('attachment') && !bName.startsWith('attachment')) return 1
+              if (!aName.startsWith('attachment') && bName.startsWith('attachment')) return -1
               return aName.localeCompare(bName)
             }).map((attachment: any) => (
               <Link
@@ -138,8 +138,8 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
             {[...proposalDetails.applications[0].attachments].sort((a, b) => {
               const aName = a.name.toLowerCase()
               const bName = b.name.toLowerCase()
-              if (aName.startsWith('further') && !bName.startsWith('further')) return 1
-              if (!aName.startsWith('further') && bName.startsWith('further')) return -1
+              if (aName.startsWith('attachment') && !bName.startsWith('attachment')) return 1
+              if (!aName.startsWith('attachment') && bName.startsWith('attachment')) return -1
               return aName.localeCompare(bName)
             }).map(
               (attachment: any) => (
@@ -166,8 +166,8 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
             {[...proposalDetails.attachments].sort((a, b) => {
               const aName = a.name.toLowerCase()
               const bName = b.name.toLowerCase()
-              if (aName.startsWith('further') && !bName.startsWith('further')) return 1
-              if (!aName.startsWith('further') && bName.startsWith('further')) return -1
+              if (aName.startsWith('attachment') && !bName.startsWith('attachment')) return 1
+              if (!aName.startsWith('attachment') && bName.startsWith('attachment')) return -1
               return aName.localeCompare(bName)
             }).map((attachment: any) => (
               <Link
