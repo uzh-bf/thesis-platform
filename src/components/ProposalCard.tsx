@@ -9,8 +9,9 @@ import { useSession } from 'next-auth/react'
 import { ProposalType, UserRole } from 'src/lib/constants'
 import { AppRouter } from 'src/server/routers/_app'
 import { twMerge } from 'tailwind-merge'
-import { format } from 'date-fns'
+import { format, differenceInWeeks } from 'date-fns'
 import { de } from 'date-fns/locale'
+import { useMemo } from 'react'
 
 type Proposals = inferProcedureOutput<AppRouter['proposals']>
 type ProposalDetails = Proposals[number]
@@ -30,6 +31,12 @@ export default function ProposalCard({
       session?.user?.role === UserRole.DEVELOPER) &&
     proposal.receivedFeedbacks?.length > 0
 
+  const isUrgent = useMemo(() => {
+    if (proposal.typeKey !== 'STUDENT') return false
+    const weeksOld = differenceInWeeks(new Date(), new Date(proposal.createdAt))
+    return weeksOld >= 3 && proposal.statusKey === 'OPEN'
+  }, [proposal])
+
   return (
     <Button
       key={proposal.id}
@@ -38,7 +45,8 @@ export default function ProposalCard({
           'flex flex-row md:flex-col justify-between w-full md:w-64 p-2 text-right md:text-center text-sm',
           (proposal.isOwnProposal || proposal.isSupervisedProposal) &&
             'border-orange-300',
-          hasFeedback && 'bg-slate-100 border-slate-200'
+          hasFeedback && 'bg-slate-100 border-slate-200',
+          isUrgent && 'bg-red-50 border-red-200'
         ),
       }}
       active={isActive}
@@ -50,6 +58,8 @@ export default function ProposalCard({
       ) : proposal.statusKey === 'MATCHED' &&
         proposal.supervisedBy[0].supervisorEmail === session?.user?.email ? (
         <FontAwesomeIcon icon={faCircleCheck} />
+      ) : isUrgent ? (
+        <FontAwesomeIcon icon={faHourglassHalf} className="text-red-500" />
       ) : null}
       <div className="font-bold">{proposal.title}</div>
       <div className="mt-1 space-y-1 text-xs">
