@@ -9,6 +9,8 @@ import { useSession } from 'next-auth/react'
 import { ProposalType, UserRole } from 'src/lib/constants'
 import { AppRouter } from 'src/server/routers/_app'
 import { twMerge } from 'tailwind-merge'
+import { format } from 'date-fns'
+import { de } from 'date-fns/locale'
 
 type Proposals = inferProcedureOutput<AppRouter['proposals']>
 type ProposalDetails = Proposals[number]
@@ -57,6 +59,9 @@ export default function ProposalCard({
           {proposal.typeKey === ProposalType.STUDENT
             ? proposal.applications?.[0]?.fullName
             : proposal.supervisedBy?.name}
+        </div>
+        <div className="text-gray-600">
+          Erstellt am {format(new Date(proposal.createdAt), 'dd.MM.yyyy', { locale: de })}
         </div>
         {hasFeedback && (
           <div>
