@@ -73,7 +73,6 @@ export default function Index() {
             {(isSupervisor || isDeveloper) && (
               <div className="bg-white rounded-lg shadow">
                 <div className="p-6">
-                  <h2 className="text-lg font-medium text-gray-900 mb-4">Student Proposals</h2>
                   <StudentProposals
                     data={data}
                     selectedProposal={proposalId}
@@ -88,7 +87,6 @@ export default function Index() {
 
             <div className="bg-white rounded-lg shadow">
               <div className="p-6">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Supervisor Proposals</h2>
                 <SupervisorProposals
                   data={data}
                   selectedProposal={proposalId}
