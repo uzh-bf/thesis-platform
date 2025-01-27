@@ -115,14 +115,11 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
 
       {proposalDetails.typeKey === 'STUDENT' && (
         <div className="flex flex-col gap-4 mt-4">
+          {/* Main files */}
           <div className="flex flex-row flex-wrap gap-6 text-sm">
-            {[...proposalDetails.attachments].sort((a, b) => {
-              const aName = a.name.toLowerCase()
-              const bName = b.name.toLowerCase()
-              if (aName.startsWith('attachment') && !bName.startsWith('attachment')) return 1
-              if (!aName.startsWith('attachment') && bName.startsWith('attachment')) return -1
-              return aName.localeCompare(bName)
-            }).map((attachment: any) => (
+            {[...proposalDetails.attachments].filter(a => !a.name.toLowerCase().startsWith('attachment')).sort((a, b) => 
+              a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+            ).map((attachment: any) => (
               <Link
                 key={attachment.id}
                 href={attachment.href}
@@ -135,13 +132,9 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
                 </div>
               </Link>
             ))}
-            {[...proposalDetails.applications[0].attachments].sort((a, b) => {
-              const aName = a.name.toLowerCase()
-              const bName = b.name.toLowerCase()
-              if (aName.startsWith('attachment') && !bName.startsWith('attachment')) return 1
-              if (!aName.startsWith('attachment') && bName.startsWith('attachment')) return -1
-              return aName.localeCompare(bName)
-            }).map(
+            {[...proposalDetails.applications[0].attachments].filter(a => !a.name.toLowerCase().startsWith('attachment')).sort((a, b) => 
+              a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+            ).map(
               (attachment: any) => (
                 <Link
                   key={attachment.id}
@@ -157,19 +150,55 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
               )
             )}
           </div>
+          {/* Attachment files */}
+          <div className="flex flex-row flex-wrap gap-6 text-sm">
+            {[
+              ...proposalDetails.attachments.filter(a => a.name.toLowerCase().startsWith('attachment')),
+              ...proposalDetails.applications[0].attachments.filter(a => a.name.toLowerCase().startsWith('attachment'))
+            ].sort((a, b) => 
+              a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+            ).map((attachment: any) => (
+              <Link
+                key={attachment.id}
+                href={attachment.href}
+                target="_blank"
+                className="hover:text-orange-600"
+              >
+                <div className="flex flex-row items-center gap-2 text-lg">
+                  <FontAwesomeIcon icon={FileTypeIconMap[attachment.type] || faFilePdf} />
+                  <div>{attachment.name}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 
       {proposalDetails.typeKey === 'SUPERVISOR' && (
         <div className="flex flex-col gap-4 mt-4">
+          {/* Main files */}
           <div className="flex flex-row flex-wrap gap-6 text-sm">
-            {[...proposalDetails.attachments].sort((a, b) => {
-              const aName = a.name.toLowerCase()
-              const bName = b.name.toLowerCase()
-              if (aName.startsWith('attachment') && !bName.startsWith('attachment')) return 1
-              if (!aName.startsWith('attachment') && bName.startsWith('attachment')) return -1
-              return aName.localeCompare(bName)
-            }).map((attachment: any) => (
+            {[...proposalDetails.attachments].filter(a => !a.name.toLowerCase().startsWith('attachment')).sort((a, b) => 
+              a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+            ).map((attachment: any) => (
+              <Link
+                key={attachment.id}
+                href={attachment.href}
+                target="_blank"
+                className="hover:text-orange-600"
+              >
+                <div className="flex flex-row items-center gap-2 text-lg">
+                  <FontAwesomeIcon icon={FileTypeIconMap[attachment.type] || faFilePdf} />
+                  <div>{attachment.name}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+          {/* Attachment files */}
+          <div className="flex flex-row flex-wrap gap-6 text-sm">
+            {[...proposalDetails.attachments].filter(a => a.name.toLowerCase().startsWith('attachment')).sort((a, b) => 
+              a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+            ).map((attachment: any) => (
               <Link
                 key={attachment.id}
                 href={attachment.href}
