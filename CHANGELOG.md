@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.29](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.28...v1.1.0-beta.29) (2025-01-27)
+
+
+### Enhancements
+
+* Date sorting & 3 weeks in marking ([#48](https://github.com/uzh-bf/thesis-platform/issues/48)) ([3a025c7](https://github.com/uzh-bf/thesis-platform/commit/3a025c792d52ab11c1a8054555e101fdcf64ad5f))
+
 ## [1.1.0-beta.28](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.27...v1.1.0-beta.28) (2025-01-27)
 
 
