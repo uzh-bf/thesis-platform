@@ -32,9 +32,7 @@ export default function SupervisorProposals({
 
   return (
     <div>
-      {(isSupervisor || isDeveloper) && (
-        <H2 className={{ root: 'mt-2' }}>Supervisor Proposals</H2>
-      )}
+      <H2 className={{ root: 'mt-2 mb-4' }}>Supervisor Proposals</H2>
       <div className="flex flex-row flex-wrap grid-cols-3 gap-2">
         {sortedSupervisorProposals.length === 0 && <div>No supervisor proposals available...</div>}
         {sortedSupervisorProposals.map((proposal: ProposalDetails) => (
