@@ -33,7 +33,7 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
     <div className="p-4">
       <h1 className="text-base font-bold">{proposalDetails.title}</h1>
 
-      <p className="pb-4 text-base">{proposalDetails.description}</p>
+      <p className="pb-4 text-base whitespace-pre-line">{proposalDetails.description}</p>
 
       <div className="grid grid-cols-2">
         <div className="text-base">
