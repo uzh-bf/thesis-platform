@@ -1,0 +1,25 @@
+meta {
+  name: Thesis Posting
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:3000/api/addProposal
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "flowSecret": "abcd",
+    "id": "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+    "title": "Test 2",
+    "description": "Following:\n-Python\n-Love\nthis is my final sentence and I really like this one!!!!!!!!! :)",
+    "language": "[\"English\",\"German\"]",
+    "studyLevel": "Master Thesis (30 ECTS)",
+    "topicAreaSlug": "corporate_finance",
+    "timeFrame": "now",
+    "ownedByUserEmail": "maximilian.weber@df.uzh.ch"
+  }
+}
