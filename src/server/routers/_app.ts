@@ -177,6 +177,32 @@ async function getSupervisorProposals({ ctx, filters }) {
     }
   }
 
+  if (filters.status === ProposalStatusFilter.ACTIVE_PROPOSALS) {
+    const sixMonthsAgo = dayjs().subtract(6, 'month').toDate();
+    
+    where = {
+      ...where,
+      OR: [
+        { 
+          statusKey: ProposalStatus.MATCHED,
+          updatedAt: {
+            gte: sixMonthsAgo
+          }
+        },
+        {
+          supervisedBy: {
+            some: {
+              supervisorEmail: ctx.user?.email,
+              createdAt: {
+                gte: sixMonthsAgo
+              }
+            },
+          },
+        },
+      ],
+    }
+  }
+
   if (filters.status === ProposalStatusFilter.REJECTED_AND_DECLINED_PROPOSALS) {
     where = {
       ...where,
@@ -267,6 +293,7 @@ export const appRouter = router({
             ProposalStatusFilter.ALL_PROPOSALS,
             ProposalStatusFilter.OPEN_PROPOSALS,
             ProposalStatusFilter.MY_PROPOSALS,
+            ProposalStatusFilter.ACTIVE_PROPOSALS,
             ProposalStatusFilter.REJECTED_AND_DECLINED_PROPOSALS,
           ]),
         }),

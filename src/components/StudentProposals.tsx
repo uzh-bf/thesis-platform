@@ -54,6 +54,10 @@ export default function StudentProposals({
               label: 'My Proposals',
             },
             {
+              value: ProposalStatusFilter.ACTIVE_PROPOSALS,
+              label: 'My Active Proposals',
+            },
+            {
               value: ProposalStatusFilter.REJECTED_AND_DECLINED_PROPOSALS,
               label: 'Rejected / Declined Proposals',
             },
