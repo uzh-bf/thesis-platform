@@ -187,6 +187,11 @@ async function getSupervisorProposals({ ctx, filters }) {
           statusKey: ProposalStatus.MATCHED,
           updatedAt: {
             gte: sixMonthsAgo
+          },
+          supervisedBy: {
+            some: {
+              supervisorEmail: ctx.user?.email
+            }
           }
         },
         {
