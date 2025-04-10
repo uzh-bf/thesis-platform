@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.33](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.32...v1.1.0-beta.33) (2025-04-10)
+
+
+### Features
+
+* Add "My Active Proposals" filter and visual indicators for proposal status ([#53](https://github.com/uzh-bf/thesis-platform/issues/53)) ([5ee6383](https://github.com/uzh-bf/thesis-platform/commit/5ee638382a121f7bf06413568b65bbbb853c48f6))
+
 ## [1.1.0-beta.32](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.30...v1.1.0-beta.32) (2025-02-24)
 
 
