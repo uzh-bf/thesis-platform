@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "prebuild": "npm run prisma:generate",
+    "prebuild": "pnpm run prisma:generate",
     "build": "npm-run-all build:next",
     "build:next": "next build",
     "predev": "npm-run-all prisma:generate",
