@@ -10,10 +10,15 @@
   ],
   "scripts": {
     "prebuild": "pnpm run prisma:generate",
-    "build": "npm-run-all build:next",
+    "build": "pnpm run build:next",
     "build:next": "next build",
+<<<<<<< HEAD
     "predev": "npm-run-all prisma:generate",
     "dev": "doppler run --config dev -- next dev & lt --port 3000 --subdomain thesis-platform-df-uzh-dev",
+=======
+    "predev": "pnpm run prisma:generate",
+    "dev": "doppler run --config dev -- next dev",
+>>>>>>> 2f580a9 (chore: replace npm-run-all with pnpm run in build scripts)
     "format": "prettier --write .",
     "lint": "next lint",
     "script:dev": "doppler run --config dev --",
