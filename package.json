@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "prebuild": "pnpm run prisma:generate",
-    "build": "npm-run-all build:next",
+    "build": "pnpm run build:next",
     "build:next": "next build",
-    "predev": "npm-run-all prisma:generate",
+    "predev": "pnpm run prisma:generate",
     "dev": "doppler run --config dev -- next dev",
     "format": "prettier --write .",
     "lint": "next lint",
