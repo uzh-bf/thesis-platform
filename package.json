@@ -9,7 +9,7 @@
     "Maximilian Weber <maximilian.weber@df.uzh.ch>"
   ],
   "scripts": {
-    "prebuild": "npm run prisma:generate",
+    "prebuild": "pnpm run prisma:generate",
     "build": "npm-run-all build:next",
     "build:next": "next build",
     "predev": "npm-run-all prisma:generate",
