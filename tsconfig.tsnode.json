@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "esnext"],
-    "module": "esnext",
-    "target": "es5",
+    "module": "commonjs",
+    "target": "es2020",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node10",
+    "moduleResolution": "node",
     "allowJs": true,
     "noEmit": true,
     "resolveJsonModule": true,
@@ -24,10 +24,6 @@
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"],
   "ts-node": {
-    "transpileOnly": true,
-    "moduleTypes": {
-      "prisma/seed.ts": "esm",
-      "src/lib/constants.ts": "esm"
-    }
+    "transpileOnly": true
   }
 }
