@@ -17,12 +17,6 @@ const prismaClient = new PrismaClient({
 async function seed(prisma: PrismaClient) {
   console.log('> running prisma seed')
 
-  const applicationStatus = await prisma.applicationStatus.createMany({
-    data: Object.values(ApplicationStatus).map((status) => ({
-      key: status,
-    })),
-  })
-
   console.log('Seeding TopicAreas...')
   await Promise.all(
     Object.entries(TopicAreas).map(([slug, name]) =>
@@ -85,12 +79,17 @@ async function seed(prisma: PrismaClient) {
 
   // Only prompt for user creation/update if environment variables are set
   if (process.env.USER_EMAIL && process.env.USER_NAME) {
-      await new Promise((resolve) =>
-        rl.question('Please sign-in before continuing...', (ans) => {
-          rl.close()
-          resolve(ans)
-        })
-      )
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    })
+
+    await new Promise((resolve) =>
+      rl.question('Please sign-in before continuing...', (ans) => {
+        rl.close()
+        resolve(ans)
+      })
+    )
 
     const user = await prisma.user.upsert({
       where: { email: process.env.USER_EMAIL },
@@ -108,7 +107,6 @@ async function seed(prisma: PrismaClient) {
     console.log(`User updated/created: ${user.email}`)
   } else {
     console.log('Skipping user creation - USER_EMAIL and USER_NAME environment variables not set')
-    rl.close()
   }
 
   console.log('✅ Database seeding completed successfully!')
