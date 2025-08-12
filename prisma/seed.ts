@@ -77,6 +77,15 @@ async function seed(prisma: PrismaClient) {
   )
   console.log('ProposalFeedbackTypes seeded successfully')
 
+  console.log('Seeding Responsible table...')
+  await prisma.responsible.create({
+    data: {
+      name: 'Service User_DF_DEV',
+      email: 'ibf-srv-powplatf@d.uzh.ch',
+    },
+  })
+  console.log('Responsible table seeded successfully')
+
   // Only prompt for user creation/update if environment variables are set
   if (process.env.USER_EMAIL && process.env.USER_NAME) {
     const rl = readline.createInterface({
@@ -172,6 +181,45 @@ async function seed(prisma: PrismaClient) {
       })
 
       await prisma.proposal.upsert({
+        where: { id: '3ef84a3b-cff0-4350-b760-4c5bb3b3cabc' },
+        create: {
+          id: '3ef84a3b-cff0-4350-b760-4c5bb3b3cabc',
+          title: 'TEST STUDENT',
+          description: 'TEST DESC',
+          language: '["English"]',
+          studyLevel: 'Bachelor Thesis (6 ECTS)',
+          topicArea: {
+            connect: {
+              slug: 'banking_and_insurance',
+            },
+          },
+          status: {
+            connect: { key: ProposalStatus.OPEN },
+          },
+          type: {
+            connect: { key: ProposalType.STUDENT },
+          },
+          applications: {
+            create: {
+              email: 'roland.ferdinand@df.uzh.ch',
+              plannedStartAt: new Date(),
+              fullName: 'Roland Ferdinand',
+              matriculationNumber: '12-345-678',
+              motivation: 'I want to explore this topic because I believe it has significant implications for economic policy.',
+              status: {
+                connect: { key: ApplicationStatus.OPEN },
+              },
+            },
+          },
+          ownedByStudent: 'roland.ferdinand@df.uzh.ch',
+          ownedByUser: {
+            connect: { email: user.email },
+          },
+        },
+        update: {},
+      })
+
+      await prisma.proposal.upsert({
         where: { id: '33a9a1b7-cad7-46e7-8b72-cfcbdbaa60d6' },
         create: {
           id: '33a9a1b7-cad7-46e7-8b72-cfcbdbaa60d6',
@@ -206,7 +254,7 @@ async function seed(prisma: PrismaClient) {
           applications: {
             create: {
               plannedStartAt: new Date(),
-              email: 'roland.ferdinand@uzh.ch',
+              email: 'roland.ferdinand@df.uzh.ch',
               fullName: 'Roland Ferdinand',
               matriculationNumber: '12-345-678',
               motivation:
