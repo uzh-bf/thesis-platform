@@ -188,6 +188,7 @@ async function seed(prisma: PrismaClient) {
           description: 'TEST DESC',
           language: '["English"]',
           studyLevel: 'Bachelor Thesis (6 ECTS)',
+          additionalStudentComment: 'TEST COMMENT',
           topicArea: {
             connect: {
               slug: 'banking_and_insurance',
@@ -209,6 +210,8 @@ async function seed(prisma: PrismaClient) {
               status: {
                 connect: { key: ApplicationStatus.OPEN },
               },
+              allowPublication: true,
+              allowUsage: true,
             },
           },
           ownedByStudent: 'roland.ferdinand@df.uzh.ch',
