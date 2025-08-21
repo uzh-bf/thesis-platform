@@ -47,67 +47,69 @@ export default function ProposalApplication({
             {proposalDetails?.applications?.length === 0 &&
               'No applications for this proposal...'}
             {proposalDetails?.applications?.length > 0 && (
-              <Table<ApplicationDetails>
-                className={{
-                  root: 'text-xs',
-                  tableHeader: 'text-sm',
-                }}
-                columns={[
-                  {
-                    label: 'Date',
-                    accessor: 'createdAt',
-                    sortable: true,
-                    transformer: ({ row }) =>
-                      format(parseISO(row.createdAt), 'dd.MM.yyyy'),
-                  },
-                  {
-                    label: 'Email',
-                    accessor: 'email',
-                    sortable: true,
-                  },
-                  {
-                    label: 'Working Period',
-                    accessor: 'plannedStartAt',
-                    sortable: true,
-                    transformer: ({ row }) =>
-                      `${format(
-                        parseISO(row.plannedStartAt),
-                        'd.M.Y'
-                      )} - ${format(
-                        add(parseISO(row.plannedStartAt), { months: 6 }),
-                        'd.M.Y'
-                      )}`,
-                  },
-                  {
-                    label: 'Details',
-                    accessor: 'details',
-                    transformer: ({ row }) => (
-                      <ApplicationDetailsModal
-                        row={row}
-                        isModalOpen={isModalOpen}
-                        setIsModalOpen={setIsModalOpen}
-                      />
-                    ),
-                  },
-                  {
-                    label: 'Action',
-                    accessor: 'action',
-                    transformer: ({ row }) => (
-                      <ConfirmationModal
-                        row={row}
-                        isConfirmationModalOpen={isConfirmationModalOpen}
-                        setIsConfirmationModalOpen={setIsConfirmationModalOpen}
-                        acceptApplication={acceptApplication}
-                        proposalDetails={proposalDetails}
-                        refetch={refetch}
-                        setFilters={setFilters}
-                      />
-                    ),
-                  },
-                ]}
-                data={proposalDetails?.applications}
-                defaultSortField="createdAt"
-              />
+              <div className="overflow-x-auto">
+                <Table<ApplicationDetails>
+                  className={{
+                    root: 'text-xs',
+                    tableHeader: 'text-sm',
+                  }}
+                  columns={[
+                    {
+                      label: 'Date',
+                      accessor: 'createdAt',
+                      sortable: true,
+                      transformer: ({ row }) =>
+                        format(parseISO(row.createdAt), 'dd.MM.yyyy'),
+                    },
+                    {
+                      label: 'Email',
+                      accessor: 'email',
+                      sortable: true,
+                    },
+                    {
+                      label: 'Working Period',
+                      accessor: 'plannedStartAt',
+                      sortable: true,
+                      transformer: ({ row }) =>
+                        `${format(
+                          parseISO(row.plannedStartAt),
+                          'd.M.Y'
+                        )} - ${format(
+                          add(parseISO(row.plannedStartAt), { months: 6 }),
+                          'd.M.Y'
+                        )}`,
+                    },
+                    {
+                      label: 'Details',
+                      accessor: 'details',
+                      transformer: ({ row }) => (
+                        <ApplicationDetailsModal
+                          row={row}
+                          isModalOpen={isModalOpen}
+                          setIsModalOpen={setIsModalOpen}
+                        />
+                      ),
+                    },
+                    {
+                      label: 'Action',
+                      accessor: 'action',
+                      transformer: ({ row }) => (
+                        <ConfirmationModal
+                          row={row}
+                          isConfirmationModalOpen={isConfirmationModalOpen}
+                          setIsConfirmationModalOpen={setIsConfirmationModalOpen}
+                          acceptApplication={acceptApplication}
+                          proposalDetails={proposalDetails}
+                          refetch={refetch}
+                          setFilters={setFilters}
+                        />
+                      ),
+                    },
+                  ]}
+                  data={proposalDetails?.applications}
+                  defaultSortField="createdAt"
+                />
+              </div>
             )}
           </div>
         ) : (
