@@ -40,9 +40,12 @@ export default function StudentProposals({
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <H2>Student Proposals</H2>
+      <div className="flex">
+        <H2 className={{ root: 'w-1/3' }}>Student Proposals</H2>
         <Select
+          className={{
+            root: 'w-2/3 justify-end',
+          }}
           value={filters.status}
           items={[
             {
