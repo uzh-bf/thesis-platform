@@ -94,7 +94,7 @@ async function seed(prisma: PrismaClient) {
     })
 
     await new Promise((resolve) =>
-      rl.question('Please sign-in before continuing...', (ans) => {
+      rl.question(`Please sign-in with ${process.env.USER_EMAIL} (${process.env.USER_NAME}) before continuing... else adjust the USER_EMAIL and USER_NAME environment variables in Doppler.`, (ans) => {
         rl.close()
         resolve(ans)
       })
