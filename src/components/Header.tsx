@@ -27,7 +27,7 @@ export default function Header() {
           href={
             isSupervisor
               ? 'https://www.df.uzh.ch/de/intranet/phd/thesis-supervision.html'
-              : 'https://www.df.uzh.ch/en/studies/thesis.html'
+              : 'https://www.df.uzh.ch/en/studies/bachelor-master/thesis/faq.html'
           }
           target="_blank"
         >
