@@ -58,15 +58,21 @@ model VerificationToken {
   @@id([identifier, token])
 }
 
+enum Department {
+  DF
+  IBW
+}
+
 model User {
   id String @id @unique @default(uuid())
 
   name          String
   email         String    @unique
   emailVerified DateTime?
-  image         String?   @db.Text
+  image         String?   @db.Text 
 
   role String @default("UNSET")
+  department    Department?
 
   accounts Account[]
 
@@ -83,6 +89,8 @@ model TopicArea {
 
   slug String @unique
   name String @unique
+
+  department    Department?
 
   proposals Proposal[]
 }
@@ -127,6 +135,8 @@ model Proposal {
 
   topicArea     TopicArea @relation(fields: [topicAreaSlug], references: [slug])
   topicAreaSlug String
+
+  department    Department?
 
   attachments ProposalAttachment[]
 
@@ -245,6 +255,7 @@ model AdminInfo {
   olatGradeDate    DateTime?
   comment          String?   @db.Text
   capturedOnZora   Boolean?
+  department    Department?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -255,6 +266,8 @@ model Responsible {
 
   name  String
   email String @unique
+
+  department    Department?
 
   supervisions UserProposalSupervision[]
 
