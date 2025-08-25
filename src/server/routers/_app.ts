@@ -1,5 +1,5 @@
 // import { ClientSecretCredential } from '@azure/identity'
-import { ProposalStatus, ApplicationStatus, ProposalType, UserRole } from 'src/lib/constants'
+import { ProposalStatus, ApplicationStatus, ProposalType, UserRole, Department } from 'src/lib/constants'
 // import { Client } from '@microsoft/microsoft-graph-client'
 // import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials'
 import {
@@ -460,6 +460,7 @@ export const appRouter = router({
                   input.proposal.additionalStudentComment,
                 typeKey: 'STUDENT',
                 statusKey: 'OPEN',
+                department: process.env.DEPARTMENT_NAME as Department,
               },
             }),
             prisma.proposalApplication.create({
@@ -585,6 +586,7 @@ export const appRouter = router({
             data: {
               proposalId: input.proposalId,
               status: 'OPEN',
+              department: process.env.DEPARTMENT_NAME as Department,
             },
           }),
         ])
@@ -1063,6 +1065,7 @@ updateProposalStatus: publicProcedure
         updatedAt: new Date(),
         proposalId: input.proposalId,
         status: ProposalStatus.OPEN,
+        department: process.env.DEPARTMENT_NAME as Department,
       },
     });
 
@@ -1498,6 +1501,7 @@ updateProposalStatus: publicProcedure
             name: input.name,
             email: input.email,
             role: "SUPERVISOR",
+            department: process.env.DEPARTMENT_NAME as Department,
             createdAt: new Date(),
             updatedAt: new Date(),
           },
@@ -1630,6 +1634,7 @@ updateProposalStatus: publicProcedure
               statusKey: ProposalStatus.OPEN,
               timeFrame: input.timeFrame,
               ownedByUserEmail: input.ownedByUserEmail,
+              department: process.env.DEPARTMENT_NAME as Department,
               createdAt: new Date(),
               updatedAt: new Date(),
             },

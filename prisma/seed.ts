@@ -8,6 +8,7 @@ import {
   ProposalType,
   TopicAreas,
   UserRole,
+  Department,
 } from '../src/lib/constants'
 
 const prismaClient = new PrismaClient({
@@ -22,7 +23,7 @@ async function seed(prisma: PrismaClient) {
     Object.entries(TopicAreas).map(([slug, name]) =>
       prisma.topicArea.upsert({
         where: { slug },
-        create: { slug, name },
+        create: { slug, name, department: process.env.DEPARTMENT_NAME as Department },
         update: {},
       })
     )
@@ -78,11 +79,13 @@ async function seed(prisma: PrismaClient) {
   console.log('ProposalFeedbackTypes seeded successfully')
 
   console.log('Seeding Responsible table...')
-  await prisma.responsible.create({
-    data: {
+  await prisma.responsible.upsert({
+    where: { email: 'ibw-srv-powplatf-prd@d.uzh.ch' },
+    create: {
       name: 'Service User_IBW_PROD',
       email: 'ibw-srv-powplatf-prd@d.uzh.ch',
     },
+    update: {},
   })
   console.log('Responsible table seeded successfully')
 
