@@ -37,6 +37,7 @@ function App({
 
         <style jsx global>{`
           :root {
+            --source-sans-pro: ${sourceSansPro.variable};
             --theme-font-primary: ${sourceSansPro.variable};
           }
 

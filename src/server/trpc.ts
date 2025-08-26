@@ -1,5 +1,5 @@
 import { initTRPC, TRPCError } from '@trpc/server'
-import { OpenApiMeta } from 'trpc-openapi'
+import { OpenApiMeta } from 'trpc-to-openapi'
 import { Context } from './context'
 
 const t = initTRPC
