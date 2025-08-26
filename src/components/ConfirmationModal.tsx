@@ -57,37 +57,6 @@ export default function ConfirmationModal({
         </Button>
       }
       onClose={() => setIsModalOpen(false)}
-      onPrimaryAction={
-        <Button
-          onClick={async () => {
-            setIsModalOpen(false)
-            await acceptApplication.mutateAsync(
-              {
-                proposalId: proposalDetails.id,
-                proposalApplicationId: row.id,
-                applicantEmail: row.email,
-              },
-              {
-                onSuccess: () => {
-                  refetch()
-                  setFilters({
-                    status: ProposalStatusFilter.MY_PROPOSALS,
-                  })
-                },
-              }
-            )
-          }}
-          className={{
-            root: twMerge('bg-red-600 font-bold text-white'),
-          }}
-        >
-          Confirm
-        </Button>
-      }
-      onSecondaryAction={
-        <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
-      }
-      hideCloseButton={true}
       className={{
         content: 'w-max h-max self-center p-8 pt-4 text-sm',
       }}
@@ -99,6 +68,34 @@ export default function ConfirmationModal({
           will receive an acceptance notification, while the other students will
           receive a notification indicating their application has been declined.
         </Prose>
+        <div className="flex justify-between w-full mt-4">
+          <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
+          <Button
+            onClick={async () => {
+              setIsModalOpen(false)
+              await acceptApplication.mutateAsync(
+                {
+                  proposalId: proposalDetails.id,
+                  proposalApplicationId: row.id,
+                  applicantEmail: row.email,
+                },
+                {
+                  onSuccess: () => {
+                    refetch()
+                    setFilters({
+                      status: ProposalStatusFilter.MY_PROPOSALS,
+                    })
+                  },
+                }
+              )
+            }}
+            className={{
+              root: twMerge('bg-red-600 font-bold text-white'),
+            }}
+          >
+            Confirm
+          </Button>
+        </div>
       </div>
     </Modal>
   )

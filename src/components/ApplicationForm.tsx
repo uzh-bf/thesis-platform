@@ -1,7 +1,7 @@
 import { BlobServiceClient } from '@azure/storage-blob'
 import {
   Button,
-  FormikDateChanger,
+  FormikDatePicker,
   FormikSwitchField,
   FormikTextField,
   FormikTextareaField,
@@ -163,11 +163,11 @@ export default function ApplicationForm({
               field: 'flex-col',
             }}
           />
-          <FormikDateChanger
+          <FormikDatePicker
             required
             name="startingDate"
             className={{
-              root: 'pt-2 font-sans font-bold text-lg',
+              label: 'pt-2 font-sans font-bold text-lg',
             }}
             label="Starting Date"
           />

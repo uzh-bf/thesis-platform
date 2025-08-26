@@ -1,5 +1,5 @@
 import { useSessionStorage } from '@uidotdev/usehooks'
-import { Tabs, UserNotification } from '@uzh-bf/design-system'
+import { TabContent, Tabs, UserNotification } from '@uzh-bf/design-system'
 import { useSession } from 'next-auth/react'
 import { ProposalDetails } from 'src/types/app'
 import AcceptProposalForm from './AcceptProposalForm' // Import AcceptProposalForm and other form components
@@ -33,12 +33,17 @@ export default function ProposalStatusForm({
           reject the proposal.
         </UserNotification>
         <div className="">
-          <Tabs defaultValue="accept">
-            <Tabs.TabList className={{ root: 'md:flex-row border' }}>
-              <Tabs.Tab key="accept" value="accept" label="Accept" />
-              <Tabs.Tab key="reject" value="reject" label="Reject" />
-            </Tabs.TabList>
-            <Tabs.TabContent
+          <Tabs defaultValue="accept" tabs={[
+            {
+              value: 'accept',
+              label: 'Accept',
+            },
+            {
+              value: 'reject',
+              label: 'Reject',
+            },
+          ]}>
+            <TabContent
               key="accept"
               value="accept"
               className={{
@@ -52,8 +57,8 @@ export default function ProposalStatusForm({
                 supervisorEmail={session?.user?.email as string}
                 setProvidedFeedback={setProvidedFeedback}
               />
-            </Tabs.TabContent>
-            <Tabs.TabContent
+            </TabContent>
+            <TabContent
               key="reject"
               value="reject"
               className={{
@@ -67,7 +72,7 @@ export default function ProposalStatusForm({
                 supervisorEmail={session?.user?.email as string}
                 setProvidedFeedback={setProvidedFeedback}
               />
-            </Tabs.TabContent>
+            </TabContent>
           </Tabs>
         </div>
       </>
@@ -92,18 +97,25 @@ export default function ProposalStatusForm({
   } else if (proposalDetails?.typeKey === 'STUDENT') {
     return (
       <div className="">
-        <Tabs defaultValue="accept">
-          <Tabs.TabList className={{ root: 'md:flex-row border' }}>
-            <Tabs.Tab key="accept" value="accept" label="Accept" />
-            <Tabs.Tab
-              key="acceptTentative"
-              value="acceptTentative"
-              label="Accept (Tentative)"
-            />
-            <Tabs.Tab key="reject" value="reject" label="Reject" />
-            <Tabs.Tab key="decline" value="decline" label="Decline" />
-          </Tabs.TabList>
-          <Tabs.TabContent
+        <Tabs defaultValue="accept" tabs={[
+          {
+            value: 'accept',
+            label: 'Accept',
+          },
+          {
+            value: 'acceptTentative',
+            label: 'Accept (Tentative)',
+          },
+          {
+            value: 'reject',
+            label: 'Reject',
+          },
+          {
+            value: 'decline',
+            label: 'Decline',
+          },
+        ]}>
+          <TabContent
             key="accept"
             value="accept"
             className={{
@@ -117,8 +129,8 @@ export default function ProposalStatusForm({
               supervisorEmail={session?.user?.email as string}
               setProvidedFeedback={setProvidedFeedback}
             />
-          </Tabs.TabContent>
-          <Tabs.TabContent
+          </TabContent>
+          <TabContent
             key="acceptTentative"
             value="acceptTentative"
             className={{
@@ -132,8 +144,8 @@ export default function ProposalStatusForm({
               supervisorEmail={session?.user?.email as string}
               setProvidedFeedback={setProvidedFeedback}
             />
-          </Tabs.TabContent>
-          <Tabs.TabContent
+          </TabContent>
+          <TabContent
             key="decline"
             value="decline"
             className={{
@@ -147,8 +159,8 @@ export default function ProposalStatusForm({
               supervisorEmail={session?.user?.email as string}
               setProvidedFeedback={setProvidedFeedback}
             />
-          </Tabs.TabContent>
-          <Tabs.TabContent
+          </TabContent>
+          <TabContent
             key="reject"
             value="reject"
             className={{
@@ -162,7 +174,7 @@ export default function ProposalStatusForm({
               supervisorEmail={session?.user?.email as string}
               setProvidedFeedback={setProvidedFeedback}
             />
-          </Tabs.TabContent>
+          </TabContent>
         </Tabs>
       </div>
     )
