@@ -99,7 +99,7 @@ export default function AcceptProposalForm({
           </div>
         </div>
 
-        <Button className={{ root: 'mt-2' }} type="submit">
+        <Button className={{ root: 'my-2' }} type="submit">
           Accept Proposal
         </Button>
         <Toaster />

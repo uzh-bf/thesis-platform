@@ -1718,6 +1718,24 @@ updateProposalStatus: publicProcedure
           })
         }
       }),
-  });
+    
+    getTopicAreas: publicProcedure
+    .query(async () => {
+      try {
+        const topicAreas = await prisma.topicArea.findMany({
+          orderBy: {
+            name: 'asc',
+          },
+        });
+        return topicAreas;
+      } catch (error) {
+        console.error('Error fetching topic areas:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch topic areas',
+        });
+      }
+    }),
+});
 
 export type AppRouter = typeof appRouter

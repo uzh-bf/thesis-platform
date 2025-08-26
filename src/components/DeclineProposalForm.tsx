@@ -101,7 +101,7 @@ export default function DeclineProposalForm({
           </div>
         </div>
 
-        <Button className={{ root: 'mt-2' }} type="submit">
+        <Button className={{ root: 'my-2' }} type="submit">
           Decline Proposal
         </Button>
         <Toaster />

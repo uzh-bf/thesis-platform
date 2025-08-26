@@ -75,7 +75,7 @@ export default function TentativeAcceptProposalForm({
           </div>
         </div>
 
-        <Button className={{ root: 'mt-2' }} type="submit">
+        <Button className={{ root: 'my-2' }} type="submit">
           Accept Proposal (Tentative)
         </Button>
         <Toaster />
