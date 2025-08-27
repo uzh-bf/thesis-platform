@@ -6,12 +6,13 @@ on:
     branches:
       - 'main'
       - 'dev'
+      - 'feature/department-column'
   # pull_request:
   #   branches: ['main']
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository }}-ibw
 
 jobs:
   build:
@@ -58,3 +59,49 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+  build-ibw:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_APP_URL=theses.business.uzh.ch
+            NEXT_PUBLIC_FORMS_URL_PUBLISH=""
+            NEXT_PUBLIC_FORMS_URL_SUBMIT=""
+            NEXT_PUBLIC_BLOBSERVICECLIENT_URL="https://thesisplatformbusiness.blob.core.windows.net/uploads?"
+            NEXT_PUBLIC_CONTAINER_NAME=uploads
+            NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME=thesisplatformbusiness
+            NEXT_PUBLIC_FOOTER_COPYRIGHT="Department of Business Administration, University of Zurich. All rights reserved."
+            NEXT_PUBLIC_DEPARTMENT_NAME="IBW"
