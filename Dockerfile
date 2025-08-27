@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN pnpm install --frozen
 
 # Rebuild the source code only when needed
 FROM node:18.12.0-alpine AS builder
@@ -26,7 +26,7 @@ ARG NEXT_PUBLIC_DEPARTMENT_NAME
 
 ENV NEXT_TELEMETRY_DISABLED 1
 
-RUN npm run build
+RUN pnpm run build
 
 # If using npm comment out above and use below instead
 # RUN npm run build
