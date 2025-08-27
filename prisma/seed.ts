@@ -23,7 +23,7 @@ async function seed(prisma: PrismaClient) {
     Object.entries(TopicAreas).map(([slug, name]) =>
       prisma.topicArea.upsert({
         where: { slug },
-        create: { slug, name, department: process.env.DEPARTMENT_NAME as Department },
+        create: { slug, name, department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department },
         update: {},
       })
     )

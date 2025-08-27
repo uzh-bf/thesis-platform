@@ -41,7 +41,7 @@ export default function Header() {
         {session?.user ? (
           <Button onClick={() => signOut()}>Sign out</Button>
         ) : (
-          <Button onClick={() => signIn()}>DBF Supervisor Log-in</Button>
+          <Button onClick={() => signIn()}>{process.env.NEXT_PUBLIC_DEPARTMENT_NAME} Supervisor Log-in</Button>
         )}
       </div>
     </header>

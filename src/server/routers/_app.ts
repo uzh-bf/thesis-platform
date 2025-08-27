@@ -27,6 +27,7 @@ async function getStudentProposals({ ctx, filters }) {
     where: {
       typeKey: ProposalType.SUPERVISOR,
       statusKey: ProposalStatus.OPEN,
+      department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
     },
     include: {
       attachments: true,
@@ -56,6 +57,7 @@ async function getSupervisorProposals({ ctx, filters }) {
       typeKey: {
         in: ['SUPERVISOR', 'STUDENT'],
       },
+      department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
     }
     applications = {
       where: {
@@ -97,6 +99,7 @@ async function getSupervisorProposals({ ctx, filters }) {
       typeKey: {
         in: ['SUPERVISOR', 'STUDENT'],
       },
+      department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
     }
     applications = {
       include: {
@@ -111,6 +114,7 @@ async function getSupervisorProposals({ ctx, filters }) {
       typeKey: {
         in: ['SUPERVISOR'],
       },
+      department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
     }
   }
 
@@ -283,6 +287,9 @@ export const appRouter = router({
     return prisma.responsible.findMany({
       select: {
         name: true,
+      },
+      where: {
+        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
       orderBy: {
         name: 'asc',
@@ -460,7 +467,7 @@ export const appRouter = router({
                   input.proposal.additionalStudentComment,
                 typeKey: 'STUDENT',
                 statusKey: 'OPEN',
-                department: process.env.DEPARTMENT_NAME as Department,
+                department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
               },
             }),
             prisma.proposalApplication.create({
@@ -586,7 +593,7 @@ export const appRouter = router({
             data: {
               proposalId: input.proposalId,
               status: 'OPEN',
-              department: process.env.DEPARTMENT_NAME as Department,
+              department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
             },
           }),
         ])
@@ -804,6 +811,7 @@ export const appRouter = router({
                 lt: eightWeeksAgo, // Proposals created more than 8 weeks ago
               },
               ownedByUserEmail: null, // Proposal must not be owned by a user (Student Proposal | otherwise it is a Supervisor Proposal)
+              department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
             },
           },
           select: {
@@ -934,6 +942,7 @@ updateProposalStatus: publicProcedure
             lt: oneWeeksAgo,
           },
           ownedByUserEmail: null,
+          department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
         },
         select: {
           id: true,
@@ -1065,7 +1074,7 @@ updateProposalStatus: publicProcedure
         updatedAt: new Date(),
         proposalId: input.proposalId,
         status: ProposalStatus.OPEN,
-        department: process.env.DEPARTMENT_NAME as Department,
+        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
     });
 
@@ -1445,7 +1454,8 @@ updateProposalStatus: publicProcedure
 
       const user = await prisma.user.findUnique({
         where: {
-          email: input.email
+          email: input.email,
+          department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
         }
       })
       if (!user) {
@@ -1501,7 +1511,7 @@ updateProposalStatus: publicProcedure
             name: input.name,
             email: input.email,
             role: "SUPERVISOR",
-            department: process.env.DEPARTMENT_NAME as Department,
+            department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
             createdAt: new Date(),
             updatedAt: new Date(),
           },
@@ -1634,7 +1644,7 @@ updateProposalStatus: publicProcedure
               statusKey: ProposalStatus.OPEN,
               timeFrame: input.timeFrame,
               ownedByUserEmail: input.ownedByUserEmail,
-              department: process.env.DEPARTMENT_NAME as Department,
+              department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
               createdAt: new Date(),
               updatedAt: new Date(),
             },
@@ -1688,6 +1698,7 @@ updateProposalStatus: publicProcedure
           const responsible = await prisma.responsible.findFirst({
             where: {
               name: input.responsibleName,
+              department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
             }
           })
 
@@ -1723,9 +1734,12 @@ updateProposalStatus: publicProcedure
     .query(async () => {
       try {
         const topicAreas = await prisma.topicArea.findMany({
+          where: {
+            department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+          },
           orderBy: {
             name: 'asc',
-          },
+          }
         });
         return topicAreas;
       } catch (error) {
