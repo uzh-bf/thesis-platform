@@ -98,10 +98,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             NEXT_PUBLIC_APP_URL=theses-ibw.prd.env.df-app.ch
-            NEXT_PUBLIC_FORMS_URL_PUBLISH="https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAswMW9Ql8fXxAnGa_PK_OI41UQ1AyT1pNRFVRV1FGQ1NDVTJORERFMlZXNCQlQCN0PWcu"
-            NEXT_PUBLIC_FORMS_URL_SUBMIT="https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAswMW9Ql8fXxAnGa_PK_OI41UMlpJRDYxUjdBRk5WVk05N0JZNFNLRlNHNiQlQCN0PWcu"
-            NEXT_PUBLIC_BLOBSERVICECLIENT_URL="https://thesisplatformbusiness.blob.core.windows.net/uploads?"
+            NEXT_PUBLIC_FORMS_URL_PUBLISH=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAswMW9Ql8fXxAnGa_PK_OI41UQ1AyT1pNRFVRV1FGQ1NDVTJORERFMlZXNCQlQCN0PWcu
+            NEXT_PUBLIC_FORMS_URL_SUBMIT=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAswMW9Ql8fXxAnGa_PK_OI41UMlpJRDYxUjdBRk5WVk05N0JZNFNLRlNHNiQlQCN0PWcu
+            NEXT_PUBLIC_BLOBSERVICECLIENT_URL=https://thesisplatformbusiness.blob.core.windows.net/uploads?
             NEXT_PUBLIC_CONTAINER_NAME=uploads
             NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME=thesisplatformbusiness
-            NEXT_PUBLIC_FOOTER_COPYRIGHT="Department of Business Administration, University of Zurich. All rights reserved."
-            NEXT_PUBLIC_DEPARTMENT_NAME="IBW"
+            NEXT_PUBLIC_FOOTER_COPYRIGHT=Department of Business Administration, University of Zurich. All rights reserved.
+            NEXT_PUBLIC_DEPARTMENT_NAME=IBW
