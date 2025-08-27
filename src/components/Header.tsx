@@ -31,11 +31,9 @@ export default function Header() {
           }
           target="_blank"
         >
-          <Button>
-            <Button.Icon>
-              <FontAwesomeIcon icon={faQuestion} />
-            </Button.Icon>
-            <Button.Label>FAQ / Documentation</Button.Label>
+          <Button className={{root: "flex items-center gap-1"}}>
+            <FontAwesomeIcon icon={faQuestion} />
+            FAQ / Documentation
           </Button>
         </a>
         {session?.user ? (

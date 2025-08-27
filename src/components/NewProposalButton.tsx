@@ -20,11 +20,9 @@ export default function NewProposalButton({
             : (process.env.NEXT_PUBLIC_FORMS_URL_SUBMIT as string)
         }
       >
-        <Button>
-          <Button.Icon>
-            <FontAwesomeIcon icon={faAdd} />
-          </Button.Icon>
-          <Button.Label>New Proposal</Button.Label>
+        <Button className={{root: "flex items-center gap-1"}}>
+          <FontAwesomeIcon icon={faAdd} />
+          New Proposal
         </Button>
       </Link>
     </div>
