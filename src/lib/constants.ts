@@ -53,11 +53,11 @@ export enum TopicAreas {
 }
 
 export enum TopicAreasIBW {
-  slug_1 = 'Topic Area 1',
-  slug_2 = 'Topic Area 2',
-  slug_3 = 'Topic Area 3',
-  slug_4 = 'Topic Area 4',
-  slug_5 = 'Topic Area 5',
+  topic_area_1 = 'Topic Area 1',
+  topic_area_2 = 'Topic Area 2',
+  topic_area_3 = 'Topic Area 3',
+  topic_area_4 = 'Topic Area 4',
+  topic_area_5 = 'Topic Area 5',
 }
 
 export enum Department {
