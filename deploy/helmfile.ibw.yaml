@@ -1,0 +1,23 @@
+releases:
+  - name: thesis-platform
+    namespace: thesis-platform-ibw
+    createNamespace: true
+    chart: ./chart
+    version: '{{ env "CHART_VERSION" | default "0.1.0" }}'
+    installed: true
+    kubeContext: bf-k8s463ba113
+    values:
+      - .values-SECRET.yaml
+      - image:
+          repository: ghcr.io/uzh-bf/thesis-platform-ibw
+          tag: feature-department-column
+
+        ingress:
+          hosts:
+            - host: theses-ibw.prd.env.df-app.ch
+              paths:
+                - /
+          tls:
+            - secretName: thesis-platform-tls
+              hosts:
+                - theses-ibw.prd.env.df-app.ch
