@@ -84,6 +84,7 @@ async function seed(prisma: PrismaClient) {
     create: {
       name: 'Service User_IBW_PROD',
       email: 'ibw-srv-powplatf-prd@d.uzh.ch',
+      department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
     },
     update: {},
   })
@@ -109,10 +110,12 @@ async function seed(prisma: PrismaClient) {
         email: process.env.USER_EMAIL,
         name: process.env.USER_NAME,
         role: UserRole.SUPERVISOR,
+        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
       update: {
         role: UserRole.SUPERVISOR,
         name: process.env.USER_NAME,
+        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
     })
     
