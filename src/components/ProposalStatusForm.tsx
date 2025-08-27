@@ -32,26 +32,25 @@ export default function ProposalStatusForm({
           This proposal is tentatively matched with a student. Please accept or
           reject the proposal.
         </UserNotification>
-        <div className="">
-          <Tabs defaultValue="accept" tabs={[
+        <Tabs defaultValue="accept" tabs={[
             {
+              id: 'tentative-tabs-accept',
               value: 'accept',
               label: 'Accept',
             },
             {
+              id: 'tentative-tabs-reject',
               value: 'reject',
               label: 'Reject',
             },
           ]}>
             <TabContent
-              key="accept"
               value="accept"
               className={{
                 root: 'border border-t-0 rounded-none px-4',
               }}
             >
               <AcceptProposalForm
-                key={proposalDetails?.id}
                 proposalName={proposalDetails?.title}
                 proposalId={proposalDetails?.id}
                 supervisorEmail={session?.user?.email as string}
@@ -59,14 +58,12 @@ export default function ProposalStatusForm({
               />
             </TabContent>
             <TabContent
-              key="reject"
               value="reject"
               className={{
                 root: 'border border-t-0 rounded-none px-4',
               }}
             >
               <RejectProposalForm
-                key={proposalDetails?.id}
                 proposalName={proposalDetails?.title}
                 proposalId={proposalDetails?.id}
                 supervisorEmail={session?.user?.email as string}
@@ -74,7 +71,6 @@ export default function ProposalStatusForm({
               />
             </TabContent>
           </Tabs>
-        </div>
       </>
     )
   } else if (
@@ -96,34 +92,35 @@ export default function ProposalStatusForm({
     )
   } else if (proposalDetails?.typeKey === 'STUDENT') {
     return (
-      <div className="">
         <Tabs defaultValue="accept" tabs={[
           {
+            id: 'student-tabs-accept',
             value: 'accept',
             label: 'Accept',
           },
           {
+            id: 'student-tabs-accept-tentative',
             value: 'acceptTentative',
             label: 'Accept (Tentative)',
           },
           {
+            id: 'student-tabs-reject',
             value: 'reject',
             label: 'Reject',
           },
           {
+            id: 'student-tabs-decline',
             value: 'decline',
             label: 'Decline',
           },
         ]}>
           <TabContent
-            key="accept"
             value="accept"
             className={{
               root: 'border border-t-0 rounded-none px-4',
             }}
           >
             <AcceptProposalForm
-              key={proposalDetails?.id}
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
@@ -131,14 +128,12 @@ export default function ProposalStatusForm({
             />
           </TabContent>
           <TabContent
-            key="acceptTentative"
             value="acceptTentative"
             className={{
               root: 'border border-t-0 rounded-none px-4',
             }}
           >
             <TentativeAcceptProposalForm
-              key={proposalDetails?.id}
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
@@ -146,14 +141,12 @@ export default function ProposalStatusForm({
             />
           </TabContent>
           <TabContent
-            key="decline"
             value="decline"
             className={{
               root: 'border border-t-0 rounded-none px-4',
             }}
           >
             <DeclineProposalForm
-              key={proposalDetails?.id}
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
@@ -161,14 +154,12 @@ export default function ProposalStatusForm({
             />
           </TabContent>
           <TabContent
-            key="reject"
             value="reject"
             className={{
               root: 'border border-t-0 rounded-none px-4',
             }}
           >
             <RejectProposalForm
-              key={proposalDetails?.id}
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
@@ -176,7 +167,6 @@ export default function ProposalStatusForm({
             />
           </TabContent>
         </Tabs>
-      </div>
     )
   }
 }
