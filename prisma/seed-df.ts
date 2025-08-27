@@ -82,13 +82,8 @@ async function seed(prisma: PrismaClient) {
   await prisma.responsible.createMany({
     data: [
       {
-        name: 'Service User_IBW_PROD',
-        email: 'ibw-srv-powplatf-prd@d.uzh.ch',
-        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
-      },
-      {
-        name: 'Service User_IBW_DEV',
-        email: 'ibw-srv-powplatf-dev@d.uzh.ch',
+        name: 'Service User_DF_DEV',
+        email: 'df-srv-powplatf-dev@d.uzh.ch',
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
     ],
@@ -103,7 +98,7 @@ async function seed(prisma: PrismaClient) {
     })
 
     await new Promise((resolve) =>
-      rl.question(`Please sign-in with ${process.env.USER_EMAIL} (${process.env.USER_NAME}) before continuing... else adjust the USER_EMAIL and USER_NAME environment variables in Doppler.`, (ans) => {
+      rl.question(`Please sign-in with ${process.env.USER_EMAIL} (${process.env.USER_NAME}) before continuing... else adjust the USER_EMAIL and USER_NAME environment variables in Doppler...`, (ans) => {
         rl.close()
         resolve(ans)
       })
