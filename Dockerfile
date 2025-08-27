@@ -1,8 +1,13 @@
 # Install dependencies only when needed
-FROM node:18.12.0-alpine AS deps
+FROM docker.io/library/node:20.18.1-alpine AS base
+
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 RUN apk add --no-cache libc6-compat
+RUN apk update
+
 WORKDIR /app
+
+RUN npm i -g --ignore-scripts pnpm@9.15.4
 
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json* ./
