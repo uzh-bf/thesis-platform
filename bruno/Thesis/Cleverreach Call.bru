@@ -24,15 +24,30 @@ headers {
 
 body:json {
   {
-    "template_name": "TEST",
-    "html_variables_to_replace": [{
-      "key": "____CUSTOM_TEXT____",
-      "value": "WAUW!"}, {"key": "Spannende Ausschreibungen auf der Theses Plattform", "value": "COOOOOL!"}],
+    "template_name": "TEST_FLOW_TEMP",
+    "replacements": [
+      {
+        "placeholder": "____INTRO_TEXT____",
+        "replacement": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+      },
+      {
+        "placeholder": "____THESIS_TITLE____",
+        "replacement": "ASDF"
+      },
+      {
+        "placeholder": "____ADDITIONAL_INFORMATION____",
+        "replacement": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+      },
+      {
+        "placeholder": "____DEPARTMENT_NAME____",
+        "replacement": "DF"
+      }
+    ],
     "sender_email": "maximilian.weber@bluewin.ch",
     "sender_name": "Max",
     "subject": "ABC",
     "receiver_group_id": "571328",
-    "mailing_name": "TEST_123"
+    "mailing_name": "TEST_FROM_BRUNO"
   }
 }
 
