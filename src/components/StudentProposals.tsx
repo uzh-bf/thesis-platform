@@ -3,6 +3,7 @@ import * as R from 'ramda'
 import { RefObject, useMemo } from 'react'
 import { ProposalDetails, ProposalStatusFilter } from 'src/types/app'
 import ProposalCard from './ProposalCard'
+import { trpc } from 'src/lib/trpc'
 
 interface StudentProposalsProps {
   data: ProposalDetails[]
@@ -23,6 +24,9 @@ export default function StudentProposals({
   filters,
   setFilters,
 }: StudentProposalsProps) {
+  // Fetch topic areas from the database
+  const { data: topicAreas, isLoading: isLoadingTopicAreas } = trpc.getTopicAreas.useQuery()
+
   const groupedStudentProposals = useMemo(() => {
     if (!data) return {}
 
@@ -79,36 +83,34 @@ export default function StudentProposals({
         {data?.filter((proposal: any) => proposal.typeKey === 'STUDENT')
           .length === 0 && <div>No student proposals available...</div>}
 
-        {[
-          'Banking and Insurance',
-          'Corporate Finance',
-          'Financial Economics',
-          'Quantitative Finance',
-          'Sustainable Finance',
-        ]
-          .filter(
-            (topicArea) => groupedStudentProposals?.[topicArea]?.length > 0
-          )
-          .map((topicArea) => (
-            <div key={topicArea}>
-              <H3 className={{ root: 'mt-2' }}>{topicArea}</H3>
-              <div className="flex flex-row flex-wrap grid-cols-3 gap-2">
-                {groupedStudentProposals?.[topicArea].map((proposal: any) => (
-                  <ProposalCard
-                    key={proposal.id}
-                    proposal={proposal}
-                    isActive={selectedProposal === proposal.id}
-                    onClick={() => {
-                      setSelectedProposal(proposal.id)
-                      buttonRef?.current?.scrollIntoView({
-                        behavior: 'smooth',
-                      })
-                    }}
-                  />
-                ))}
+        {isLoadingTopicAreas ? (
+          <div>Loading topic areas...</div>
+        ) : (
+          (topicAreas || [])
+            .filter(
+              (topicArea) => groupedStudentProposals?.[topicArea.name]?.length > 0
+            )
+            .map((topicArea) => (
+              <div key={topicArea.id}>
+                <H3 className={{ root: 'mt-2' }}>{topicArea.name}</H3>
+                <div className="flex flex-row flex-wrap grid-cols-3 gap-2">
+                  {groupedStudentProposals?.[topicArea.name]?.map((proposal: any) => (
+                    <ProposalCard
+                      key={proposal.id}
+                      proposal={proposal}
+                      isActive={selectedProposal === proposal.id}
+                      onClick={() => {
+                        setSelectedProposal(proposal.id)
+                        buttonRef?.current?.scrollIntoView({
+                          behavior: 'smooth',
+                        })
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+        )}
       </div>
     </div>
   )

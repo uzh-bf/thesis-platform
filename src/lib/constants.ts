@@ -51,3 +51,16 @@ export enum TopicAreas {
   quantitative_finance = 'Quantitative Finance',
   sustainable_finance = 'Sustainable Finance',
 }
+
+export enum TopicAreasIBW {
+  topic_area_1 = 'Topic Area 1',
+  topic_area_2 = 'Topic Area 2',
+  topic_area_3 = 'Topic Area 3',
+  topic_area_4 = 'Topic Area 4',
+  topic_area_5 = 'Topic Area 5',
+}
+
+export enum Department {
+  DF = 'DF',
+  IBW = 'IBW',
+}

@@ -31,17 +31,15 @@ export default function Header() {
           }
           target="_blank"
         >
-          <Button>
-            <Button.Icon>
-              <FontAwesomeIcon icon={faQuestion} />
-            </Button.Icon>
-            <Button.Label>FAQ / Documentation</Button.Label>
+          <Button className={{root: "flex items-center gap-1"}}>
+            <FontAwesomeIcon icon={faQuestion} />
+            FAQ / Documentation
           </Button>
         </a>
         {session?.user ? (
           <Button onClick={() => signOut()}>Sign out</Button>
         ) : (
-          <Button onClick={() => signIn()}>DBF Supervisor Log-in</Button>
+          <Button onClick={() => signIn()}>{process.env.NEXT_PUBLIC_DEPARTMENT_NAME} Supervisor Log-in</Button>
         )}
       </div>
     </header>

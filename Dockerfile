@@ -1,15 +1,27 @@
 # Install dependencies only when needed
-FROM node:18.12.0-alpine AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
+FROM node:22.18.0-alpine AS deps
+
 WORKDIR /app
 
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+RUN apk add --no-cache libc6-compat
+RUN apk update
+
+RUN npm i -g --ignore-scripts pnpm@10.15.0
+
 # Install dependencies based on the preferred package manager
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm i --frozen-lockfile --ignore-scripts
 
 # Rebuild the source code only when needed
-FROM node:18.12.0-alpine AS builder
+FROM node:22.18.0-alpine AS builder
+
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+RUN apk add --no-cache libc6-compat
+RUN apk update
+
+RUN npm i -g --ignore-scripts pnpm@10.15.0
+
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -22,17 +34,25 @@ ARG NEXT_PUBLIC_BLOBSERVICECLIENT_URL
 ARG NEXT_PUBLIC_CONTAINER_NAME "uploads"
 ARG NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME
 ARG NEXT_PUBLIC_FOOTER_COPYRIGHT
+ARG NEXT_PUBLIC_DEPARTMENT_NAME
+ARG NEXT_PUBLIC_DEPARTMENT_LONG_NAME
 
 ENV NEXT_TELEMETRY_DISABLED 1
 
-RUN npm run build
+RUN pnpm run build
 
 # If using npm comment out above and use below instead
 # RUN npm run build
 
 # Production image, copy all the files and run next
-FROM node:18.12.0-alpine AS runner
+FROM node:22.18.0-alpine AS runner
 WORKDIR /app
+
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+RUN apk add --no-cache libc6-compat
+RUN apk update
+
+RUN npm i -g --ignore-scripts pnpm@10.15.0
 
 ARG NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1

@@ -11,16 +11,12 @@ import { twMerge } from 'tailwind-merge'
 
 export default function ConfirmationModal({
   row,
-  isConfirmationModalOpen,
-  setIsConfirmationModalOpen,
   acceptApplication,
   proposalDetails,
   refetch,
   setFilters,
 }: {
   row: any
-  isConfirmationModalOpen: boolean
-  setIsConfirmationModalOpen: (isOpen: boolean) => void
   acceptApplication: any
   proposalDetails: any
   refetch: () => void
@@ -32,12 +28,8 @@ export default function ConfirmationModal({
     <Modal
       open={isModalOpen}
       trigger={
-        <Button
-          disabled={row.statusKey !== 'OPEN' || acceptApplication.isLoading}
-          onClick={() => setIsModalOpen(true)}
-        >
-          <FontAwesomeIcon
-            icon={
+        <Button disabled={row.statusKey !== 'OPEN' || acceptApplication.isLoading} onClick={() => setIsModalOpen(true)} >
+          <Button.Icon icon={
               acceptApplication.isLoading
                 ? faSpinner
                 : row.statusKey === 'OPEN'
@@ -47,19 +39,18 @@ export default function ConfirmationModal({
                 : faCircleXmark
             }
           />
-          {acceptApplication.isLoading
-            ? 'Loading...'
-            : row.statusKey === 'OPEN'
-            ? 'Accept'
-            : row.statusKey === 'ACCEPTED'
-            ? 'Accepted'
-            : 'Declined'}
+          <Button.Label>
+            {acceptApplication.isLoading
+              ? 'Loading...'
+              : row.statusKey === 'OPEN'
+              ? 'Accept'
+              : row.statusKey === 'ACCEPTED'
+              ? 'Accepted'
+              : 'Declined'}
+          </Button.Label>
         </Button>
       }
       onClose={() => setIsModalOpen(false)}
-      className={{
-        content: 'w-max h-max self-center p-8 pt-4 text-sm',
-      }}
     >
       <div className="flex flex-col items-center gap-4">
         <FontAwesomeIcon className="text-7xl" icon={faCheckCircle} />
@@ -68,7 +59,7 @@ export default function ConfirmationModal({
           will receive an acceptance notification, while the other students will
           receive a notification indicating their application has been declined.
         </Prose>
-        <div className="flex justify-between w-full mt-4">
+        <div className='flex justify-between w-full'>
           <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
           <Button
             onClick={async () => {
@@ -89,9 +80,7 @@ export default function ConfirmationModal({
                 }
               )
             }}
-            className={{
-              root: twMerge('bg-red-600 font-bold text-white'),
-            }}
+            destructive
           >
             Confirm
           </Button>

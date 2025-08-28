@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -58,6 +59,11 @@ model VerificationToken {
   @@id([identifier, token])
 }
 
+enum Department {
+  DF
+  IBW
+}
+
 model User {
   id String @id @unique @default(uuid())
 
@@ -66,7 +72,8 @@ model User {
   emailVerified DateTime?
   image         String?   @db.Text
 
-  role String @default("UNSET")
+  role       String      @default("UNSET")
+  department Department?
 
   accounts Account[]
 
@@ -83,6 +90,8 @@ model TopicArea {
 
   slug String @unique
   name String @unique
+
+  department Department?
 
   proposals Proposal[]
 }
@@ -127,6 +136,8 @@ model Proposal {
 
   topicArea     TopicArea @relation(fields: [topicAreaSlug], references: [slug])
   topicAreaSlug String
+
+  department Department?
 
   attachments ProposalAttachment[]
 
@@ -236,15 +247,16 @@ model AdminInfo {
   proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
   proposalId String   @unique
 
-  mailReceived     String?
-  status           Status?
-  olatCapturedDate DateTime?
+  mailReceived         String?
+  status               Status?
+  olatCapturedDate     DateTime?
   latestSubmissionDate DateTime?
-  submissionDate   DateTime?
-  grade            Float?
-  olatGradeDate    DateTime?
-  comment          String?   @db.Text
-  capturedOnZora   Boolean?
+  submissionDate       DateTime?
+  grade                Float?
+  olatGradeDate        DateTime?
+  comment              String?     @db.Text
+  capturedOnZora       Boolean?
+  department           Department?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -255,6 +267,8 @@ model Responsible {
 
   name  String
   email String @unique
+
+  department Department?
 
   supervisions UserProposalSupervision[]
 
