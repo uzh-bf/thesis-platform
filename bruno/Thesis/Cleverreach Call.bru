@@ -19,11 +19,11 @@ params:query {
 
 headers {
   Content-Type: application/json
+  secret_key: abcd
 }
 
 body:json {
   {
-    "flow_secret": "abcd",
     "template_name": "TEST",
     "html_variables_to_replace": [{
       "key": "____CUSTOM_TEXT____",
