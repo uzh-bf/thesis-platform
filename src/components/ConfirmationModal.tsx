@@ -54,6 +54,7 @@ export default function ConfirmationModal({
           <Button 
             disabled={isDisabled} 
             onClick={() => setIsAcceptModalOpen(true)}
+            size="sm"
           >
             <Button.Icon icon={acceptApplication.isLoading ? faSpinner : faCheckCircle} />
             <Button.Label>
@@ -89,6 +90,7 @@ export default function ConfirmationModal({
           <Button 
             disabled={isDisabled} 
             onClick={() => setIsDeclineModalOpen(true)}
+            size="sm"
           >
             <Button.Icon icon={faCircleXmark} />
             <Button.Label>Decline</Button.Label>
