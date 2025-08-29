@@ -69,6 +69,7 @@ export default function ConfirmationModal({
       <Modal
         open={isAcceptModalOpen}
         trigger={
+          row.statusKey === 'OPEN' ? 
           <Button 
             disabled={isDisabled} 
             onClick={() => setIsAcceptModalOpen(true)}
@@ -79,7 +80,7 @@ export default function ConfirmationModal({
               {acceptApplication.isLoading ? 'Loading...' : 'Accept'}
             </Button.Label>
           </Button>
-        }
+          : null}
         onClose={() => setIsAcceptModalOpen(false)}
       >
         <div className="flex flex-col items-center gap-4">
@@ -111,7 +112,7 @@ export default function ConfirmationModal({
             size="sm"
           >
             <Button.Icon icon={faCircleXmark} />
-            <Button.Label>Decline</Button.Label>
+            <Button.Label>{row.statusKey === 'DECLINED' ? 'Declined' : 'Decline'}</Button.Label>
           </Button>
         }
         onClose={() => setIsDeclineModalOpen(false)}
