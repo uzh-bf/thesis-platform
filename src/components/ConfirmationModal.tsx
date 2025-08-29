@@ -74,30 +74,57 @@ export default function ConfirmationModal({
 
   const isDisabled = row.statusKey !== 'OPEN' || acceptApplication.isLoading || isProcessing || declineIndividualApplication.isLoading
 
+  // Helper function to render the Accept button trigger
+  function getAcceptButtonTrigger() {
+    if (row.statusKey === 'ACCEPTED') {
+      return (
+        <Button 
+          disabled={true} 
+          size="sm"
+        >
+          <Button.Icon icon={faCheckCircle} />
+          <Button.Label>Accepted</Button.Label>
+        </Button>
+      );
+    }
+    if (row.statusKey === 'OPEN') {
+      return (
+        <Button 
+          disabled={isDisabled} 
+          onClick={() => setIsAcceptModalOpen(true)}
+          size="sm"
+        >
+          <Button.Icon icon={acceptApplication.isLoading ? faSpinner : faCheckCircle} />
+          <Button.Label>{isProcessing ? 'Processing...' : 'Accept'}</Button.Label>
+        </Button>
+      );
+    }
+    return null;
+  }
+
+  // Helper function to render the Decline button trigger
+  function getDeclineButtonTrigger() {
+    if (row.statusKey === 'ACCEPTED') {
+      return null;
+    }
+    return (
+      <Button 
+        disabled={isDisabled} 
+        onClick={() => setIsDeclineModalOpen(true)}
+        size="sm"
+      >
+        <Button.Icon icon={declineIndividualApplication.isLoading ? faSpinner : faCircleXmark} />
+        <Button.Label>{isProcessing ? 'Processing...' : row.statusKey === 'DECLINED' ? 'Declined' : 'Decline'}</Button.Label>
+      </Button>
+    );
+  }
+
   return (
     <div className="flex gap-2">
       {/* Accept Button and Modal */}
       <Modal
         open={isAcceptModalOpen}
-        trigger={
-          row.statusKey === 'ACCEPTED' ? 
-          <Button 
-            disabled={true} 
-            size="sm"
-          >
-            <Button.Icon icon={faCheckCircle} />
-            <Button.Label>Accepted</Button.Label>
-          </Button>
-          : row.statusKey === 'OPEN' ? 
-          <Button 
-            disabled={isDisabled} 
-            onClick={() => setIsAcceptModalOpen(true)}
-            size="sm"
-          >
-            <Button.Icon icon={acceptApplication.isLoading ? faSpinner : faCheckCircle} />
-            <Button.Label>{isProcessing ? 'Processing...' : 'Accept'}</Button.Label>
-          </Button>
-          : null}
+        trigger={getAcceptButtonTrigger()}
         onClose={() => setIsAcceptModalOpen(false)}
       >
         <div className="flex flex-col items-center gap-4">
@@ -126,20 +153,10 @@ export default function ConfirmationModal({
       </Modal>
 
       {/* Decline Button and Modal */}
-      {row.statusKey !== 'ACCEPTED' && (
-        <Modal
-          open={isDeclineModalOpen}
-          trigger={
-            <Button 
-              disabled={isDisabled} 
-              onClick={() => setIsDeclineModalOpen(true)}
-              size="sm"
-            >
-              <Button.Icon icon={declineIndividualApplication.isLoading ? faSpinner : faCircleXmark} />
-              <Button.Label>{isProcessing ? 'Processing...' : row.statusKey === 'DECLINED' ? 'Declined' : 'Decline'}</Button.Label>
-            </Button>
-          }
-          onClose={() => setIsDeclineModalOpen(false)}
+      <Modal
+        open={isDeclineModalOpen}
+        trigger={getDeclineButtonTrigger()}
+        onClose={() => setIsDeclineModalOpen(false)}
         >
       
         <div className="flex flex-col items-center gap-4">
@@ -163,8 +180,7 @@ export default function ConfirmationModal({
             </Button>
           </div>
         </div>
-        </Modal>
-      )}
+      </Modal>
     </div>
   )
 }
