@@ -28,6 +28,7 @@ function ApplicationDetailsModal({
           onClick={() => {
             setIsOpen(true)
           }}
+          size="sm"
         >
           More
         </Button>
