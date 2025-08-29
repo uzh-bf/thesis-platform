@@ -408,6 +408,41 @@ export const appRouter = router({
     )
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
+      // Check if the user is authorized to decline this application
+      const proposal = await prisma.proposal.findUnique({
+        where: { id: input.proposalId },
+        include: {
+          supervisedBy: {
+            include: {
+              supervisor: true,
+              responsible: true
+            }
+          },
+        },
+      })
+
+      if (!proposal) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Proposal not found',
+        })
+      }
+
+      // Verify the user is either a supervisor or a responsible person for this proposal
+      const isAuthorized = proposal.supervisedBy.some(
+        supervision => 
+          supervision.supervisorEmail === ctx.user.email || 
+          supervision.responsible?.email === ctx.user.email
+      )
+
+      if (!isAuthorized) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You are not authorized to decline applications for this proposal',
+        })
+      }
+
+      // Update the application status
       await prisma.proposalApplication.update({
         where: {
           id: input.proposalApplicationId,
