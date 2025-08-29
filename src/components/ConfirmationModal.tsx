@@ -11,12 +11,14 @@ import { ProposalStatusFilter } from 'src/types/app'
 export default function ConfirmationModal({
   row,
   acceptApplication,
+  declineIndividualApplication,
   proposalDetails,
   refetch,
   setFilters,
 }: {
   row: any
   acceptApplication: any
+  declineIndividualApplication: any
   proposalDetails: any
   refetch: () => void
   setFilters: (filters: { status: string }) => void
@@ -38,6 +40,22 @@ export default function ConfirmationModal({
           setFilters({
             status: ProposalStatusFilter.MY_PROPOSALS,
           })
+        },
+      }
+    )
+  }
+
+  const handleDecline = async () => {
+    setIsDeclineModalOpen(false)
+    await declineIndividualApplication.mutateAsync(
+      {
+        proposalId: proposalDetails.id,
+        proposalApplicationId: row.id,
+        applicantEmail: row.email,
+      },
+      {
+        onSuccess: () => {
+          refetch()
         },
       }
     )
@@ -106,7 +124,7 @@ export default function ConfirmationModal({
           <div className='flex justify-between w-full'>
             <Button onClick={() => setIsDeclineModalOpen(false)}>Cancel</Button>
             <Button
-              onClick={() => setIsDeclineModalOpen(false)}
+              onClick={handleDecline}
               destructive
             >
               Confirm

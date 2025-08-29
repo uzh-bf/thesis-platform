@@ -398,6 +398,30 @@ export const appRouter = router({
       return res.data
     }),
 
+  declineProposalApplication: publicProcedure
+    .input(
+      z.object({
+        proposalId: z.string(),
+        proposalApplicationId: z.string(),
+        applicantEmail: z.email(),
+      })
+    )
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      await prisma.proposalApplication.update({
+        where: {
+          id: input.proposalApplicationId,
+          proposalId: input.proposalId,
+          email: input.applicantEmail,
+        },
+        data: {
+          statusKey: 'DECLINED',
+        },
+      })
+      return { success: true }
+    }),
+    
+
   persistProposalSubmission: publicProcedure
     .meta({
       openapi: { method: 'POST', path: '/persistProposalSubmission' },

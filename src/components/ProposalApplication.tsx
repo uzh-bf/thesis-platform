@@ -43,6 +43,7 @@ export default function ProposalApplication({
   const { data: session } = useSession()
   const { isStudent, isSupervisor, isDeveloper } = useUserRole()
   const acceptApplication = trpc.acceptProposalApplication.useMutation()
+  const declineIndividualApplication = trpc.declineProposalApplication.useMutation()
   if (proposalDetails?.typeKey === 'SUPERVISOR') {
     return (
       <div className="p-4">
@@ -125,6 +126,7 @@ export default function ProposalApplication({
                           isConfirmationModalOpen={isConfirmationModalOpen}
                           setIsConfirmationModalOpen={setIsConfirmationModalOpen}
                           acceptApplication={acceptApplication}
+                          declineIndividualApplication={declineIndividualApplication}
                           proposalDetails={proposalDetails}
                           refetch={refetch}
                           setFilters={setFilters}
