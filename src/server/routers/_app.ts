@@ -398,7 +398,7 @@ export const appRouter = router({
       return res.data
     }),
 
-  declineProposalApplication: publicProcedure
+  declineProposalApplication: authedProcedure
     .input(
       z.object({
         proposalId: z.string(),
