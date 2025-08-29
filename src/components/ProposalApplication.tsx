@@ -68,10 +68,10 @@ export default function ProposalApplication({
                 {showIndicators && (
                   <>
                     <div className="absolute -right-1 top-1/2 -translate-y-1/2 bg-blue-600 text-white w-7 h-7 flex items-center justify-center rounded-full shadow-lg transition-opacity duration-500 opacity-90 z-10 animate-pulse">
-                      <span className="text-lg font-bold">→</span>
+                      <span className="text-lg font-bold" aria-label="Scroll right">→</span>
                     </div>
                     <div className="absolute -left-1 top-1/2 -translate-y-1/2 bg-blue-600 text-white w-7 h-7 flex items-center justify-center rounded-full shadow-lg transition-opacity duration-500 opacity-90 z-10 animate-pulse">
-                      <span className="text-lg font-bold">←</span>
+                      <span className="text-lg font-bold" aria-label="Scroll left">←</span>
                     </div>
                   </>
                 )}
