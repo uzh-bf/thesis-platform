@@ -25,8 +25,10 @@ export default function ConfirmationModal({
 }) {
   const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false)
   const [isDeclineModalOpen, setIsDeclineModalOpen] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   const handleAccept = async () => {
+    setIsProcessing(true) // Disable all buttons during processing
     setIsAcceptModalOpen(false)
     await acceptApplication.mutateAsync(
       {
@@ -40,12 +42,17 @@ export default function ConfirmationModal({
           setFilters({
             status: ProposalStatusFilter.MY_PROPOSALS,
           })
+          setIsProcessing(false) // Re-enable buttons after success
         },
+        onError: () => {
+          setIsProcessing(false) // Re-enable buttons on error
+        }
       }
     )
   }
 
   const handleDecline = async () => {
+    setIsProcessing(true) // Disable all buttons during processing
     setIsDeclineModalOpen(false)
     await declineIndividualApplication.mutateAsync(
       {
@@ -56,12 +63,16 @@ export default function ConfirmationModal({
       {
         onSuccess: () => {
           refetch()
+          setIsProcessing(false) // Re-enable buttons after success
         },
+        onError: () => {
+          setIsProcessing(false) // Re-enable buttons on error
+        }
       }
     )
   }
 
-  const isDisabled = row.statusKey !== 'OPEN' || acceptApplication.isLoading
+  const isDisabled = row.statusKey !== 'OPEN' || acceptApplication.isLoading || isProcessing || declineIndividualApplication.isLoading
 
   return (
     <div className="flex gap-2">
@@ -69,16 +80,22 @@ export default function ConfirmationModal({
       <Modal
         open={isAcceptModalOpen}
         trigger={
-          row.statusKey === 'OPEN' ? 
+          row.statusKey === 'ACCEPTED' ? 
+          <Button 
+            disabled={true} 
+            size="sm"
+          >
+            <Button.Icon icon={faCheckCircle} />
+            <Button.Label>Accepted</Button.Label>
+          </Button>
+          : row.statusKey === 'OPEN' ? 
           <Button 
             disabled={isDisabled} 
             onClick={() => setIsAcceptModalOpen(true)}
             size="sm"
           >
             <Button.Icon icon={acceptApplication.isLoading ? faSpinner : faCheckCircle} />
-            <Button.Label>
-              {acceptApplication.isLoading ? 'Loading...' : 'Accept'}
-            </Button.Label>
+            <Button.Label>{isProcessing ? 'Processing...' : 'Accept'}</Button.Label>
           </Button>
           : null}
         onClose={() => setIsAcceptModalOpen(false)}
@@ -91,48 +108,63 @@ export default function ConfirmationModal({
             receive a notification indicating their application has been declined.
           </Prose>
           <div className='flex justify-between w-full'>
-            <Button onClick={() => setIsAcceptModalOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={() => setIsAcceptModalOpen(false)}
+              disabled={isProcessing}
+            >
+              Cancel
+            </Button>
             <Button
               onClick={handleAccept}
               destructive
+              disabled={isProcessing}
             >
-              Confirm
+              {isProcessing ? 'Processing...' : 'Confirm'}
             </Button>
           </div>
         </div>
       </Modal>
 
       {/* Decline Button and Modal */}
-      <Modal
-        open={isDeclineModalOpen}
-        trigger={
-          <Button 
-            disabled={isDisabled} 
-            onClick={() => setIsDeclineModalOpen(true)}
-            size="sm"
-          >
-            <Button.Icon icon={faCircleXmark} />
-            <Button.Label>{row.statusKey === 'DECLINED' ? 'Declined' : 'Decline'}</Button.Label>
-          </Button>
-        }
-        onClose={() => setIsDeclineModalOpen(false)}
-      >
+      {row.statusKey !== 'ACCEPTED' && (
+        <Modal
+          open={isDeclineModalOpen}
+          trigger={
+            <Button 
+              disabled={isDisabled} 
+              onClick={() => setIsDeclineModalOpen(true)}
+              size="sm"
+            >
+              <Button.Icon icon={declineIndividualApplication.isLoading ? faSpinner : faCircleXmark} />
+              <Button.Label>{isProcessing ? 'Processing...' : row.statusKey === 'DECLINED' ? 'Declined' : 'Decline'}</Button.Label>
+            </Button>
+          }
+          onClose={() => setIsDeclineModalOpen(false)}
+        >
+      
         <div className="flex flex-col items-center gap-4">
           <FontAwesomeIcon className="text-7xl text-red-600" icon={faCircleXmark} />
           <Prose>
             Are you sure you want to decline this application? This action cannot be undone.
           </Prose>
           <div className='flex justify-between w-full'>
-            <Button onClick={() => setIsDeclineModalOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={() => setIsDeclineModalOpen(false)}
+              disabled={isProcessing}
+            >
+              Cancel
+            </Button>
             <Button
               onClick={handleDecline}
               destructive
+              disabled={isProcessing}
             >
-              Confirm
+              {isProcessing ? 'Processing...' : 'Confirm'}
             </Button>
           </div>
         </div>
-      </Modal>
+        </Modal>
+      )}
     </div>
   )
 }
