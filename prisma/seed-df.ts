@@ -82,8 +82,8 @@ async function seed(prisma: PrismaClient) {
   await prisma.responsible.createMany({
     data: [
       {
-        name: 'Service User_DF_DEV',
-        email: 'df-srv-powplatf-dev@d.uzh.ch',
+        name: 'Service IBF PowerPlattform',
+        email: 'ibf-srv-powplatf@d.uzh.ch',
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
     ],
