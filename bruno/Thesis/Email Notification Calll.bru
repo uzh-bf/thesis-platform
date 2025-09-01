@@ -1,0 +1,35 @@
+meta {
+  name: Email Notification Calll
+  type: http
+  seq: 3
+}
+
+post {
+  url: https://e23f3bf4f318ee8cb16be46e7008d8.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ff8cf95d291d4c8db49206624c274d7c/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=QhIkGygl94wrmXeeO81POgkcyHHnr0niBbq3TV8_pJY
+  body: json
+  auth: none
+}
+
+params:query {
+  api-version: 1
+  sp: %2Ftriggers%2Fmanual%2Frun
+  sv: 1.0
+  sig: QhIkGygl94wrmXeeO81POgkcyHHnr0niBbq3TV8_pJY
+}
+
+headers {
+  secretKey: abcd
+  Content-Type: application/json
+}
+
+body:json {
+  {
+      "recipients": ["ibf-srv-powplatf@d.uzh.ch"],
+      "subject": "Hello",
+      "content": "Test Email Body!"
+  }
+}
+
+settings {
+  encodeUrl: false
+}

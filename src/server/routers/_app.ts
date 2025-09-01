@@ -453,6 +453,22 @@ export const appRouter = router({
           statusKey: 'DECLINED',
         },
       })
+      
+      // Send the email notification
+      await axios.post(
+        process.env.EMAIL_NOTIFICATION_URL as string,
+        {
+          recipients: [input.applicantEmail],
+          subject: `${process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME} - Application Declined`,
+          content: `Your application for the proposal "${proposal.title}" has been declined.`,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            secretkey: process.env.FLOW_SECRET as string,
+          },
+        }
+      )
       return { success: true }
     }),
     
