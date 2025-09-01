@@ -5,21 +5,9 @@ meta {
 }
 
 post {
-  url: https://prod-26.switzerlandnorth.logic.azure.com:443/workflows/b63f15d8297848638ff53bb415cd718c/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=wxbVQoHIHheWa94H6qg5MRBKa_dHS1HATc5lAjndsJU
+  url: {{cleverreach_url}}
   body: json
   auth: none
-}
-
-params:query {
-  api-version: 2016-06-01
-  sp: %2Ftriggers%2Fmanual%2Frun
-  sv: 1.0
-  sig: wxbVQoHIHheWa94H6qg5MRBKa_dHS1HATc5lAjndsJU
-}
-
-headers {
-  Content-Type: application/json
-  secret_key: abcd
 }
 
 body:json {

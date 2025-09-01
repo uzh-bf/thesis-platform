@@ -1,7 +1,7 @@
 import { H2, Table } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
 import { useSession } from 'next-auth/react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import useUserRole from 'src/lib/hooks/useUserRole'
 import { trpc } from 'src/lib/trpc'
 import { ApplicationDetails, ProposalDetails } from 'src/types/app'
@@ -23,10 +23,27 @@ export default function ProposalApplication({
   const [isModalOpen, setIsModalOpen] = useState<boolean>(true)
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] =
     useState<boolean>(false)
+  const [showIndicators, setShowIndicators] = useState(true)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  
+  // Handle scroll indicators - only hide on scroll
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current
+    if (!scrollContainer) return
+    
+    // Hide indicators on scroll
+    const handleScroll = () => setShowIndicators(false)
+    scrollContainer.addEventListener('scroll', handleScroll)
+    
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
 
   const { data: session } = useSession()
   const { isStudent, isSupervisor, isDeveloper } = useUserRole()
   const acceptApplication = trpc.acceptProposalApplication.useMutation()
+  const declineIndividualApplication = trpc.declineProposalApplication.useMutation()
   if (proposalDetails?.typeKey === 'SUPERVISOR') {
     return (
       <div className="p-4">
@@ -47,7 +64,17 @@ export default function ProposalApplication({
             {proposalDetails?.applications?.length === 0 &&
               'No applications for this proposal...'}
             {proposalDetails?.applications?.length > 0 && (
-              <div className="overflow-x-auto">
+              <div ref={scrollContainerRef} className="overflow-x-auto relative group">
+                {showIndicators && (
+                  <>
+                    <div className="absolute -right-1 top-1/2 -translate-y-1/2 bg-blue-600 text-white w-7 h-7 flex items-center justify-center rounded-full shadow-lg transition-opacity duration-500 opacity-90 z-10 animate-pulse">
+                      <span className="text-lg font-bold" aria-label="Scroll right">→</span>
+                    </div>
+                    <div className="absolute -left-1 top-1/2 -translate-y-1/2 bg-blue-600 text-white w-7 h-7 flex items-center justify-center rounded-full shadow-lg transition-opacity duration-500 opacity-90 z-10 animate-pulse">
+                      <span className="text-lg font-bold" aria-label="Scroll left">←</span>
+                    </div>
+                  </>
+                )}
                 <Table<ApplicationDetails>
                   className={{
                     root: 'text-xs',
@@ -99,6 +126,7 @@ export default function ProposalApplication({
                           isConfirmationModalOpen={isConfirmationModalOpen}
                           setIsConfirmationModalOpen={setIsConfirmationModalOpen}
                           acceptApplication={acceptApplication}
+                          declineIndividualApplication={declineIndividualApplication}
                           proposalDetails={proposalDetails}
                           refetch={refetch}
                           setFilters={setFilters}

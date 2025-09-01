@@ -398,6 +398,86 @@ export const appRouter = router({
       return res.data
     }),
 
+  declineProposalApplication: authedProcedure
+    .input(
+      z.object({
+        proposalId: z.string(),
+        proposalApplicationId: z.string(),
+        applicantEmail: z.email(),
+      })
+    )
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      // Check if the user is authorized to decline this application
+      const proposal = await prisma.proposal.findUnique({
+        where: { id: input.proposalId },
+        include: {
+          supervisedBy: {
+            include: {
+              supervisor: true,
+              responsible: true
+            }
+          },
+        },
+      })
+
+      if (!proposal) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Proposal not found',
+        })
+      }
+
+      // Verify the user is either a supervisor or a responsible person for this proposal
+      const isAuthorized = proposal.supervisedBy.some(
+        supervision => 
+          supervision.supervisorEmail === ctx.user.email || 
+          supervision.responsible?.email === ctx.user.email
+      )
+
+      if (!isAuthorized) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You are not authorized to decline applications for this proposal',
+        })
+      }
+
+      // Update the application status
+      await prisma.proposalApplication.update({
+        where: {
+          id: input.proposalApplicationId,
+          proposalId: input.proposalId,
+          email: input.applicantEmail,
+        },
+        data: {
+          statusKey: 'DECLINED',
+        },
+      })
+      
+      // Send the email notification
+      try {
+        await axios.post(
+          process.env.EMAIL_NOTIFICATION_URL as string,
+          {
+            recipients: [input.applicantEmail],
+            subject: `${process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME} - Application Declined`,
+          content: `Your application for the proposal "${proposal.title}" has been declined.`,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            secretkey: process.env.FLOW_SECRET as string,
+          },
+          timeout: 8000,
+        }
+      )
+      return { success: true }
+    } catch (error) {
+      console.error('Error sending email notification:', error)
+      return { success: false }
+    }
+  }),
+
   persistProposalSubmission: publicProcedure
     .meta({
       openapi: { method: 'POST', path: '/persistProposalSubmission' },
