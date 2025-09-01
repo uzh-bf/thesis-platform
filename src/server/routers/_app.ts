@@ -455,11 +455,12 @@ export const appRouter = router({
       })
       
       // Send the email notification
-      await axios.post(
-        process.env.EMAIL_NOTIFICATION_URL as string,
-        {
-          recipients: [input.applicantEmail],
-          subject: `${process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME} - Application Declined`,
+      try {
+        await axios.post(
+          process.env.EMAIL_NOTIFICATION_URL as string,
+          {
+            recipients: [input.applicantEmail],
+            subject: `${process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME} - Application Declined`,
           content: `Your application for the proposal "${proposal.title}" has been declined.`,
         },
         {
@@ -467,11 +468,15 @@ export const appRouter = router({
             'Content-Type': 'application/json',
             secretkey: process.env.FLOW_SECRET as string,
           },
+          timeout: 8000,
         }
       )
       return { success: true }
-    }),
-    
+    } catch (error) {
+      console.error('Error sending email notification:', error)
+      return { success: false }
+    }
+  }),
 
   persistProposalSubmission: publicProcedure
     .meta({
