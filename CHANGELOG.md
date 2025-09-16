@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.35](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.34...v1.1.0-beta.35) (2025-09-16)
+
+
+### Features
+
+* add additional student comment and consent fields to seed data ([46fd542](https://github.com/uzh-bf/thesis-platform/commit/46fd5428db991967ae0692147ece4c6254f77941))
+* add CleverReach API integration via Power Automate ([#61](https://github.com/uzh-bf/thesis-platform/issues/61)) ([b43b5c3](https://github.com/uzh-bf/thesis-platform/commit/b43b5c34da4e3e891666a3e0d645b3fa7a9bc492))
+* add concurrent ngrok tunnel for local development ([6bd770c](https://github.com/uzh-bf/thesis-platform/commit/6bd770cd49374961758841edf138f2e7cc93acc8))
+* Add department column to DB ([#60](https://github.com/uzh-bf/thesis-platform/issues/60)) ([4ed24bb](https://github.com/uzh-bf/thesis-platform/commit/4ed24bb57e0615203be8ea62490aa9d01d4f5f65))
+* add IBW environment configuration and scripts with localtunnel support ([88c11c0](https://github.com/uzh-bf/thesis-platform/commit/88c11c07c8146478bf11bd982bfda3707192320e))
+* add responsible table seeding and test student proposal data ([3bfb904](https://github.com/uzh-bf/thesis-platform/commit/3bfb90458941c38b3fd172f94ee6496b27def13e))
+* Decline individual supervisor proposal applications ([#62](https://github.com/uzh-bf/thesis-platform/issues/62)) ([6ea6371](https://github.com/uzh-bf/thesis-platform/commit/6ea6371edcfcd6cf6917f78a05120c6dd40bf0e4))
+* enhance seed script prompt with user email and name from env vars ([c61c174](https://github.com/uzh-bf/thesis-platform/commit/c61c174e79437115bfca68dfe770bc4526f003fa))
+
+
+### Bug Fixes
+
+* add horizontal scrolling to proposal applications table ([d94049b](https://github.com/uzh-bf/thesis-platform/commit/d94049b70b07033312112930d75a9ef6048be1d9))
+* initialize readline interface before use and remove unused application status seeding ([51b1a4b](https://github.com/uzh-bf/thesis-platform/commit/51b1a4bacef6b7b8b28f4be30668637cc288096c))
+* update service user name and email in seed data ([c0c35c6](https://github.com/uzh-bf/thesis-platform/commit/c0c35c670f9a9d7f05db9a47ac94ee5ef266d765))
+* update thesis FAQ link for non-supervisors ([a1b0bc6](https://github.com/uzh-bf/thesis-platform/commit/a1b0bc6bfa6c0a69f873dc0f26637be9b3c3b3e3))
+
+
+### Refactors
+
+* improve database seeding with better logging and error handling ([04a23a2](https://github.com/uzh-bf/thesis-platform/commit/04a23a2f327557e6049f76230ecdb94c38bfd7b5))
+
+
+### Other
+
+* adjust layout and width of student proposals header and select filter ([d6db072](https://github.com/uzh-bf/thesis-platform/commit/d6db072582060621bbbdef3bd036084efff46a57))
+
 ## [1.1.0-beta.34](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.33...v1.1.0-beta.34) (2025-04-10)
 
 
