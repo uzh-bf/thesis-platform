@@ -12,7 +12,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-ibw
 
 jobs:
   build:
@@ -42,7 +41,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ github.repository }}
 
       - name: Replace .env.production with .env.stage
         shell: bash
@@ -59,6 +58,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          
   build-ibw:
     runs-on: ubuntu-latest
     permissions:
@@ -86,7 +86,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ github.repository }}-ibw
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
@@ -97,7 +97,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            NEXT_PUBLIC_APP_URL=theses-ibw.prd.env.df-app.ch
+            NEXT_PUBLIC_APP_URL=theses.business.uzh.ch
             NEXT_PUBLIC_FORMS_URL_PUBLISH=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAswMW9Ql8fXxAnGa_PK_OI41UQ1AyT1pNRFVRV1FGQ1NDVTJORERFMlZXNCQlQCN0PWcu
             NEXT_PUBLIC_FORMS_URL_SUBMIT=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAswMW9Ql8fXxAnGa_PK_OI41UMlpJRDYxUjdBRk5WVk05N0JZNFNLRlNHNiQlQCN0PWcu
             NEXT_PUBLIC_BLOBSERVICECLIENT_URL=https://thesisplatformbusiness.blob.core.windows.net/uploads?
