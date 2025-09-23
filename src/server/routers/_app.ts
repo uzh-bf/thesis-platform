@@ -1251,7 +1251,7 @@ updateProposalStatus: publicProcedure
             email: input.proposalApplication.email,
             matriculationNumber: input.proposalApplication.matriculationNumber,
             fullName: input.proposalApplication.fullName,
-            plannedStartAt: new Date(input.proposalApplication.plannedStartAt + "T00:00:00Z"),
+            plannedStartAt: new Date(input.proposalApplication.plannedStartAt),
             motivation: input.proposalApplication.motivation,
             proposalId: input.proposalApplication.proposalId,
             createdAt: new Date(),
