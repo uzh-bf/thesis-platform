@@ -23,7 +23,8 @@ export default function Header() {
             Signed in as {session.user.email} ({session.user.role})
           </div>
         )}
-        <a
+        {process.env.NEXT_PUBLIC_DEPARTMENT_NAME === 'DF' ? (
+          <a
           href={
             isSupervisor
               ? 'https://www.df.uzh.ch/de/intranet/phd/thesis-supervision.html'
@@ -36,6 +37,8 @@ export default function Header() {
             FAQ / Documentation
           </Button>
         </a>
+        ) : null}
+        
         {session?.user ? (
           <Button onClick={() => signOut()}>Sign out</Button>
         ) : (
