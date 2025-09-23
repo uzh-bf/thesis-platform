@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.39](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.38...v1.1.0-beta.39) (2025-09-23)
+
+
+### Bug Fixes
+
+* remove quotes from NEXT_PUBLIC_DEPARTMENT_LONG_NAME env variable in workflow ([fa8a0dc](https://github.com/uzh-bf/thesis-platform/commit/fa8a0dc0cb99ef08556969b3a1e4f1e28f43bc82))
+
 ## [1.1.0-beta.38](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.37...v1.1.0-beta.38) (2025-09-23)
 
 
