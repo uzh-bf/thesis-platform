@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.38](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.37...v1.1.0-beta.38) (2025-09-23)
+
+
+### Features
+
+* conditionally show FAQ button based on department name env var ([6feb0ca](https://github.com/uzh-bf/thesis-platform/commit/6feb0ca4a7fce35404b16ddb7c843d9bc05a9e0b))
+* update IBW topic areas with specific business categories ([8ff54ab](https://github.com/uzh-bf/thesis-platform/commit/8ff54ab2b00f089500ab65dd8d194bcda166c886))
+
+
+### Bug Fixes
+
+* remove timezone offset when parsing planned start date for proposal applications ([bd3bb23](https://github.com/uzh-bf/thesis-platform/commit/bd3bb2385c60b6e3c2d156ac47eeb2dfbfc92f5c))
+
 ## [1.1.0-beta.37](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.36...v1.1.0-beta.37) (2025-09-17)
 
 
