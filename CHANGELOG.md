@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.40](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.39...v1.1.0-beta.40) (2025-09-26)
+
+
+### Other
+
+* update TopicAreasIBW enum labels to use ampersands and commas ([2769c39](https://github.com/uzh-bf/thesis-platform/commit/2769c39199b6e3dbc50a2645399f6bc851498da3))
+
 ## [1.1.0-beta.39](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.38...v1.1.0-beta.39) (2025-09-23)
 
 
