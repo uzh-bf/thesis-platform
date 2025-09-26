@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.41](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.40...v1.1.0-beta.41) (2025-09-26)
+
 ## [1.1.0-beta.40](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.39...v1.1.0-beta.40) (2025-09-26)
 
 
