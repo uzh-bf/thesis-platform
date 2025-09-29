@@ -32,6 +32,7 @@ export default function AcceptProposalForm({
 
   return (
     <Formik
+      enableReinitialize
       initialValues={{
         proposalName: proposalName,
         personResponsible: undefined,
