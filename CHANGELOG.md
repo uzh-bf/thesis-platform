@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.42](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.41...v1.1.0-beta.42) (2025-09-29)
+
+
+### Features
+
+* enable form reinitialization in AcceptProposalForm component ([6c459bc](https://github.com/uzh-bf/thesis-platform/commit/6c459bcdd7101512fa2a42e175b25ea54fa1122e))
+
 ## [1.1.0-beta.41](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.40...v1.1.0-beta.41) (2025-09-26)
 
 ## [1.1.0-beta.40](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.39...v1.1.0-beta.40) (2025-09-26)
