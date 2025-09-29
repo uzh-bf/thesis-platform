@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.43](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.42...v1.1.0-beta.43) (2025-09-29)
+
+
+### Bug Fixes
+
+* reduce query stale time to 0 for always-fresh data ([e0f714e](https://github.com/uzh-bf/thesis-platform/commit/e0f714e0f828756154f0c84148e0f87789f9f0fb))
+
 ## [1.1.0-beta.42](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.41...v1.1.0-beta.42) (2025-09-29)
 
 
