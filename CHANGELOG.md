@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.44](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.43...v1.1.0-beta.44) (2025-09-30)
+
+
+### Features
+
+* auto-assign department to new users during account creation ([d51fddc](https://github.com/uzh-bf/thesis-platform/commit/d51fddc11de46cab1b7eabca261afb0471a6fe33))
+
 ## [1.1.0-beta.43](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.42...v1.1.0-beta.43) (2025-09-29)
 
 
