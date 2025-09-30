@@ -43,6 +43,18 @@ export const authOptions: NextAuthOptions = {
     encode,
     decode,
   },
+  // Add events to handle user creation
+  events: {
+    async createUser({ user }) {
+      // Update the newly created user with department from environment variable
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { 
+          department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as any // Cast as any since department is an enum
+        }
+      });
+    }
+  },
   callbacks: {
     async jwt({ token, user, account, profile }) {
       if (account) {
