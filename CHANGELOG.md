@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.45](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.44...v1.1.0-beta.45) (2025-10-03)
+
+
+### Features
+
+* implement Microsoft Entra ID single sign-out flow ([f03be2f](https://github.com/uzh-bf/thesis-platform/commit/f03be2ff622e5f667fba69f460899de953953636))
+
 ## [1.1.0-beta.44](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.43...v1.1.0-beta.44) (2025-09-30)
 
 
