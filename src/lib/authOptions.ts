@@ -27,6 +27,12 @@ export const authOptions: NextAuthOptions = {
         clientId: process.env.AZURE_AD_CLIENT_ID as string,
         clientSecret: process.env.AZURE_AD_CLIENT_SECRET as string,
         tenantId: process.env.AZURE_AD_TENANT_ID as string,
+        authorization: {
+          params: {
+            prompt: 'login', // Force users to re-enter credentials on each login
+            scope: 'openid profile email',
+          },
+        },
       }),
     typeof process.env.AUTH0_CLIENT_ID === 'string' &&
       process.env.AUTH0_CLIENT_ID !== '' &&
@@ -53,7 +59,12 @@ export const authOptions: NextAuthOptions = {
           department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as any // Cast as any since department is an enum
         }
       });
-    }
+    },
+    async signOut({ token }) {
+      // This event is called when the user signs out
+      // The session will be cleared automatically by NextAuth
+      console.log('User signed out:', token.sub);
+    },
   },
   callbacks: {
     async jwt({ token, user, account, profile }) {
