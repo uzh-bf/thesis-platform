@@ -91,11 +91,11 @@ async function seed(prisma: PrismaClient) {
         email: 'andrea.giuffredi-kaehr@business.uzh.ch',
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
-      {
-        name: 'Scherer Andreas Georg',
-        email: 'andreas.scherer@business.uzh.ch',
-        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
-      },
+      // {
+      //   name: 'Scherer Andreas Georg',
+      //   email: 'andreas.scherer@business.uzh.ch',
+      //   department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+      // },
       {
         name: 'Schulze Anja',
         email: 'anja.schulze@business.uzh.ch',
@@ -126,11 +126,11 @@ async function seed(prisma: PrismaClient) {
         email: 'david.seidl@business.uzh.ch',
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
-      {
-        name: 'Pfaff Dieter',
-        email: 'dieter.pfaff@business.uzh.ch',
-        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
-      },
+      // {
+      //   name: 'Pfaff Dieter',
+      //   email: 'dieter.pfaff@business.uzh.ch',
+      //   department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+      // },
       {
         name: 'Franck Egon',
         email: 'egon.franck@business.uzh.ch',
@@ -206,11 +206,11 @@ async function seed(prisma: PrismaClient) {
         email: 'reto.eberle@business.uzh.ch',
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
-      {
-        name: 'Göx Robert',
-        email: 'robert.goex@business.uzh.ch',
-        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
-      },
+      // {
+      //   name: 'Göx Robert',
+      //   email: 'robert.goex@business.uzh.ch',
+      //   department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+      // },
       {
         name: 'Tan Tarkan',
         email: 'tarkan.tan@business.uzh.ch',
@@ -221,11 +221,11 @@ async function seed(prisma: PrismaClient) {
         email: 'thomas.keil@business.uzh.ch',
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
-      {
-        name: 'Backes-Gellner Uschi',
-        email: 'ubg@business.uzh.ch',
-        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
-      },
+      // {
+      //   name: 'Backes-Gellner Uschi',
+      //   email: 'ubg@business.uzh.ch',
+      //   department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+      // },
       {
         name: 'Kaiser Ulrich',
         email: 'ulrich.kaiser@business.uzh.ch',
