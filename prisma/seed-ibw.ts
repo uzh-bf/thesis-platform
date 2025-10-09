@@ -252,8 +252,8 @@ async function seed(prisma: PrismaClient) {
   // Testing with one user first
   const predefinedSupervisors = [
     {
-      email: 'maximilian.weber@df.uzh.ch',
-      name: 'maximilian.weber',
+      email: 'ibw-srv-powplatf-prd@d.uzh.ch',
+      name: 'Service User_IBW_PROD',
     },
   ]
 
