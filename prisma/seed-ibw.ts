@@ -80,6 +80,7 @@ async function seed(prisma: PrismaClient) {
 
   console.log('Seeding Responsible table...')
   await prisma.responsible.createMany({
+    skipDuplicates: true,
     data: [
       {
         name: 'Service User_IBW_PROD',
@@ -245,39 +246,57 @@ async function seed(prisma: PrismaClient) {
   })
   console.log('Responsible table seeded successfully')
 
-  // Only prompt for user creation/update if environment variables are set
-  if (process.env.USER_EMAIL && process.env.USER_NAME) {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    })
+  // Pre-create supervisor accounts that will be linked on first OAuth login
+  console.log('Seeding pre-defined supervisor accounts...')
+  
+  // Testing with one user first
+  const predefinedSupervisors = [
+    {
+      email: 'maximilian.weber@df.uzh.ch',
+      name: 'maximilian.weber',
+    },
+  ]
 
-    await new Promise((resolve) =>
-      rl.question(`Please sign-in with ${process.env.USER_EMAIL} (${process.env.USER_NAME}) before continuing... else adjust the USER_EMAIL and USER_NAME environment variables in Doppler...`, (ans) => {
-        rl.close()
-        resolve(ans)
-      })
-    )
-
-    const user = await prisma.user.upsert({
-      where: { email: process.env.USER_EMAIL },
+  for (const supervisor of predefinedSupervisors) {
+    await prisma.user.upsert({
+      where: { email: supervisor.email },
       create: {
-        email: process.env.USER_EMAIL,
-        name: process.env.USER_NAME,
+        email: supervisor.email,
+        name: supervisor.name,
         role: UserRole.SUPERVISOR,
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
       update: {
         role: UserRole.SUPERVISOR,
-        name: process.env.USER_NAME,
+        name: supervisor.name,
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
     })
-    
-    console.log(`User updated/created: ${user.email}`)
-  } else {
-    console.log('Skipping user creation - USER_EMAIL and USER_NAME environment variables not set')
   }
+  
+  console.log(`Pre-defined supervisor accounts created/updated: ${predefinedSupervisors.length} users`)
+
+  // Only prompt for user creation/update if environment variables are set
+  // if (process.env.USER_EMAIL && process.env.USER_NAME) {
+  //   const user = await prisma.user.upsert({
+  //     where: { email: process.env.USER_EMAIL },
+  //     create: {
+  //       email: process.env.USER_EMAIL,
+  //       name: process.env.USER_NAME,
+  //       role: UserRole.SUPERVISOR,
+  //       department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+  //     },
+  //     update: {
+  //       role: UserRole.SUPERVISOR,
+  //       name: process.env.USER_NAME,
+  //       department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+  //     },
+  //   })
+    
+  //   console.log(`Additional user updated/created from env vars: ${user.email}`)
+  // } else {
+  //   console.log('No USER_EMAIL and USER_NAME environment variables set - skipping additional user creation')
+  // }
 
   console.log('✅ Database seeding completed successfully!')
 

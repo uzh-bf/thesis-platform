@@ -6,6 +6,7 @@ import AzureADProvider from 'next-auth/providers/azure-ad'
 // import EmailProvider from 'next-auth/providers/email'
 
 import prisma from '../server/prisma'
+import { UserRole } from './constants'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -33,6 +34,8 @@ export const authOptions: NextAuthOptions = {
             scope: 'openid profile email',
           },
         },
+        // Allow linking OAuth account to existing user with same email
+        allowDangerousEmailAccountLinking: true,
       }),
     typeof process.env.AUTH0_CLIENT_ID === 'string' &&
       process.env.AUTH0_CLIENT_ID !== '' &&
@@ -40,6 +43,8 @@ export const authOptions: NextAuthOptions = {
         clientId: process.env.AUTH0_CLIENT_ID as string,
         clientSecret: process.env.AUTH0_CLIENT_SECRET as string,
         issuer: process.env.AUTH0_ISSUER as string,
+        // Allow linking OAuth account to existing user with same email
+        allowDangerousEmailAccountLinking: true,
       }) as any),
   ],
   session: {
@@ -68,16 +73,21 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user, account, profile }) {
-      if (account) {
+      if (account && user) {
+        // Fetch the full user with role from database
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+        })
+        
         token.sub = user.id
-        token.role = user.role
+        token.role = dbUser?.role || 'UNSET'
       }
       return token
     },
     async session({ session, user, token }) {
       if (session.user && token.sub && token.role) {
-        session.user.sub = token.sub
-        session.user.role = token.role
+        session.user.sub = token.sub as string
+        session.user.role = token.role as UserRole
       }
       return session
     },
