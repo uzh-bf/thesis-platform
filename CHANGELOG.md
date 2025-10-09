@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.46](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.45...v1.1.0-beta.46) (2025-10-09)
+
+
+### Features
+
+* add additional faculty members to seed data for IBW department ([e5d4cbe](https://github.com/uzh-bf/thesis-platform/commit/e5d4cbeffa1d46d2351d0ca6fd46d79f2dd0b044))
+* implement pre-defined supervisor accounts and improve OAuth account linking ([4830305](https://github.com/uzh-bf/thesis-platform/commit/4830305300276149643602895a1e90e0ddfe1cc4))
+
 ## [1.1.0-beta.45](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.44...v1.1.0-beta.45) (2025-10-03)
 
 
