@@ -276,28 +276,6 @@ async function seed(prisma: PrismaClient) {
   
   console.log(`Pre-defined supervisor accounts created/updated: ${predefinedSupervisors.length} users`)
 
-  // Only prompt for user creation/update if environment variables are set
-  // if (process.env.USER_EMAIL && process.env.USER_NAME) {
-  //   const user = await prisma.user.upsert({
-  //     where: { email: process.env.USER_EMAIL },
-  //     create: {
-  //       email: process.env.USER_EMAIL,
-  //       name: process.env.USER_NAME,
-  //       role: UserRole.SUPERVISOR,
-  //       department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
-  //     },
-  //     update: {
-  //       role: UserRole.SUPERVISOR,
-  //       name: process.env.USER_NAME,
-  //       department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
-  //     },
-  //   })
-    
-  //   console.log(`Additional user updated/created from env vars: ${user.email}`)
-  // } else {
-  //   console.log('No USER_EMAIL and USER_NAME environment variables set - skipping additional user creation')
-  // }
-
   console.log('✅ Database seeding completed successfully!')
 
   // // Create sample proposals

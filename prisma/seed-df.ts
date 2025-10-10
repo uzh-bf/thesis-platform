@@ -80,49 +80,69 @@ async function seed(prisma: PrismaClient) {
 
   console.log('Seeding Responsible table...')
   await prisma.responsible.createMany({
+    skipDuplicates: true,
     data: [
       {
-        name: 'Service IBF PowerPlattform',
-        email: 'ibf-srv-powplatf@d.uzh.ch',
+        name: 'Maximilian Weber',
+        email: 'maximilian.weber@df.uzh.ch',
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
+      {
+        name: 'Roland Schläfli',
+        email: 'roland.schlaefli@df.uzh.ch',
+        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+      },
+      {
+        name: process.env.USER_NAME as string,
+        email: process.env.USER_EMAIL as string,
+        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+      }
     ],
   })
   console.log('Responsible table seeded successfully')
 
-  // Only prompt for user creation/update if environment variables are set
-  if (process.env.USER_EMAIL && process.env.USER_NAME) {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    })
+  // Pre-create supervisor accounts that will be linked on first OAuth login
+  console.log('Seeding pre-defined supervisor accounts...')
+  
+  // Testing with one user first
+  const predefinedSupervisors = [
+    {
+      email: 'maximilian.weber@df.uzh.ch',
+      name: 'Maximilian Weber',
+      role: UserRole.DEVELOPER,
+    },
+    {
+      email: 'roland.schlaefli@df.uzh.ch',
+      name: 'Roland Schläfli',
+      role: UserRole.SUPERVISOR,
+    },
+    {
+      email: process.env.USER_EMAIL as string,
+      name: process.env.USER_NAME as string,
+      role: UserRole.SUPERVISOR,
+    }
+  ]
 
-    await new Promise((resolve) =>
-      rl.question(`Please sign-in with ${process.env.USER_EMAIL} (${process.env.USER_NAME}) before continuing... else adjust the USER_EMAIL and USER_NAME environment variables in Doppler...`, (ans) => {
-        rl.close()
-        resolve(ans)
-      })
-    )
+  console.log(`User: ${process.env.USER_EMAIL} - ${process.env.USER_NAME} created from .env file`)
 
-    const user = await prisma.user.upsert({
-      where: { email: process.env.USER_EMAIL },
+  for (const supervisor of predefinedSupervisors) {
+    await prisma.user.upsert({
+      where: { email: supervisor.email },
       create: {
-        email: process.env.USER_EMAIL,
-        name: process.env.USER_NAME,
-        role: UserRole.SUPERVISOR,
+        email: supervisor.email,
+        name: supervisor.name,
+        role: supervisor.role,
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
       update: {
-        role: UserRole.SUPERVISOR,
-        name: process.env.USER_NAME,
+        role: supervisor.role,
+        name: supervisor.name,
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
     })
-    
-    console.log(`User updated/created: ${user.email}`)
-  } else {
-    console.log('Skipping user creation - USER_EMAIL and USER_NAME environment variables not set')
   }
+  
+  console.log(`Pre-defined supervisor accounts created/updated: ${predefinedSupervisors.length} users`)
 
   console.log('✅ Database seeding completed successfully!')
 
