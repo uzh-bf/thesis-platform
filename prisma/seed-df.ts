@@ -83,16 +83,6 @@ async function seed(prisma: PrismaClient) {
     skipDuplicates: true,
     data: [
       {
-        name: 'Maximilian Weber',
-        email: 'maximilian.weber@df.uzh.ch',
-        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
-      },
-      {
-        name: 'Roland Schläfli',
-        email: 'roland.schlaefli@df.uzh.ch',
-        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
-      },
-      {
         name: process.env.USER_NAME as string,
         email: process.env.USER_EMAIL as string,
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
@@ -106,16 +96,6 @@ async function seed(prisma: PrismaClient) {
   
   // Testing with one user first
   const predefinedSupervisors = [
-    {
-      email: 'maximilian.weber@df.uzh.ch',
-      name: 'Maximilian Weber',
-      role: UserRole.DEVELOPER,
-    },
-    {
-      email: 'roland.schlaefli@df.uzh.ch',
-      name: 'Roland Schläfli',
-      role: UserRole.SUPERVISOR,
-    },
     {
       email: process.env.USER_EMAIL as string,
       name: process.env.USER_NAME as string,
