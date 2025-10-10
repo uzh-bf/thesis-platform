@@ -89,7 +89,8 @@ async function seed(prisma: PrismaClient) {
       }
     ],
   })
-  console.log('Responsible table seeded successfully')
+  
+  console.log(`\x1b[1m\x1b[93m⚠️  RESPONSIBLE with Name: ${process.env.USER_NAME} and Email: ${process.env.USER_EMAIL} created from (Doppler) .env file\x1b[0m`)
 
   // Pre-create supervisor accounts that will be linked on first OAuth login
   console.log('Seeding pre-defined supervisor accounts...')
@@ -102,8 +103,6 @@ async function seed(prisma: PrismaClient) {
       role: UserRole.SUPERVISOR,
     }
   ]
-
-  console.log(`User: ${process.env.USER_EMAIL} - ${process.env.USER_NAME} created from .env file`)
 
   for (const supervisor of predefinedSupervisors) {
     await prisma.user.upsert({
@@ -122,7 +121,7 @@ async function seed(prisma: PrismaClient) {
     })
   }
   
-  console.log(`Pre-defined supervisor accounts created/updated: ${predefinedSupervisors.length} users`)
+  console.log(`\x1b[1m\x1b[93m⚠️  SUPERVISOR with Name: ${process.env.USER_NAME} and Email: ${process.env.USER_EMAIL} created from (Doppler) .env file\x1b[0m`)
 
   console.log('✅ Database seeding completed successfully!')
 
