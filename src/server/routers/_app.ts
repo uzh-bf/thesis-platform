@@ -1830,6 +1830,109 @@ updateProposalStatus: publicProcedure
         });
       }
     }),
+
+  createUserWithSupervisorRole: publicProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/createUserWithSupervisorRole',
+      },
+    })
+    .input(
+      z.object({
+        flowSecret: z.string(),
+        name: z.string(),
+        email: z.string().email()
+      })
+    )
+    .output(
+      z.object({
+        success: z.boolean(),
+        message: z.string(),
+        user: z.object({
+          id: z.string(),
+          name: z.string(),
+          email: z.string(),
+          role: z.string(),
+          department: z.string().nullable(),
+        }).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Validate flowSecret
+      if (input.flowSecret !== process.env.FLOW_SECRET) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' })
+      }
+
+      try {
+        // Check if user exists by email
+        const existingUser = await prisma.user.findUnique({
+          where: { email: input.email },
+        })
+
+        if (existingUser) {
+          // User exists - check if name needs updating
+          if (existingUser.name !== input.name) {
+            const updatedUser = await prisma.user.update({
+              where: { email: input.email },
+              data: { name: input.name },
+            })
+
+            return {
+              success: true,
+              message: 'User already exists. Name has been updated.',
+              user: {
+                id: updatedUser.id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                role: updatedUser.role,
+                department: updatedUser.department,
+              },
+            }
+          } else {
+            return {
+              success: true,
+              message: 'User already exists with the same name.',
+              user: {
+                id: existingUser.id,
+                name: existingUser.name,
+                email: existingUser.email,
+                role: existingUser.role,
+                department: existingUser.department,
+              },
+            }
+          }
+        } else {
+          // Create new user with SUPERVISOR role
+          const newUser = await prisma.user.create({
+            data: {
+              name: input.name,
+              email: input.email,
+              role: UserRole.SUPERVISOR,
+              department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+            },
+          })
+
+          return {
+            success: true,
+            message: 'User created successfully with SUPERVISOR role.',
+            user: {
+              id: newUser.id,
+              name: newUser.name,
+              email: newUser.email,
+              role: newUser.role,
+              department: newUser.department,
+            },
+          }
+        }
+      } catch (error) {
+        console.error('Error creating/updating user:', error)
+        return {
+          success: false,
+          message: 'Failed to create or update user.',
+        }
+      }
+    }),
 });
 
 export type AppRouter = typeof appRouter
