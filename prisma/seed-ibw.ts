@@ -83,7 +83,7 @@ async function seed(prisma: PrismaClient) {
     skipDuplicates: true,
     data: [
       {
-        name: 'Service User_IBW_PROD',
+        name: 'User_IBW_PROD Service',
         email: 'ibw-srv-powplatf-prd@d.uzh.ch',
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
