@@ -9,6 +9,7 @@ flows:
   application: '$APPLICATION_URL'
   proposalFeedback: '$PROPOSAL_FEEDBACK_URL'
   applicationAcceptance: '$APPLICATION_ACCEPTANCE_URL'
+  emailNotification: '$EMAIL_NOTIFICATION_URL'
 
 azureAd:
   clientId: '$AZURE_AD_CLIENT_ID'
