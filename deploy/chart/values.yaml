@@ -23,6 +23,7 @@ flows:
   application: ""
   proposalFeedback: ""
   applicationAcceptance: ""
+  emailNotification: ""
 
 replicaCount: 1
 
