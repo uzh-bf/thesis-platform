@@ -1871,11 +1871,9 @@ updateProposalStatus: publicProcedure
         })
 
         if (existingUser) {
-          // User exists - check if name needs updating
-          if (existingUser.name !== input.name) {
             const updatedUser = await prisma.user.update({
               where: { email: input.email },
-              data: { name: input.name },
+              data: { name: input.name, role: UserRole.SUPERVISOR },
             })
 
             return {
@@ -1889,19 +1887,6 @@ updateProposalStatus: publicProcedure
                 department: updatedUser.department,
               },
             }
-          } else {
-            return {
-              success: true,
-              message: 'User already exists with the same name.',
-              user: {
-                id: existingUser.id,
-                name: existingUser.name,
-                email: existingUser.email,
-                role: existingUser.role,
-                department: existingUser.department,
-              },
-            }
-          }
         } else {
           // Create new user with SUPERVISOR role
           const newUser = await prisma.user.create({
