@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.47](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.46...v1.1.0-beta.47) (2025-10-15)
+
+
+### Features
+
+* add API endpoint to create or update users with supervisor role ([#65](https://github.com/uzh-bf/thesis-platform/issues/65)) ([b0e0988](https://github.com/uzh-bf/thesis-platform/commit/b0e098851c6b5e8ce64cec0ffdf052989fa11ce8))
+* add conditional logout flow for dev/prod authentication providers ([5068a82](https://github.com/uzh-bf/thesis-platform/commit/5068a82bdd03009648bbea2692e96bbe695a3d32))
+* add department field and uncomment sample proposal creation in seed script ([475a805](https://github.com/uzh-bf/thesis-platform/commit/475a8050852915174062ff28fd578d5b80a97fd6))
+
+
+### Bug Fixes
+
+* correct service user name in IBW seed data to match production ([832ebfe](https://github.com/uzh-bf/thesis-platform/commit/832ebfe2973771593d1c8c6dd0d18f8fbe84e641))
+
+
+### Refactors
+
+* remove commented out sample proposal creation code ([e6da7fe](https://github.com/uzh-bf/thesis-platform/commit/e6da7fe71375c52fa8efa30c54890a1beeb71747))
+* simplify user seeding by removing prompts and adding predefined supervisors ([3adea3e](https://github.com/uzh-bf/thesis-platform/commit/3adea3ec3ac931c8542e6bf8eb5827496020e9e9))
+
 ## [1.1.0-beta.46](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.45...v1.1.0-beta.46) (2025-10-09)
 
 
