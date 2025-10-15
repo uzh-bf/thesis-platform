@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.50](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.49...v1.1.0-beta.50) (2025-10-15)
+
+
+### Features
+
+* add email notification URL to deployment configuration ([ba570b9](https://github.com/uzh-bf/thesis-platform/commit/ba570b9011e136f5f74c4a8fe9100acdf408645f))
+
 ## [1.1.0-beta.49](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.48...v1.1.0-beta.49) (2025-10-15)
 
 
