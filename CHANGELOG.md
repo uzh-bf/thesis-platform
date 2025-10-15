@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.51](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.50...v1.1.0-beta.51) (2025-10-15)
+
+
+### Features
+
+* add email notification URL to Helm chart secrets and values ([0d2520d](https://github.com/uzh-bf/thesis-platform/commit/0d2520d61d21adcbb9ec6b5e39f994f13e9c89a8))
+
 ## [1.1.0-beta.50](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.49...v1.1.0-beta.50) (2025-10-15)
 
 
