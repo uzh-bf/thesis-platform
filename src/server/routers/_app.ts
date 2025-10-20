@@ -281,7 +281,16 @@ export const appRouter = router({
     }
   }),
 
-  healthcheck: publicProcedure.query(() => 'OK'),
+  healthcheck: publicProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/healthcheck',
+      },
+    })
+    .input(z.void())
+    .output(z.string())
+    .query(() => 'OK'),
 
   getAllPersonsResponsible: optionalAuthedProcedure.query(() => {
     return prisma.responsible.findMany({
