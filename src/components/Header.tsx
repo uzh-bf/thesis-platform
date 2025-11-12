@@ -46,12 +46,12 @@ export default function Header() {
             Signed in as {session.user.email} ({session.user.role})
           </div>
         )}
-        {process.env.NEXT_PUBLIC_DEPARTMENT_NAME === 'DF' ? (
-          <a
+
+        <a
           href={
             isSupervisor
-              ? 'https://www.df.uzh.ch/de/intranet/phd/thesis-supervision.html'
-              : 'https://www.df.uzh.ch/en/studies/bachelor-master/thesis/faq.html'
+              ? process.env.NEXT_PUBLIC_FAQ_URL_SUPERVISOR
+              : process.env.NEXT_PUBLIC_FAQ_URL_STUDENT
           }
           target="_blank"
         >
@@ -60,7 +60,6 @@ export default function Header() {
             FAQ / Documentation
           </Button>
         </a>
-        ) : null}
         
         {session?.user ? (
           <Button onClick={handleLogout}>Sign out</Button>
