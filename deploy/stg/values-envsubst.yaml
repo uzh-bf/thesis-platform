@@ -10,6 +10,8 @@ flows:
   proposalFeedback: '$PROPOSAL_FEEDBACK_URL'
   applicationAcceptance: '$APPLICATION_ACCEPTANCE_URL'
   emailNotification: '$EMAIL_NOTIFICATION_URL'
+  faqUrlStudent: '$FAQ_URL_STUDENT'
+  faqUrlSupervisor: '$FAQ_URL_SUPERVISOR'
 
 auth0:
   issuer: '$AUTH0_ISSUER'
