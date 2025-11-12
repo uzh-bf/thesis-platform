@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.54](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.53...v1.1.0-beta.54) (2025-11-12)
+
+
+### Refactors
+
+* migrate FAQ URLs to NEXT_PUBLIC_ prefix for client-side access ([97910b0](https://github.com/uzh-bf/thesis-platform/commit/97910b01eb59e29017cad268ee8d2bd99d944b89))
+
 ## [1.1.0-beta.53](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.52...v1.1.0-beta.53) (2025-11-12)
 
 
