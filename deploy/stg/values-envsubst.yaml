@@ -23,3 +23,13 @@ azureBlob:
 
 database:
   url: '$DATABASE_URL'
+
+ingress:
+  hosts:
+    - host: theses.stage.env.bf-app.ch
+      paths:
+        - /
+  tls:
+    - secretName: thesis-platform-stage-tls
+      hosts:
+        - theses.stage.env.bf-app.ch
