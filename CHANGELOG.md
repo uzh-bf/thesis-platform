@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.53](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.52...v1.1.0-beta.53) (2025-11-12)
+
+
+### Features
+
+* add FAQ URL configuration for students and supervisors ([7bb69cf](https://github.com/uzh-bf/thesis-platform/commit/7bb69cf638a3d8887e3fab6b6feb5c8f9c42d1fb))
+* add FAQ URL configuration for students and supervisors ([afe2863](https://github.com/uzh-bf/thesis-platform/commit/afe2863c3f8b89f9f4e36e6b1925a6d15379a6e2))
+
+
+### Refactors
+
+* move FAQ URLs from build-time to runtime configuration ([e1852cb](https://github.com/uzh-bf/thesis-platform/commit/e1852cb1e1e21b476b1dd838e8a29249bf536f70))
+
 ## [1.1.0-beta.52](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.51...v1.1.0-beta.52) (2025-11-12)
 
 
