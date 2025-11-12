@@ -2,13 +2,11 @@ import { faQuestion } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button } from '@uzh-bf/design-system'
 import { signIn, signOut, useSession } from 'next-auth/react'
-import getConfig from 'next/config'
 import { UserRole } from 'src/lib/constants'
 import NewProposalButton from './NewProposalButton'
 
 export default function Header() {
   const { data: session } = useSession()
-  const { publicRuntimeConfig } = getConfig()
 
   const isSupervisor =
     session?.user?.role === UserRole.SUPERVISOR ||
@@ -49,12 +47,12 @@ export default function Header() {
           </div>
         )}
 
-        {(publicRuntimeConfig.FAQ_URL_STUDENT || publicRuntimeConfig.FAQ_URL_SUPERVISOR) && (
+        {(process.env.NEXT_PUBLIC_FAQ_URL_STUDENT || process.env.NEXT_PUBLIC_FAQ_URL_SUPERVISOR) && (
           <a
             href={
               isSupervisor
-                ? publicRuntimeConfig.FAQ_URL_SUPERVISOR
-                : publicRuntimeConfig.FAQ_URL_STUDENT
+                ? process.env.NEXT_PUBLIC_FAQ_URL_SUPERVISOR
+                : process.env.NEXT_PUBLIC_FAQ_URL_STUDENT
             }
             target="_blank"
           >
