@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.52](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.51...v1.1.0-beta.52) (2025-11-12)
+
+
+### Features
+
+* add FAQ URL configuration for supervisors and students ([50f0b79](https://github.com/uzh-bf/thesis-platform/commit/50f0b7992a5ed685977f8d1f283e27cf5683866c))
+* add FAQ URL configuration for supervisors and students ([253d5c4](https://github.com/uzh-bf/thesis-platform/commit/253d5c4437c6350d5ac9bdc267046a04b93fdbb6))
+* add OpenAPI metadata and type definitions to healthcheck endpoint ([2298897](https://github.com/uzh-bf/thesis-platform/commit/22988977cf64a51d4bf60b1e6bd4597a50fb04d2))
+* make FAQ links configurable via environment variables ([d8254f8](https://github.com/uzh-bf/thesis-platform/commit/d8254f8738242fe1adbcc2a9082efc57a0f39b2c))
+
 ## [1.1.0-beta.51](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.50...v1.1.0-beta.51) (2025-10-15)
 
 
