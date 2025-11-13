@@ -306,6 +306,22 @@ export const appRouter = router({
     })
   }),
 
+  getAllSupervisors: optionalAuthedProcedure.query(() => {
+    return prisma.user.findMany({
+      select: {
+        name: true,
+        email: true,
+      },
+      where: {
+        role: UserRole.SUPERVISOR,
+        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    })
+  }),
+
   proposals: optionalAuthedProcedure
     .input(
       z.object({

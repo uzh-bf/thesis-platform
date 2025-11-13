@@ -26,6 +26,7 @@ export default function ProposalPublishForm({
   const submitProposal = trpc.submitProposalPublish.useMutation()
   const topicAreasQuery = trpc.getTopicAreas.useQuery()
   const personsResponsible = trpc.getAllPersonsResponsible.useQuery()
+  const supervisorsQuery = trpc.getAllSupervisors.useQuery()
 
   const handleFileFieldChange =
     (fieldKey: string, fileName: string, formikProps: any) =>
@@ -62,17 +63,6 @@ export default function ProposalPublishForm({
     fieldOfResearch: Yup.string().required('Required'),
     supervisor: Yup.string()
       .email('Invalid email')
-      .test(
-        'uzh-domain',
-        'Please enter a UZH email address (e.g., @uzh.ch, @df.uzh.ch)',
-        (value) => {
-          if (value) {
-            const domain = value.split('@')[1]
-            return domain === 'uzh.ch' || domain?.endsWith('.uzh.ch')
-          }
-          return true
-        }
-      )
       .required('Required'),
     personResponsible: Yup.string().required('Required'),
     bachelorOrMasterLevel: Yup.string().required('Required'),
@@ -164,14 +154,19 @@ export default function ProposalPublishForm({
                 label: 'font-sans text-lg',
               }}
             />
-            <FormikTextField
+            <FormikSelectField
               required
               name="supervisor"
-              label="Supervisor Email"
-              placeholder="supervisor@uzh.ch"
+              label="Supervisor"
+              placeholder="Select supervisor"
+              items={
+                supervisorsQuery.data?.map((supervisor) => ({
+                  value: supervisor.email,
+                  label: `${supervisor.name} (${supervisor.email})`,
+                })) || []
+              }
               className={{
                 label: 'font-sans text-lg',
-                field: 'flex-col',
               }}
             />
             <FormikSelectField
@@ -232,37 +227,25 @@ export default function ProposalPublishForm({
                 )}
                 multiple={false}
                 accept={{ 'application/pdf': ['.pdf'] }}
-                disabled={
-                  !formikProps.values.supervisor.includes('@') ||
-                  !(
-                    formikProps.values.supervisor.split('@')[1] === 'uzh.ch' ||
-                    formikProps.values.supervisor.split('@')[1]?.endsWith('.uzh.ch')
-                  )
-                }
+                disabled={!formikProps.values.supervisor}
               >
-                {({ getRootProps, getInputProps }) => {
-                  const email = formikProps.values.supervisor
-                  const domain = email.split('@')[1]
-                  const isValidUzhEmail = domain === 'uzh.ch' || domain?.endsWith('.uzh.ch')
-                  
-                  return (
-                    <section>
-                      <div
-                        {...getRootProps()}
-                        className="flex items-center justify-center w-full text-2xl border border-dashed rounded bg-gray-50"
-                      >
-                        <input type="file" {...getInputProps()} />
-                        <p className="p-2 text-base">
-                          {!isValidUzhEmail
-                            ? 'Enter your UZH Email before uploading files ⚠️'
-                            : researchProposalPDF.length > 0
-                            ? `Attached File 📄: '${researchProposalPDF[0].name}'`
-                            : 'Drag and drop your file 🗃️ here, or click to select the file'}
-                        </p>
-                      </div>
-                    </section>
-                  )
-                }}
+                {({ getRootProps, getInputProps }) => (
+                  <section>
+                    <div
+                      {...getRootProps()}
+                      className="flex items-center justify-center w-full text-2xl border border-dashed rounded bg-gray-50"
+                    >
+                      <input type="file" {...getInputProps()} />
+                      <p className="p-2 text-base">
+                        {!formikProps.values.supervisor
+                          ? 'Select a supervisor before uploading files ⚠️'
+                          : researchProposalPDF.length > 0
+                          ? `Attached File 📄: '${researchProposalPDF[0].name}'`
+                          : 'Drag and drop your file 🗃️ here, or click to select the file'}
+                      </p>
+                    </div>
+                  </section>
+                )}
               </Dropzone>
             </div>
 
@@ -278,37 +261,25 @@ export default function ProposalPublishForm({
                 )}
                 multiple={false}
                 accept={{ 'application/pdf': ['.pdf'] }}
-                disabled={
-                  !formikProps.values.supervisor.includes('@') ||
-                  !(
-                    formikProps.values.supervisor.split('@')[1] === 'uzh.ch' ||
-                    formikProps.values.supervisor.split('@')[1]?.endsWith('.uzh.ch')
-                  )
-                }
+                disabled={!formikProps.values.supervisor}
               >
-                {({ getRootProps, getInputProps }) => {
-                  const email = formikProps.values.supervisor
-                  const domain = email.split('@')[1]
-                  const isValidUzhEmail = domain === 'uzh.ch' || domain?.endsWith('.uzh.ch')
-                  
-                  return (
-                    <section>
-                      <div
-                        {...getRootProps()}
-                        className="flex items-center justify-center w-full text-2xl border border-dashed rounded bg-gray-50"
-                      >
-                        <input type="file" {...getInputProps()} />
-                        <p className="p-2 text-base">
-                          {!isValidUzhEmail
-                            ? 'Enter your UZH Email before uploading files ⚠️'
-                            : furtherAttachments.length > 0
-                            ? `Attached File 📄: '${furtherAttachments[0].name}'`
-                            : 'Drag and drop your file 🗃️ here, or click to select the file'}
-                        </p>
-                      </div>
-                    </section>
-                  )
-                }}
+                {({ getRootProps, getInputProps }) => (
+                  <section>
+                    <div
+                      {...getRootProps()}
+                      className="flex items-center justify-center w-full text-2xl border border-dashed rounded bg-gray-50"
+                    >
+                      <input type="file" {...getInputProps()} />
+                      <p className="p-2 text-base">
+                        {!formikProps.values.supervisor
+                          ? 'Select a supervisor before uploading files ⚠️'
+                          : furtherAttachments.length > 0
+                          ? `Attached File 📄: '${furtherAttachments[0].name}'`
+                          : 'Drag and drop your file 🗃️ here, or click to select the file'}
+                      </p>
+                    </div>
+                  </section>
+                )}
               </Dropzone>
             </div>
 
