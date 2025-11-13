@@ -385,6 +385,61 @@ export const appRouter = router({
       )
     }),
 
+  submitProposalPublish: publicProcedure
+    .input(
+      z.object({
+        proposalTitle: z.string(),
+        proposalSummary: z.string(),
+        fieldOfResearch: z.string(),
+        supervisor: z.string().email(),
+        personResponsible: z.string(),
+        bachelorOrMasterLevel: z.string(),
+        proposalLanguage: z.string(),
+        timeFrame: z.string(),
+        researchProposalPDF: z.string().nullable(),
+        furtherAttachments: z.string().nullable(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const submitDate = new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      })
+
+      const payload = {
+        responder: input.supervisor,
+        submitDate: submitDate,
+        proposalSummary: input.proposalSummary,
+        fieldOfResearch: input.fieldOfResearch,
+        supervisor: input.supervisor,
+        researchProposalPDF: input.researchProposalPDF || '',
+        proposalTitle: input.proposalTitle,
+        bachelorOrMasterLevel: input.bachelorOrMasterLevel,
+        proposalLanguage: input.proposalLanguage,
+        timeFrame: input.timeFrame,
+        furtherAttachments: input.furtherAttachments || '',
+        personResponsible: input.personResponsible,
+      }
+
+      const res = await axios.post(
+        process.env.PROPOSAL_PUBLISH_URL as string,
+        payload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            secretkey: process.env.FLOW_SECRET as string,
+          },
+        }
+      )
+      
+      return res.data
+    }),
+
   acceptProposalApplication: publicProcedure
     .input(
       z.object({
