@@ -442,18 +442,53 @@ export const appRouter = router({
         personResponsible: input.personResponsible,
       }
 
-      const res = await axios.post(
-        process.env.PROPOSAL_PUBLISH_URL as string,
-        payload,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            secretkey: process.env.FLOW_SECRET as string,
-          },
+      if (!process.env.PROPOSAL_PUBLISH_URL) {
+        console.log('PROPOSAL_PUBLISH_URL not configured. Proposal data:', payload)
+        return {
+          success: true,
+          message: 'Development mode: PROPOSAL_PUBLISH_URL not configured',
+          data: payload
         }
-      )
-      
-      return res.data
+      }
+
+      try {
+        console.log('Submitting proposal to Power Automate flow...')
+        console.log('URL:', process.env.PROPOSAL_PUBLISH_URL)
+        console.log('Payload:', JSON.stringify(payload, null, 2))
+        
+        const res = await axios.post(
+          process.env.PROPOSAL_PUBLISH_URL,
+          payload,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              secretkey: process.env.FLOW_SECRET as string,
+            },
+          }
+        )
+        
+        console.log('Successfully submitted proposal')
+        return res.data
+      } catch (error: any) {
+        console.error('Error submitting proposal:', error)
+        
+        if (error.response) {
+          console.error('Response status:', error.response.status)
+          console.error('Response data:', error.response.data)
+          
+          if (error.response.status === 401) {
+            throw new TRPCError({
+              code: 'UNAUTHORIZED',
+              message: 'Authentication failed with Power Automate flow. Check FLOW_SECRET environment variable.',
+            })
+          }
+        }
+        
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to submit proposal: ${error.message || 'Unknown error'}`,
+        })
+      }
     }),
 
   acceptProposalApplication: publicProcedure
@@ -1832,7 +1867,7 @@ updateProposalStatus: publicProcedure
           proposalId: z.string().uuid(),
           supervisorEmail: z.string().email(),
           studyLevel: z.string(),
-          responsibleName: z.string(),
+          responsibleEmail: z.string(),
         })
       )
       .output(z.object({
@@ -1857,7 +1892,7 @@ updateProposalStatus: publicProcedure
         try {
           const responsible = await prisma.responsible.findFirst({
             where: {
-              name: input.responsibleName,
+              email: input.responsibleEmail,
               department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
             }
           })

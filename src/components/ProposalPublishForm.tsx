@@ -110,8 +110,10 @@ export default function ProposalPublishForm({
           setResearchProposalPDF([])
           setFurtherAttachments([])
           onSuccess?.()
-        } catch (error) {
-          toast.error('Failed to submit proposal. Please try again.')
+        } catch (error: any) {
+          console.error('Form submission error:', error)
+          const errorMessage = error?.message || 'Failed to submit proposal. Please try again.'
+          toast.error(errorMessage)
         }
       }}
     >
