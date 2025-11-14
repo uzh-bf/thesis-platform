@@ -22,9 +22,9 @@ export default function NewProposalButton({
         trigger={
           <Button 
             onClick={() => setIsModalOpen(true)}
-            className={{root: "flex items-center gap-1"}}
+            className={{root: "flex items-center"}}
           >
-            <FontAwesomeIcon icon={faAdd} />
+            <FontAwesomeIcon icon={faAdd} className="mr-2" />
             New Proposal
           </Button>
         }
@@ -41,8 +41,8 @@ export default function NewProposalButton({
         target="_blank"
         href={process.env.NEXT_PUBLIC_FORMS_URL_SUBMIT as string}
       >
-        <Button className={{root: "flex items-center gap-1"}}>
-          <FontAwesomeIcon icon={faAdd} />
+        <Button className={{root: "flex items-center"}}>
+          <FontAwesomeIcon icon={faAdd} className='mr-2'/>
           New Proposal
         </Button>
       </Link>
