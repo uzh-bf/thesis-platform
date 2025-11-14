@@ -445,7 +445,6 @@ export const appRouter = router({
       }
 
       if (!process.env.PROPOSAL_PUBLISH_URL) {
-        console.log('PROPOSAL_PUBLISH_URL not configured. Proposal data:', payload)
         return {
           success: true,
           message: 'Development mode: PROPOSAL_PUBLISH_URL not configured',
