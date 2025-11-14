@@ -8,6 +8,7 @@ flows:
   secret: '$FLOW_SECRET'
   application: '$APPLICATION_URL'
   proposalFeedback: '$PROPOSAL_FEEDBACK_URL'
+  proposalPublish: '$PROPOSAL_PUBLISH_URL'
   applicationAcceptance: '$APPLICATION_ACCEPTANCE_URL'
   emailNotification: '$EMAIL_NOTIFICATION_URL'
   faqUrlStudent: '$FAQ_URL_STUDENT'
