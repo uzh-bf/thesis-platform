@@ -4,6 +4,7 @@ import type { Session } from 'next-auth'
 import { SessionProvider } from 'next-auth/react'
 import type { AppProps } from 'next/app'
 import { Source_Sans_3 } from 'next/font/google'
+import { Toaster } from 'react-hot-toast'
 
 import { trpc } from '../lib/trpc'
 
@@ -34,6 +35,8 @@ function App({
         <Component {...pageProps} />
 
         <Footer />
+
+        <Toaster />
 
         <style jsx global>{`
           :root {

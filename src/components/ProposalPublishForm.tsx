@@ -9,7 +9,7 @@ import { Field, Form, Formik } from 'formik'
 import { useSession } from 'next-auth/react'
 import { useState } from 'react'
 import Dropzone from 'react-dropzone'
-import toast, { Toaster } from 'react-hot-toast'
+import toast from 'react-hot-toast'
 import { trpc } from 'src/lib/trpc'
 import * as Yup from 'yup'
 
@@ -109,11 +109,11 @@ export default function ProposalPublishForm({
             responder: session?.user?.email || '',
             proposalLanguage: JSON.stringify(values.proposalLanguage),
           })
-          toast.success('Proposal submitted successfully!')
           resetForm()
           setResearchProposalPDF([])
           setFurtherAttachments([])
           onSuccess?.()
+          toast.success('Proposal submitted successfully!')
         } catch (error: any) {
           console.error('Form submission error:', error)
           const errorMessage = error?.message || 'Failed to submit proposal. Please try again.'
@@ -310,7 +310,6 @@ export default function ProposalPublishForm({
               >
                 {submitProposal.isPending ? 'Submitting...' : 'Submit Proposal'}
               </Button>
-              <Toaster />
             </div>
           </div>
         </Form>
