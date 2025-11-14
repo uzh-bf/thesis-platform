@@ -296,6 +296,7 @@ export const appRouter = router({
     return prisma.responsible.findMany({
       select: {
         name: true,
+        email: true,
       },
       where: {
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
@@ -408,7 +409,7 @@ export const appRouter = router({
         proposalSummary: z.string(),
         fieldOfResearch: z.string(),
         supervisor: z.string().email(),
-        personResponsible: z.string(),
+        personResponsibleEmail: z.string().email(),
         bachelorOrMasterLevel: z.string(),
         proposalLanguage: z.string(),
         timeFrame: z.string(),
@@ -439,7 +440,7 @@ export const appRouter = router({
         proposalLanguage: input.proposalLanguage,
         timeFrame: input.timeFrame,
         furtherAttachments: input.furtherAttachments || '',
-        personResponsible: input.personResponsible,
+        personResponsibleEmail: input.personResponsibleEmail,
       }
 
       if (!process.env.PROPOSAL_PUBLISH_URL) {

@@ -64,7 +64,9 @@ export default function ProposalPublishForm({
     supervisor: Yup.string()
       .email('Invalid email')
       .required('Required'),
-    personResponsible: Yup.string().required('Required'),
+    personResponsibleEmail: Yup.string()
+      .email('Invalid email')
+      .required('Required'),
     bachelorOrMasterLevel: Yup.string().required('Required'),
     proposalLanguage: Yup.string().required('Required'),
     timeFrame: Yup.string().required('Required'),
@@ -89,7 +91,7 @@ export default function ProposalPublishForm({
         proposalSummary: '',
         fieldOfResearch: '',
         supervisor: '',
-        personResponsible: '',
+        personResponsibleEmail: '',
         bachelorOrMasterLevel: '',
         proposalLanguage: '',
         timeFrame: '',
@@ -173,13 +175,13 @@ export default function ProposalPublishForm({
             />
             <FormikSelectField
               required
-              name="personResponsible"
+              name="personResponsibleEmail"
               label="Person Responsible"
               placeholder="Select person responsible"
               items={
                 personsResponsible.data?.map((person) => ({
-                  value: person.name,
-                  label: person.name,
+                  value: person.email,
+                  label: `${person.name} (${person.email})`,
                 })) || []
               }
               className={{
