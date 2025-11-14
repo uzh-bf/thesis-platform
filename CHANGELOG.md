@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.57](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.56...v1.1.0-beta.57) (2025-11-14)
+
+
+### Features
+
+* add PROPOSAL_PUBLISH_URL configuration to deployment environments ([5625b55](https://github.com/uzh-bf/thesis-platform/commit/5625b55a0020ae64b06e14fd1b0e122202fbfe1c))
+
 ## [1.1.0-beta.56](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.55...v1.1.0-beta.56) (2025-11-14)
 
 ## [1.1.0-beta.55](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.54...v1.1.0-beta.55) (2025-11-14)
