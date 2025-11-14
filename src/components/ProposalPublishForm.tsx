@@ -6,6 +6,7 @@ import {
   FormikTextareaField,
 } from '@uzh-bf/design-system'
 import { Field, Form, Formik } from 'formik'
+import { useSession } from 'next-auth/react'
 import { useState } from 'react'
 import Dropzone from 'react-dropzone'
 import toast, { Toaster } from 'react-hot-toast'
@@ -19,6 +20,7 @@ interface ProposalPublishFormProps {
 export default function ProposalPublishForm({
   onSuccess,
 }: ProposalPublishFormProps) {
+  const { data: session } = useSession()
   const [researchProposalPDF, setResearchProposalPDF] = useState<any[]>([])
   const [furtherAttachments, setFurtherAttachments] = useState<any[]>([])
 
@@ -87,6 +89,7 @@ export default function ProposalPublishForm({
   return (
     <Formik
       initialValues={{
+        responder: session?.user?.email || '',
         proposalTitle: '',
         proposalSummary: '',
         fieldOfResearch: '',

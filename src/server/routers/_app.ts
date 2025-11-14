@@ -405,6 +405,7 @@ export const appRouter = router({
   submitProposalPublish: publicProcedure
     .input(
       z.object({
+        responder: z.string().email(),
         proposalTitle: z.string(),
         proposalSummary: z.string(),
         fieldOfResearch: z.string(),
