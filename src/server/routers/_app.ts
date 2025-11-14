@@ -430,7 +430,7 @@ export const appRouter = router({
       })
 
       const payload = {
-        responder: input.supervisor,
+        responder: input.responder,
         submitDate: submitDate,
         proposalSummary: input.proposalSummary,
         fieldOfResearch: input.fieldOfResearch,

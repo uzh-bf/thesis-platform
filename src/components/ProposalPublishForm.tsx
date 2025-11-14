@@ -106,6 +106,7 @@ export default function ProposalPublishForm({
         try {
           await submitProposal.mutateAsync({
             ...values,
+            responder: session?.user?.email || '',
             proposalLanguage: JSON.stringify(values.proposalLanguage),
           })
           toast.success('Proposal submitted successfully!')
