@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.55](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.54...v1.1.0-beta.55) (2025-11-14)
+
+
+### Features
+
+* add in-app proposal publishing form for supervisors ([#66](https://github.com/uzh-bf/thesis-platform/issues/66)) ([8857727](https://github.com/uzh-bf/thesis-platform/commit/8857727b799c7549c2fcab4a371137be3f4f54e3))
+
+
+### Bug Fixes
+
+* stg env deployment ([e46204b](https://github.com/uzh-bf/thesis-platform/commit/e46204b64da4b18aee5b59d4d725da7ea158a2ec))
+
 ## [1.1.0-beta.54](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.53...v1.1.0-beta.54) (2025-11-12)
 
 
