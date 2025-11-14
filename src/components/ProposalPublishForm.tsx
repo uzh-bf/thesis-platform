@@ -5,7 +5,7 @@ import {
   FormikTextField,
   FormikTextareaField,
 } from '@uzh-bf/design-system'
-import { Form, Formik } from 'formik'
+import { Field, Form, Formik } from 'formik'
 import { useState } from 'react'
 import Dropzone from 'react-dropzone'
 import toast, { Toaster } from 'react-hot-toast'
@@ -68,7 +68,7 @@ export default function ProposalPublishForm({
       .email('Invalid email')
       .required('Required'),
     bachelorOrMasterLevel: Yup.string().required('Required'),
-    proposalLanguage: Yup.string().required('Required'),
+    proposalLanguage: Yup.array().min(1, 'At least one language is required').required('Required'),
     timeFrame: Yup.string().required('Required'),
     researchProposalPDF: Yup.string().nullable(),
     furtherAttachments: Yup.string().nullable(),
@@ -93,7 +93,7 @@ export default function ProposalPublishForm({
         supervisor: '',
         personResponsibleEmail: '',
         bachelorOrMasterLevel: '',
-        proposalLanguage: '',
+        proposalLanguage: [],
         timeFrame: '',
         researchProposalPDF: null,
         furtherAttachments: null,
@@ -101,11 +101,9 @@ export default function ProposalPublishForm({
       validationSchema={ProposalPublishSchema}
       onSubmit={async (values, { resetForm }) => {
         try {
-          const languages = [values.proposalLanguage]
-          
           await submitProposal.mutateAsync({
             ...values,
-            proposalLanguage: JSON.stringify(languages),
+            proposalLanguage: JSON.stringify(values.proposalLanguage),
           })
           toast.success('Proposal submitted successfully!')
           resetForm()
@@ -198,16 +196,29 @@ export default function ProposalPublishForm({
                 label: 'font-sans text-lg',
               }}
             />
-            <FormikSelectField
-              required
-              name="proposalLanguage"
-              label="Primary Proposal Language"
-              placeholder="Select primary language"
-              items={languageOptions}
-              className={{
-                label: 'font-sans text-lg',
-              }}
-            />
+            <div className="space-y-2">
+              <label className="font-sans text-lg font-bold">
+                Proposal Language <span className="text-red-500">*</span>
+              </label>
+              <div className="space-y-2">
+                {languageOptions.map((option) => (
+                  <label key={option.value} className="flex items-center space-x-2">
+                    <Field
+                      type="checkbox"
+                      name="proposalLanguage"
+                      value={option.value}
+                      className="w-4 h-4"
+                    />
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </div>
+              {formikProps.errors.proposalLanguage && formikProps.touched.proposalLanguage && (
+                <div className="text-sm text-red-500">
+                  {formikProps.errors.proposalLanguage}
+                </div>
+              )}
+            </div>
             <FormikTextField
               required
               name="timeFrame"
