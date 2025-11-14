@@ -166,7 +166,7 @@ export default function ProposalPublishForm({
               items={
                 supervisorsQuery.data?.map((supervisor) => ({
                   value: supervisor.email,
-                  label: `${supervisor.name} (${supervisor.email})`,
+                  label: `${supervisor.email}`,
                 })) || []
               }
               className={{
@@ -181,7 +181,7 @@ export default function ProposalPublishForm({
               items={
                 personsResponsible.data?.map((person) => ({
                   value: person.email,
-                  label: `${person.name} (${person.email})`,
+                  label: `${person.email}`,
                 })) || []
               }
               className={{
