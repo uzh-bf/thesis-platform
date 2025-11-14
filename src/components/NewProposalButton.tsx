@@ -17,7 +17,7 @@ export default function NewProposalButton({
   if (isSupervisor) {
     return (
       <Modal
-        title="Publish New Proposal"
+        title="Publish New Supervisor Proposal"
         open={isModalOpen}
         trigger={
           <Button 
