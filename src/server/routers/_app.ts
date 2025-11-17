@@ -302,7 +302,7 @@ export const appRouter = router({
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
       orderBy: {
-        name: 'asc',
+        email: 'asc',
       },
     })
   }),
@@ -318,7 +318,7 @@ export const appRouter = router({
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
       orderBy: {
-        name: 'asc',
+        email: 'asc',
       },
     })
   }),
