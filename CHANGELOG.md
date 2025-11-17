@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.58](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.57...v1.1.0-beta.58) (2025-11-17)
+
+
+### Refactors
+
+* change user list sorting from name to email in student and supervisor queries ([93ad22f](https://github.com/uzh-bf/thesis-platform/commit/93ad22fb3d3b1ff9ee42dfa8cdf765eaf2ffad77))
+
 ## [1.1.0-beta.57](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.56...v1.1.0-beta.57) (2025-11-14)
 
 
