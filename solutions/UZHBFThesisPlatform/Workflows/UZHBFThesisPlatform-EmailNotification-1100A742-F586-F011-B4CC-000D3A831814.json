@@ -1,0 +1,250 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "uzhbf_thesisplatform_outlook365_ref"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)": {
+          "defaultValue": "ibf-srv-powplatf@d.uzh.ch",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_outlook_from_address_env_var"
+          }
+        },
+        "Environment (uzhbf_thesisplatform_environment_env_var)": {
+          "defaultValue": "DEV",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_environment_env_var"
+          }
+        },
+        "Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)": {
+          "defaultValue": "flow@bf.uzh.ch",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_email_failure_env_var"
+          }
+        },
+        "Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)": {
+          "defaultValue": "abcd",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_flow_secret_env_var"
+          }
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "13f6ca94-f89f-4867-b33c-7b7dc2497445"
+          },
+          "type": "Request",
+          "kind": "Http",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "recipients": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "subject": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                }
+              }
+            },
+            "triggerAuthenticationType": "All"
+          }
+        }
+      },
+      "actions": {
+        "Catch": {
+          "actions": {
+            "FilterForFailedOrTimedOutStatus": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "ca1bedd8-7555-4a99-a290-1c22c2e6e229"
+              },
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Try')",
+                "where": "@or(equals(item()?['Status'], 'Failed'), equals(item()?['Status'], 'TimedOut'))"
+              }
+            },
+            "CreateHtmlTable": {
+              "runAfter": {
+                "FilterForFailedOrTimedOutStatus": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "34b6a96f-64c6-43fd-89a3-fe7d5ef245ff"
+              },
+              "type": "Table",
+              "inputs": {
+                "from": "@body('FilterForFailedOrTimedOutStatus')",
+                "format": "HTML",
+                "columns": [
+                  {
+                    "header": "ErrorCode",
+                    "value": "@item()?['code']"
+                  }
+                ]
+              }
+            },
+            "Terminate": {
+              "runAfter": {
+                "SendFailureNotification": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "0f41eff7-41db-4eae-8e12-46f64d545e8b"
+              },
+              "type": "Terminate",
+              "inputs": {
+                "runStatus": "Cancelled"
+              }
+            },
+            "SendFailureNotification": {
+              "runAfter": {
+                "CreateHtmlTable": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "a7e78abe-4a5a-401c-bf9e-8b66ac344927"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_office365",
+                  "operationId": "SharedMailboxSendEmailV2",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                },
+                "parameters": {
+                  "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
+                  "emailMessage/To": "@parameters('Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)')",
+                  "emailMessage/Subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Thesis Platform - Thesis Student Reminder",
+                  "emailMessage/Body": "<p>@{body('CreateHtmlTable')}</p>",
+                  "emailMessage/Importance": "Normal"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "Try": [
+              "Skipped",
+              "Failed",
+              "TimedOut"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "054f28a3-080c-4f8a-9529-1183121f12f9"
+          },
+          "type": "Scope"
+        },
+        "Try": {
+          "actions": {
+            "Apply_to_each": {
+              "foreach": "@triggerBody()?['recipients']",
+              "actions": {
+                "SendEmail": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "04ef49e2-deda-497c-8b08-a0d6809ae0b1"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_office365",
+                      "operationId": "SharedMailboxSendEmailV2",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                    },
+                    "parameters": {
+                      "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
+                      "emailMessage/To": "@items('Apply_to_each')",
+                      "emailMessage/Subject": "@triggerBody()?['subject']",
+                      "emailMessage/Body": "<p>@{triggerBody()?['content']}</p>",
+                      "emailMessage/Importance": "Normal"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              },
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "656d9278-9b05-43e8-b046-c7163683dd85"
+              },
+              "type": "Foreach"
+            }
+          },
+          "runAfter": {
+            "IsFLowSecretCorrect": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "282845bf-8592-4d9f-b2e5-d5d7260bcb05"
+          },
+          "type": "Scope"
+        },
+        "IsFLowSecretCorrect": {
+          "actions": {},
+          "runAfter": {},
+          "else": {
+            "actions": {
+              "Terminate_2": {
+                "runAfter": {},
+                "metadata": {
+                  "operationMetadataId": "b0e5bdca-638d-4f99-bf6a-88e22b939ecb"
+                },
+                "type": "Terminate",
+                "inputs": {
+                  "runStatus": "Cancelled"
+                }
+              }
+            }
+          },
+          "expression": {
+            "equals": [
+              "@triggerOutputs()['headers']['secretKey']",
+              "@parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "2e8497de-b65d-41bd-bc3e-8d913d2aba3c"
+          },
+          "type": "If"
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}

@@ -1,0 +1,389 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "uzhbf_thesisplatform_outlook365_ref"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_sendmail-2": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "uzhbf_thesisplatform_mail_ref"
+        },
+        "api": {
+          "name": "shared_sendmail"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)": {
+          "defaultValue": "ibf-srv-powplatf@d.uzh.ch",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_outlook_from_address_env_var"
+          }
+        },
+        "Environment (uzhbf_thesisplatform_environment_env_var)": {
+          "defaultValue": "DEV",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_environment_env_var"
+          }
+        },
+        "Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)": {
+          "defaultValue": "flow@df.uzh.ch",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_email_failure_env_var"
+          }
+        },
+        "Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)": {
+          "defaultValue": "abcd",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_flow_secret_env_var"
+          }
+        },
+        "Root URL (uzhbf_thesisplatform_root_url_env_var)": {
+          "defaultValue": "https://mentally-ace-maggot.ngrok-free.app",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_root_url_env_var"
+          }
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "recurrence": {
+            "frequency": "Week",
+            "interval": 1,
+            "timeZone": "W. Europe Standard Time",
+            "startTime": "2025-02-01T09:00:00Z",
+            "schedule": {
+              "weekDays": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday"
+              ]
+            }
+          },
+          "evaluatedRecurrence": {
+            "frequency": "Week",
+            "interval": 1,
+            "timeZone": "W. Europe Standard Time",
+            "startTime": "2025-02-01T09:00:00Z",
+            "schedule": {
+              "weekDays": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday"
+              ]
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "5f1404ad-7d60-485c-964a-72eb13d305da"
+          },
+          "type": "Recurrence"
+        }
+      },
+      "actions": {
+        "Try": {
+          "actions": {
+            "healthCheck": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "515b6b22-ca63-4268-ba5a-ad1ab074f999"
+              },
+              "type": "Http",
+              "inputs": {
+                "method": "GET",
+                "uri": "@{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/api/healthcheck"
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            },
+            "Condition": {
+              "actions": {
+                "getOpenStudentProposalsOlderThan8Weeks": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "128cde69-4bef-42a4-87f1-cdbfdb7f2551"
+                  },
+                  "type": "Http",
+                  "inputs": {
+                    "method": "POST",
+                    "uri": "@{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/api/getOpenStudentProposalsOlderThan8Weeks",
+                    "body": {
+                      "flowSecret": "@{parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')}"
+                    }
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "Parse_JSON": {
+                  "runAfter": {
+                    "getOpenStudentProposalsOlderThan8Weeks": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "39421005-434b-4608-b513-d8c5e2d4b4b8"
+                  },
+                  "type": "ParseJson",
+                  "inputs": {
+                    "content": "@body('getOpenStudentProposalsOlderThan8Weeks')",
+                    "schema": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "proposalTitle": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "email",
+                          "proposalTitle"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "updateWaitingForStudentProposalsOlderThan1Week": {
+                  "runAfter": {
+                    "Parse_JSON": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "55beb587-1ac5-4a83-8508-cb80233316db"
+                  },
+                  "type": "Http",
+                  "inputs": {
+                    "method": "POST",
+                    "uri": "@{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/api/updateWaitingForStudentProposalsOlderThan1Week",
+                    "body": {
+                      "flowSecret": "@{parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')}"
+                    }
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "Apply_to_each": {
+                  "foreach": "@body('Parse_JSON')",
+                  "actions": {
+                    "Send_an_email_from_a_shared_mailbox_(V2)": {
+                      "runAfter": {},
+                      "metadata": {
+                        "operationMetadataId": "0794402d-ba74-45df-a87d-3254acd61b3f"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connectionName": "shared_office365",
+                          "operationId": "SharedMailboxSendEmailV2",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                        },
+                        "parameters": {
+                          "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
+                          "emailMessage/To": "@item()['email']",
+                          "emailMessage/Subject": "Action Required: Proposal bestätigen",
+                          "emailMessage/Body": "<p class=\"editor-paragraph\"><i><em class=\"editor-text-italic\">Dies ist eine automatisch generierte E-Mail.</em></i></p><p class=\"editor-paragraph\">Bitte bestätige, ob dein Proposal mit dem Titel: „@{item()['proposalTitle']}“ noch aktuell ist.</p><p class=\"editor-paragraph\">Falls ja, klicke auf den folgenden Link: <a href=\"@{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/api/updateProposalUpdatedAt/@{item()['id']}\" class=\"editor-link\">Bestätigungslink</a><br>Falls nicht, kannst du diese E-Mail einfach ignorieren.</p><p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\">Hinweis</strong></b>: Das Proposal wird automatisch gelöscht, sofern der Bestätigungslink nicht innerhalb von 7 Tagen angeklickt wird.</p><p class=\"editor-paragraph\">Vielen Dank!</p><br>",
+                          "emailMessage/Importance": "Normal"
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    },
+                    "updateProposalStatus": {
+                      "runAfter": {
+                        "Send_an_email_from_a_shared_mailbox_(V2)": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "78eebe38-3c88-4479-bdf9-04c6f0a478a6"
+                      },
+                      "type": "Http",
+                      "inputs": {
+                        "method": "POST",
+                        "uri": "@{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/api/updateProposalStatus/@{item()['id']}",
+                        "body": {
+                          "flowSecret": "@{parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')}"
+                        }
+                      },
+                      "runtimeConfiguration": {
+                        "contentTransfer": {
+                          "transferMode": "Chunked"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "updateWaitingForStudentProposalsOlderThan1Week": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "26d714fe-516b-4e51-b453-6237cdbc55f7"
+                  },
+                  "type": "Foreach"
+                }
+              },
+              "runAfter": {
+                "healthCheck": [
+                  "Succeeded",
+                  "Failed"
+                ]
+              },
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@body('healthCheck')",
+                      "OK"
+                    ]
+                  }
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "59399478-7a07-4ab3-ac4c-bb59be186913"
+              },
+              "type": "If"
+            }
+          },
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "b995b4fe-ad72-4c49-b754-9266d34ccaf2"
+          },
+          "type": "Scope"
+        },
+        "Catch": {
+          "actions": {
+            "FilterForFailedOrTimedOutStatus": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "ca1bedd8-7555-4a99-a290-1c22c2e6e229"
+              },
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Try')",
+                "where": "@or(equals(item()?['Status'], 'Failed'), equals(item()?['Status'], 'TimedOut'))"
+              }
+            },
+            "CreateHtmlTable": {
+              "runAfter": {
+                "FilterForFailedOrTimedOutStatus": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "34b6a96f-64c6-43fd-89a3-fe7d5ef245ff"
+              },
+              "type": "Table",
+              "inputs": {
+                "from": "@body('FilterForFailedOrTimedOutStatus')",
+                "format": "HTML",
+                "columns": [
+                  {
+                    "header": "ErrorCode",
+                    "value": "@item()?['code']"
+                  }
+                ]
+              }
+            },
+            "Terminate": {
+              "runAfter": {
+                "SendFailureNotification": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "0f41eff7-41db-4eae-8e12-46f64d545e8b"
+              },
+              "type": "Terminate",
+              "inputs": {
+                "runStatus": "Cancelled"
+              }
+            },
+            "SendFailureNotification": {
+              "runAfter": {
+                "CreateHtmlTable": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "e7c370de-36de-45b2-ae99-b7d0e7013242"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sendmail-2",
+                  "operationId": "SendEmailV3",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sendmail"
+                },
+                "parameters": {
+                  "request/to": "@parameters('Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)')",
+                  "request/subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Thesis Platform - Thesis Student Reminder",
+                  "request/text": "<p>@{body('CreateHtmlTable')}</p>"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "Try": [
+              "Failed",
+              "TimedOut"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "054f28a3-080c-4f8a-9529-1183121f12f9"
+          },
+          "type": "Scope"
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}
