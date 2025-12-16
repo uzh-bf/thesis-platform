@@ -40,16 +40,16 @@ importers:
         version: 4.33.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@trpc/client':
         specifier: 10.37.1
-        version: 10.37.1(@trpc/server@10.37.1)
+        version: 10.37.1(@trpc/server@10.45.3)
       '@trpc/next':
         specifier: 10.37.1
-        version: 10.37.1(@tanstack/react-query@4.33.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@trpc/client@10.37.1(@trpc/server@10.37.1))(@trpc/react-query@10.37.1(@tanstack/react-query@4.33.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@trpc/client@10.37.1(@trpc/server@10.37.1))(@trpc/server@10.37.1)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@trpc/server@10.37.1)(next@13.4.19(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+        version: 10.37.1(@tanstack/react-query@4.33.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@trpc/client@10.37.1(@trpc/server@10.45.3))(@trpc/react-query@10.37.1(@tanstack/react-query@4.33.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@trpc/client@10.37.1(@trpc/server@10.45.3))(@trpc/server@10.45.3)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@trpc/server@10.45.3)(next@13.4.19(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@trpc/react-query':
         specifier: 10.37.1
-        version: 10.37.1(@tanstack/react-query@4.33.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@trpc/client@10.37.1(@trpc/server@10.37.1))(@trpc/server@10.37.1)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+        version: 10.37.1(@tanstack/react-query@4.33.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@trpc/client@10.37.1(@trpc/server@10.45.3))(@trpc/server@10.45.3)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@trpc/server':
-        specifier: 10.37.1
-        version: 10.37.1
+        specifier: 10.45.3
+        version: 10.45.3
       '@uidotdev/usehooks':
         specifier: 2.4.1
         version: 2.4.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -350,6 +350,7 @@ packages:
 
   '@fortawesome/react-fontawesome@0.2.0':
     resolution: {integrity: sha512-uHg75Rb/XORTtVt7OS9WoK8uM276Ufi7gCzshVWkUJbHhh3svsUUeqXerrM96Wm7fRiDzfKRwSoahhMIkGAYHw==}
+    deprecated: v0.2.x is no longer supported. Unless you are still using FontAwesome 5, please update to v3.1.1 or greater.
     peerDependencies:
       '@fortawesome/fontawesome-svg-core': ~1 || ~6
       react: '>=16.3'
@@ -1025,8 +1026,8 @@ packages:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
-  '@trpc/server@10.37.1':
-    resolution: {integrity: sha512-r3VeA319/braYMBIzj+XLgLKQ9lJSVglvPvP9HUv4kr5w6Y5grQMxMcExhTiZWltE9bnSJHKtBBzHafOo7KC8A==}
+  '@trpc/server@10.45.3':
+    resolution: {integrity: sha512-CVZM42FdGwqYQxV7vSRwb//AF8REfV60S/fUnwx7xqCnnSDus0FW/UuAOW4eQJ30RQlOPy4MYU8B3dbTAx85Ew==}
 
   '@tsconfig/next@1.0.5':
     resolution: {integrity: sha512-ZpAlWqSGE3ZWFqKmI3FiQEu8WcBF3uii1z1ovedMcALflsRoJnExp3YzWQ/fU7lzGmYtfX1CWFpf1Gl8aEC6GQ==}
@@ -2643,6 +2644,7 @@ packages:
   next@13.4.19:
     resolution: {integrity: sha512-HuPSzzAbJ1T4BD8e0bs6B9C1kWQ6gv8ykZoRWs5AQoiIuqbGHHdQO7Ljuvg05Q0Z24E2ABozHe6FxDvI6HfyAw==}
     engines: {node: '>=16.8.0'}
+    deprecated: This version has a security vulnerability. Please upgrade to a patched version. See https://nextjs.org/blog/security-update-2025-12-11 for more details.
     hasBin: true
     peerDependencies:
       '@opentelemetry/api': ^1.1.0
@@ -4706,30 +4708,30 @@ snapshots:
     optionalDependencies:
       react-dom: 18.2.0(react@18.2.0)
 
-  '@trpc/client@10.37.1(@trpc/server@10.37.1)':
+  '@trpc/client@10.37.1(@trpc/server@10.45.3)':
     dependencies:
-      '@trpc/server': 10.37.1
+      '@trpc/server': 10.45.3
 
-  '@trpc/next@10.37.1(@tanstack/react-query@4.33.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@trpc/client@10.37.1(@trpc/server@10.37.1))(@trpc/react-query@10.37.1(@tanstack/react-query@4.33.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@trpc/client@10.37.1(@trpc/server@10.37.1))(@trpc/server@10.37.1)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@trpc/server@10.37.1)(next@13.4.19(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
+  '@trpc/next@10.37.1(@tanstack/react-query@4.33.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@trpc/client@10.37.1(@trpc/server@10.45.3))(@trpc/react-query@10.37.1(@tanstack/react-query@4.33.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@trpc/client@10.37.1(@trpc/server@10.45.3))(@trpc/server@10.45.3)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@trpc/server@10.45.3)(next@13.4.19(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
     dependencies:
       '@tanstack/react-query': 4.33.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@trpc/client': 10.37.1(@trpc/server@10.37.1)
-      '@trpc/react-query': 10.37.1(@tanstack/react-query@4.33.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@trpc/client@10.37.1(@trpc/server@10.37.1))(@trpc/server@10.37.1)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@trpc/server': 10.37.1
+      '@trpc/client': 10.37.1(@trpc/server@10.45.3)
+      '@trpc/react-query': 10.37.1(@tanstack/react-query@4.33.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@trpc/client@10.37.1(@trpc/server@10.45.3))(@trpc/server@10.45.3)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@trpc/server': 10.45.3
       next: 13.4.19(@opentelemetry/api@1.9.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
       react-ssr-prepass: 1.6.0(react@18.2.0)
 
-  '@trpc/react-query@10.37.1(@tanstack/react-query@4.33.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@trpc/client@10.37.1(@trpc/server@10.37.1))(@trpc/server@10.37.1)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
+  '@trpc/react-query@10.37.1(@tanstack/react-query@4.33.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@trpc/client@10.37.1(@trpc/server@10.45.3))(@trpc/server@10.45.3)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
     dependencies:
       '@tanstack/react-query': 4.33.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@trpc/client': 10.37.1(@trpc/server@10.37.1)
-      '@trpc/server': 10.37.1
+      '@trpc/client': 10.37.1(@trpc/server@10.45.3)
+      '@trpc/server': 10.45.3
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
 
-  '@trpc/server@10.37.1': {}
+  '@trpc/server@10.45.3': {}
 
   '@tsconfig/next@1.0.5': {}
 
@@ -5626,7 +5628,7 @@ snapshots:
       eslint: 8.48.0
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(eslint@8.48.0))(eslint@8.48.0)
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@6.21.0(eslint@8.48.0)(typescript@5.2.2))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@8.48.0))(eslint@8.48.0))(eslint@8.48.0)
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@6.21.0(eslint@8.48.0)(typescript@5.2.2))(eslint-import-resolver-typescript@3.10.1)(eslint@8.48.0)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@8.48.0)
       eslint-plugin-react: 7.37.5(eslint@8.48.0)
       eslint-plugin-react-hooks: 5.0.0-canary-7118f5dd7-20230705(eslint@8.48.0)
@@ -5656,7 +5658,7 @@ snapshots:
       tinyglobby: 0.2.14
       unrs-resolver: 1.11.1
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@6.21.0(eslint@8.48.0)(typescript@5.2.2))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@8.48.0))(eslint@8.48.0))(eslint@8.48.0)
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@6.21.0(eslint@8.48.0)(typescript@5.2.2))(eslint-import-resolver-typescript@3.10.1)(eslint@8.48.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -5671,7 +5673,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@6.21.0(eslint@8.48.0)(typescript@5.2.2))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@8.48.0))(eslint@8.48.0))(eslint@8.48.0):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@6.21.0(eslint@8.48.0)(typescript@5.2.2))(eslint-import-resolver-typescript@3.10.1)(eslint@8.48.0):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9

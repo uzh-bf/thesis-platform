@@ -46,7 +46,7 @@
     "@trpc/client": "10.37.1",
     "@trpc/next": "10.37.1",
     "@trpc/react-query": "10.37.1",
-    "@trpc/server": "10.37.1",
+    "@trpc/server": "10.45.3",
     "@uidotdev/usehooks": "2.4.1",
     "@uzh-bf/design-system": "2.4.3",
     "axios": "1.5.1",
