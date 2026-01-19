@@ -202,8 +202,15 @@ export default function AdminPanel() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900">
-                          {proposal.ownedByUser?.email || proposal.ownedByStudent || 'N/A'}
+                          {proposal.type.key === 'STUDENT' && proposal.applications?.[0]
+                            ? proposal.applications[0].email
+                            : proposal.ownedByUser?.email || proposal.ownedByStudent || 'N/A'}
                         </div>
+                        {proposal.type.key === 'STUDENT' && proposal.applications?.[0] && (
+                          <div className="text-xs text-gray-500">
+                            {proposal.applications[0].fullName}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(proposal.createdAt).toLocaleDateString()}
@@ -280,10 +287,22 @@ export default function AdminPanel() {
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Owner</p>
-                  <p className="mt-1 text-sm text-gray-900">
-                    {selectedProposal.ownedByUser?.email || selectedProposal.ownedByStudent || 'N/A'}
+                  <p className="text-sm font-medium text-gray-500">
+                    {selectedProposal.type.key === 'STUDENT' ? 'Student Applicant' : 'Owner'}
                   </p>
+                  {selectedProposal.type.key === 'STUDENT' && selectedProposal.applications?.[0] ? (
+                    <div className="mt-1">
+                      <p className="text-sm text-gray-900">{selectedProposal.applications[0].fullName}</p>
+                      <p className="text-sm text-gray-600">{selectedProposal.applications[0].email}</p>
+                      <p className="text-xs text-gray-500">
+                        Matric: {selectedProposal.applications[0].matriculationNumber}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">
+                      {selectedProposal.ownedByUser?.email || selectedProposal.ownedByStudent || 'N/A'}
+                    </p>
+                  )}
                 </div>
 
                 {selectedProposal.supervisedBy?.[0]?.supervisor && (
@@ -291,6 +310,24 @@ export default function AdminPanel() {
                     <p className="text-sm font-medium text-gray-500">Supervisor</p>
                     <p className="mt-1 text-sm text-gray-900">
                       {selectedProposal.supervisedBy[0].supervisor.email}
+                    </p>
+                  </div>
+                )}
+
+                {selectedProposal.type.key === 'STUDENT' && selectedProposal.applications?.[0] && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Planned Start</p>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {new Date(selectedProposal.applications[0].plannedStartAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
+
+                {selectedProposal.type.key === 'STUDENT' && selectedProposal.applications?.[0]?.motivation && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Motivation</p>
+                    <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">
+                      {selectedProposal.applications[0].motivation}
                     </p>
                   </div>
                 )}
@@ -318,17 +355,11 @@ export default function AdminPanel() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Created</p>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {new Date(selectedProposal.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Applications</p>
-                    <p className="mt-1 text-sm text-gray-900">{selectedProposal.applications?.length || 0}</p>
-                  </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Created</p>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {new Date(selectedProposal.createdAt).toLocaleString()}
+                  </p>
                 </div>
 
                 {selectedProposal.attachments?.length > 0 && (
