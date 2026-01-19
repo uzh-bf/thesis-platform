@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.61](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.60...v1.1.0-beta.61) (2026-01-19)
+
+
+### Features
+
+* add NEXT_PUBLIC_APP_VERSION to Docker build args ([9d15a1e](https://github.com/uzh-bf/thesis-platform/commit/9d15a1e48847ef9cad9d79ea4c0fa69c521b616c))
+
+
+### Bug Fixes
+
+* add NEXT_PUBLIC_APP_VERSION ARG to Dockerfile ([33e51b4](https://github.com/uzh-bf/thesis-platform/commit/33e51b4af1f1d064eb3a98fae6e0a91c7ea1ad87))
+
 ## [1.1.0-beta.60](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.59...v1.1.0-beta.60) (2026-01-19)
 
 
