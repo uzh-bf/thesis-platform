@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.60](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.59...v1.1.0-beta.60) (2026-01-19)
+
+
+### Features
+
+* display app version in footer when available ([31f3a8c](https://github.com/uzh-bf/thesis-platform/commit/31f3a8c6c7de801a08da065764c68d351852895d))
+
 ## [1.1.0-beta.59](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.58...v1.1.0-beta.59) (2026-01-19)
 
 
