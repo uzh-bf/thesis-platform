@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.62](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.61...v1.1.0-beta.62) (2026-01-19)
+
+
+### Features
+
+* enhance admin panel UX ([7f6ce08](https://github.com/uzh-bf/thesis-platform/commit/7f6ce08c4350fc5084e755639867dda5fd313b34))
+
 ## [1.1.0-beta.61](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.60...v1.1.0-beta.61) (2026-01-19)
 
 
