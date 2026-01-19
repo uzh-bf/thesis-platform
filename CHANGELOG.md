@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.64](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.63...v1.1.0-beta.64) (2026-01-19)
+
+
+### Bug Fixes
+
+* update student proposal form URL for staging ([fd54387](https://github.com/uzh-bf/thesis-platform/commit/fd543876b4d6f9cdf85a8d32912cfde36aff452b))
+
 ## [1.1.0-beta.63](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.62...v1.1.0-beta.63) (2026-01-19)
 
 
