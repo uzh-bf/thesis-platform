@@ -58,6 +58,8 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_APP_VERSION=${{ github.ref_name }}
           
   build-ibw:
     runs-on: ubuntu-latest
@@ -108,3 +110,4 @@ jobs:
             NEXT_PUBLIC_DEPARTMENT_LONG_NAME=Department of Business Administration
             NEXT_PUBLIC_FAQ_URL_STUDENT=https://www.business.uzh.ch/en/teaching/theses/faqs.html
             NEXT_PUBLIC_FAQ_URL_SUPERVISOR=https://www.business.uzh.ch/de/Intranet/Lehre/businessthesesmarket.html
+            NEXT_PUBLIC_APP_VERSION=${{ github.ref_name }}
