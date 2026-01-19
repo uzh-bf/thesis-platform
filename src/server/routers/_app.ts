@@ -391,16 +391,37 @@ export const appRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const res = await axios.post(
-        process.env.APPLICATION_URL as string,
-        input,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            secretkey: process.env.FLOW_SECRET as string,
-          },
+      try {
+        console.log('Submitting application to Power Automate...')
+        console.log('APPLICATION_URL:', process.env.APPLICATION_URL)
+        console.log('Payload:', JSON.stringify({ ...input, cvFile: '[file]', transcriptFile: '[file]' }, null, 2))
+        
+        const res = await axios.post(
+          process.env.APPLICATION_URL as string,
+          input,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              secretkey: process.env.FLOW_SECRET as string,
+            },
+            timeout: 10000,
+          }
+        )
+        
+        console.log('Power Automate response:', res.status, res.statusText)
+        return { success: true, data: res.data }
+      } catch (error: any) {
+        console.error('Error submitting application to Power Automate:')
+        console.error('Error message:', error.message)
+        if (error.response) {
+          console.error('Response status:', error.response.status)
+          console.error('Response data:', error.response.data)
         }
-      )
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to submit application: ${error.message}`,
+        })
+      }
     }),
 
   submitProposalPublish: publicProcedure
