@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.63](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.62...v1.1.0-beta.63) (2026-01-19)
+
+
+### Bug Fixes
+
+* add error handling and logging to application submission ([44c5de6](https://github.com/uzh-bf/thesis-platform/commit/44c5de6f01d3f2f1a1ccdd17cb5c47bbf8885a9f))
+
 ## [1.1.0-beta.62](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.61...v1.1.0-beta.62) (2026-01-19)
 
 
