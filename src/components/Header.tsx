@@ -1,16 +1,22 @@
-import { faQuestion } from '@fortawesome/free-solid-svg-icons'
+import { faQuestion, faUserShield } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button } from '@uzh-bf/design-system'
 import { signIn, signOut, useSession } from 'next-auth/react'
+import { useRouter } from 'next/router'
 import { UserRole } from 'src/lib/constants'
+import useUserRole from 'src/lib/hooks/useUserRole'
 import NewProposalButton from './NewProposalButton'
 
 export default function Header() {
   const { data: session } = useSession()
+  const router = useRouter()
+  const { isAdmin } = useUserRole()
 
   const isSupervisor =
     session?.user?.role === UserRole.SUPERVISOR ||
     session?.user?.role === UserRole.DEVELOPER
+  
+  const isOnAdminPage = router.pathname === '/admin'
 
   const handleLogout = async () => {
     const tenantId = process.env.NEXT_PUBLIC_AZURE_AD_TENANT_ID
@@ -45,6 +51,16 @@ export default function Header() {
           <div className="text-sm md:pr-2">
             Signed in as {session.user.email} ({session.user.role})
           </div>
+        )}
+
+        {isAdmin && !isOnAdminPage && (
+          <Button 
+            onClick={() => router.push('/admin')}
+            className={{root: "flex items-center gap-1"}}
+          >
+            <FontAwesomeIcon icon={faUserShield} />
+            Admin Panel
+          </Button>
         )}
 
         {(process.env.NEXT_PUBLIC_FAQ_URL_STUDENT || process.env.NEXT_PUBLIC_FAQ_URL_SUPERVISOR) && (

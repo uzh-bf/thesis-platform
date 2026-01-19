@@ -73,6 +73,7 @@ model User {
   image         String?   @db.Text
 
   role       String      @default("UNSET")
+  isAdmin    Boolean     @default(false)
   department Department?
 
   accounts Account[]

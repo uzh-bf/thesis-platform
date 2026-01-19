@@ -13,6 +13,7 @@ interface ContextWithOptionalUser extends Context {
   user?: {
     sub: string
     role: UserRole
+    isAdmin?: boolean
   }
 }
 
@@ -20,17 +21,20 @@ interface ContextWithUser extends Context {
   user: {
     sub: string
     role: UserRole
+    isAdmin?: boolean
   }
 }
 
 declare module 'next-auth' {
   interface User extends DefaultUser {
     role: UserRole
+    isAdmin?: boolean
   }
   interface Session {
     user?: {
       sub: string
       role: UserRole
+      isAdmin?: boolean
     } & DefaultSession['user']
   }
 }

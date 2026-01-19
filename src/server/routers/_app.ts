@@ -13,6 +13,7 @@ import 'cross-fetch/polyfill'
 import dayjs from 'dayjs'
 import { prisma } from 'src/server/prisma'
 import {
+  adminProcedure,
   authedProcedure,
   optionalAuthedProcedure,
   publicProcedure,
@@ -1936,6 +1937,97 @@ updateProposalStatus: publicProcedure
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to fetch topic areas',
         });
+      }
+    }),
+
+  // Admin routes
+  adminGetAllProposals: adminProcedure
+    .input(
+      z.object({
+        search: z.string().optional(),
+        statusFilter: z.string().optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      const where: any = {
+        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+      }
+
+      if (input.search) {
+        where.OR = [
+          { title: { contains: input.search } },
+          { ownedByUserEmail: { contains: input.search } },
+          { ownedByStudent: { contains: input.search } },
+        ]
+      }
+
+      if (input.statusFilter && input.statusFilter !== 'ALL') {
+        where.statusKey = input.statusFilter
+      }
+
+      const proposals = await prisma.proposal.findMany({
+        where,
+        include: {
+          topicArea: true,
+          ownedByUser: true,
+          supervisedBy: {
+            include: {
+              supervisor: true,
+            },
+          },
+          applications: {
+            include: {
+              status: true,
+            },
+          },
+          status: true,
+          type: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      })
+
+      return proposals
+    }),
+
+  adminWithdrawProposal: adminProcedure
+    .input(
+      z.object({
+        proposalId: z.string(),
+        reason: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const proposal = await prisma.proposal.findUnique({
+          where: { id: input.proposalId },
+        })
+
+        if (!proposal) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Proposal not found',
+          })
+        }
+
+        await prisma.proposal.update({
+          where: { id: input.proposalId },
+          data: {
+            statusKey: ProposalStatus.WITHDRAWN,
+          },
+        })
+
+        return {
+          success: true,
+          message: 'Proposal withdrawn successfully',
+        }
+      } catch (error) {
+        console.error('Error withdrawing proposal:', error)
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to withdraw proposal',
+        })
       }
     }),
 

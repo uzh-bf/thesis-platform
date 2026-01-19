@@ -72,7 +72,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   callbacks: {
-    async jwt({ token, user, account, profile }) {
+    async jwt({ token, user, account, profile, trigger }) {
       if (account && user) {
         // Fetch the full user with role from database
         const dbUser = await prisma.user.findUnique({
@@ -81,6 +81,19 @@ export const authOptions: NextAuthOptions = {
         
         token.sub = user.id
         token.role = dbUser?.role || 'UNSET'
+        token.isAdmin = dbUser?.isAdmin || false
+      } else if (trigger === 'update' || token.isAdmin === undefined || token.isAdmin === false) {
+        // Refresh user data from database on session update or if user is not admin
+        // This allows immediate reflection when admin access is granted (just refresh the page)
+        // Once user becomes admin, we stop checking the database on every request
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.sub as string },
+        })
+        
+        if (dbUser) {
+          token.role = dbUser.role
+          token.isAdmin = dbUser.isAdmin || false
+        }
       }
       return token
     },
@@ -88,6 +101,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user && token.sub && token.role) {
         session.user.sub = token.sub as string
         session.user.role = token.role as UserRole
+        session.user.isAdmin = token.isAdmin as boolean
       }
       return session
     },
