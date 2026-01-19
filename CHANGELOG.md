@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.59](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.58...v1.1.0-beta.59) (2026-01-19)
+
+
+### Features
+
+* add admin panel with proposal management capabilities ([2cf5b5d](https://github.com/uzh-bf/thesis-platform/commit/2cf5b5df71eb711ffaccf9c49f540b3b1658e769))
+
 ## [1.1.0-beta.58](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.57...v1.1.0-beta.58) (2025-11-17)
 
 
