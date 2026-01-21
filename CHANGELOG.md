@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.67](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.66...v1.1.0-beta.67) (2026-01-21)
+
+
+### Bug Fixes
+
+* adjust urgent proposal threshold from 3 to 12 weeks ([9df06bc](https://github.com/uzh-bf/thesis-platform/commit/9df06bc4f04e1b2f79db513057cb3e9959fc2b9f))
+
 ## [1.1.0-beta.66](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.65...v1.1.0-beta.66) (2026-01-21)
 
 
