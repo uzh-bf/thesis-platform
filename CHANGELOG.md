@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.66](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.65...v1.1.0-beta.66) (2026-01-21)
+
+
+### Bug Fixes
+
+* remove hardcoded forms URL from docker build args ([b13c6e2](https://github.com/uzh-bf/thesis-platform/commit/b13c6e20396cea64b8f8b64d745e1cfd5969486c))
+
 ## [1.1.0-beta.65](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.64...v1.1.0-beta.65) (2026-01-19)
 
 
