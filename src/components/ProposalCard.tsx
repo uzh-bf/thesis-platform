@@ -35,7 +35,7 @@ export default function ProposalCard({
   const isUrgent = useMemo(() => {
     if (proposal.typeKey !== 'STUDENT') return false
     const weeksOld = differenceInWeeks(new Date(), new Date(proposal.createdAt))
-    return weeksOld >= 3 && proposal.statusKey === 'OPEN'
+    return weeksOld >= 12 && proposal.statusKey === 'OPEN'
   }, [proposal])
 
   const isRecentlyActive = useMemo(() => {
