@@ -54,7 +54,7 @@ export enum TopicAreas {
 
 export enum TopicAreasIBW {
   accounting = 'Accounting',
-  leadership_and_personnel_management = 'Leadership & Personnel Management',
+  personnel_and_leadership = 'Personnel & Leadership',
   strategy_organization_and_innovation = 'Strategy, Organization & Innovation',
   marketing_digital_transformation_and_entrepreneurship = 'Marketing, Digital Transformation & Entrepreneurship',
   business_analytics_and_operations = 'Business Analytics & Operations',
