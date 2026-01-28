@@ -1,35 +1,104 @@
-import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faSort, faSortUp, faSortDown } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button } from '@uzh-bf/design-system'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
-import { useEffect } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import useUserRole from 'src/lib/hooks/useUserRole'
 import { trpc } from 'src/lib/trpc'
+
+type SortColumn = 'thesis' | 'student' | 'supervisor' | 'status' | 'submission' | 'grade'
+type SortDirection = 'asc' | 'desc' | null
 
 export default function AdminResponsiblesPage() {
   const router = useRouter()
   const { data: session } = useSession()
   const { isAdmin } = useUserRole()
+  const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null)
 
   const { data: responsiblesOverview, isLoading: responsiblesLoading } =
     trpc.adminGetResponsiblesOverview.useQuery()
 
-  useEffect(() => {
-    if (!session?.user) {
-      router.push('/')
-      return
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc')
+      } else if (sortDirection === 'desc') {
+        setSortDirection(null)
+        setSortColumn(null)
+      } else {
+        setSortDirection('asc')
+      }
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
     }
-    
-    if (!isAdmin) {
-      router.push('/')
-      alert('Admin access required')
-    }
-  }, [session, isAdmin, router])
-
-  if (!session?.user || !isAdmin) {
-    return null
   }
+
+  const getSortIcon = (column: SortColumn) => {
+    if (sortColumn !== column) {
+      return faSort
+    }
+    return sortDirection === 'asc' ? faSortUp : faSortDown
+  }
+
+  const sortedResponsibles = useMemo(() => {
+    if (!responsiblesOverview) return []
+    
+    return responsiblesOverview.map((responsible) => {
+      if (!sortColumn || !sortDirection) {
+        return responsible
+      }
+
+      const sortedSupervisions = [...responsible.supervisions].sort((a, b) => {
+        let aValue: any
+        let bValue: any
+
+        switch (sortColumn) {
+          case 'thesis':
+            aValue = a.proposal.title?.toLowerCase() || ''
+            bValue = b.proposal.title?.toLowerCase() || ''
+            break
+          case 'student':
+            aValue = (a.studentEmail || a.proposal.ownedByStudent || '').toLowerCase()
+            bValue = (b.studentEmail || b.proposal.ownedByStudent || '').toLowerCase()
+            break
+          case 'supervisor':
+            aValue = (a.supervisor?.email || a.supervisorEmail || '').toLowerCase()
+            bValue = (b.supervisor?.email || b.supervisorEmail || '').toLowerCase()
+            break
+          case 'status':
+            aValue = a.proposal.AdminInfo?.status || ''
+            bValue = b.proposal.AdminInfo?.status || ''
+            break
+          case 'submission':
+            aValue = a.proposal.AdminInfo?.latestSubmissionDate 
+              ? new Date(a.proposal.AdminInfo.latestSubmissionDate).getTime() 
+              : 0
+            bValue = b.proposal.AdminInfo?.latestSubmissionDate 
+              ? new Date(b.proposal.AdminInfo.latestSubmissionDate).getTime() 
+              : 0
+            break
+          case 'grade':
+            aValue = a.proposal.AdminInfo?.grade ?? -1
+            bValue = b.proposal.AdminInfo?.grade ?? -1
+            break
+          default:
+            return 0
+        }
+
+        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
+        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
+        return 0
+      })
+
+      return {
+        ...responsible,
+        supervisions: sortedSupervisions,
+      }
+    })
+  }, [responsiblesOverview, sortColumn, sortDirection])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -57,7 +126,7 @@ export default function AdminResponsiblesPage() {
             <p className="text-gray-600">No responsibles found</p>
           ) : (
             <div className="space-y-3">
-              {responsiblesOverview.map((responsible) => (
+              {sortedResponsibles.map((responsible) => (
                 <details
                   key={responsible.id}
                   className="border border-gray-200 rounded-md bg-white"
@@ -80,23 +149,59 @@ export default function AdminResponsiblesPage() {
                         <table className="min-w-full divide-y divide-gray-200">
                           <thead className="bg-gray-50">
                             <tr>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Thesis
+                              <th 
+                                className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSort('thesis')}
+                              >
+                                <div className="flex items-center gap-2">
+                                  Thesis
+                                  <FontAwesomeIcon icon={getSortIcon('thesis')} className="text-gray-400" />
+                                </div>
                               </th>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Student
+                              <th 
+                                className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSort('student')}
+                              >
+                                <div className="flex items-center gap-2">
+                                  Student
+                                  <FontAwesomeIcon icon={getSortIcon('student')} className="text-gray-400" />
+                                </div>
                               </th>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Supervisor
+                              <th 
+                                className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSort('supervisor')}
+                              >
+                                <div className="flex items-center gap-2">
+                                  Supervisor
+                                  <FontAwesomeIcon icon={getSortIcon('supervisor')} className="text-gray-400" />
+                                </div>
                               </th>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Admin Status
+                              <th 
+                                className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSort('status')}
+                              >
+                                <div className="flex items-center gap-2">
+                                  Admin Status
+                                  <FontAwesomeIcon icon={getSortIcon('status')} className="text-gray-400" />
+                                </div>
                               </th>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Latest Submission
+                              <th 
+                                className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSort('submission')}
+                              >
+                                <div className="flex items-center gap-2">
+                                  Latest Submission
+                                  <FontAwesomeIcon icon={getSortIcon('submission')} className="text-gray-400" />
+                                </div>
                               </th>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Grade
+                              <th 
+                                className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSort('grade')}
+                              >
+                                <div className="flex items-center gap-2">
+                                  Grade
+                                  <FontAwesomeIcon icon={getSortIcon('grade')} className="text-gray-400" />
+                                </div>
                               </th>
                             </tr>
                           </thead>
