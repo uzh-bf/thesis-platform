@@ -17,9 +17,6 @@ export default function AdminPanel() {
   const [typeFilter, setTypeFilter] = useState('STUDENT')
   const [selectedProposal, setSelectedProposal] = useState<any>(null)
 
-  const { data: responsiblesOverview, isLoading: responsiblesLoading } =
-    trpc.adminGetResponsiblesOverview.useQuery()
-
   const { data: proposals, isLoading, refetch } = trpc.adminGetAllProposals.useQuery({
     search,
     statusFilter,
@@ -134,105 +131,6 @@ export default function AdminPanel() {
               />
             </div>
           </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow mb-6 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Responsibles Overview</h2>
-          {responsiblesLoading ? (
-            <p className="text-gray-600">Loading responsibles...</p>
-          ) : !responsiblesOverview || responsiblesOverview.length === 0 ? (
-            <p className="text-gray-600">No responsibles found</p>
-          ) : (
-            <div className="space-y-3">
-              {responsiblesOverview.map((responsible) => (
-                <details
-                  key={responsible.id}
-                  className="border border-gray-200 rounded-md bg-white"
-                >
-                  <summary className="px-4 py-3 cursor-pointer flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{responsible.name}</div>
-                      <div className="text-xs text-gray-500">{responsible.email}</div>
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {responsible.supervisions.length} supervised
-                    </div>
-                  </summary>
-
-                  <div className="p-4 border-t border-gray-200">
-                    {responsible.supervisions.length === 0 ? (
-                      <p className="text-sm text-gray-500">No supervised theses</p>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Thesis
-                              </th>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Student
-                              </th>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Supervisor
-                              </th>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Admin Status
-                              </th>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Latest Submission
-                              </th>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Grade
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {responsible.supervisions.map((supervision) => (
-                              <tr key={supervision.id} className="hover:bg-gray-50">
-                                <td className="px-4 py-2">
-                                  <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
-                                    {supervision.proposal.title}
-                                  </div>
-                                  <div className="text-xs text-gray-500">
-                                    {supervision.proposal.topicArea?.name}
-                                  </div>
-                                </td>
-                                <td className="px-4 py-2">
-                                  <div className="text-sm text-gray-900">
-                                    {supervision.studentEmail || supervision.proposal.ownedByStudent || '-'}
-                                  </div>
-                                  {supervision.studyLevel && (
-                                    <div className="text-xs text-gray-500">{supervision.studyLevel}</div>
-                                  )}
-                                </td>
-                                <td className="px-4 py-2 text-sm text-gray-900">
-                                  {supervision.supervisor?.email || supervision.supervisorEmail || '-'}
-                                </td>
-                                <td className="px-4 py-2 text-sm text-gray-900">
-                                  {supervision.proposal.AdminInfo?.status || '-'}
-                                </td>
-                                <td className="px-4 py-2 text-sm text-gray-900">
-                                  {supervision.proposal.AdminInfo?.latestSubmissionDate
-                                    ? new Date(
-                                        supervision.proposal.AdminInfo.latestSubmissionDate
-                                      ).toLocaleDateString()
-                                    : '-'}
-                                </td>
-                                <td className="px-4 py-2 text-sm text-gray-900">
-                                  {supervision.proposal.AdminInfo?.grade ?? '-'}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                </details>
-              ))}
-            </div>
-          )}
         </div>
 
         {isLoading ? (
@@ -501,6 +399,23 @@ export default function AdminPanel() {
             </div>
           </Modal>
         )}
+
+        <div className="bg-white rounded-lg shadow mt-6 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Quick Links</h2>
+              <p className="text-sm text-gray-600">Navigate to different admin sections</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Button
+              onClick={() => router.push('/admin/responsibles')}
+              className={{ root: 'flex items-center justify-center gap-2 py-4' }}
+            >
+              View Responsibles Overview
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   )
