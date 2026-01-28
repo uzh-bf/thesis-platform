@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.71](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.70...v1.1.0-beta.71) (2026-01-28)
+
+
+### Bug Fixes
+
+* correct application field reference in responsibles overview query and display ([8b8fe17](https://github.com/uzh-bf/thesis-platform/commit/8b8fe1746cbbd2dc627784f2579de50b6a3ecb03))
+
 ## [1.1.0-beta.70](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.69...v1.1.0-beta.70) (2026-01-28)
 
 
