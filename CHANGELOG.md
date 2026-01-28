@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.68](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.67...v1.1.0-beta.68) (2026-01-28)
+
+
+### Features
+
+* add responsibles overview section to admin panel ([23032cf](https://github.com/uzh-bf/thesis-platform/commit/23032cf911d5b21f1b6094c9e71f626e6b24816e))
+* add supervised theses seed data with responsible assignments ([5576c39](https://github.com/uzh-bf/thesis-platform/commit/5576c39050728ddc71d3cc8161a63b10eedff67a))
+
+
+### Bug Fixes
+
+* rename topic area from "Leadership & Personnel Management" to "Personnel & Leadership" ([0d89ebd](https://github.com/uzh-bf/thesis-platform/commit/0d89ebd35f5651c9652c92913321c46ac86471b0))
+
+
+### Refactors
+
+* move responsibles overview to dedicated admin page ([149eb93](https://github.com/uzh-bf/thesis-platform/commit/149eb936d0863caf5d008922fbe26e087aa0264e))
+
 ## [1.1.0-beta.67](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.66...v1.1.0-beta.67) (2026-01-21)
 
 
