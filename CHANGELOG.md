@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.72](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.71...v1.1.0-beta.72) (2026-01-28)
+
+
+### Features
+
+* add multi-application supervisor proposals to seed data with accepted and declined applications ([cf76194](https://github.com/uzh-bf/thesis-platform/commit/cf76194ff87f3178108ecb8c627093cfe4db4799))
+
 ## [1.1.0-beta.71](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.70...v1.1.0-beta.71) (2026-01-28)
 
 
