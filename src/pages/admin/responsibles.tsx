@@ -61,8 +61,8 @@ export default function AdminResponsiblesPage() {
             bValue = b.proposal.title?.toLowerCase() || ''
             break
           case 'student':
-            aValue = (a.studentEmail || a.proposal.applications?.[0]?.email || a.proposal.ownedByStudent || '').toLowerCase()
-            bValue = (b.studentEmail || b.proposal.applications?.[0]?.email || b.proposal.ownedByStudent || '').toLowerCase()
+            aValue = (a.studentEmail || a.application?.[0]?.email || a.proposal.ownedByStudent || '').toLowerCase()
+            bValue = (b.studentEmail || b.application?.[0]?.email || b.proposal.ownedByStudent || '').toLowerCase()
             break
           case 'supervisor':
             aValue = (a.supervisor?.email || a.supervisorEmail || '').toLowerCase()
@@ -219,13 +219,13 @@ export default function AdminResponsiblesPage() {
                                 <td className="px-4 py-2">
                                   <div className="text-sm text-gray-900">
                                     {supervision.studentEmail || 
-                                     supervision.proposal.applications?.[0]?.email || 
+                                     supervision.application?.[0]?.email || 
                                      supervision.proposal.ownedByStudent || 
                                      '-'}
                                   </div>
-                                  {(supervision.studyLevel || supervision.proposal.applications?.[0]?.fullName) && (
+                                  {(supervision.studyLevel || supervision.application?.[0]?.fullName) && (
                                     <div className="text-xs text-gray-500">
-                                      {supervision.studyLevel || supervision.proposal.applications?.[0]?.fullName}
+                                      {supervision.studyLevel || supervision.application?.[0]?.fullName}
                                     </div>
                                   )}
                                 </td>

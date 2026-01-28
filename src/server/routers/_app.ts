@@ -1976,14 +1976,14 @@ updateProposalStatus: publicProcedure
                 status: true,
                 type: true,
                 AdminInfo: true,
-                applications: {
-                  include: {
-                    status: true,
-                  },
-                },
               },
             },
             supervisor: true,
+            application: {
+              where: {
+                statusKey: 'ACCEPTED',
+              },
+            },
           },
           orderBy: {
             updatedAt: 'desc',
