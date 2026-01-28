@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Status as AdminStatus } from '@prisma/client'
 import readline from 'readline'
 
 import {
@@ -358,6 +358,125 @@ async function seed(prisma: PrismaClient) {
         },
         update: {},
       })
+
+      console.log('Creating dummy supervised theses (Responsible + AdminInfo)...')
+
+      const department = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+
+      await prisma.responsible.createMany({
+        skipDuplicates: true,
+        data: [
+          {
+            name: 'Alice Responsible',
+            email: 'alice.responsible@uzh.ch',
+            department,
+          },
+          {
+            name: 'Bob Responsible',
+            email: 'bob.responsible@uzh.ch',
+            department,
+          },
+        ],
+      })
+
+      const responsibles = await prisma.responsible.findMany({
+        where: {
+          email: {
+            in: [
+              'alice.responsible@uzh.ch',
+              'bob.responsible@uzh.ch',
+              process.env.USER_EMAIL as string,
+            ],
+          },
+          department,
+        },
+        select: {
+          id: true,
+          email: true,
+        },
+      })
+
+      const responsibleByEmail = new Map(
+        responsibles.map((r) => [r.email, r.id])
+      )
+
+      const aliceResponsibleId = responsibleByEmail.get('alice.responsible@uzh.ch')
+      const bobResponsibleId = responsibleByEmail.get('bob.responsible@uzh.ch')
+      const fallbackResponsibleId =
+        responsibleByEmail.get(process.env.USER_EMAIL as string) ||
+        aliceResponsibleId ||
+        bobResponsibleId
+
+      const supervisedTheses = [
+        {
+          proposalId: '3ef84a3b-cff0-4350-b760-4c5bb3b3c98f',
+          responsibleId: aliceResponsibleId || fallbackResponsibleId,
+          studentEmail: 'student.one@uzh.ch',
+          studyLevel: 'Master Thesis (30 ECTS)',
+          adminStatus: AdminStatus.IN_PROGRESS,
+          latestSubmissionDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+          grade: null as number | null,
+        },
+        {
+          proposalId: '33a9a1b7-cad7-46e7-8b72-cfcbdbaa60d6',
+          responsibleId: bobResponsibleId || fallbackResponsibleId,
+          studentEmail: 'student.two@uzh.ch',
+          studyLevel: 'Master Thesis (30 ECTS)',
+          adminStatus: AdminStatus.GRADING,
+          latestSubmissionDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 60),
+          grade: 5.5,
+        },
+      ].filter((t) => Boolean(t.responsibleId)) as Array<{
+        proposalId: string
+        responsibleId: string
+        studentEmail: string
+        studyLevel: string
+        adminStatus: AdminStatus
+        latestSubmissionDate: Date
+        grade: number | null
+      }>
+
+      for (const thesis of supervisedTheses) {
+        await prisma.userProposalSupervision.upsert({
+          where: { proposalId: thesis.proposalId },
+          create: {
+            id: thesis.proposalId,
+            proposalId: thesis.proposalId,
+            supervisorEmail: user.email,
+            responsibleId: thesis.responsibleId,
+            studentEmail: thesis.studentEmail,
+            studyLevel: thesis.studyLevel,
+          },
+          update: {
+            supervisorEmail: user.email,
+            responsibleId: thesis.responsibleId,
+            studentEmail: thesis.studentEmail,
+            studyLevel: thesis.studyLevel,
+            updatedAt: new Date(),
+          },
+        })
+
+        await prisma.adminInfo.upsert({
+          where: { proposalId: thesis.proposalId },
+          create: {
+            id: thesis.proposalId,
+            proposalId: thesis.proposalId,
+            status: thesis.adminStatus,
+            latestSubmissionDate: thesis.latestSubmissionDate,
+            grade: thesis.grade,
+            department,
+          },
+          update: {
+            status: thesis.adminStatus,
+            latestSubmissionDate: thesis.latestSubmissionDate,
+            grade: thesis.grade,
+            department,
+            updatedAt: new Date(),
+          },
+        })
+      }
+
+      console.log('✅ dummy supervised theses created successfully!')
       
       console.log('✅ 4 sample proposals created successfully!')
     } else {
