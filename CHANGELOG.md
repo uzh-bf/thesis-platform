@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.69](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.68...v1.1.0-beta.69) (2026-01-28)
+
+
+### Features
+
+* add sortable columns to responsibles overview table ([d9e5307](https://github.com/uzh-bf/thesis-platform/commit/d9e53078e6cfbc4016dbc5b0cc759268506c5c6a))
+
 ## [1.1.0-beta.68](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.67...v1.1.0-beta.68) (2026-01-28)
 
 
