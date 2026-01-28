@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.70](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.69...v1.1.0-beta.70) (2026-01-28)
+
+
+### Features
+
+* include application data in responsibles overview for better student identification ([93b31e4](https://github.com/uzh-bf/thesis-platform/commit/93b31e477078acf82f4f96aa5ddffc82f0d2fe77))
+
 ## [1.1.0-beta.69](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.68...v1.1.0-beta.69) (2026-01-28)
 
 
