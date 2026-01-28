@@ -1,10 +1,8 @@
 import { faArrowLeft, faSort, faSortUp, faSortDown } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button } from '@uzh-bf/design-system'
-import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
-import { useEffect, useState, useMemo } from 'react'
-import useUserRole from 'src/lib/hooks/useUserRole'
+import { useState, useMemo } from 'react'
 import { trpc } from 'src/lib/trpc'
 
 type SortColumn = 'thesis' | 'student' | 'supervisor' | 'status' | 'submission' | 'grade'
@@ -12,8 +10,6 @@ type SortDirection = 'asc' | 'desc' | null
 
 export default function AdminResponsiblesPage() {
   const router = useRouter()
-  const { data: session } = useSession()
-  const { isAdmin } = useUserRole()
   const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
 
@@ -61,8 +57,8 @@ export default function AdminResponsiblesPage() {
             bValue = b.proposal.title?.toLowerCase() || ''
             break
           case 'student':
-            aValue = (a.studentEmail || a.application?.[0]?.email || a.proposal.ownedByStudent || '').toLowerCase()
-            bValue = (b.studentEmail || b.application?.[0]?.email || b.proposal.ownedByStudent || '').toLowerCase()
+            aValue = (a.studentEmail || a.proposal.applications?.[0]?.email || a.proposal.ownedByStudent || '').toLowerCase()
+            bValue = (b.studentEmail || b.proposal.applications?.[0]?.email || b.proposal.ownedByStudent || '').toLowerCase()
             break
           case 'supervisor':
             aValue = (a.supervisor?.email || a.supervisorEmail || '').toLowerCase()
@@ -219,13 +215,13 @@ export default function AdminResponsiblesPage() {
                                 <td className="px-4 py-2">
                                   <div className="text-sm text-gray-900">
                                     {supervision.studentEmail || 
-                                     supervision.application?.[0]?.email || 
+                                     supervision.proposal.applications?.[0]?.email || 
                                      supervision.proposal.ownedByStudent || 
                                      '-'}
                                   </div>
-                                  {(supervision.studyLevel || supervision.application?.[0]?.fullName) && (
+                                  {(supervision.studyLevel || supervision.proposal.applications?.[0]?.fullName) && (
                                     <div className="text-xs text-gray-500">
-                                      {supervision.studyLevel || supervision.application?.[0]?.fullName}
+                                      {supervision.studyLevel || supervision.proposal.applications?.[0]?.fullName}
                                     </div>
                                   )}
                                 </td>

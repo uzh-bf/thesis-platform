@@ -359,10 +359,11 @@ async function seed(prisma: PrismaClient) {
         update: {},
       })
 
-      console.log('Creating dummy supervised theses (Responsible + AdminInfo)...')
+      console.log('Creating supervisor proposals with multiple applications (one accepted, others declined)...')
 
       const department = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
 
+      // Create responsible persons first
       await prisma.responsible.createMany({
         skipDuplicates: true,
         data: [
@@ -378,6 +379,263 @@ async function seed(prisma: PrismaClient) {
           },
         ],
       })
+
+      // Supervisor proposal 1: Multiple applications with one accepted
+      const multiAppProposal1Id = '9a8b7c6d-5e4f-3a2b-1c0d-9e8f7a6b5c4d'
+      await prisma.proposal.upsert({
+        where: { id: multiAppProposal1Id },
+        create: {
+          id: multiAppProposal1Id,
+          title: 'Machine Learning Applications in Financial Risk Assessment',
+          description: 'This research explores how machine learning algorithms can improve credit risk assessment and fraud detection in banking.',
+          language: '["English"]',
+          studyLevel: 'Master Thesis (30 ECTS)',
+          timeFrame: 'Spring 2025',
+          department,
+          topicArea: {
+            connect: { slug: 'banking_and_insurance' },
+          },
+          status: {
+            connect: { key: ProposalStatus.MATCHED },
+          },
+          type: {
+            connect: { key: ProposalType.SUPERVISOR },
+          },
+          ownedByUser: {
+            connect: { email: user.email },
+          },
+        },
+        update: {},
+      })
+
+      // Create multiple applications for the proposal
+      await prisma.proposalApplication.createMany({
+        skipDuplicates: true,
+        data: [
+          {
+            id: 'app-accepted-001',
+            proposalId: multiAppProposal1Id,
+            email: 'accepted.student@uzh.ch',
+            fullName: 'Emma Accepted',
+            matriculationNumber: '20-111-111',
+            plannedStartAt: new Date('2025-02-01'),
+            motivation: 'I have a strong background in machine learning and finance, with relevant coursework in both areas.',
+            statusKey: ApplicationStatus.ACCEPTED,
+            allowPublication: true,
+            allowUsage: true,
+          },
+          {
+            id: 'app-declined-001',
+            proposalId: multiAppProposal1Id,
+            email: 'declined.one@uzh.ch',
+            fullName: 'John Declined',
+            matriculationNumber: '20-222-222',
+            plannedStartAt: new Date('2025-02-01'),
+            motivation: 'I am interested in exploring machine learning applications.',
+            statusKey: ApplicationStatus.DECLINED,
+            allowPublication: true,
+            allowUsage: true,
+          },
+          {
+            id: 'app-declined-002',
+            proposalId: multiAppProposal1Id,
+            email: 'declined.two@uzh.ch',
+            fullName: 'Sarah Declined',
+            matriculationNumber: '20-333-333',
+            plannedStartAt: new Date('2025-02-01'),
+            motivation: 'This topic aligns with my career goals in financial technology.',
+            statusKey: ApplicationStatus.DECLINED,
+            allowPublication: true,
+            allowUsage: true,
+          },
+        ],
+      })
+
+      // Supervisor proposal 2: Another one with multiple applications
+      const multiAppProposal2Id = '8b7a6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d'
+      await prisma.proposal.upsert({
+        where: { id: multiAppProposal2Id },
+        create: {
+          id: multiAppProposal2Id,
+          title: 'Sustainable Investment Strategies and ESG Performance',
+          description: 'Analyzing the relationship between ESG criteria and long-term financial performance of investment portfolios.',
+          language: '["English", "German"]',
+          studyLevel: 'Master Thesis (30 ECTS)',
+          timeFrame: 'Fall 2024',
+          department,
+          topicArea: {
+            connect: { slug: 'financial_economics' },
+          },
+          status: {
+            connect: { key: ProposalStatus.MATCHED },
+          },
+          type: {
+            connect: { key: ProposalType.SUPERVISOR },
+          },
+          ownedByUser: {
+            connect: { email: user.email },
+          },
+        },
+        update: {},
+      })
+
+      // Create multiple applications for the second proposal
+      await prisma.proposalApplication.createMany({
+        skipDuplicates: true,
+        data: [
+          {
+            id: 'app-accepted-002',
+            proposalId: multiAppProposal2Id,
+            email: 'lisa.winner@uzh.ch',
+            fullName: 'Lisa Winner',
+            matriculationNumber: '19-444-444',
+            plannedStartAt: new Date('2024-09-01'),
+            motivation: 'My passion for sustainable finance and previous research on ESG metrics make me ideal for this project.',
+            statusKey: ApplicationStatus.ACCEPTED,
+            allowPublication: true,
+            allowUsage: true,
+          },
+          {
+            id: 'app-declined-003',
+            proposalId: multiAppProposal2Id,
+            email: 'mark.other@uzh.ch',
+            fullName: 'Mark Other',
+            matriculationNumber: '19-555-555',
+            plannedStartAt: new Date('2024-09-01'),
+            motivation: 'I want to learn more about sustainable investing.',
+            statusKey: ApplicationStatus.DECLINED,
+            allowPublication: true,
+            allowUsage: true,
+          },
+          {
+            id: 'app-declined-004',
+            proposalId: multiAppProposal2Id,
+            email: 'anna.third@uzh.ch',
+            fullName: 'Anna Third',
+            matriculationNumber: '19-666-666',
+            plannedStartAt: new Date('2024-09-01'),
+            motivation: 'ESG is an important topic for the future of finance.',
+            statusKey: ApplicationStatus.DECLINED,
+            allowPublication: true,
+            allowUsage: true,
+          },
+          {
+            id: 'app-declined-005',
+            proposalId: multiAppProposal2Id,
+            email: 'peter.fourth@uzh.ch',
+            fullName: 'Peter Fourth',
+            matriculationNumber: '19-777-777',
+            plannedStartAt: new Date('2024-09-01'),
+            motivation: 'I have experience in portfolio management.',
+            statusKey: ApplicationStatus.DECLINED,
+            allowPublication: true,
+            allowUsage: true,
+          },
+        ],
+      })
+
+      console.log('✅ Supervisor proposals with multiple applications created!')
+
+      // Fetch responsible persons to link supervisions
+      const responsiblesForMultiApp = await prisma.responsible.findMany({
+        where: {
+          email: {
+            in: ['alice.responsible@uzh.ch', 'bob.responsible@uzh.ch'],
+          },
+          department,
+        },
+        select: {
+          id: true,
+          email: true,
+        },
+      })
+
+      const aliceId = responsiblesForMultiApp.find(r => r.email === 'alice.responsible@uzh.ch')?.id
+      const bobId = responsiblesForMultiApp.find(r => r.email === 'bob.responsible@uzh.ch')?.id
+
+      // Create UserProposalSupervision for proposal 1 (linking accepted student)
+      if (aliceId) {
+        await prisma.userProposalSupervision.upsert({
+          where: { proposalId: multiAppProposal1Id },
+          create: {
+            id: multiAppProposal1Id,
+            proposalId: multiAppProposal1Id,
+            supervisorEmail: user.email,
+            responsibleId: aliceId,
+            studentEmail: 'accepted.student@uzh.ch',
+            studyLevel: 'Master Thesis (30 ECTS)',
+          },
+          update: {
+            supervisorEmail: user.email,
+            responsibleId: aliceId,
+            studentEmail: 'accepted.student@uzh.ch',
+            studyLevel: 'Master Thesis (30 ECTS)',
+          },
+        })
+
+        // Create AdminInfo for proposal 1
+        await prisma.adminInfo.upsert({
+          where: { proposalId: multiAppProposal1Id },
+          create: {
+            id: multiAppProposal1Id,
+            proposalId: multiAppProposal1Id,
+            status: AdminStatus.IN_PROGRESS,
+            latestSubmissionDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 45),
+            grade: null,
+            department,
+          },
+          update: {
+            status: AdminStatus.IN_PROGRESS,
+            latestSubmissionDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 45),
+            grade: null,
+            department,
+          },
+        })
+      }
+
+      // Create UserProposalSupervision for proposal 2 (linking accepted student)
+      if (bobId) {
+        await prisma.userProposalSupervision.upsert({
+          where: { proposalId: multiAppProposal2Id },
+          create: {
+            id: multiAppProposal2Id,
+            proposalId: multiAppProposal2Id,
+            supervisorEmail: user.email,
+            responsibleId: bobId,
+            studentEmail: 'lisa.winner@uzh.ch',
+            studyLevel: 'Master Thesis (30 ECTS)',
+          },
+          update: {
+            supervisorEmail: user.email,
+            responsibleId: bobId,
+            studentEmail: 'lisa.winner@uzh.ch',
+            studyLevel: 'Master Thesis (30 ECTS)',
+          },
+        })
+
+        // Create AdminInfo for proposal 2
+        await prisma.adminInfo.upsert({
+          where: { proposalId: multiAppProposal2Id },
+          create: {
+            id: multiAppProposal2Id,
+            proposalId: multiAppProposal2Id,
+            status: AdminStatus.GRADING,
+            latestSubmissionDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10),
+            grade: 5.75,
+            department,
+          },
+          update: {
+            status: AdminStatus.GRADING,
+            latestSubmissionDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10),
+            grade: 5.75,
+            department,
+          },
+        })
+      }
+
+      console.log('✅ UserProposalSupervision and AdminInfo created for multi-application proposals!')
+
+      console.log('Creating dummy supervised theses (Responsible + AdminInfo)...')
 
       const responsibles = await prisma.responsible.findMany({
         where: {
