@@ -1962,6 +1962,35 @@ updateProposalStatus: publicProcedure
     }),
 
   // Admin routes
+  adminGetResponsiblesOverview: adminProcedure.query(async () => {
+    return prisma.responsible.findMany({
+      where: {
+        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+      },
+      include: {
+        supervisions: {
+          include: {
+            proposal: {
+              include: {
+                topicArea: true,
+                status: true,
+                type: true,
+                AdminInfo: true,
+              },
+            },
+            supervisor: true,
+          },
+          orderBy: {
+            updatedAt: 'desc',
+          },
+        },
+      },
+      orderBy: {
+        email: 'asc',
+      },
+    })
+  }),
+
   adminGetAllProposals: adminProcedure
     .input(
       z.object({
