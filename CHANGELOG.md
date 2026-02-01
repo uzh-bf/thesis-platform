@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.73](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.72...v1.1.0-beta.73) (2026-02-01)
+
+
+### Refactors
+
+* replace boolean isAdmin with AdminRole enum for granular permission control ([867e531](https://github.com/uzh-bf/thesis-platform/commit/867e531df778934e4895611c5f58fc3976d1af0a))
+
 ## [1.1.0-beta.72](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.71...v1.1.0-beta.72) (2026-01-28)
 
 
