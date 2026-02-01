@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.74](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.73...v1.1.0-beta.74) (2026-02-01)
+
+
+### Features
+
+* add AdminInfo editing capabilities with modal form and expanded table columns ([995dcf1](https://github.com/uzh-bf/thesis-platform/commit/995dcf1827d67690d2a4fa8a5ff09be9e0a079a9))
+* add AdminInfoOverview component with filtering, sorting, and inline editing capabilities ([921da48](https://github.com/uzh-bf/thesis-platform/commit/921da486403ecb368aef8658ac1613dec189e03e))
+* add prisma deploy script for IBW production environment ([02490c4](https://github.com/uzh-bf/thesis-platform/commit/02490c4d925328b91e12d26ef7d8debe60cad382))
+* add search and filtering capabilities to AdminInfoOverview with improved layout and sticky sidebar ([dce2ca5](https://github.com/uzh-bf/thesis-platform/commit/dce2ca5843543410dbb07631ed0860d9a86a12b4))
+
 ## [1.1.0-beta.73](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.72...v1.1.0-beta.73) (2026-02-01)
 
 
