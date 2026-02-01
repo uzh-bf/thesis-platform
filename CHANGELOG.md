@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.75](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.74...v1.1.0-beta.75) (2026-02-01)
+
+
+### Features
+
+* add AdminStatsDashboard with supervision statistics by supervisor and responsible, restricted to ADMIN role ([90a7c28](https://github.com/uzh-bf/thesis-platform/commit/90a7c286bc7b1bd126f4cfd472eef4549db09e63))
+* add horizontal scroll indicator to AdminInfoOverview supervision table ([ae20478](https://github.com/uzh-bf/thesis-platform/commit/ae2047827f87e76b10893d10086da2d6fdf60155))
+
 ## [1.1.0-beta.74](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.73...v1.1.0-beta.74) (2026-02-01)
 
 
