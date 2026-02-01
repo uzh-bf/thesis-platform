@@ -2053,7 +2053,7 @@ updateProposalStatus: publicProcedure
       return { success: true }
     }),
 
-  adminGetAllProposals: adminProcedure
+  adminGetAllProposals: adminOnlyProcedure
     .input(
       z.object({
         search: z.string().optional(),
@@ -2182,7 +2182,7 @@ updateProposalStatus: publicProcedure
       }
     }),
 
-  adminWithdrawProposal: adminProcedure
+  adminWithdrawProposal: adminOnlyProcedure
     .input(
       z.object({
         proposalId: z.string(),
