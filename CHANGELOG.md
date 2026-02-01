@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.76](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.75...v1.1.0-beta.76) (2026-02-01)
+
+
+### Features
+
+* restrict admin panel tabs based on role permissions, default non-ADMIN users to AdminInfo tab ([46cfa73](https://github.com/uzh-bf/thesis-platform/commit/46cfa73be11baffafd5930fb636eed1f4cd1954a))
+
 ## [1.1.0-beta.75](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.74...v1.1.0-beta.75) (2026-02-01)
 
 
