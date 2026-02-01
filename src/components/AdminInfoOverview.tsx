@@ -41,6 +41,8 @@ export default function AdminInfoOverview() {
   const [selectedResponsibleIds, setSelectedResponsibleIds] = useState<null | string[]>(
     null
   )
+  const [responsibleSearch, setResponsibleSearch] = useState('')
+  const [entrySearch, setEntrySearch] = useState('')
 
   const {
     data: responsiblesOverview,
@@ -190,106 +192,233 @@ export default function AdminInfoOverview() {
     })
   }, [responsiblesOverview, sortColumn, sortDirection])
 
-  const filteredResponsibles = useMemo(() => {
-    if (selectedResponsibleIds === null) return sortedResponsibles
-    const allowed = new Set(selectedResponsibleIds)
-    return sortedResponsibles.filter((r) => allowed.has(r.id))
-  }, [sortedResponsibles, selectedResponsibleIds])
+  const totalResponsibles = responsiblesOverview?.length ?? 0
+  const selectedCount =
+    selectedResponsibleIds === null
+      ? totalResponsibles
+      : selectedResponsibleIds.length
+  const normalizedEntrySearch = entrySearch.trim().toLowerCase()
+
+  const responsiblesForPicker = useMemo(() => {
+    if (!responsiblesOverview) return []
+    const q = responsibleSearch.trim().toLowerCase()
+    if (!q) return responsiblesOverview
+
+    return responsiblesOverview.filter((responsible: any) => {
+      const name = String(responsible.name ?? '').toLowerCase()
+      const email = String(responsible.email ?? '').toLowerCase()
+      return name.includes(q) || email.includes(q)
+    })
+  }, [responsiblesOverview, responsibleSearch])
+
+  const displayedResponsibles = useMemo(() => {
+    const base =
+      selectedResponsibleIds === null
+        ? sortedResponsibles
+        : sortedResponsibles.filter((r: any) =>
+            new Set(selectedResponsibleIds).has(r.id)
+          )
+
+    if (!normalizedEntrySearch) {
+      return base.map((r: any) => ({ ...r, supervisionsForDisplay: r.supervisions }))
+    }
+
+    const matches = (supervision: any) => {
+      const proposal = supervision?.proposal
+      const student =
+        supervision?.studentEmail ||
+        proposal?.applications?.[0]?.email ||
+        proposal?.ownedByStudent ||
+        ''
+      const supervisor = supervision?.supervisor?.email || supervision?.supervisorEmail || ''
+      const status = proposal?.AdminInfo?.status || ''
+      const comment = proposal?.AdminInfo?.comment || ''
+      const title = proposal?.title || ''
+
+      const haystack = `${title} ${student} ${supervisor} ${status} ${comment}`.toLowerCase()
+      return haystack.includes(normalizedEntrySearch)
+    }
+
+    return base
+      .map((r: any) => ({
+        ...r,
+        supervisionsForDisplay: r.supervisions.filter(matches),
+      }))
+      .filter((r: any) => r.supervisionsForDisplay.length > 0)
+  }, [sortedResponsibles, selectedResponsibleIds, normalizedEntrySearch])
+
+  const totalDisplayedSupervisions = useMemo(() => {
+    return displayedResponsibles.reduce(
+      (acc: number, r: any) => acc + (r.supervisionsForDisplay?.length ?? 0),
+      0
+    )
+  }, [displayedResponsibles])
 
   return (
     <>
       <div className="bg-white rounded-lg shadow mb-6 p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="text-xl font-bold text-gray-900">AdminInfo Overview</h2>
             <p className="mt-1 text-sm text-gray-600">
               Overview of AdminInfo entries grouped by person responsible
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setSelectedResponsibleIds(null)}
-              className={{ root: 'text-xs' }}
-            >
-              Select all
-            </Button>
-            <Button
-              onClick={() => setSelectedResponsibleIds([])}
-              className={{ root: 'text-xs' }}
-            >
-              Clear
-            </Button>
+          <div className="text-sm text-gray-600">
+            {responsiblesLoading
+              ? 'Loading…'
+              : `${totalDisplayedSupervisions} theses • ${displayedResponsibles.length} responsibles`}
           </div>
         </div>
 
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Filter responsibles
-          </label>
-          {responsiblesLoading ? (
-            <p className="text-gray-600">Loading responsibles...</p>
-          ) : !responsiblesOverview || responsiblesOverview.length === 0 ? (
-            <p className="text-gray-600">No responsibles found</p>
-          ) : (
-            <div className="max-h-56 overflow-auto border border-gray-200 rounded-md">
-              {responsiblesOverview.map((responsible) => (
-                <label
-                  key={responsible.id}
-                  className="flex items-center gap-3 px-3 py-2 border-b border-gray-100 last:border-b-0"
-                >
-                  <input
-                    type="checkbox"
-                    checked={isResponsibleSelected(responsible.id)}
-                    onChange={() => toggleResponsible(responsible.id)}
-                  />
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium text-gray-900 truncate">
-                      {responsible.name}
-                    </div>
-                    <div className="text-xs text-gray-500 truncate">
-                      {responsible.email}
-                    </div>
-                  </div>
-                </label>
-              ))}
-            </div>
-          )}
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Search entries
+            </label>
+            <input
+              type="text"
+              value={entrySearch}
+              onChange={(e) => setEntrySearch(e.target.value)}
+              placeholder="Search thesis, student, supervisor, status, comment…"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div className="flex items-end gap-2">
+            <Button
+              onClick={() => {
+                setEntrySearch('')
+                setResponsibleSearch('')
+                setSelectedResponsibleIds(null)
+              }}
+              className={{ root: 'text-xs' }}
+            >
+              Reset filters
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        {responsiblesLoading ? (
-          <p className="text-gray-600">Loading responsibles...</p>
-        ) : !filteredResponsibles || filteredResponsibles.length === 0 ? (
-          <p className="text-gray-600">No responsibles found</p>
-        ) : (
-          <div className="space-y-3">
-            {filteredResponsibles.map((responsible) => (
-              <details
-                key={responsible.id}
-                className="border border-gray-200 rounded-md bg-white"
-              >
-                <summary className="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-gray-50">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {responsible.name}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {responsible.email}
-                    </div>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {responsible.supervisions.length} supervised
-                  </div>
-                </summary>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-4">
+          <div className="bg-white rounded-lg shadow p-6 lg:sticky lg:top-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Responsibles</h3>
+              <div className="text-xs text-gray-600">
+                {selectedCount}/{totalResponsibles} selected
+              </div>
+            </div>
 
-                <div className="p-4 border-t border-gray-200">
-                  {responsible.supervisions.length === 0 ? (
-                    <p className="text-sm text-gray-500">No supervised theses</p>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+            <div className="mt-3 flex gap-2">
+              <Button
+                onClick={() => setSelectedResponsibleIds(null)}
+                className={{ root: 'text-xs' }}
+                disabled={selectedResponsibleIds === null}
+              >
+                Select all
+              </Button>
+              <Button
+                onClick={() => setSelectedResponsibleIds([])}
+                className={{ root: 'text-xs' }}
+                disabled={selectedResponsibleIds !== null && selectedResponsibleIds.length === 0}
+              >
+                Clear
+              </Button>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Filter responsibles
+              </label>
+              <input
+                type="text"
+                value={responsibleSearch}
+                onChange={(e) => setResponsibleSearch(e.target.value)}
+                placeholder="Search by name or email…"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div className="mt-3">
+              {responsiblesLoading ? (
+                <p className="text-gray-600">Loading responsibles...</p>
+              ) : !responsiblesOverview || responsiblesOverview.length === 0 ? (
+                <p className="text-gray-600">No responsibles found</p>
+              ) : responsiblesForPicker.length === 0 ? (
+                <p className="text-gray-600">No matches</p>
+              ) : (
+                <div className="max-h-[50vh] overflow-auto border border-gray-200 rounded-md p-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                    {responsiblesForPicker.map((responsible: any) => (
+                      <label
+                        key={responsible.id}
+                        className="flex items-start gap-3 p-2 rounded hover:bg-gray-50"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isResponsibleSelected(responsible.id)}
+                          onChange={() => toggleResponsible(responsible.id)}
+                          className="mt-1"
+                        />
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate">
+                            {responsible.name}
+                          </div>
+                          <div className="text-xs text-gray-500 truncate">
+                            {responsible.email}
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            {responsiblesLoading ? (
+              <p className="text-gray-600">Loading responsibles...</p>
+            ) : displayedResponsibles.length === 0 ? (
+              <p className="text-gray-600">No results for the current filters</p>
+            ) : (
+              <div className="space-y-3">
+                {displayedResponsibles.map((responsible: any) => {
+                  const supervisionsToShow =
+                    responsible.supervisionsForDisplay ?? responsible.supervisions
+                  const total = responsible.supervisions.length
+                  const countText = normalizedEntrySearch
+                    ? `${supervisionsToShow.length}/${total} theses`
+                    : `${total} theses`
+
+                  return (
+                    <details
+                      key={responsible.id}
+                      className="border border-gray-200 rounded-md bg-white"
+                    >
+                      <summary className="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-gray-50">
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate">
+                            {responsible.name}
+                          </div>
+                          <div className="text-xs text-gray-500 truncate">
+                            {responsible.email}
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-600 whitespace-nowrap">
+                          {countText}
+                        </div>
+                      </summary>
+
+                      <div className="p-4 border-t border-gray-200">
+                        {supervisionsToShow.length === 0 ? (
+                          <p className="text-sm text-gray-500">No supervised theses</p>
+                        ) : (
+                          <div className="overflow-auto max-h-[65vh] border border-gray-200 rounded-md">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-50 sticky top-0 z-10">
                           <tr>
                             <th
                               className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -384,7 +513,7 @@ export default function AdminInfoOverview() {
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {responsible.supervisions.map((supervision) => (
+                          {supervisionsToShow.map((supervision: any) => (
                             <tr key={supervision.id} className="hover:bg-gray-50">
                               <td className="px-4 py-2">
                                 <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
@@ -513,13 +642,16 @@ export default function AdminInfoOverview() {
                           ))}
                         </tbody>
                       </table>
-                    </div>
-                  )}
-                </div>
-              </details>
-            ))}
+                          </div>
+                        )}
+                      </div>
+                    </details>
+                  )
+                })}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {editState && (
