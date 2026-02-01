@@ -81,7 +81,7 @@ export const authOptions: NextAuthOptions = {
         
         token.sub = user.id
         token.role = dbUser?.role || 'UNSET'
-        token.isAdmin = dbUser?.isAdmin || false
+        token.isAdmin = (dbUser?.adminRole ?? 'UNSET') !== 'UNSET'
       } else if (trigger === 'update' || token.isAdmin === undefined || token.isAdmin === false) {
         // Refresh user data from database on session update or if user is not admin
         // This allows immediate reflection when admin access is granted (just refresh the page)
@@ -92,7 +92,7 @@ export const authOptions: NextAuthOptions = {
         
         if (dbUser) {
           token.role = dbUser.role
-          token.isAdmin = dbUser.isAdmin || false
+          token.isAdmin = dbUser.adminRole !== 'UNSET'
         }
       }
       return token

@@ -64,6 +64,12 @@ enum Department {
   IBW
 }
 
+enum AdminRole {
+  COORDINATOR
+  ADMIN
+  UNSET
+}
+
 model User {
   id String @id @unique @default(uuid())
 
@@ -72,8 +78,8 @@ model User {
   emailVerified DateTime?
   image         String?   @db.Text
 
-  role       String      @default("UNSET")
-  isAdmin    Boolean     @default(false)
+  role       String     @default("UNSET")
+  adminRole  AdminRole  @default(UNSET) @map("AdminRole")
   department Department?
 
   accounts Account[]
