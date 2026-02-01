@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import AdminInfoOverview from 'src/components/AdminInfoOverview'
+import AdminStatsDashboard from 'src/components/AdminStatsDashboard'
 import { ProposalStatus, ProposalType } from 'src/lib/constants'
 import useUserRole from 'src/lib/hooks/useUserRole'
 import { trpc } from 'src/lib/trpc'
@@ -13,6 +14,7 @@ export default function AdminPanel() {
   const router = useRouter()
   const { data: session } = useSession()
   const { isAdmin } = useUserRole()
+  const isAdminOnly = session?.user?.adminRole === 'ADMIN'
   const [activeTab, setActiveTab] = useState('proposals')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('OPEN')
@@ -51,7 +53,16 @@ export default function AdminPanel() {
     if (router.query.tab === 'admininfo') {
       setActiveTab('admininfo')
     }
-  }, [router.isReady, router.query.tab])
+    if (router.query.tab === 'stats' && isAdminOnly) {
+      setActiveTab('stats')
+    }
+  }, [router.isReady, router.query.tab, isAdminOnly])
+
+  useEffect(() => {
+    if (!isAdminOnly && activeTab === 'stats') {
+      setActiveTab('proposals')
+    }
+  }, [isAdminOnly, activeTab])
 
   if (!session?.user || !isAdmin) {
     return null
@@ -123,6 +134,15 @@ export default function AdminPanel() {
               value: 'admininfo',
               label: 'AdminInfo',
             },
+            ...(isAdminOnly
+              ? [
+                  {
+                    id: 'admin-tabs-stats',
+                    value: 'stats',
+                    label: 'Statistics',
+                  },
+                ]
+              : []),
           ]}
         >
           <TabContent value="proposals" className={{ root: 'pt-6' }}>
@@ -480,6 +500,12 @@ export default function AdminPanel() {
           <TabContent value="admininfo" className={{ root: 'pt-6' }}>
             <AdminInfoOverview />
           </TabContent>
+
+          {isAdminOnly && (
+            <TabContent value="stats" className={{ root: 'pt-6' }}>
+              <AdminStatsDashboard />
+            </TabContent>
+          )}
         </Tabs>
       </div>
     </div>

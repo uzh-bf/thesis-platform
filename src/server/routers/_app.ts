@@ -13,6 +13,7 @@ import 'cross-fetch/polyfill'
 import dayjs from 'dayjs'
 import { prisma } from 'src/server/prisma'
 import {
+  adminOnlyProcedure,
   adminProcedure,
   authedProcedure,
   optionalAuthedProcedure,
@@ -2100,6 +2101,85 @@ updateProposalStatus: publicProcedure
       })
 
       return proposals
+    }),
+
+  adminGetSupervisionStats: adminOnlyProcedure
+    .input(z.object({ year: z.number().int().optional() }).optional())
+    .query(async ({ input }) => {
+      const envDepartment = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+
+      const supervisionDates = await prisma.userProposalSupervision.findMany({
+        where: {
+          proposal: {
+            department: envDepartment,
+          },
+        },
+        select: {
+          createdAt: true,
+        },
+      })
+
+      const years = Array.from(
+        new Set(supervisionDates.map((d) => d.createdAt.getFullYear()))
+      ).sort((a, b) => b - a)
+
+      const defaultYear = years[0] ?? new Date().getFullYear()
+      const selectedYear =
+        input?.year && years.includes(input.year) ? input.year : defaultYear
+
+      const start = new Date(selectedYear, 0, 1)
+      const end = new Date(selectedYear + 1, 0, 1)
+
+      const [supervisions, supervisors, responsibles] = await Promise.all([
+        prisma.userProposalSupervision.findMany({
+          where: {
+            createdAt: {
+              gte: start,
+              lt: end,
+            },
+            proposal: {
+              department: envDepartment,
+            },
+          },
+          select: {
+            supervisorEmail: true,
+            responsibleId: true,
+          },
+        }),
+        prisma.user.findMany({
+          where: {
+            department: envDepartment,
+            role: {
+              in: [UserRole.SUPERVISOR, UserRole.DEVELOPER],
+            },
+          },
+          select: {
+            email: true,
+            name: true,
+            role: true,
+          },
+          orderBy: [{ name: 'asc' }, { email: 'asc' }],
+        }),
+        prisma.responsible.findMany({
+          where: {
+            department: envDepartment,
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+          orderBy: [{ name: 'asc' }, { email: 'asc' }],
+        }),
+      ])
+
+      return {
+        year: selectedYear,
+        years,
+        supervisions,
+        supervisors,
+        responsibles,
+      }
     }),
 
   adminWithdrawProposal: adminProcedure

@@ -57,3 +57,24 @@ const isAdmin = middleware(({ next, ctx }) => {
 })
 
 export const adminProcedure = t.procedure.use(isAdmin)
+
+const isAdminOnly = middleware(({ next, ctx }) => {
+  const user = ctx.session?.user
+
+  if (!user?.name) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  }
+
+  if (user.adminRole !== 'ADMIN') {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Admin role required',
+    })
+  }
+
+  return next({
+    ctx: { user },
+  })
+})
+
+export const adminOnlyProcedure = t.procedure.use(isAdminOnly)

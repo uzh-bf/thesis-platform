@@ -5,6 +5,8 @@ import type { IterableElement } from 'type-fest'
 import type { UserRole } from '../lib/constants'
 import type { AppRouter } from '../server/routers/_app'
 
+type AdminRole = 'COORDINATOR' | 'ADMIN' | 'UNSET'
+
 interface Context extends BaseContext {
   prisma: PrismaClient
 }
@@ -14,6 +16,7 @@ interface ContextWithOptionalUser extends Context {
     sub: string
     role: UserRole
     isAdmin?: boolean
+    adminRole?: AdminRole
   }
 }
 
@@ -22,6 +25,7 @@ interface ContextWithUser extends Context {
     sub: string
     role: UserRole
     isAdmin?: boolean
+    adminRole?: AdminRole
   }
 }
 
@@ -29,12 +33,14 @@ declare module 'next-auth' {
   interface User extends DefaultUser {
     role: UserRole
     isAdmin?: boolean
+    adminRole?: AdminRole
   }
   interface Session {
     user?: {
       sub: string
       role: UserRole
       isAdmin?: boolean
+      adminRole?: AdminRole
     } & DefaultSession['user']
   }
 }
