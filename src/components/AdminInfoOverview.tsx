@@ -1,4 +1,5 @@
 import {
+  faArrowsLeftRight,
   faPenToSquare,
   faSort,
   faSortDown,
@@ -416,7 +417,12 @@ export default function AdminInfoOverview() {
                         {supervisionsToShow.length === 0 ? (
                           <p className="text-sm text-gray-500">No supervised theses</p>
                         ) : (
-                          <div className="overflow-auto max-h-[65vh] border border-gray-200 rounded-md">
+                          <div className="border border-gray-200 rounded-md">
+                            <div className="flex items-center justify-end gap-2 px-3 py-2 text-xs text-gray-600 bg-gray-50 border-b border-gray-200">
+                              <FontAwesomeIcon icon={faArrowsLeftRight} className="text-gray-400" />
+                              <span>Scroll horizontally for more columns</span>
+                            </div>
+                            <div className="overflow-auto max-h-[65vh]">
                             <table className="min-w-full divide-y divide-gray-200">
                               <thead className="bg-gray-50 sticky top-0 z-10">
                           <tr>
@@ -642,6 +648,7 @@ export default function AdminInfoOverview() {
                           ))}
                         </tbody>
                       </table>
+                            </div>
                           </div>
                         )}
                       </div>
