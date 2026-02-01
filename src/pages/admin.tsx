@@ -412,7 +412,7 @@ export default function AdminPanel() {
               onClick={() => router.push('/admin/responsibles')}
               className={{ root: 'flex items-center justify-center gap-2 py-4' }}
             >
-              View Responsibles Overview
+              AdminInfo Overview
             </Button>
           </div>
         </div>

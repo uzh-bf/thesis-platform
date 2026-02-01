@@ -1996,6 +1996,62 @@ updateProposalStatus: publicProcedure
     })
   }),
 
+  adminUpdateAdminInfo: adminProcedure
+    .input(
+      z.object({
+        adminInfoId: z.string(),
+        olatCapturedDate: z.string().nullable().optional(),
+        latestSubmissionDate: z.string().nullable().optional(),
+        submissionDate: z.string().nullable().optional(),
+        olatGradeDate: z.string().nullable().optional(),
+        grade: z.number().nullable().optional(),
+        comment: z.string().nullable().optional(),
+        capturedOnZora: z.boolean().nullable().optional(),
+      })
+    )
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ input }) => {
+      const adminInfo = await prisma.adminInfo.findUnique({
+        where: { id: input.adminInfoId },
+        select: { id: true, department: true },
+      })
+
+      if (!adminInfo) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'AdminInfo entry not found' })
+      }
+
+      const envDepartment = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+      if (adminInfo.department && adminInfo.department !== envDepartment) {
+        throw new TRPCError({ code: 'FORBIDDEN' })
+      }
+
+      const parseDate = (value: string | null | undefined) => {
+        if (value === undefined) return undefined
+        if (value === null || value === '') return null
+        const date = new Date(value)
+        if (Number.isNaN(date.getTime())) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: `Invalid date: ${value}` })
+        }
+        return date
+      }
+
+      const data: any = {}
+      if ('olatCapturedDate' in input) data.olatCapturedDate = parseDate(input.olatCapturedDate)
+      if ('latestSubmissionDate' in input) data.latestSubmissionDate = parseDate(input.latestSubmissionDate)
+      if ('submissionDate' in input) data.submissionDate = parseDate(input.submissionDate)
+      if ('olatGradeDate' in input) data.olatGradeDate = parseDate(input.olatGradeDate)
+      if ('grade' in input) data.grade = input.grade
+      if ('comment' in input) data.comment = input.comment
+      if ('capturedOnZora' in input) data.capturedOnZora = input.capturedOnZora
+
+      await prisma.adminInfo.update({
+        where: { id: input.adminInfoId },
+        data,
+      })
+
+      return { success: true }
+    }),
+
   adminGetAllProposals: adminProcedure
     .input(
       z.object({

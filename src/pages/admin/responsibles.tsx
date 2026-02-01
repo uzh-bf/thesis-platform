@@ -1,20 +1,86 @@
-import { faArrowLeft, faSort, faSortUp, faSortDown } from '@fortawesome/free-solid-svg-icons'
+import {
+  faArrowLeft,
+  faPenToSquare,
+  faSort,
+  faSortDown,
+  faSortUp,
+} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Button } from '@uzh-bf/design-system'
+import { Button, Modal } from '@uzh-bf/design-system'
 import { useRouter } from 'next/router'
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { trpc } from 'src/lib/trpc'
 
 type SortColumn = 'thesis' | 'student' | 'supervisor' | 'status' | 'submission' | 'grade'
 type SortDirection = 'asc' | 'desc' | null
 
+type AdminInfoEditState = {
+  adminInfoId: string
+  thesisTitle: string
+  olatCapturedDate: string
+  latestSubmissionDate: string
+  submissionDate: string
+  olatGradeDate: string
+  grade: string
+  capturedOnZora: '' | 'true' | 'false'
+  comment: string
+}
+
+function toDateInputValue(value: unknown): string {
+  if (!value) return ''
+  const date = new Date(value as any)
+  if (Number.isNaN(date.getTime())) return ''
+  const yyyy = String(date.getFullYear())
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
 export default function AdminResponsiblesPage() {
   const router = useRouter()
   const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
+  const [editState, setEditState] = useState<AdminInfoEditState | null>(null)
 
-  const { data: responsiblesOverview, isLoading: responsiblesLoading } =
-    trpc.adminGetResponsiblesOverview.useQuery()
+  const {
+    data: responsiblesOverview,
+    isLoading: responsiblesLoading,
+    refetch,
+  } = trpc.adminGetResponsiblesOverview.useQuery()
+
+  const updateAdminInfo = trpc.adminUpdateAdminInfo.useMutation({
+    onSuccess: () => {
+      setEditState(null)
+      refetch()
+    },
+    onError: (error) => {
+      alert(`Error: ${error.message}`)
+    },
+  })
+
+  const handleSaveAdminInfo = () => {
+    if (!editState) return
+
+    const gradeValue = editState.grade.trim() === '' ? null : Number(editState.grade)
+    if (gradeValue !== null && Number.isNaN(gradeValue)) {
+      alert('Grade must be a number')
+      return
+    }
+
+    updateAdminInfo.mutate({
+      adminInfoId: editState.adminInfoId,
+      olatCapturedDate: editState.olatCapturedDate || null,
+      latestSubmissionDate: editState.latestSubmissionDate || null,
+      submissionDate: editState.submissionDate || null,
+      olatGradeDate: editState.olatGradeDate || null,
+      grade: gradeValue,
+      comment: editState.comment.trim() === '' ? null : editState.comment,
+      capturedOnZora:
+        editState.capturedOnZora === ''
+          ? null
+          : editState.capturedOnZora === 'true',
+    })
+  }
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
@@ -109,9 +175,9 @@ export default function AdminResponsiblesPage() {
               Back to Admin Panel
             </Button>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Responsibles Overview</h1>
+          <h1 className="text-3xl font-bold text-gray-900">AdminInfo Overview</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Overview of persons responsible and their supervised theses
+            Overview of AdminInfo entries grouped by person responsible
           </p>
         </div>
 
@@ -181,6 +247,9 @@ export default function AdminResponsiblesPage() {
                                   <FontAwesomeIcon icon={getSortIcon('status')} className="text-gray-400" />
                                 </div>
                               </th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                OLAT Captured
+                              </th>
                               <th 
                                 className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                                 onClick={() => handleSort('submission')}
@@ -190,6 +259,12 @@ export default function AdminResponsiblesPage() {
                                   <FontAwesomeIcon icon={getSortIcon('submission')} className="text-gray-400" />
                                 </div>
                               </th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Submission Date
+                              </th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                OLAT Grade Date
+                              </th>
                               <th 
                                 className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                                 onClick={() => handleSort('grade')}
@@ -198,6 +273,15 @@ export default function AdminResponsiblesPage() {
                                   Grade
                                   <FontAwesomeIcon icon={getSortIcon('grade')} className="text-gray-400" />
                                 </div>
+                              </th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Captured on Zora
+                              </th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Comment
+                              </th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
                               </th>
                             </tr>
                           </thead>
@@ -232,6 +316,13 @@ export default function AdminResponsiblesPage() {
                                   {supervision.proposal.AdminInfo?.status || '-'}
                                 </td>
                                 <td className="px-4 py-2 text-sm text-gray-900">
+                                  {supervision.proposal.AdminInfo?.olatCapturedDate
+                                    ? new Date(
+                                        supervision.proposal.AdminInfo.olatCapturedDate
+                                      ).toLocaleDateString()
+                                    : '-'}
+                                </td>
+                                <td className="px-4 py-2 text-sm text-gray-900">
                                   {supervision.proposal.AdminInfo?.latestSubmissionDate
                                     ? new Date(
                                         supervision.proposal.AdminInfo.latestSubmissionDate
@@ -239,7 +330,75 @@ export default function AdminResponsiblesPage() {
                                     : '-'}
                                 </td>
                                 <td className="px-4 py-2 text-sm text-gray-900">
+                                  {supervision.proposal.AdminInfo?.submissionDate
+                                    ? new Date(
+                                        supervision.proposal.AdminInfo.submissionDate
+                                      ).toLocaleDateString()
+                                    : '-'}
+                                </td>
+                                <td className="px-4 py-2 text-sm text-gray-900">
+                                  {supervision.proposal.AdminInfo?.olatGradeDate
+                                    ? new Date(
+                                        supervision.proposal.AdminInfo.olatGradeDate
+                                      ).toLocaleDateString()
+                                    : '-'}
+                                </td>
+                                <td className="px-4 py-2 text-sm text-gray-900">
                                   {supervision.proposal.AdminInfo?.grade ?? '-'}
+                                </td>
+                                <td className="px-4 py-2 text-sm text-gray-900">
+                                  {supervision.proposal.AdminInfo?.capturedOnZora === true
+                                    ? 'Yes'
+                                    : supervision.proposal.AdminInfo?.capturedOnZora === false
+                                      ? 'No'
+                                      : '-'}
+                                </td>
+                                <td className="px-4 py-2 text-sm text-gray-900 max-w-xs truncate">
+                                  {supervision.proposal.AdminInfo?.comment || '-'}
+                                </td>
+                                <td className="px-4 py-2 text-sm">
+                                  <Button
+                                    onClick={() => {
+                                      const adminInfo = supervision.proposal.AdminInfo
+                                      if (!adminInfo) {
+                                        alert('No AdminInfo entry exists for this proposal')
+                                        return
+                                      }
+
+                                      setEditState({
+                                        adminInfoId: adminInfo.id,
+                                        thesisTitle: supervision.proposal.title,
+                                        olatCapturedDate: toDateInputValue(
+                                          adminInfo.olatCapturedDate
+                                        ),
+                                        latestSubmissionDate: toDateInputValue(
+                                          adminInfo.latestSubmissionDate
+                                        ),
+                                        submissionDate: toDateInputValue(
+                                          adminInfo.submissionDate
+                                        ),
+                                        olatGradeDate: toDateInputValue(
+                                          adminInfo.olatGradeDate
+                                        ),
+                                        grade:
+                                          adminInfo.grade === null || adminInfo.grade === undefined
+                                            ? ''
+                                            : String(adminInfo.grade),
+                                        capturedOnZora:
+                                          adminInfo.capturedOnZora === null ||
+                                          adminInfo.capturedOnZora === undefined
+                                            ? ''
+                                            : adminInfo.capturedOnZora
+                                              ? 'true'
+                                              : 'false',
+                                        comment: adminInfo.comment || '',
+                                      })
+                                    }}
+                                    className={{ root: 'flex items-center gap-2 text-xs' }}
+                                  >
+                                    <FontAwesomeIcon icon={faPenToSquare} />
+                                    Edit
+                                  </Button>
                                 </td>
                               </tr>
                             ))}
@@ -253,6 +412,142 @@ export default function AdminResponsiblesPage() {
             </div>
           )}
         </div>
+
+        {editState && (
+          <Modal
+            open={true}
+            onClose={() => setEditState(null)}
+            className={{ content: 'max-w-2xl' }}
+          >
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-gray-900">Edit AdminInfo</h2>
+              <p className="mt-1 text-sm text-gray-600">{editState.thesisTitle}</p>
+
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    OLAT Captured Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editState.olatCapturedDate}
+                    onChange={(e) =>
+                      setEditState({ ...editState, olatCapturedDate: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Latest Submission Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editState.latestSubmissionDate}
+                    onChange={(e) =>
+                      setEditState({
+                        ...editState,
+                        latestSubmissionDate: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Submission Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editState.submissionDate}
+                    onChange={(e) =>
+                      setEditState({ ...editState, submissionDate: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    OLAT Grade Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editState.olatGradeDate}
+                    onChange={(e) =>
+                      setEditState({ ...editState, olatGradeDate: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Grade
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={editState.grade}
+                    onChange={(e) => setEditState({ ...editState, grade: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Captured on Zora
+                  </label>
+                  <select
+                    value={editState.capturedOnZora}
+                    onChange={(e) =>
+                      setEditState({
+                        ...editState,
+                        capturedOnZora: e.target.value as AdminInfoEditState['capturedOnZora'],
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">-</option>
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Comment
+                </label>
+                <textarea
+                  value={editState.comment}
+                  onChange={(e) => setEditState({ ...editState, comment: e.target.value })}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2">
+                <Button
+                  onClick={() => setEditState(null)}
+                  className={{ root: 'text-sm' }}
+                  disabled={updateAdminInfo.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveAdminInfo}
+                  className={{ root: 'text-sm' }}
+                  disabled={updateAdminInfo.isPending}
+                >
+                  {updateAdminInfo.isPending ? 'Saving…' : 'Save'}
+                </Button>
+              </div>
+            </div>
+          </Modal>
+        )}
       </div>
     </div>
   )
