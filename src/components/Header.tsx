@@ -1,4 +1,4 @@
-import { faQuestion, faUserShield } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faQuestion, faUserShield } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button } from '@uzh-bf/design-system'
 import { signIn, signOut, useSession } from 'next-auth/react'
@@ -16,7 +16,7 @@ export default function Header() {
     session?.user?.role === UserRole.SUPERVISOR ||
     session?.user?.role === UserRole.DEVELOPER
   
-  const isOnAdminPage = router.pathname === '/admin'
+  const isOnAdminPage = router.pathname.startsWith('/admin')
 
   const handleLogout = async () => {
     const tenantId = process.env.NEXT_PUBLIC_AZURE_AD_TENANT_ID
@@ -51,6 +51,16 @@ export default function Header() {
           <div className="text-sm md:pr-2">
             Signed in as {session.user.email} ({session.user.role})
           </div>
+        )}
+
+        {isOnAdminPage && (
+          <Button
+            onClick={() => router.push('/')}
+            className={{ root: 'flex items-center gap-2' }}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} />
+            Back to Overview
+          </Button>
         )}
 
         {isAdmin && !isOnAdminPage && (

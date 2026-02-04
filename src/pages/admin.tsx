@@ -1,5 +1,3 @@
-import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button, Modal, Select, TabContent, Tabs } from '@uzh-bf/design-system'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
@@ -141,15 +139,6 @@ export default function AdminPanel() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <Button 
-              onClick={() => router.push('/')}
-              className={{ root: 'flex items-center gap-2' }}
-            >
-              <FontAwesomeIcon icon={faArrowLeft} />
-              Back to Overview
-            </Button>
-          </div>
           <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
           <p className="mt-2 text-sm text-gray-600">
             Manage proposals and administrative tasks
