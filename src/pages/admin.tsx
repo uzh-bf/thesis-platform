@@ -6,6 +6,7 @@ import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import AdminInfoOverview from 'src/components/AdminInfoOverview'
 import AdminStatsDashboard from 'src/components/AdminStatsDashboard'
+import AdminUserRoles from 'src/components/AdminUserRoles'
 import { ProposalStatus, ProposalType } from 'src/lib/constants'
 import useUserRole from 'src/lib/hooks/useUserRole'
 import { trpc } from 'src/lib/trpc'
@@ -58,6 +59,9 @@ export default function AdminPanel() {
     if (router.query.tab === 'admininfo') {
       setActiveTab('admininfo')
     }
+    if (router.query.tab === 'users' && isAdminOnly) {
+      setActiveTab('users')
+    }
     if (router.query.tab === 'stats' && isAdminOnly) setActiveTab('stats')
   }, [router.isReady, router.query.tab, isAdminOnly])
 
@@ -82,6 +86,11 @@ export default function AdminPanel() {
           id: 'admin-tabs-admininfo',
           value: 'admininfo',
           label: 'AdminInfo',
+        },
+        {
+          id: 'admin-tabs-users',
+          value: 'users',
+          label: 'Users',
         },
         {
           id: 'admin-tabs-stats',
@@ -537,6 +546,12 @@ export default function AdminPanel() {
           <TabContent value="admininfo" className={{ root: 'pt-6' }}>
             <AdminInfoOverview />
           </TabContent>
+
+          {isAdminOnly && (
+            <TabContent value="users" className={{ root: 'pt-6' }}>
+              <AdminUserRoles />
+            </TabContent>
+          )}
 
           {isAdminOnly && (
             <TabContent value="stats" className={{ root: 'pt-6' }}>

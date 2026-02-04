@@ -2222,6 +2222,68 @@ updateProposalStatus: publicProcedure
       }
     }),
 
+  adminGetAllUsers: adminOnlyProcedure.query(async () => {
+    return prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        adminRole: true,
+        department: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: [{ name: 'asc' }, { email: 'asc' }],
+    })
+  }),
+
+  adminUpdateUserRoles: adminOnlyProcedure
+    .input(
+      z
+        .object({
+          userId: z.string(),
+          role: z.enum(['UNSET', 'STUDENT', 'SUPERVISOR', 'DEVELOPER']).optional(),
+          adminRole: z.enum(['UNSET', 'COORDINATOR', 'ADMIN']).optional(),
+        })
+        .refine((data) => data.role !== undefined || data.adminRole !== undefined, {
+          message: 'At least one of role or adminRole must be provided',
+        })
+    )
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      if (!ctx.user?.sub) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' })
+      }
+
+      if (input.userId === ctx.user.sub) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You cannot change your own role/admin role',
+        })
+      }
+
+      const existing = await prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { id: true },
+      })
+
+      if (!existing) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' })
+      }
+
+      const data: any = {}
+      if (input.role !== undefined) data.role = input.role
+      if (input.adminRole !== undefined) data.adminRole = input.adminRole
+
+      await prisma.user.update({
+        where: { id: input.userId },
+        data,
+      })
+
+      return { success: true }
+    }),
+
   createUserWithSupervisorRole: publicProcedure
     .meta({
       openapi: {
