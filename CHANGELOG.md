@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.77](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.76...v1.1.0-beta.77) (2026-02-04)
+
+
+### Features
+
+* add back navigation button to Header for admin page ([ee3505a](https://github.com/uzh-bf/thesis-platform/commit/ee3505a054976fdbfd11c918b9abf716b6fcde28))
+* add user role management component and related API procedures for admin panel ([8341e95](https://github.com/uzh-bf/thesis-platform/commit/8341e9534b4fa39773eab52a71182ee4a6928108))
+
 ## [1.1.0-beta.76](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.75...v1.1.0-beta.76) (2026-02-01)
 
 
