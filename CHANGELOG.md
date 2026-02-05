@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.80](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.79...v1.1.0-beta.80) (2026-02-05)
+
+
+### Refactors
+
+* filter out withdrawn proposals in professor supervisions ([56088ca](https://github.com/uzh-bf/thesis-platform/commit/56088ca150bb6cf32a4aa059aad188ba5a796b40))
+
 ## [1.1.0-beta.79](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.78...v1.1.0-beta.79) (2026-02-05)
 
 
