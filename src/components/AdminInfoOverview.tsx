@@ -7,7 +7,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button, Modal } from '@uzh-bf/design-system'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { trpc } from 'src/lib/trpc'
 
 type SortColumn = 'thesis' | 'student' | 'supervisor' | 'status' | 'submission' | 'grade'
@@ -42,12 +42,29 @@ export default function AdminInfoOverview() {
   const [selectedResponsibleIds, setSelectedResponsibleIds] = useState<null | string[]>(
     null
   )
-  const [responsibleSearch, setResponsibleSearch] = useState('')
+  const [isProfessorDropdownOpen, setIsProfessorDropdownOpen] = useState(false)
+  const professorDropdownRef = useRef<HTMLDivElement>(null)
   const [entrySearch, setEntrySearch] = useState('')
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        professorDropdownRef.current &&
+        !professorDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsProfessorDropdownOpen(false)
+      }
+    }
+
+    if (isProfessorDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isProfessorDropdownOpen])
+
   const {
-    data: responsiblesOverview,
-    isLoading: responsiblesLoading,
+    data: professorsOverview,
+    isLoading: professorsLoading,
     refetch,
   } = trpc.adminGetResponsiblesOverview.useQuery()
 
@@ -108,33 +125,43 @@ export default function AdminInfoOverview() {
     return sortDirection === 'asc' ? faSortUp : faSortDown
   }
 
-  const isResponsibleSelected = (responsibleId: string) =>
+  const isProfessorSelected = (professorId: string) =>
     selectedResponsibleIds === null ||
-    selectedResponsibleIds.includes(responsibleId)
+    selectedResponsibleIds.includes(professorId)
 
-  const toggleResponsible = (responsibleId: string) => {
+  const toggleProfessor = (professorId: string) => {
     setSelectedResponsibleIds((prev) => {
       const current =
         prev === null
-          ? (responsiblesOverview?.map((r) => r.id) ?? [])
+          ? (professorsOverview?.map((r) => r.id) ?? [])
           : prev
 
-      if (current.includes(responsibleId)) {
-        return current.filter((id) => id !== responsibleId)
+      if (current.includes(professorId)) {
+        return current.filter((id) => id !== professorId)
       }
-      return [...current, responsibleId]
+      return [...current, professorId]
     })
   }
 
-  const sortedResponsibles = useMemo(() => {
-    if (!responsiblesOverview) return []
+  const selectAllProfessors = () => {
+    setSelectedResponsibleIds(null)
+    setIsProfessorDropdownOpen(false)
+  }
 
-    return responsiblesOverview.map((responsible) => {
+  const clearAllProfessors = () => {
+    setSelectedResponsibleIds([])
+    setIsProfessorDropdownOpen(false)
+  }
+
+  const sortedProfessors = useMemo(() => {
+    if (!professorsOverview) return []
+
+    return professorsOverview.map((professor) => {
       if (!sortColumn || !sortDirection) {
-        return responsible
+        return professor
       }
 
-      const sortedSupervisions = [...responsible.supervisions].sort((a, b) => {
+      const sortedSupervisions = [...professor.supervisions].sort((a, b) => {
         let aValue: any
         let bValue: any
 
@@ -187,36 +214,24 @@ export default function AdminInfoOverview() {
       })
 
       return {
-        ...responsible,
+        ...professor,
         supervisions: sortedSupervisions,
       }
     })
-  }, [responsiblesOverview, sortColumn, sortDirection])
+  }, [professorsOverview, sortColumn, sortDirection])
 
-  const totalResponsibles = responsiblesOverview?.length ?? 0
+  const totalProfessors = professorsOverview?.length ?? 0
   const selectedCount =
     selectedResponsibleIds === null
-      ? totalResponsibles
+      ? totalProfessors
       : selectedResponsibleIds.length
   const normalizedEntrySearch = entrySearch.trim().toLowerCase()
 
-  const responsiblesForPicker = useMemo(() => {
-    if (!responsiblesOverview) return []
-    const q = responsibleSearch.trim().toLowerCase()
-    if (!q) return responsiblesOverview
-
-    return responsiblesOverview.filter((responsible: any) => {
-      const name = String(responsible.name ?? '').toLowerCase()
-      const email = String(responsible.email ?? '').toLowerCase()
-      return name.includes(q) || email.includes(q)
-    })
-  }, [responsiblesOverview, responsibleSearch])
-
-  const displayedResponsibles = useMemo(() => {
+  const displayedProfessors = useMemo(() => {
     const base =
       selectedResponsibleIds === null
-        ? sortedResponsibles
-        : sortedResponsibles.filter((r: any) =>
+        ? sortedProfessors
+        : sortedProfessors.filter((r: any) =>
             new Set(selectedResponsibleIds).has(r.id)
           )
 
@@ -246,14 +261,14 @@ export default function AdminInfoOverview() {
         supervisionsForDisplay: r.supervisions.filter(matches),
       }))
       .filter((r: any) => r.supervisionsForDisplay.length > 0)
-  }, [sortedResponsibles, selectedResponsibleIds, normalizedEntrySearch])
+  }, [sortedProfessors, selectedResponsibleIds, normalizedEntrySearch])
 
   const totalDisplayedSupervisions = useMemo(() => {
-    return displayedResponsibles.reduce(
+    return displayedProfessors.reduce(
       (acc: number, r: any) => acc + (r.supervisionsForDisplay?.length ?? 0),
       0
     )
-  }, [displayedResponsibles])
+  }, [displayedProfessors])
 
   return (
     <>
@@ -262,13 +277,13 @@ export default function AdminInfoOverview() {
           <div>
             <h2 className="text-xl font-bold text-gray-900">AdminInfo Overview</h2>
             <p className="mt-1 text-sm text-gray-600">
-              Overview of AdminInfo entries grouped by person responsible
+              Overview of AdminInfo entries grouped by professor
             </p>
           </div>
           <div className="text-sm text-gray-600">
-            {responsiblesLoading
+            {professorsLoading
               ? 'Loading…'
-              : `${totalDisplayedSupervisions} theses • ${displayedResponsibles.length} responsibles`}
+              : `${totalDisplayedSupervisions} theses • ${displayedProfessors.length} professors`}
           </div>
         </div>
 
@@ -289,7 +304,6 @@ export default function AdminInfoOverview() {
             <Button
               onClick={() => {
                 setEntrySearch('')
-                setResponsibleSearch('')
                 setSelectedResponsibleIds(null)
               }}
               className={{ root: 'text-xs' }}
@@ -304,108 +318,120 @@ export default function AdminInfoOverview() {
         <div className="lg:col-span-4">
           <div className="bg-white rounded-lg shadow p-6 lg:sticky lg:top-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Responsibles</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Professors</h3>
               <div className="text-xs text-gray-600">
-                {selectedCount}/{totalResponsibles} selected
+                {selectedCount}/{totalProfessors} selected
               </div>
             </div>
 
-            <div className="mt-3 flex gap-2">
-              <Button
-                onClick={() => setSelectedResponsibleIds(null)}
-                className={{ root: 'text-xs' }}
-                disabled={selectedResponsibleIds === null}
-              >
-                Select all
-              </Button>
-              <Button
-                onClick={() => setSelectedResponsibleIds([])}
-                className={{ root: 'text-xs' }}
-                disabled={selectedResponsibleIds !== null && selectedResponsibleIds.length === 0}
-              >
-                Clear
-              </Button>
-            </div>
-
-            <div className="mt-4">
+            <div className="mt-4 relative" ref={professorDropdownRef}>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Filter responsibles
+                Select professors
               </label>
-              <input
-                type="text"
-                value={responsibleSearch}
-                onChange={(e) => setResponsibleSearch(e.target.value)}
-                placeholder="Search by name or email…"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+              <button
+                type="button"
+                onClick={() => setIsProfessorDropdownOpen(!isProfessorDropdownOpen)}
+                className="w-full px-4 py-2 text-left border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between"
+              >
+                <span className="text-sm text-gray-700">
+                  {selectedResponsibleIds === null
+                    ? 'All professors'
+                    : selectedResponsibleIds.length === 0
+                      ? 'None selected'
+                      : `${selectedResponsibleIds.length} professor${selectedResponsibleIds.length === 1 ? '' : 's'} selected`}
+                </span>
+                <svg
+                  className={`w-4 h-4 text-gray-500 transition-transform ${isProfessorDropdownOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
-            <div className="mt-3">
-              {responsiblesLoading ? (
-                <p className="text-gray-600">Loading responsibles...</p>
-              ) : !responsiblesOverview || responsiblesOverview.length === 0 ? (
-                <p className="text-gray-600">No responsibles found</p>
-              ) : responsiblesForPicker.length === 0 ? (
-                <p className="text-gray-600">No matches</p>
-              ) : (
-                <div className="max-h-[50vh] overflow-auto border border-gray-200 rounded-md p-2">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
-                    {responsiblesForPicker.map((responsible: any) => (
+              {isProfessorDropdownOpen && (
+                <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-64 overflow-auto">
+                  <div className="sticky top-0 bg-white border-b border-gray-200 p-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={selectAllProfessors}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Select all
+                    </button>
+                    <span className="text-gray-300">|</span>
+                    <button
+                      type="button"
+                      onClick={clearAllProfessors}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Clear
+                    </button>
+                  </div>
+
+                  {professorsLoading ? (
+                    <p className="p-3 text-sm text-gray-600">Loading professors...</p>
+                  ) : !professorsOverview || professorsOverview.length === 0 ? (
+                    <p className="p-3 text-sm text-gray-600">No professors found</p>
+                  ) : (
+                    professorsOverview.map((professor: any) => (
                       <label
-                        key={responsible.id}
-                        className="flex items-start gap-3 p-2 rounded hover:bg-gray-50"
+                        key={professor.id}
+                        className="flex items-start gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer"
                       >
                         <input
                           type="checkbox"
-                          checked={isResponsibleSelected(responsible.id)}
-                          onChange={() => toggleResponsible(responsible.id)}
-                          className="mt-1"
+                          checked={isProfessorSelected(professor.id)}
+                          onChange={() => toggleProfessor(professor.id)}
+                          className="mt-0.5"
                         />
                         <div className="min-w-0">
                           <div className="text-sm font-medium text-gray-900 truncate">
-                            {responsible.name}
+                            {professor.name}
                           </div>
                           <div className="text-xs text-gray-500 truncate">
-                            {responsible.email}
+                            {professor.email}
                           </div>
                         </div>
                       </label>
-                    ))}
-                  </div>
+                    ))
+                  )}
                 </div>
               )}
             </div>
+
           </div>
         </div>
 
         <div className="lg:col-span-8">
           <div className="bg-white rounded-lg shadow p-6">
-            {responsiblesLoading ? (
-              <p className="text-gray-600">Loading responsibles...</p>
-            ) : displayedResponsibles.length === 0 ? (
+            {professorsLoading ? (
+              <p className="text-gray-600">Loading professors...</p>
+            ) : displayedProfessors.length === 0 ? (
               <p className="text-gray-600">No results for the current filters</p>
             ) : (
               <div className="space-y-3">
-                {displayedResponsibles.map((responsible: any) => {
+                {displayedProfessors.map((professor: any) => {
                   const supervisionsToShow =
-                    responsible.supervisionsForDisplay ?? responsible.supervisions
-                  const total = responsible.supervisions.length
+                    professor.supervisionsForDisplay ?? professor.supervisions
+                  const total = professor.supervisions.length
                   const countText = normalizedEntrySearch
                     ? `${supervisionsToShow.length}/${total} theses`
                     : `${total} theses`
 
                   return (
                     <details
-                      key={responsible.id}
+                      key={professor.id}
                       className="border border-gray-200 rounded-md bg-white"
                     >
                       <summary className="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-gray-50">
                         <div className="min-w-0">
                           <div className="text-sm font-medium text-gray-900 truncate">
-                            {responsible.name}
+                            {professor.name}
                           </div>
                           <div className="text-xs text-gray-500 truncate">
-                            {responsible.email}
+                            {professor.email}
                           </div>
                         </div>
                         <div className="text-sm text-gray-600 whitespace-nowrap">
