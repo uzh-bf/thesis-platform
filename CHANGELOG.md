@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.81](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.80...v1.1.0-beta.81) (2026-02-05)
+
+
+### Features
+
+* implement admin functionality to create new admin info entries ([5b2d085](https://github.com/uzh-bf/thesis-platform/commit/5b2d08584d95ab73fb0f2e3813a13278b317460d))
+
 ## [1.1.0-beta.80](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.79...v1.1.0-beta.80) (2026-02-05)
 
 
