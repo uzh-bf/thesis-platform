@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.79](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.78...v1.1.0-beta.79) (2026-02-05)
+
+
+### Refactors
+
+* add status filter functionality and improve search in AdminInfoOverview component ([0375883](https://github.com/uzh-bf/thesis-platform/commit/03758833f5fb1c3b57dfc62ddce16a1db04bfb32))
+* enhance professor selection dropdown functionality and layout in AdminInfoOverview component ([0f57635](https://github.com/uzh-bf/thesis-platform/commit/0f57635690449757569b751f4bfea0af824f917c))
+* improve layout and spacing in AdminPanel component for better readability ([24d01d6](https://github.com/uzh-bf/thesis-platform/commit/24d01d6a1d3a85a35588ca2cd9fa65e36bb722c0))
+* simplify search functionality in AdminInfoOverview component by updating search criteria and removing unused elements ([58777fe](https://github.com/uzh-bf/thesis-platform/commit/58777fed27cbe34a40fa96d28493ce2fd337968b))
+* streamline supervision filtering and sorting logic in AdminInfoOverview component ([a4b8c2b](https://github.com/uzh-bf/thesis-platform/commit/a4b8c2b955656a5319a851f821906ca1e5f82117))
+* update AdminInfoOverview to use professors terminology and improve dropdown functionality ([79fec77](https://github.com/uzh-bf/thesis-platform/commit/79fec779aa1450ee73ec353775a70ce32316e44c))
+
 ## [1.1.0-beta.78](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.77...v1.1.0-beta.78) (2026-02-05)
 
 
