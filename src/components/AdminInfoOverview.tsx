@@ -163,11 +163,18 @@ export default function AdminInfoOverview() {
     if (!professorsOverview) return []
 
     return professorsOverview.map((professor) => {
+      // Filter out withdrawn proposals
+      const activeSupervisions = professor.supervisions.filter((supervision: any) => {
+        return supervision.proposal.statusKey !== 'WITHDRAWN'
+      })
+
+      const professorWithActive = { ...professor, supervisions: activeSupervisions }
+
       if (!sortColumn || !sortDirection) {
-        return professor
+        return professorWithActive
       }
 
-      const sortedSupervisions = [...professor.supervisions].sort((a, b) => {
+      const sortedSupervisions = [...activeSupervisions].sort((a, b) => {
         let aValue: any
         let bValue: any
 
@@ -216,7 +223,7 @@ export default function AdminInfoOverview() {
       })
 
       return {
-        ...professor,
+        ...professorWithActive,
         supervisions: sortedSupervisions,
       }
     })
