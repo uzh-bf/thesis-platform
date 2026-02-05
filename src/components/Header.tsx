@@ -43,16 +43,7 @@ export default function Header() {
 
   return (
     <header className="flex flex-col flex-none p-4 text-gray-600 bg-slate-100 md:justify-between md:flex-row">
-      <div>
-        {!isOnAdminPage && <NewProposalButton isSupervisor={isSupervisor} />}
-      </div>
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
-        {session?.user && (
-          <div className="text-sm md:pr-2">
-            Signed in as {session.user.email} ({session.user.role})
-          </div>
-        )}
-
         {isOnAdminPage && (
           <Button
             onClick={() => router.push('/')}
@@ -61,6 +52,14 @@ export default function Header() {
             <FontAwesomeIcon icon={faArrowLeft} />
             Back to Overview
           </Button>
+        )}
+        {!isOnAdminPage && <NewProposalButton isSupervisor={isSupervisor} />}
+      </div>
+      <div className="flex flex-col gap-2 md:flex-row md:items-center">
+        {session?.user && (
+          <div className="text-sm md:pr-2">
+            Signed in as {session.user.email} ({session.user.role})
+          </div>
         )}
 
         {isAdmin && !isOnAdminPage && (
