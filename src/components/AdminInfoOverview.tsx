@@ -163,17 +163,11 @@ export default function AdminInfoOverview() {
     if (!professorsOverview) return []
 
     return professorsOverview.map((professor) => {
-      const filteredSupervisions = professor.supervisions.filter((supervision: any) => {
-        return supervision.proposal.applications?.some(
-          (app: any) => app.statusKey === 'ACCEPTED'
-        )
-      })
-
       if (!sortColumn || !sortDirection) {
-        return { ...professor, supervisions: filteredSupervisions }
+        return professor
       }
 
-      const sortedSupervisions = [...filteredSupervisions].sort((a, b) => {
+      const sortedSupervisions = [...professor.supervisions].sort((a, b) => {
         let aValue: any
         let bValue: any
 
