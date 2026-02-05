@@ -43,9 +43,11 @@ export default function AdminInfoOverview() {
     null
   )
   const [isProfessorDropdownOpen, setIsProfessorDropdownOpen] = useState(false)
+  const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false)
   const professorDropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const [entrySearch, setEntrySearch] = useState('')
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -161,11 +163,17 @@ export default function AdminInfoOverview() {
     if (!professorsOverview) return []
 
     return professorsOverview.map((professor) => {
+      const filteredSupervisions = professor.supervisions.filter((supervision: any) => {
+        return supervision.proposal.applications?.some(
+          (app: any) => app.statusKey === 'ACCEPTED'
+        )
+      })
+
       if (!sortColumn || !sortDirection) {
-        return professor
+        return { ...professor, supervisions: filteredSupervisions }
       }
 
-      const sortedSupervisions = [...professor.supervisions].sort((a, b) => {
+      const sortedSupervisions = [...filteredSupervisions].sort((a, b) => {
         let aValue: any
         let bValue: any
 
@@ -176,16 +184,12 @@ export default function AdminInfoOverview() {
             break
           case 'student':
             aValue = (
-              a.studentEmail ||
-              a.proposal.applications?.[0]?.email ||
-              a.proposal.ownedByStudent ||
-              ''
+              a.proposal.applications?.find((app: any) => app.statusKey === 'ACCEPTED')
+                ?.fullName || ''
             ).toLowerCase()
             bValue = (
-              b.studentEmail ||
-              b.proposal.applications?.[0]?.email ||
-              b.proposal.ownedByStudent ||
-              ''
+              b.proposal.applications?.find((app: any) => app.statusKey === 'ACCEPTED')
+                ?.fullName || ''
             ).toLowerCase()
             break
           case 'supervisor':
@@ -232,21 +236,30 @@ export default function AdminInfoOverview() {
   const normalizedEntrySearch = entrySearch.trim().toLowerCase()
 
   const displayedProfessors = useMemo(() => {
-    const base =
+    let base =
       selectedResponsibleIds === null
         ? sortedProfessors
         : sortedProfessors.filter((r: any) =>
             new Set(selectedResponsibleIds).has(r.id)
           )
 
-    if (!normalizedEntrySearch) {
-      return base.map((r: any) => ({ ...r, supervisionsForDisplay: r.supervisions }))
-    }
-
     const matches = (supervision: any) => {
       const proposal = supervision?.proposal
-      const studentName = proposal?.applications?.[0]?.fullName || ''
-      const matrikelNumber = proposal?.applications?.[0]?.matriculationNumber || ''
+      
+      // Check status filter
+      if (selectedStatuses.length > 0) {
+        const proposalStatus = proposal?.AdminInfo?.status
+        if (!selectedStatuses.includes(proposalStatus)) {
+          return false
+        }
+      }
+      
+      // Check search filter
+      if (!normalizedEntrySearch) return true
+      
+      const acceptedApp = proposal?.applications?.find((app: any) => app.statusKey === 'ACCEPTED')
+      const studentName = acceptedApp?.fullName || ''
+      const matrikelNumber = acceptedApp?.matriculationNumber || ''
 
       const haystack = `${studentName} ${matrikelNumber}`.toLowerCase()
       return haystack.includes(normalizedEntrySearch)
@@ -258,7 +271,7 @@ export default function AdminInfoOverview() {
         supervisionsForDisplay: r.supervisions.filter(matches),
       }))
       .filter((r: any) => r.supervisionsForDisplay.length > 0)
-  }, [sortedProfessors, selectedResponsibleIds, normalizedEntrySearch])
+  }, [sortedProfessors, selectedResponsibleIds, normalizedEntrySearch, selectedStatuses])
 
   const totalDisplayedSupervisions = useMemo(() => {
     return displayedProfessors.reduce(
@@ -284,22 +297,10 @@ export default function AdminInfoOverview() {
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 overflow-visible">
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Search entries
-            </label>
-            <input
-              type="text"
-              value={entrySearch}
-              onChange={(e) => setEntrySearch(e.target.value)}
-              placeholder="Search by student name or matrikel number…"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
+        <div className="mt-4 space-y-4">
           <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select professors
+              Professors
             </label>
             <button
               ref={buttonRef}
@@ -373,6 +374,72 @@ export default function AdminInfoOverview() {
                 )}
               </div>
             )}
+          </div>
+
+          <div>
+            <button
+              type="button"
+              onClick={() => setIsStatusFilterOpen(!isStatusFilterOpen)}
+              className="text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center gap-2"
+            >
+              <svg 
+                className={`w-4 h-4 transition-transform ${isStatusFilterOpen ? 'rotate-90' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              Show Theses by Status
+            </button>
+            
+            {isStatusFilterOpen && (
+              <div className="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
+                <div className="text-xs text-gray-500 mb-2">
+                  ({selectedStatuses.length === 0 ? 'All' : selectedStatuses.length}) Offen (OPEN), In Bearbeitung (IN_PROGRESS), Überfällig (OVERDUE), In Benotung (GRADING), Abgeschlossen (COMPLETED), Archiviert (ARCHIVED)
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {['OPEN', 'IN_PROGRESS', 'OVERDUE', 'GRADING', 'COMPLETED', 'ARCHIVED'].map((status) => (
+                    <button
+                      key={status}
+                      type="button"
+                      onClick={() => {
+                        setSelectedStatuses((prev) =>
+                          prev.includes(status)
+                            ? prev.filter((s) => s !== status)
+                            : [...prev, status]
+                        )
+                      }}
+                      className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                        selectedStatuses.includes(status)
+                          ? 'bg-blue-100 border-blue-300 text-blue-800'
+                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      {status === 'OPEN' && 'Offen (OPEN)'}
+                      {status === 'IN_PROGRESS' && 'In Bearbeitung (IN_PROGRESS)'}
+                      {status === 'OVERDUE' && 'Überfällig (OVERDUE)'}
+                      {status === 'GRADING' && 'In Benotung (GRADING)'}
+                      {status === 'COMPLETED' && 'Abgeschlossen (COMPLETED)'}
+                      {status === 'ARCHIVED' && 'Archiviert (ARCHIVED)'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Search entries
+            </label>
+            <input
+              type="text"
+              value={entrySearch}
+              onChange={(e) => setEntrySearch(e.target.value)}
+              placeholder="Search by student name or matrikel number…"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
         </div>
 
@@ -529,19 +596,21 @@ export default function AdminInfoOverview() {
                                 </div>
                               </td>
                               <td className="px-4 py-2">
-                                <div className="text-sm text-gray-900">
-                                  {supervision.studentEmail ||
-                                    supervision.proposal.applications?.[0]?.email ||
-                                    supervision.proposal.ownedByStudent ||
-                                    '-'}
-                                </div>
-                                {(supervision.studyLevel ||
-                                  supervision.proposal.applications?.[0]?.fullName) && (
-                                  <div className="text-xs text-gray-500">
-                                    {supervision.studyLevel ||
-                                      supervision.proposal.applications?.[0]?.fullName}
-                                  </div>
-                                )}
+                                {(() => {
+                                  const acceptedApp = supervision.proposal.applications?.find(
+                                    (app: any) => app.statusKey === 'ACCEPTED'
+                                  )
+                                  return (
+                                    <>
+                                      <div className="text-sm font-medium text-gray-900">
+                                        {acceptedApp?.fullName || '-'}
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        {acceptedApp?.matriculationNumber || '-'}
+                                      </div>
+                                    </>
+                                  )
+                                })()}
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-900">
                                 {supervision.supervisor?.email ||
