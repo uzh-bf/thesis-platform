@@ -140,26 +140,27 @@ export default function AdminPanel() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
+        <div className="mb-4">
           <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-gray-600">
             Manage proposals and administrative tasks
           </p>
         </div>
 
-        <Tabs
-          defaultValue={isAdminOnly ? 'proposals' : 'admininfo'}
-          value={resolvedActiveTab}
-          onValueChange={(newValue) => {
-            setActiveTab(newValue)
-            if (newValue !== 'proposals') {
-              setSelectedProposal(null)
-            }
-          }}
-          tabs={visibleTabs}
-        >
+        {visibleTabs.length > 1 ? (
+          <Tabs
+            defaultValue={isAdminOnly ? 'proposals' : 'admininfo'}
+            value={resolvedActiveTab}
+            onValueChange={(newValue) => {
+              setActiveTab(newValue)
+              if (newValue !== 'proposals') {
+                setSelectedProposal(null)
+              }
+            }}
+            tabs={visibleTabs}
+          >
           {isAdminOnly && (
-            <TabContent value="proposals" className={{ root: 'pt-6' }}>
+            <TabContent value="proposals" className={{ root: 'pt-3' }}>
               <div className="bg-white rounded-lg shadow mb-6 p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
@@ -534,22 +535,27 @@ export default function AdminPanel() {
             </TabContent>
           )}
 
-          <TabContent value="admininfo" className={{ root: 'pt-6' }}>
+          <TabContent value="admininfo" className={{ root: 'pt-3' }}>
             <AdminInfoOverview />
           </TabContent>
 
           {isAdminOnly && (
-            <TabContent value="users" className={{ root: 'pt-6' }}>
+            <TabContent value="users" className={{ root: 'pt-3' }}>
               <AdminUserRoles />
             </TabContent>
           )}
 
           {isAdminOnly && (
-            <TabContent value="stats" className={{ root: 'pt-6' }}>
+            <TabContent value="stats" className={{ root: 'pt-3' }}>
               <AdminStatsDashboard />
             </TabContent>
           )}
-        </Tabs>
+          </Tabs>
+        ) : (
+          <div className="pt-3">
+            <AdminInfoOverview />
+          </div>
+        )}
       </div>
     </div>
   )
