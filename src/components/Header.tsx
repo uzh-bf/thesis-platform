@@ -44,7 +44,7 @@ export default function Header() {
   return (
     <header className="flex flex-col flex-none p-4 text-gray-600 bg-slate-100 md:justify-between md:flex-row">
       <div>
-        <NewProposalButton isSupervisor={isSupervisor} />
+        {!isOnAdminPage && <NewProposalButton isSupervisor={isSupervisor} />}
       </div>
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
         {session?.user && (
