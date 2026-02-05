@@ -11,7 +11,7 @@ import { trpc } from 'src/lib/trpc'
 
 export default function AdminPanel() {
   const router = useRouter()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const { isAdmin } = useUserRole()
   const isAdminOnly = session?.user?.adminRole === 'ADMIN'
   const [activeTab, setActiveTab] = useState('proposals')
@@ -41,6 +41,8 @@ export default function AdminPanel() {
   })
 
   useEffect(() => {
+    if (status === 'loading') return
+    
     if (!session?.user) {
       router.push('/')
       return
@@ -50,7 +52,7 @@ export default function AdminPanel() {
       router.push('/')
       alert('Admin access required')
     }
-  }, [session, isAdmin, router])
+  }, [session, isAdmin, router, status])
 
   useEffect(() => {
     if (!router.isReady) return
