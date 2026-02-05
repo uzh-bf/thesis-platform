@@ -2053,6 +2053,127 @@ updateProposalStatus: publicProcedure
       return { success: true }
     }),
 
+  adminCreateAdminInfoEntry: adminProcedure
+    .input(
+      z.object({
+        responsibleId: z.string(),
+        supervisorEmail: z.string().email(),
+        studentEmail: z.string().email(),
+        studentName: z.string().min(1),
+        matriculationNumber: z.string().min(1),
+        title: z.string().min(1),
+        language: z.enum(['English', 'German']),
+        studyLevel: z.string().min(1),
+        topicAreaSlug: z.string().min(1),
+        allowPublication: z.boolean(),
+        allowUsage: z.boolean(),
+      })
+    )
+    .output(z.object({ success: z.boolean(), proposalId: z.string() }))
+    .mutation(async ({ input }) => {
+      const envDepartment = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+
+      const [responsible, supervisor, topicArea] = await Promise.all([
+        prisma.responsible.findFirst({
+          where: {
+            id: input.responsibleId,
+            department: envDepartment,
+          },
+          select: { id: true },
+        }),
+        prisma.user.findFirst({
+          where: {
+            email: input.supervisorEmail,
+            role: UserRole.SUPERVISOR,
+            department: envDepartment,
+          },
+          select: { email: true },
+        }),
+        prisma.topicArea.findFirst({
+          where: {
+            slug: input.topicAreaSlug,
+            department: envDepartment,
+          },
+          select: { slug: true },
+        }),
+      ])
+
+      if (!responsible) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Responsible not found' })
+      }
+
+      if (!supervisor) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Supervisor not found' })
+      }
+
+      if (!topicArea) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Topic area not found' })
+      }
+
+      const proposalId = uuidv4()
+      const supervisionId = uuidv4()
+      const applicationId = uuidv4()
+      const adminInfoId = uuidv4()
+
+      await prisma.$transaction(async (tx) => {
+        await tx.proposal.create({
+          data: {
+            id: proposalId,
+            title: input.title,
+            description: 'Created via admin panel',
+            language: JSON.stringify([input.language]),
+            studyLevel: input.studyLevel,
+            topicAreaSlug: input.topicAreaSlug,
+            typeKey: ProposalType.SUPERVISOR,
+            statusKey: ProposalStatus.MATCHED,
+            ownedByUserEmail: input.supervisorEmail,
+            ownedByStudent: input.studentEmail,
+            department: envDepartment,
+          },
+        })
+
+        await tx.userProposalSupervision.create({
+          data: {
+            id: supervisionId,
+            proposalId,
+            responsibleId: responsible.id,
+            supervisorEmail: supervisor.email,
+            studentEmail: input.studentEmail,
+            studyLevel: input.studyLevel,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        })
+
+        await tx.proposalApplication.create({
+          data: {
+            id: applicationId,
+            statusKey: ApplicationStatus.ACCEPTED,
+            email: input.studentEmail,
+            matriculationNumber: input.matriculationNumber,
+            fullName: input.studentName,
+            plannedStartAt: new Date(),
+            motivation: 'Created via admin panel',
+            proposalId,
+            supervisionId,
+            allowPublication: input.allowPublication,
+            allowUsage: input.allowUsage,
+          },
+        })
+
+        await tx.adminInfo.create({
+          data: {
+            id: adminInfoId,
+            proposalId,
+            status: 'OPEN',
+            department: envDepartment,
+          },
+        })
+      })
+
+      return { success: true, proposalId }
+    }),
+
   adminGetAllProposals: adminOnlyProcedure
     .input(
       z.object({

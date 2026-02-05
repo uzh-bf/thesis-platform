@@ -1,6 +1,5 @@
 import {
   faArrowsLeftRight,
-  faPenToSquare,
   faSort,
   faSortDown,
   faSortUp,
@@ -25,6 +24,12 @@ type AdminInfoEditState = {
   comment: string
 }
 
+type DetailsModalState = {
+  professorName: string
+  professorEmail: string
+  supervision: any
+}
+
 function toDateInputValue(value: unknown): string {
   if (!value) return ''
   const date = new Date(value as any)
@@ -39,15 +44,32 @@ export default function AdminInfoOverview() {
   const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
   const [editState, setEditState] = useState<AdminInfoEditState | null>(null)
+  const [detailsState, setDetailsState] = useState<DetailsModalState | null>(null)
   const [selectedResponsibleIds, setSelectedResponsibleIds] = useState<null | string[]>(
     null
   )
   const [isProfessorDropdownOpen, setIsProfessorDropdownOpen] = useState(false)
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const professorDropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const [entrySearch, setEntrySearch] = useState('')
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
+  
+  // Create entry form state
+  const [createForm, setCreateForm] = useState({
+    responsibleId: '',
+    supervisorEmail: '',
+    studentEmail: '',
+    studentName: '',
+    matriculationNumber: '',
+    title: '',
+    language: '',
+    studyLevel: '',
+    topicAreaSlug: '',
+    allowPublication: 'Nein',
+    allowUsage: 'Ja',
+  })
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -74,9 +96,37 @@ export default function AdminInfoOverview() {
     refetch,
   } = trpc.adminGetResponsiblesOverview.useQuery()
 
+  const { data: supervisors } = trpc.getAllSupervisors.useQuery()
+
+  const { data: topicAreas } = trpc.getTopicAreas.useQuery()
+
   const updateAdminInfo = trpc.adminUpdateAdminInfo.useMutation({
     onSuccess: () => {
       setEditState(null)
+      setDetailsState(null)
+      refetch()
+    },
+    onError: (error) => {
+      alert(`Error: ${error.message}`)
+    },
+  })
+
+  const createAdminInfoEntry = trpc.adminCreateAdminInfoEntry.useMutation({
+    onSuccess: () => {
+      setIsCreateModalOpen(false)
+      setCreateForm({
+        responsibleId: '',
+        supervisorEmail: '',
+        studentEmail: '',
+        studentName: '',
+        matriculationNumber: '',
+        title: '',
+        language: '',
+        studyLevel: '',
+        topicAreaSlug: '',
+        allowPublication: 'Nein',
+        allowUsage: 'Ja',
+      })
       refetch()
     },
     onError: (error) => {
@@ -108,6 +158,40 @@ export default function AdminInfoOverview() {
     })
   }
 
+  const handleCreateEntry = () => {
+    if (createAdminInfoEntry.isPending) return
+
+    const missingFields: string[] = []
+    if (!createForm.responsibleId) missingFields.push('Professor Email')
+    if (!createForm.supervisorEmail) missingFields.push('Betreuer Email')
+    if (!createForm.studentEmail) missingFields.push('Student Email')
+    if (!createForm.studentName) missingFields.push('Student Vor- und Nachname')
+    if (!createForm.matriculationNumber) missingFields.push('Matrikelnummer')
+    if (!createForm.title) missingFields.push('Titel')
+    if (!createForm.language) missingFields.push('Sprache')
+    if (!createForm.studyLevel) missingFields.push('BA/MA')
+    if (!createForm.topicAreaSlug) missingFields.push('Topic Area')
+
+    if (missingFields.length > 0) {
+      alert(`Please fill in: ${missingFields.join(', ')}`)
+      return
+    }
+
+    createAdminInfoEntry.mutate({
+      responsibleId: createForm.responsibleId,
+      supervisorEmail: createForm.supervisorEmail,
+      studentEmail: createForm.studentEmail,
+      studentName: createForm.studentName,
+      matriculationNumber: createForm.matriculationNumber,
+      title: createForm.title,
+      language: createForm.language as 'English' | 'German',
+      studyLevel: createForm.studyLevel,
+      topicAreaSlug: createForm.topicAreaSlug,
+      allowPublication: createForm.allowPublication === 'Ja',
+      allowUsage: createForm.allowUsage === 'Ja',
+    })
+  }
+
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
       if (sortDirection === 'asc') {
@@ -129,6 +213,45 @@ export default function AdminInfoOverview() {
       return faSort
     }
     return sortDirection === 'asc' ? faSortUp : faSortDown
+  }
+
+  const closeDetailsModal = () => {
+    setDetailsState(null)
+    setEditState(null)
+  }
+
+  const openDetailsModal = (professor: any, supervision: any) => {
+    setDetailsState({
+      professorName: professor.name,
+      professorEmail: professor.email,
+      supervision,
+    })
+
+    const adminInfo = supervision?.proposal?.AdminInfo
+    if (!adminInfo) {
+      setEditState(null)
+      return
+    }
+
+    setEditState({
+      adminInfoId: adminInfo.id,
+      thesisTitle: supervision.proposal.title,
+      olatCapturedDate: toDateInputValue(adminInfo.olatCapturedDate),
+      latestSubmissionDate: toDateInputValue(adminInfo.latestSubmissionDate),
+      submissionDate: toDateInputValue(adminInfo.submissionDate),
+      olatGradeDate: toDateInputValue(adminInfo.olatGradeDate),
+      grade:
+        adminInfo.grade === null || adminInfo.grade === undefined
+          ? ''
+          : String(adminInfo.grade),
+      capturedOnZora:
+        adminInfo.capturedOnZora === null || adminInfo.capturedOnZora === undefined
+          ? ''
+          : adminInfo.capturedOnZora
+            ? 'true'
+            : 'false',
+      comment: adminInfo.comment || '',
+    })
   }
 
   const isProfessorSelected = (professorId: string) =>
@@ -186,11 +309,17 @@ export default function AdminInfoOverview() {
           case 'student':
             aValue = (
               a.proposal.applications?.find((app: any) => app.statusKey === 'ACCEPTED')
-                ?.fullName || ''
+                ?.email ||
+              a.studentEmail ||
+              a.proposal.ownedByStudent ||
+              ''
             ).toLowerCase()
             bValue = (
               b.proposal.applications?.find((app: any) => app.statusKey === 'ACCEPTED')
-                ?.fullName || ''
+                ?.email ||
+              b.studentEmail ||
+              b.proposal.ownedByStudent ||
+              ''
             ).toLowerCase()
             break
           case 'supervisor':
@@ -442,6 +571,15 @@ export default function AdminInfoOverview() {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
+
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setIsCreateModalOpen(true)}
+              className={{ root: 'text-sm bg-blue-600 hover:bg-blue-700 text-white' }}
+            >
+              Neuen Eintrag erstellen
+            </Button>
+          </div>
         </div>
 
       </div>
@@ -580,14 +718,32 @@ export default function AdminInfoOverview() {
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Comment
                             </th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Actions
-                            </th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {supervisionsToShow.map((supervision: any) => (
-                            <tr key={supervision.id} className="hover:bg-gray-50">
+                          {supervisionsToShow.map((supervision: any) => {
+                            const acceptedApp = supervision.proposal.applications?.find(
+                              (app: any) => app.statusKey === 'ACCEPTED'
+                            )
+                            const studentEmail =
+                              acceptedApp?.email ||
+                              supervision.studentEmail ||
+                              supervision.proposal.ownedByStudent ||
+                              '-'
+
+                            return (
+                            <tr
+                              key={supervision.id}
+                              className="hover:bg-gray-50 cursor-pointer"
+                              onClick={() => openDetailsModal(professor, supervision)}
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault()
+                                  openDetailsModal(professor, supervision)
+                                }
+                              }}
+                            >
                               <td className="px-4 py-2">
                                 <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
                                   {supervision.proposal.title}
@@ -597,21 +753,9 @@ export default function AdminInfoOverview() {
                                 </div>
                               </td>
                               <td className="px-4 py-2">
-                                {(() => {
-                                  const acceptedApp = supervision.proposal.applications?.find(
-                                    (app: any) => app.statusKey === 'ACCEPTED'
-                                  )
-                                  return (
-                                    <>
-                                      <div className="text-sm font-medium text-gray-900">
-                                        {acceptedApp?.fullName || '-'}
-                                      </div>
-                                      <div className="text-xs text-gray-500">
-                                        {acceptedApp?.matriculationNumber || '-'}
-                                      </div>
-                                    </>
-                                  )
-                                })()}
+                                <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
+                                  {studentEmail}
+                                </div>
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-900">
                                 {supervision.supervisor?.email ||
@@ -664,57 +808,9 @@ export default function AdminInfoOverview() {
                               <td className="px-4 py-2 text-sm text-gray-900 max-w-xs truncate">
                                 {supervision.proposal.AdminInfo?.comment || '-'}
                               </td>
-                              <td className="px-4 py-2 text-sm">
-                                <Button
-                                  onClick={() => {
-                                    const adminInfo = supervision.proposal.AdminInfo
-                                    if (!adminInfo) {
-                                      alert(
-                                        'No AdminInfo entry exists for this proposal'
-                                      )
-                                      return
-                                    }
-
-                                    setEditState({
-                                      adminInfoId: adminInfo.id,
-                                      thesisTitle: supervision.proposal.title,
-                                      olatCapturedDate: toDateInputValue(
-                                        adminInfo.olatCapturedDate
-                                      ),
-                                      latestSubmissionDate: toDateInputValue(
-                                        adminInfo.latestSubmissionDate
-                                      ),
-                                      submissionDate: toDateInputValue(
-                                        adminInfo.submissionDate
-                                      ),
-                                      olatGradeDate: toDateInputValue(
-                                        adminInfo.olatGradeDate
-                                      ),
-                                      grade:
-                                        adminInfo.grade === null ||
-                                        adminInfo.grade === undefined
-                                          ? ''
-                                          : String(adminInfo.grade),
-                                      capturedOnZora:
-                                        adminInfo.capturedOnZora === null ||
-                                        adminInfo.capturedOnZora === undefined
-                                          ? ''
-                                          : adminInfo.capturedOnZora
-                                            ? 'true'
-                                            : 'false',
-                                      comment: adminInfo.comment || '',
-                                    })
-                                  }}
-                                  className={{
-                                    root: 'flex items-center gap-2 text-xs',
-                                  }}
-                                >
-                                  <FontAwesomeIcon icon={faPenToSquare} />
-                                  Edit
-                                </Button>
-                              </td>
                             </tr>
-                          ))}
+                          )
+                          })}
                         </tbody>
                       </table>
                             </div>
@@ -728,150 +824,494 @@ export default function AdminInfoOverview() {
             )}
       </div>
 
-      {editState && (
+      {detailsState && (
         <Modal
           open={true}
-          onClose={() => setEditState(null)}
-          className={{ content: 'max-w-2xl' }}
+          onClose={() => {
+            if (!updateAdminInfo.isPending) closeDetailsModal()
+          }}
+          className={{ content: 'max-w-3xl max-h-[90vh] overflow-auto' }}
         >
           <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900">Edit AdminInfo</h2>
-            <p className="mt-1 text-sm text-gray-600">{editState.thesisTitle}</p>
+            <h2 className="text-xl font-bold text-gray-900">Eintrag Details</h2>
+            <p className="mt-1 text-sm text-gray-600">
+              {detailsState.supervision?.proposal?.title}
+            </p>
 
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {(() => {
+              const supervision = detailsState.supervision
+              const proposal = supervision?.proposal
+              const adminInfo = proposal?.AdminInfo
+              const acceptedApp = proposal?.applications?.find(
+                (app: any) => app.statusKey === 'ACCEPTED'
+              )
+
+              const studentEmail =
+                acceptedApp?.email ||
+                supervision?.studentEmail ||
+                proposal?.ownedByStudent ||
+                '-'
+              const supervisorEmail =
+                supervision?.supervisor?.email || supervision?.supervisorEmail || '-'
+              const allowPublication =
+                acceptedApp?.allowPublication === true
+                  ? 'Yes'
+                  : acceptedApp?.allowPublication === false
+                    ? 'No'
+                    : '-'
+              const allowUsage =
+                acceptedApp?.allowUsage === true
+                  ? 'Yes'
+                  : acceptedApp?.allowUsage === false
+                    ? 'No'
+                    : '-'
+
+              return (
+                <>
+                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase">
+                        Professor
+                      </div>
+                      <div className="text-sm text-gray-900">
+                        {detailsState.professorEmail}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase">
+                        Supervisor
+                      </div>
+                      <div className="text-sm text-gray-900">{supervisorEmail}</div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase">
+                        Student Email
+                      </div>
+                      <div className="text-sm text-gray-900">{studentEmail}</div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase">
+                        Student Name
+                      </div>
+                      <div className="text-sm text-gray-900">
+                        {acceptedApp?.fullName || '-'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase">
+                        Matrikelnummer
+                      </div>
+                      <div className="text-sm text-gray-900">
+                        {acceptedApp?.matriculationNumber || '-'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase">
+                        Topic Area
+                      </div>
+                      <div className="text-sm text-gray-900">
+                        {proposal?.topicArea?.name || '-'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase">
+                        Allow Publication
+                      </div>
+                      <div className="text-sm text-gray-900">{allowPublication}</div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase">
+                        Allow Usage
+                      </div>
+                      <div className="text-sm text-gray-900">{allowUsage}</div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase">
+                        Proposal StatusKey
+                      </div>
+                      <div className="text-sm text-gray-900">
+                        {proposal?.statusKey || '-'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase">
+                        Admin Status
+                      </div>
+                      <div className="text-sm text-gray-900">
+                        {adminInfo?.status || '-'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 border-t border-gray-200 pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900">AdminInfo</h3>
+
+                    {editState ? (
+                      <>
+                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              OLAT Captured Date
+                            </label>
+                            <input
+                              type="date"
+                              value={editState.olatCapturedDate}
+                              onChange={(e) =>
+                                setEditState({
+                                  ...editState,
+                                  olatCapturedDate: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Latest Submission Date
+                            </label>
+                            <input
+                              type="date"
+                              value={editState.latestSubmissionDate}
+                              onChange={(e) =>
+                                setEditState({
+                                  ...editState,
+                                  latestSubmissionDate: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Submission Date
+                            </label>
+                            <input
+                              type="date"
+                              value={editState.submissionDate}
+                              onChange={(e) =>
+                                setEditState({
+                                  ...editState,
+                                  submissionDate: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              OLAT Grade Date
+                            </label>
+                            <input
+                              type="date"
+                              value={editState.olatGradeDate}
+                              onChange={(e) =>
+                                setEditState({
+                                  ...editState,
+                                  olatGradeDate: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Grade
+                            </label>
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={editState.grade}
+                              onChange={(e) =>
+                                setEditState({
+                                  ...editState,
+                                  grade: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Captured on Zora
+                            </label>
+                            <select
+                              value={editState.capturedOnZora}
+                              onChange={(e) =>
+                                setEditState({
+                                  ...editState,
+                                  capturedOnZora: e.target
+                                    .value as AdminInfoEditState['capturedOnZora'],
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                            >
+                              <option value="">-</option>
+                              <option value="true">Yes</option>
+                              <option value="false">No</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Comment
+                          </label>
+                          <textarea
+                            value={editState.comment}
+                            onChange={(e) =>
+                              setEditState({
+                                ...editState,
+                                comment: e.target.value,
+                              })
+                            }
+                            rows={4}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <p className="mt-3 text-sm text-gray-500">
+                        No AdminInfo entry exists for this proposal.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="mt-6 flex justify-end gap-2">
+                    <Button
+                      onClick={closeDetailsModal}
+                      className={{ root: 'text-sm' }}
+                      disabled={updateAdminInfo.isPending}
+                    >
+                      Close
+                    </Button>
+                    {editState && (
+                      <Button
+                        onClick={handleSaveAdminInfo}
+                        className={{ root: 'text-sm' }}
+                        disabled={updateAdminInfo.isPending}
+                      >
+                        {updateAdminInfo.isPending ? 'Saving…' : 'Save'}
+                      </Button>
+                    )}
+                  </div>
+                </>
+              )
+            })()}
+          </div>
+        </Modal>
+      )}
+
+      {isCreateModalOpen && (
+        <Modal
+          open={true}
+          onClose={() => {
+            if (!createAdminInfoEntry.isPending) setIsCreateModalOpen(false)
+          }}
+          className={{ content: 'max-w-2xl max-h-[90vh] overflow-auto' }}
+        >
+          <div className="p-6">
+            <h2 className="text-xl font-bold text-gray-900">Neuen Eintrag erstellen</h2>
+            <p className="mt-1 text-sm text-gray-600">Erfassen Sie alle Angaben und speichern Sie.</p>
+
+            <div className="mt-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  OLAT Captured Date
-                </label>
-                <input
-                  type="date"
-                  value={editState.olatCapturedDate}
-                  onChange={(e) =>
-                    setEditState({
-                      ...editState,
-                      olatCapturedDate: e.target.value,
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Latest Submission Date
-                </label>
-                <input
-                  type="date"
-                  value={editState.latestSubmissionDate}
-                  onChange={(e) =>
-                    setEditState({
-                      ...editState,
-                      latestSubmissionDate: e.target.value,
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Submission Date
-                </label>
-                <input
-                  type="date"
-                  value={editState.submissionDate}
-                  onChange={(e) =>
-                    setEditState({
-                      ...editState,
-                      submissionDate: e.target.value,
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  OLAT Grade Date
-                </label>
-                <input
-                  type="date"
-                  value={editState.olatGradeDate}
-                  onChange={(e) =>
-                    setEditState({
-                      ...editState,
-                      olatGradeDate: e.target.value,
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Grade
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={editState.grade}
-                  onChange={(e) =>
-                    setEditState({ ...editState, grade: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Captured on Zora
+                  Professor Email
                 </label>
                 <select
-                  value={editState.capturedOnZora}
-                  onChange={(e) =>
-                    setEditState({
-                      ...editState,
-                      capturedOnZora: e.target
-                        .value as AdminInfoEditState['capturedOnZora'],
-                    })
-                  }
+                  value={createForm.responsibleId}
+                  onChange={(e) => setCreateForm({ ...createForm, responsibleId: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
-                  <option value="">-</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
+                  <option value="">Choose an option</option>
+                  {professorsOverview?.map((prof: any) => (
+                    <option key={prof.id} value={prof.id}>{prof.email}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Betreuer Email
+                </label>
+                <select
+                  value={createForm.supervisorEmail}
+                  onChange={(e) => setCreateForm({ ...createForm, supervisorEmail: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">Choose an option</option>
+                  {supervisors?.map((supervisor: any) => (
+                    <option key={supervisor.email} value={supervisor.email}>{supervisor.email}</option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  If you cannot find your supervisor here, ask the IT team for help.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Student Email
+                </label>
+                <input
+                  type="email"
+                  value={createForm.studentEmail}
+                  onChange={(e) => setCreateForm({ ...createForm, studentEmail: e.target.value })}
+                  placeholder="e.g. max.mustermann@uzh.ch"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Student Vor- und Nachname
+                </label>
+                <input
+                  type="text"
+                  value={createForm.studentName}
+                  onChange={(e) => setCreateForm({ ...createForm, studentName: e.target.value })}
+                  placeholder="e.g. Max Mustermann"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Matrikelnummer
+                </label>
+                <input
+                  type="text"
+                  value={createForm.matriculationNumber}
+                  onChange={(e) => setCreateForm({ ...createForm, matriculationNumber: e.target.value })}
+                  placeholder="e.g. 24-230-230 oder 'Keine Angabe'"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Titel
+                </label>
+                <textarea
+                  value={createForm.title}
+                  onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Sprache
+                </label>
+                <select
+                  value={createForm.language}
+                  onChange={(e) => setCreateForm({ ...createForm, language: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">Choose an option</option>
+                  <option value="German">Deutsch</option>
+                  <option value="English">English</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  BA/MA
+                </label>
+                <select
+                  value={createForm.studyLevel}
+                  onChange={(e) => setCreateForm({ ...createForm, studyLevel: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">Choose an option</option>
+                  <option value="Bachelor Thesis (18 ECTS)">BA (Bachelor)</option>
+                  <option value="Master Thesis (30 ECTS)">MA (Master)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Topic Area
+                </label>
+                <select
+                  value={createForm.topicAreaSlug}
+                  onChange={(e) => setCreateForm({ ...createForm, topicAreaSlug: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">Choose an option</option>
+                  {topicAreas?.map((area: any) => (
+                    <option key={area.id} value={area.slug}>{area.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Veröffentlichung erlauben
+                </label>
+                <select
+                  value={createForm.allowPublication}
+                  onChange={(e) => setCreateForm({ ...createForm, allowPublication: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="Nein">Nein</option>
+                  <option value="Ja">Ja</option>
+                </select>
+                <p className="mt-1 text-xs text-gray-500 flex items-start gap-1">
+                  <svg className="w-4 h-4 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  The student agrees to allow the Department of Finance to publish their work in its entirety or in part on the Internet and distribute printed versions to interested parties.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nutzung erlauben
+                </label>
+                <select
+                  value={createForm.allowUsage}
+                  onChange={(e) => setCreateForm({ ...createForm, allowUsage: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="Ja">Ja</option>
+                  <option value="Nein">Nein</option>
                 </select>
               </div>
             </div>
 
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Comment
-              </label>
-              <textarea
-                value={editState.comment}
-                onChange={(e) =>
-                  setEditState({ ...editState, comment: e.target.value })
-                }
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-
             <div className="mt-6 flex justify-end gap-2">
               <Button
-                onClick={() => setEditState(null)}
+                onClick={() => setIsCreateModalOpen(false)}
                 className={{ root: 'text-sm' }}
-                disabled={updateAdminInfo.isPending}
+                disabled={createAdminInfoEntry.isPending}
               >
                 Cancel
               </Button>
               <Button
-                onClick={handleSaveAdminInfo}
-                className={{ root: 'text-sm' }}
-                disabled={updateAdminInfo.isPending}
+                onClick={handleCreateEntry}
+                className={{ root: 'text-sm bg-blue-600 hover:bg-blue-700 text-white' }}
+                disabled={createAdminInfoEntry.isPending}
               >
-                {updateAdminInfo.isPending ? 'Saving…' : 'Save'}
+                {createAdminInfoEntry.isPending ? 'Saving…' : 'Save'}
               </Button>
             </div>
           </div>
