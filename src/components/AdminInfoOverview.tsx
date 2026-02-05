@@ -245,17 +245,10 @@ export default function AdminInfoOverview() {
 
     const matches = (supervision: any) => {
       const proposal = supervision?.proposal
-      const student =
-        supervision?.studentEmail ||
-        proposal?.applications?.[0]?.email ||
-        proposal?.ownedByStudent ||
-        ''
-      const supervisor = supervision?.supervisor?.email || supervision?.supervisorEmail || ''
-      const status = proposal?.AdminInfo?.status || ''
-      const comment = proposal?.AdminInfo?.comment || ''
-      const title = proposal?.title || ''
+      const studentName = proposal?.applications?.[0]?.fullName || ''
+      const matrikelNumber = proposal?.applications?.[0]?.matriculationNumber || ''
 
-      const haystack = `${title} ${student} ${supervisor} ${status} ${comment}`.toLowerCase()
+      const haystack = `${studentName} ${matrikelNumber}`.toLowerCase()
       return haystack.includes(normalizedEntrySearch)
     }
 
@@ -300,7 +293,7 @@ export default function AdminInfoOverview() {
               type="text"
               value={entrySearch}
               onChange={(e) => setEntrySearch(e.target.value)}
-              placeholder="Search thesis, student, supervisor, status, comment…"
+              placeholder="Search by student name or matrikel number…"
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -383,17 +376,6 @@ export default function AdminInfoOverview() {
           </div>
         </div>
 
-        <div className="flex items-end gap-2">
-          <Button
-            onClick={() => {
-              setEntrySearch('')
-              setSelectedResponsibleIds(null)
-            }}
-            className={{ root: 'text-xs' }}
-          >
-            Reset filters
-          </Button>
-        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
