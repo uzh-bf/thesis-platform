@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.78](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.77...v1.1.0-beta.78) (2026-02-05)
+
+
+### Bug Fixes
+
+* conditionally render NewProposalButton based on admin page status ([71c2297](https://github.com/uzh-bf/thesis-platform/commit/71c229799a535a27d67fa81b8347b81ee80a77ad))
+* handle session loading state in AdminPanel component ([58e825c](https://github.com/uzh-bf/thesis-platform/commit/58e825c605691cd9c7ff507270052bf1bc45967a))
+
+
+### Refactors
+
+* rearrange Header component layout for improved clarity ([0c8fe74](https://github.com/uzh-bf/thesis-platform/commit/0c8fe74970cd32c9249984b4c0eebacad900c35b))
+
 ## [1.1.0-beta.77](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.76...v1.1.0-beta.77) (2026-02-04)
 
 
