@@ -27,6 +27,19 @@ type ColumnFilters = {
   capturedOnZora: PresenceFilter
 }
 
+const DEFAULT_COLUMN_FILTERS: ColumnFilters = {
+  title: '',
+  supervisor: '',
+  olatCaptured: 'all',
+  latestSubmissionFrom: '',
+  latestSubmissionTo: '',
+  submissionFrom: '',
+  submissionTo: '',
+  gradeMin: '',
+  gradeMax: '',
+  capturedOnZora: 'all',
+}
+
 type AdminInfoEditState = {
   adminInfoId: string
   thesisTitle: string
@@ -82,18 +95,9 @@ export default function AdminInfoOverview() {
   const [entrySearch, setEntrySearch] = useState('')
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
   const [isColumnFiltersOpen, setIsColumnFiltersOpen] = useState(false)
-  const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
-    title: '',
-    supervisor: '',
-    olatCaptured: 'all',
-    latestSubmissionFrom: '',
-    latestSubmissionTo: '',
-    submissionFrom: '',
-    submissionTo: '',
-    gradeMin: '',
-    gradeMax: '',
-    capturedOnZora: 'all',
-  })
+  const [columnFilters, setColumnFilters] = useState<ColumnFilters>(
+    DEFAULT_COLUMN_FILTERS
+  )
   
   // Create entry form state
   const [createForm, setCreateForm] = useState({
@@ -112,12 +116,14 @@ export default function AdminInfoOverview() {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node
+      const targetNode = event.target as Node
+
       if (
+        isProfessorDropdownOpen &&
         professorDropdownRef.current &&
-        !professorDropdownRef.current.contains(target) &&
+        !professorDropdownRef.current.contains(targetNode) &&
         buttonRef.current &&
-        !buttonRef.current.contains(target)
+        !buttonRef.current.contains(targetNode)
       ) {
         setIsProfessorDropdownOpen(false)
       }
@@ -403,11 +409,6 @@ export default function AdminInfoOverview() {
     })
   }, [professorsOverview, sortColumn, sortDirection])
 
-  const totalProfessors = professorsOverview?.length ?? 0
-  const selectedCount =
-    selectedResponsibleIds === null
-      ? totalProfessors
-      : selectedResponsibleIds.length
   const normalizedEntrySearch = entrySearch.trim().toLowerCase()
 
   const displayedProfessors = useMemo(() => {
@@ -691,19 +692,6 @@ export default function AdminInfoOverview() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Student
-            </label>
-            <input
-              type="text"
-              value={entrySearch}
-              onChange={(e) => setEntrySearch(e.target.value)}
-              placeholder="Filter by student name, email or matriculation number…"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
             <button
               type="button"
               onClick={() => setIsColumnFiltersOpen(!isColumnFiltersOpen)}
@@ -726,10 +714,10 @@ export default function AdminInfoOverview() {
             </button>
 
             {isColumnFiltersOpen && (
-              <div className="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200 space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
                       Supervisor
                     </label>
                     <input
@@ -741,28 +729,31 @@ export default function AdminInfoOverview() {
                           supervisor: e.target.value,
                         }))
                       }
-                      placeholder="e.g. name@uzh.ch"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      placeholder="Email contains…"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
                       Title
                     </label>
                     <input
                       type="text"
                       value={columnFilters.title}
                       onChange={(e) =>
-                        setColumnFilters((prev) => ({ ...prev, title: e.target.value }))
+                        setColumnFilters((prev) => ({
+                          ...prev,
+                          title: e.target.value,
+                        }))
                       }
-                      placeholder="Filter by thesis title…"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      placeholder="Title contains…"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
                       OLAT Captured
                     </label>
                     <select
@@ -773,7 +764,7 @@ export default function AdminInfoOverview() {
                           olatCaptured: e.target.value as PresenceFilter,
                         }))
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white"
                     >
                       <option value="all">All</option>
                       <option value="yes">Captured</option>
@@ -782,8 +773,8 @@ export default function AdminInfoOverview() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Latest Submission (from / to)
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Latest Submission
                     </label>
                     <div className="flex gap-2">
                       <input
@@ -795,7 +786,7 @@ export default function AdminInfoOverview() {
                             latestSubmissionFrom: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
                       />
                       <input
                         type="date"
@@ -806,14 +797,14 @@ export default function AdminInfoOverview() {
                             latestSubmissionTo: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Submission Date (from / to)
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Submission Date
                     </label>
                     <div className="flex gap-2">
                       <input
@@ -825,7 +816,7 @@ export default function AdminInfoOverview() {
                             submissionFrom: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
                       />
                       <input
                         type="date"
@@ -836,14 +827,14 @@ export default function AdminInfoOverview() {
                             submissionTo: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Grade (min / max)
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Grade
                     </label>
                     <div className="flex gap-2">
                       <input
@@ -856,7 +847,8 @@ export default function AdminInfoOverview() {
                             gradeMin: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        placeholder="Min"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
                       />
                       <input
                         type="number"
@@ -868,13 +860,14 @@ export default function AdminInfoOverview() {
                             gradeMax: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        placeholder="Max"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
                       Captured on Zora
                     </label>
                     <select
@@ -885,39 +878,39 @@ export default function AdminInfoOverview() {
                           capturedOnZora: e.target.value as PresenceFilter,
                         }))
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white"
                     >
                       <option value="all">All</option>
                       <option value="yes">Yes</option>
                       <option value="no">No</option>
                     </select>
                   </div>
+                </div>
 
-                  <div className="flex items-end justify-end md:col-span-2 lg:col-span-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setColumnFilters({
-                          title: '',
-                          supervisor: '',
-                          olatCaptured: 'all',
-                          latestSubmissionFrom: '',
-                          latestSubmissionTo: '',
-                          submissionFrom: '',
-                          submissionTo: '',
-                          gradeMin: '',
-                          gradeMax: '',
-                          capturedOnZora: 'all',
-                        })
-                      }
-                      className="text-xs font-medium text-blue-600 hover:text-blue-800"
-                    >
-                      Reset column filters
-                    </button>
-                  </div>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setColumnFilters(DEFAULT_COLUMN_FILTERS)}
+                    className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    Reset column filters
+                  </button>
                 </div>
               </div>
             )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Student
+            </label>
+            <input
+              type="text"
+              value={entrySearch}
+              onChange={(e) => setEntrySearch(e.target.value)}
+              placeholder="Filter by student name, email or matriculation number…"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
 
           <div className="flex gap-2">
@@ -983,6 +976,7 @@ export default function AdminInfoOverview() {
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Professor
                             </th>
+
                             <th
                               className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                               onClick={() => handleSort('supervisor')}
@@ -995,6 +989,7 @@ export default function AdminInfoOverview() {
                                 />
                               </div>
                             </th>
+
                             <th
                               className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                               onClick={() => handleSort('student')}
@@ -1007,6 +1002,7 @@ export default function AdminInfoOverview() {
                                 />
                               </div>
                             </th>
+
                             <th
                               className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                               onClick={() => handleSort('thesis')}
@@ -1019,6 +1015,7 @@ export default function AdminInfoOverview() {
                                 />
                               </div>
                             </th>
+
                             <th
                               className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                               onClick={() => handleSort('status')}
@@ -1031,9 +1028,11 @@ export default function AdminInfoOverview() {
                                 />
                               </div>
                             </th>
+
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               OLAT Captured
                             </th>
+
                             <th
                               className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                               onClick={() => handleSort('submission')}
@@ -1046,9 +1045,11 @@ export default function AdminInfoOverview() {
                                 />
                               </div>
                             </th>
+
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Submission Date
                             </th>
+
                             <th
                               className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                               onClick={() => handleSort('grade')}
@@ -1061,6 +1062,7 @@ export default function AdminInfoOverview() {
                                 />
                               </div>
                             </th>
+
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Captured on Zora
                             </th>
