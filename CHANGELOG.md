@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.84](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.83...v1.1.0-beta.84) (2026-02-09)
+
+
+### Features
+
+* refactor column filters in Admin Info Overview for improved readability and maintainability ([0a5edb0](https://github.com/uzh-bf/thesis-platform/commit/0a5edb03060574688db44df7051515e4764ede05))
+
 ## [1.1.0-beta.83](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.82...v1.1.0-beta.83) (2026-02-09)
 
 
