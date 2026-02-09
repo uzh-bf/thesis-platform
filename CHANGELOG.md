@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.85](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.84...v1.1.0-beta.85) (2026-02-09)
+
+
+### Features
+
+* add student filter to Admin Info Overview for enhanced search functionality ([ef3f0be](https://github.com/uzh-bf/thesis-platform/commit/ef3f0bed561ffc6cf07fb7b05fe71f6d10a3a201))
+
 ## [1.1.0-beta.84](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.83...v1.1.0-beta.84) (2026-02-09)
 
 
