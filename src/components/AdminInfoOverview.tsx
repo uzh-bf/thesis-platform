@@ -15,6 +15,7 @@ type SortDirection = 'asc' | 'desc' | null
 type PresenceFilter = 'all' | 'yes' | 'no'
 
 type ColumnFilters = {
+  student: string
   title: string
   supervisor: string
   olatCaptured: PresenceFilter
@@ -28,6 +29,7 @@ type ColumnFilters = {
 }
 
 const DEFAULT_COLUMN_FILTERS: ColumnFilters = {
+  student: '',
   title: '',
   supervisor: '',
   olatCaptured: 'all',
@@ -92,7 +94,6 @@ export default function AdminInfoOverview() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const professorDropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
-  const [entrySearch, setEntrySearch] = useState('')
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
   const [isColumnFiltersOpen, setIsColumnFiltersOpen] = useState(false)
   const [columnFilters, setColumnFilters] = useState<ColumnFilters>(
@@ -409,9 +410,8 @@ export default function AdminInfoOverview() {
     })
   }, [professorsOverview, sortColumn, sortDirection])
 
-  const normalizedEntrySearch = entrySearch.trim().toLowerCase()
-
   const displayedProfessors = useMemo(() => {
+    const normalizedStudentFilter = columnFilters.student.trim().toLowerCase()
     const normalizedSupervisorFilter = columnFilters.supervisor.trim().toLowerCase()
     const normalizedTitleFilter = columnFilters.title.trim().toLowerCase()
 
@@ -446,8 +446,8 @@ export default function AdminInfoOverview() {
         }
       }
       
-      // Check search filter
-      if (normalizedEntrySearch) {
+      // Check student filter
+      if (normalizedStudentFilter) {
         const acceptedApp = proposal?.applications?.find(
           (app: any) => app.statusKey === 'ACCEPTED'
         )
@@ -460,7 +460,7 @@ export default function AdminInfoOverview() {
           ''
 
         const haystack = `${studentName} ${matrikelNumber} ${studentEmail}`.toLowerCase()
-        if (!haystack.includes(normalizedEntrySearch)) return false
+        if (!haystack.includes(normalizedStudentFilter)) return false
       }
 
       if (normalizedSupervisorFilter) {
@@ -530,7 +530,6 @@ export default function AdminInfoOverview() {
   }, [
     sortedProfessors,
     selectedResponsibleIds,
-    normalizedEntrySearch,
     selectedStatuses,
     columnFilters,
   ])
@@ -716,6 +715,24 @@ export default function AdminInfoOverview() {
             {isColumnFiltersOpen && (
               <div className="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200 space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="md:col-span-2 lg:col-span-3">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Student
+                    </label>
+                    <input
+                      type="text"
+                      value={columnFilters.student}
+                      onChange={(e) =>
+                        setColumnFilters((prev) => ({
+                          ...prev,
+                          student: e.target.value,
+                        }))
+                      }
+                      placeholder="Filter by student name, email or matriculation number…"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+                    />
+                  </div>
+
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Supervisor
@@ -898,19 +915,6 @@ export default function AdminInfoOverview() {
                 </div>
               </div>
             )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Student
-            </label>
-            <input
-              type="text"
-              value={entrySearch}
-              onChange={(e) => setEntrySearch(e.target.value)}
-              placeholder="Filter by student name, email or matriculation number…"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
           </div>
 
           <div className="flex gap-2">
