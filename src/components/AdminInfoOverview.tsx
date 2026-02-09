@@ -12,6 +12,21 @@ import { trpc } from 'src/lib/trpc'
 type SortColumn = 'thesis' | 'student' | 'supervisor' | 'status' | 'submission' | 'grade'
 type SortDirection = 'asc' | 'desc' | null
 
+type PresenceFilter = 'all' | 'yes' | 'no'
+
+type ColumnFilters = {
+  title: string
+  supervisor: string
+  olatCaptured: PresenceFilter
+  latestSubmissionFrom: string
+  latestSubmissionTo: string
+  submissionFrom: string
+  submissionTo: string
+  gradeMin: string
+  gradeMax: string
+  capturedOnZora: PresenceFilter
+}
+
 type AdminInfoEditState = {
   adminInfoId: string
   thesisTitle: string
@@ -40,6 +55,17 @@ function toDateInputValue(value: unknown): string {
   return `${yyyy}-${mm}-${dd}`
 }
 
+function parseDateInput(value: string, endOfDay = false): number | null {
+  if (!value) return null
+  const [y, m, d] = value.split('-').map((part) => Number(part))
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null
+  const date = endOfDay
+    ? new Date(y, m - 1, d, 23, 59, 59, 999)
+    : new Date(y, m - 1, d, 0, 0, 0, 0)
+  const time = date.getTime()
+  return Number.isNaN(time) ? null : time
+}
+
 export default function AdminInfoOverview() {
   const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
@@ -55,6 +81,19 @@ export default function AdminInfoOverview() {
   const buttonRef = useRef<HTMLButtonElement>(null)
   const [entrySearch, setEntrySearch] = useState('')
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
+  const [isColumnFiltersOpen, setIsColumnFiltersOpen] = useState(false)
+  const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
+    title: '',
+    supervisor: '',
+    olatCaptured: 'all',
+    latestSubmissionFrom: '',
+    latestSubmissionTo: '',
+    submissionFrom: '',
+    submissionTo: '',
+    gradeMin: '',
+    gradeMax: '',
+    capturedOnZora: 'all',
+  })
   
   // Create entry form state
   const [createForm, setCreateForm] = useState({
@@ -285,15 +324,11 @@ export default function AdminInfoOverview() {
   const sortedProfessors = useMemo(() => {
     if (!professorsOverview) return []
 
-    const sortByFirstName = (professors: any[]) => {
-      return [...professors].sort((a, b) => {
-        const aFirstName = a.name.split(' ')[0]?.toLowerCase() || ''
-        const bFirstName = b.name.split(' ')[0]?.toLowerCase() || ''
-        return aFirstName.localeCompare(bFirstName)
-      })
-    }
-
-    const sortedByName = sortByFirstName(professorsOverview)
+    const sortedByName = [...professorsOverview].sort((a, b) => {
+      const aName = String(a.name ?? '')
+      const bName = String(b.name ?? '')
+      return aName.localeCompare(bName, undefined, { sensitivity: 'base' })
+    })
 
     return sortedByName.map((professor) => {
       // Filter out withdrawn proposals
@@ -376,6 +411,21 @@ export default function AdminInfoOverview() {
   const normalizedEntrySearch = entrySearch.trim().toLowerCase()
 
   const displayedProfessors = useMemo(() => {
+    const normalizedSupervisorFilter = columnFilters.supervisor.trim().toLowerCase()
+    const normalizedTitleFilter = columnFilters.title.trim().toLowerCase()
+
+    const latestSubmissionFrom = parseDateInput(columnFilters.latestSubmissionFrom)
+    const latestSubmissionTo = parseDateInput(columnFilters.latestSubmissionTo, true)
+    const submissionFrom = parseDateInput(columnFilters.submissionFrom)
+    const submissionTo = parseDateInput(columnFilters.submissionTo, true)
+
+    const gradeMinRaw = columnFilters.gradeMin.trim()
+    const gradeMaxRaw = columnFilters.gradeMax.trim()
+    const gradeMin = gradeMinRaw === '' ? null : Number(gradeMinRaw)
+    const gradeMax = gradeMaxRaw === '' ? null : Number(gradeMaxRaw)
+    const gradeMinValue = gradeMin === null || Number.isNaN(gradeMin) ? null : gradeMin
+    const gradeMaxValue = gradeMax === null || Number.isNaN(gradeMax) ? null : gradeMax
+
     let base =
       selectedResponsibleIds === null
         ? sortedProfessors
@@ -385,24 +435,89 @@ export default function AdminInfoOverview() {
 
     const matches = (supervision: any) => {
       const proposal = supervision?.proposal
+      const adminInfo = proposal?.AdminInfo
       
       // Check status filter
       if (selectedStatuses.length > 0) {
-        const proposalStatus = proposal?.AdminInfo?.status
+        const proposalStatus = adminInfo?.status
         if (!selectedStatuses.includes(proposalStatus)) {
           return false
         }
       }
       
       // Check search filter
-      if (!normalizedEntrySearch) return true
-      
-      const acceptedApp = proposal?.applications?.find((app: any) => app.statusKey === 'ACCEPTED')
-      const studentName = acceptedApp?.fullName || ''
-      const matrikelNumber = acceptedApp?.matriculationNumber || ''
+      if (normalizedEntrySearch) {
+        const acceptedApp = proposal?.applications?.find(
+          (app: any) => app.statusKey === 'ACCEPTED'
+        )
+        const studentName = acceptedApp?.fullName || ''
+        const matrikelNumber = acceptedApp?.matriculationNumber || ''
+        const studentEmail =
+          acceptedApp?.email ||
+          supervision?.studentEmail ||
+          proposal?.ownedByStudent ||
+          ''
 
-      const haystack = `${studentName} ${matrikelNumber}`.toLowerCase()
-      return haystack.includes(normalizedEntrySearch)
+        const haystack = `${studentName} ${matrikelNumber} ${studentEmail}`.toLowerCase()
+        if (!haystack.includes(normalizedEntrySearch)) return false
+      }
+
+      if (normalizedSupervisorFilter) {
+        const supervisorEmail = (
+          supervision?.supervisor?.email || supervision?.supervisorEmail || ''
+        ).toLowerCase()
+        if (!supervisorEmail.includes(normalizedSupervisorFilter)) return false
+      }
+
+      if (normalizedTitleFilter) {
+        const titleHaystack = `${proposal?.title || ''} ${proposal?.topicArea?.name || ''}`
+          .toLowerCase()
+          .trim()
+        if (!titleHaystack.includes(normalizedTitleFilter)) return false
+      }
+
+      if (columnFilters.olatCaptured === 'yes' && !adminInfo?.olatCapturedDate) {
+        return false
+      }
+      if (columnFilters.olatCaptured === 'no' && adminInfo?.olatCapturedDate) {
+        return false
+      }
+
+      if (columnFilters.capturedOnZora === 'yes' && adminInfo?.capturedOnZora !== true) {
+        return false
+      }
+      if (columnFilters.capturedOnZora === 'no' && adminInfo?.capturedOnZora !== false) {
+        return false
+      }
+
+      if (latestSubmissionFrom !== null || latestSubmissionTo !== null) {
+        const latestTime = adminInfo?.latestSubmissionDate
+          ? new Date(adminInfo.latestSubmissionDate).getTime()
+          : null
+        if (latestTime === null || Number.isNaN(latestTime)) return false
+        if (latestSubmissionFrom !== null && latestTime < latestSubmissionFrom) return false
+        if (latestSubmissionTo !== null && latestTime > latestSubmissionTo) return false
+      }
+
+      if (submissionFrom !== null || submissionTo !== null) {
+        const submissionTime = adminInfo?.submissionDate
+          ? new Date(adminInfo.submissionDate).getTime()
+          : null
+        if (submissionTime === null || Number.isNaN(submissionTime)) return false
+        if (submissionFrom !== null && submissionTime < submissionFrom) return false
+        if (submissionTo !== null && submissionTime > submissionTo) return false
+      }
+
+      if (gradeMinValue !== null || gradeMaxValue !== null) {
+        const grade = adminInfo?.grade
+        if (grade === null || grade === undefined) return false
+        const gradeValue = Number(grade)
+        if (Number.isNaN(gradeValue)) return false
+        if (gradeMinValue !== null && gradeValue < gradeMinValue) return false
+        if (gradeMaxValue !== null && gradeValue > gradeMaxValue) return false
+      }
+
+      return true
     }
 
     return base
@@ -411,7 +526,13 @@ export default function AdminInfoOverview() {
         supervisionsForDisplay: r.supervisions.filter(matches),
       }))
       .filter((r: any) => r.supervisionsForDisplay.length > 0)
-  }, [sortedProfessors, selectedResponsibleIds, normalizedEntrySearch, selectedStatuses])
+  }, [
+    sortedProfessors,
+    selectedResponsibleIds,
+    normalizedEntrySearch,
+    selectedStatuses,
+    columnFilters,
+  ])
 
   const totalDisplayedSupervisions = useMemo(() => {
     return displayedProfessors.reduce(
@@ -487,10 +608,10 @@ export default function AdminInfoOverview() {
 
                 {professorsLoading ? (
                   <p className="p-3 text-sm text-gray-600">Loading professors...</p>
-                ) : !professorsOverview || professorsOverview.length === 0 ? (
+                ) : sortedProfessors.length === 0 ? (
                   <p className="p-3 text-sm text-gray-600">No professors found</p>
                 ) : (
-                  professorsOverview.map((professor: any) => (
+                  sortedProfessors.map((professor: any) => (
                     <label
                       key={professor.id}
                       className="flex items-start gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer"
@@ -571,15 +692,232 @@ export default function AdminInfoOverview() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Search entries
+              Student
             </label>
             <input
               type="text"
               value={entrySearch}
               onChange={(e) => setEntrySearch(e.target.value)}
-              placeholder="Search by student name or matriculation number…"
+              placeholder="Filter by student name, email or matriculation number…"
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
+          </div>
+
+          <div>
+            <button
+              type="button"
+              onClick={() => setIsColumnFiltersOpen(!isColumnFiltersOpen)}
+              className="text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center gap-2"
+            >
+              <svg
+                className={`w-4 h-4 transition-transform ${isColumnFiltersOpen ? 'rotate-90' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+              Column filters
+            </button>
+
+            {isColumnFiltersOpen && (
+              <div className="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Supervisor
+                    </label>
+                    <input
+                      type="text"
+                      value={columnFilters.supervisor}
+                      onChange={(e) =>
+                        setColumnFilters((prev) => ({
+                          ...prev,
+                          supervisor: e.target.value,
+                        }))
+                      }
+                      placeholder="e.g. name@uzh.ch"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Title
+                    </label>
+                    <input
+                      type="text"
+                      value={columnFilters.title}
+                      onChange={(e) =>
+                        setColumnFilters((prev) => ({ ...prev, title: e.target.value }))
+                      }
+                      placeholder="Filter by thesis title…"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      OLAT Captured
+                    </label>
+                    <select
+                      value={columnFilters.olatCaptured}
+                      onChange={(e) =>
+                        setColumnFilters((prev) => ({
+                          ...prev,
+                          olatCaptured: e.target.value as PresenceFilter,
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white"
+                    >
+                      <option value="all">All</option>
+                      <option value="yes">Captured</option>
+                      <option value="no">Not captured</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Latest Submission (from / to)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="date"
+                        value={columnFilters.latestSubmissionFrom}
+                        onChange={(e) =>
+                          setColumnFilters((prev) => ({
+                            ...prev,
+                            latestSubmissionFrom: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                      <input
+                        type="date"
+                        value={columnFilters.latestSubmissionTo}
+                        onChange={(e) =>
+                          setColumnFilters((prev) => ({
+                            ...prev,
+                            latestSubmissionTo: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Submission Date (from / to)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="date"
+                        value={columnFilters.submissionFrom}
+                        onChange={(e) =>
+                          setColumnFilters((prev) => ({
+                            ...prev,
+                            submissionFrom: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                      <input
+                        type="date"
+                        value={columnFilters.submissionTo}
+                        onChange={(e) =>
+                          setColumnFilters((prev) => ({
+                            ...prev,
+                            submissionTo: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Grade (min / max)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={columnFilters.gradeMin}
+                        onChange={(e) =>
+                          setColumnFilters((prev) => ({
+                            ...prev,
+                            gradeMin: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={columnFilters.gradeMax}
+                        onChange={(e) =>
+                          setColumnFilters((prev) => ({
+                            ...prev,
+                            gradeMax: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Captured on Zora
+                    </label>
+                    <select
+                      value={columnFilters.capturedOnZora}
+                      onChange={(e) =>
+                        setColumnFilters((prev) => ({
+                          ...prev,
+                          capturedOnZora: e.target.value as PresenceFilter,
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white"
+                    >
+                      <option value="all">All</option>
+                      <option value="yes">Yes</option>
+                      <option value="no">No</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-end justify-end md:col-span-2 lg:col-span-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setColumnFilters({
+                          title: '',
+                          supervisor: '',
+                          olatCaptured: 'all',
+                          latestSubmissionFrom: '',
+                          latestSubmissionTo: '',
+                          submissionFrom: '',
+                          submissionTo: '',
+                          gradeMin: '',
+                          gradeMax: '',
+                          capturedOnZora: 'all',
+                        })
+                      }
+                      className="text-xs font-medium text-blue-600 hover:text-blue-800"
+                    >
+                      Reset column filters
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2">
@@ -605,7 +943,8 @@ export default function AdminInfoOverview() {
                   const supervisionsToShow =
                     professor.supervisionsForDisplay ?? professor.supervisions
                   const total = professor.supervisions.length
-                  const countText = normalizedEntrySearch
+                  const isFiltered = supervisionsToShow.length !== total
+                  const countText = isFiltered
                     ? `${supervisionsToShow.length}/${total} theses`
                     : `${total} theses`
 
@@ -641,14 +980,17 @@ export default function AdminInfoOverview() {
                             <table className="min-w-full divide-y divide-gray-200">
                               <thead className="bg-gray-50 sticky top-0 z-10">
                           <tr>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Professor
+                            </th>
                             <th
                               className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                              onClick={() => handleSort('thesis')}
+                              onClick={() => handleSort('supervisor')}
                             >
                               <div className="flex items-center gap-2">
-                                Thesis
+                                Supervisor
                                 <FontAwesomeIcon
-                                  icon={getSortIcon('thesis')}
+                                  icon={getSortIcon('supervisor')}
                                   className="text-gray-400"
                                 />
                               </div>
@@ -667,12 +1009,12 @@ export default function AdminInfoOverview() {
                             </th>
                             <th
                               className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                              onClick={() => handleSort('supervisor')}
+                              onClick={() => handleSort('thesis')}
                             >
                               <div className="flex items-center gap-2">
-                                Supervisor
+                                Title
                                 <FontAwesomeIcon
-                                  icon={getSortIcon('supervisor')}
+                                  icon={getSortIcon('thesis')}
                                   className="text-gray-400"
                                 />
                               </div>
@@ -682,7 +1024,7 @@ export default function AdminInfoOverview() {
                               onClick={() => handleSort('status')}
                             >
                               <div className="flex items-center gap-2">
-                                Thesis Status
+                                Status
                                 <FontAwesomeIcon
                                   icon={getSortIcon('status')}
                                   className="text-gray-400"
@@ -707,9 +1049,6 @@ export default function AdminInfoOverview() {
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Submission Date
                             </th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              OLAT Grade Date
-                            </th>
                             <th
                               className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                               onClick={() => handleSort('grade')}
@@ -725,9 +1064,6 @@ export default function AdminInfoOverview() {
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Captured on Zora
                             </th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Comment
-                            </th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -740,6 +1076,13 @@ export default function AdminInfoOverview() {
                               supervision.studentEmail ||
                               supervision.proposal.ownedByStudent ||
                               '-'
+
+                            const studentSub = [
+                              acceptedApp?.fullName,
+                              acceptedApp?.matriculationNumber,
+                            ]
+                              .filter(Boolean)
+                              .join(' • ')
 
                             return (
                             <tr
@@ -756,21 +1099,34 @@ export default function AdminInfoOverview() {
                             >
                               <td className="px-4 py-2">
                                 <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
-                                  {supervision.proposal.title}
+                                  {professor.name}
                                 </div>
-                                <div className="text-xs text-gray-500">
-                                  {supervision.proposal.topicArea?.name}
-                                </div>
-                              </td>
-                              <td className="px-4 py-2">
-                                <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
-                                  {studentEmail}
+                                <div className="text-xs text-gray-500 max-w-xs truncate">
+                                  {professor.email}
                                 </div>
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-900">
                                 {supervision.supervisor?.email ||
                                   supervision.supervisorEmail ||
                                   '-'}
+                              </td>
+                              <td className="px-4 py-2">
+                                <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
+                                  {studentEmail}
+                                </div>
+                                {studentSub && (
+                                  <div className="text-xs text-gray-500 max-w-xs truncate">
+                                    {studentSub}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-4 py-2">
+                                <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
+                                  {supervision.proposal.title}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {supervision.proposal.topicArea?.name}
+                                </div>
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-900">
                                 {supervision.proposal.AdminInfo?.status || '-'}
@@ -797,13 +1153,6 @@ export default function AdminInfoOverview() {
                                   : '-'}
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-900">
-                                {supervision.proposal.AdminInfo?.olatGradeDate
-                                  ? new Date(
-                                      supervision.proposal.AdminInfo.olatGradeDate
-                                    ).toLocaleDateString()
-                                  : '-'}
-                              </td>
-                              <td className="px-4 py-2 text-sm text-gray-900">
                                 {supervision.proposal.AdminInfo?.grade ?? '-'}
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-900">
@@ -814,9 +1163,6 @@ export default function AdminInfoOverview() {
                                       false
                                     ? 'No'
                                     : '-'}
-                              </td>
-                              <td className="px-4 py-2 text-sm text-gray-900 max-w-xs truncate">
-                                {supervision.proposal.AdminInfo?.comment || '-'}
                               </td>
                             </tr>
                           )
@@ -1148,7 +1494,7 @@ export default function AdminInfoOverview() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="">Choose an option</option>
-                  {professorsOverview?.map((prof: any) => (
+                  {sortedProfessors.map((prof: any) => (
                     <option key={prof.id} value={prof.id}>{prof.email}</option>
                   ))}
                 </select>
