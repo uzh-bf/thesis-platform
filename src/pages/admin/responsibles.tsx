@@ -253,7 +253,7 @@ export default function AdminResponsiblesPage() {
                                 onClick={() => handleSort('status')}
                               >
                                 <div className="flex items-center gap-2">
-                                  Admin Status
+                                  Thesis Status
                                   <FontAwesomeIcon icon={getSortIcon('status')} className="text-gray-400" />
                                 </div>
                               </th>

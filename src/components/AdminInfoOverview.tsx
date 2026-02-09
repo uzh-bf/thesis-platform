@@ -682,7 +682,7 @@ export default function AdminInfoOverview() {
                               onClick={() => handleSort('status')}
                             >
                               <div className="flex items-center gap-2">
-                                Admin Status
+                                Thesis Status
                                 <FontAwesomeIcon
                                   icon={getSortIcon('status')}
                                   className="text-gray-400"
@@ -954,7 +954,7 @@ export default function AdminInfoOverview() {
 
                     <div>
                       <div className="text-xs font-medium text-gray-500 uppercase">
-                        Admin Status
+                        Thesis Status
                       </div>
                       <div className="text-sm text-gray-900">
                         {adminInfo?.status || '-'}
