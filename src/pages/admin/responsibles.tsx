@@ -107,8 +107,18 @@ export default function AdminResponsiblesPage() {
 
   const sortedResponsibles = useMemo(() => {
     if (!responsiblesOverview) return []
+
+    const sortByFirstName = (responsibles: any[]) => {
+      return [...responsibles].sort((a, b) => {
+        const aFirstName = a.name.split(' ')[0]?.toLowerCase() || ''
+        const bFirstName = b.name.split(' ')[0]?.toLowerCase() || ''
+        return aFirstName.localeCompare(bFirstName)
+      })
+    }
+
+    const sortedByName = sortByFirstName(responsiblesOverview)
     
-    return responsiblesOverview.map((responsible) => {
+    return sortedByName.map((responsible) => {
       if (!sortColumn || !sortDirection) {
         return responsible
       }

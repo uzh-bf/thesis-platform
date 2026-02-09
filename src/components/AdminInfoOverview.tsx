@@ -163,13 +163,13 @@ export default function AdminInfoOverview() {
 
     const missingFields: string[] = []
     if (!createForm.responsibleId) missingFields.push('Professor Email')
-    if (!createForm.supervisorEmail) missingFields.push('Betreuer Email')
+    if (!createForm.supervisorEmail) missingFields.push('Supervisor Email')
     if (!createForm.studentEmail) missingFields.push('Student Email')
-    if (!createForm.studentName) missingFields.push('Student Vor- und Nachname')
-    if (!createForm.matriculationNumber) missingFields.push('Matrikelnummer')
-    if (!createForm.title) missingFields.push('Titel')
-    if (!createForm.language) missingFields.push('Sprache')
-    if (!createForm.studyLevel) missingFields.push('BA/MA')
+    if (!createForm.studentName) missingFields.push('Student Name')
+    if (!createForm.matriculationNumber) missingFields.push('Matriculation Number')
+    if (!createForm.title) missingFields.push('Title')
+    if (!createForm.language) missingFields.push('Language')
+    if (!createForm.studyLevel) missingFields.push('Study Level')
     if (!createForm.topicAreaSlug) missingFields.push('Topic Area')
 
     if (missingFields.length > 0) {
@@ -285,7 +285,17 @@ export default function AdminInfoOverview() {
   const sortedProfessors = useMemo(() => {
     if (!professorsOverview) return []
 
-    return professorsOverview.map((professor) => {
+    const sortByFirstName = (professors: any[]) => {
+      return [...professors].sort((a, b) => {
+        const aFirstName = a.name.split(' ')[0]?.toLowerCase() || ''
+        const bFirstName = b.name.split(' ')[0]?.toLowerCase() || ''
+        return aFirstName.localeCompare(bFirstName)
+      })
+    }
+
+    const sortedByName = sortByFirstName(professorsOverview)
+
+    return sortedByName.map((professor) => {
       // Filter out withdrawn proposals
       const activeSupervisions = professor.supervisions.filter((supervision: any) => {
         return supervision.proposal.statusKey !== 'WITHDRAWN'
@@ -567,7 +577,7 @@ export default function AdminInfoOverview() {
               type="text"
               value={entrySearch}
               onChange={(e) => setEntrySearch(e.target.value)}
-              placeholder="Search by student name or matrikel number…"
+              placeholder="Search by student name or matriculation number…"
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -577,7 +587,7 @@ export default function AdminInfoOverview() {
               onClick={() => setIsCreateModalOpen(true)}
               className={{ root: 'text-sm bg-blue-600 hover:bg-blue-700 text-white' }}
             >
-              Neuen Eintrag erstellen
+              Create New Entry
             </Button>
           </div>
         </div>
@@ -833,7 +843,7 @@ export default function AdminInfoOverview() {
           className={{ content: 'max-w-3xl max-h-[90vh] overflow-auto' }}
         >
           <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900">Eintrag Details</h2>
+            <h2 className="text-xl font-bold text-gray-900">Entry Details</h2>
             <p className="mt-1 text-sm text-gray-600">
               {detailsState.supervision?.proposal?.title}
             </p>
@@ -903,7 +913,7 @@ export default function AdminInfoOverview() {
 
                     <div>
                       <div className="text-xs font-medium text-gray-500 uppercase">
-                        Matrikelnummer
+                        Matriculation Number
                       </div>
                       <div className="text-sm text-gray-900">
                         {acceptedApp?.matriculationNumber || '-'}
@@ -953,7 +963,7 @@ export default function AdminInfoOverview() {
                   </div>
 
                   <div className="mt-6 border-t border-gray-200 pt-6">
-                    <h3 className="text-lg font-semibold text-gray-900">AdminInfo</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">Admin Information</h3>
 
                     {editState ? (
                       <>
@@ -1124,8 +1134,8 @@ export default function AdminInfoOverview() {
           className={{ content: 'max-w-2xl max-h-[90vh] overflow-auto' }}
         >
           <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900">Neuen Eintrag erstellen</h2>
-            <p className="mt-1 text-sm text-gray-600">Erfassen Sie alle Angaben und speichern Sie.</p>
+            <h2 className="text-xl font-bold text-gray-900">Create New Entry</h2>
+            <p className="mt-1 text-sm text-gray-600">Fill in all fields and save.</p>
 
             <div className="mt-6 space-y-4">
               <div>
@@ -1146,7 +1156,7 @@ export default function AdminInfoOverview() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Betreuer Email
+                  Supervisor Email
                 </label>
                 <select
                   value={createForm.supervisorEmail}
@@ -1181,7 +1191,7 @@ export default function AdminInfoOverview() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Student Vor- und Nachname
+                  Student Name
                 </label>
                 <input
                   type="text"
@@ -1194,20 +1204,20 @@ export default function AdminInfoOverview() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Matrikelnummer
+                  Matriculation Number
                 </label>
                 <input
                   type="text"
                   value={createForm.matriculationNumber}
                   onChange={(e) => setCreateForm({ ...createForm, matriculationNumber: e.target.value })}
-                  placeholder="e.g. 24-230-230 oder 'Keine Angabe'"
+                  placeholder="e.g. 24-230-230 or 'No information'"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Titel
+                  Title
                 </label>
                 <textarea
                   value={createForm.title}
@@ -1219,7 +1229,7 @@ export default function AdminInfoOverview() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Sprache
+                  Language
                 </label>
                 <select
                   value={createForm.language}
@@ -1227,14 +1237,14 @@ export default function AdminInfoOverview() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="">Choose an option</option>
-                  <option value="German">Deutsch</option>
+                  <option value="German">German</option>
                   <option value="English">English</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  BA/MA
+                  Study Level
                 </label>
                 <select
                   value={createForm.studyLevel}
@@ -1265,15 +1275,15 @@ export default function AdminInfoOverview() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Veröffentlichung erlauben
+                  Allow Publication
                 </label>
                 <select
                   value={createForm.allowPublication}
                   onChange={(e) => setCreateForm({ ...createForm, allowPublication: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
-                  <option value="Nein">Nein</option>
-                  <option value="Ja">Ja</option>
+                  <option value="Nein">No</option>
+                  <option value="Ja">Yes</option>
                 </select>
                 <p className="mt-1 text-xs text-gray-500 flex items-start gap-1">
                   <svg className="w-4 h-4 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1285,15 +1295,15 @@ export default function AdminInfoOverview() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nutzung erlauben
+                  Allow Usage
                 </label>
                 <select
                   value={createForm.allowUsage}
                   onChange={(e) => setCreateForm({ ...createForm, allowUsage: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
-                  <option value="Ja">Ja</option>
-                  <option value="Nein">Nein</option>
+                  <option value="Ja">Yes</option>
+                  <option value="Nein">No</option>
                 </select>
               </div>
             </div>
