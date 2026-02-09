@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.83](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.82...v1.1.0-beta.83) (2026-02-09)
+
+
+### Features
+
+* add column filters for supervisor, title, OLAT captured, submission dates, and grades in Admin Info Overview ([adb9d0c](https://github.com/uzh-bf/thesis-platform/commit/adb9d0cd970e856af735b2023f7c9fb75b22220b))
+
+
+### Bug Fixes
+
+* update label from 'Admin Status' to 'Thesis Status' in Admin Info Overview and Responsibles pages ([b9d4eca](https://github.com/uzh-bf/thesis-platform/commit/b9d4eca0ecbdc2c306d86a1a43c030122d070ee1))
+
 ## [1.1.0-beta.82](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.81...v1.1.0-beta.82) (2026-02-09)
 
 
