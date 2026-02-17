@@ -238,6 +238,30 @@ export default function AdminInfoOverview() {
     })
   }
 
+  const handleCreateFormSelectKeyDown = (
+    event: React.KeyboardEvent<HTMLSelectElement>
+  ) => {
+    if (event.key !== 'Enter') return
+
+    event.preventDefault()
+
+    const selectElement = event.currentTarget as HTMLSelectElement & {
+      showPicker?: () => void
+    }
+
+    if (typeof selectElement.showPicker === 'function') {
+      try {
+        selectElement.showPicker()
+        return
+      } catch {
+        selectElement.click()
+        return
+      }
+    }
+
+    selectElement.click()
+  }
+
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
       if (sortDirection === 'asc') {
@@ -1497,6 +1521,7 @@ export default function AdminInfoOverview() {
                 <select
                   value={createForm.responsibleId}
                   onChange={(e) => setCreateForm({ ...createForm, responsibleId: e.target.value })}
+                  onKeyDown={handleCreateFormSelectKeyDown}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="">Choose an option</option>
@@ -1513,6 +1538,7 @@ export default function AdminInfoOverview() {
                 <select
                   value={createForm.supervisorEmail}
                   onChange={(e) => setCreateForm({ ...createForm, supervisorEmail: e.target.value })}
+                  onKeyDown={handleCreateFormSelectKeyDown}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="">Choose an option</option>
@@ -1586,6 +1612,7 @@ export default function AdminInfoOverview() {
                 <select
                   value={createForm.language}
                   onChange={(e) => setCreateForm({ ...createForm, language: e.target.value })}
+                  onKeyDown={handleCreateFormSelectKeyDown}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="">Choose an option</option>
@@ -1601,6 +1628,7 @@ export default function AdminInfoOverview() {
                 <select
                   value={createForm.studyLevel}
                   onChange={(e) => setCreateForm({ ...createForm, studyLevel: e.target.value })}
+                  onKeyDown={handleCreateFormSelectKeyDown}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="">Choose an option</option>
@@ -1616,6 +1644,7 @@ export default function AdminInfoOverview() {
                 <select
                   value={createForm.topicAreaSlug}
                   onChange={(e) => setCreateForm({ ...createForm, topicAreaSlug: e.target.value })}
+                  onKeyDown={handleCreateFormSelectKeyDown}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="">Choose an option</option>
@@ -1632,6 +1661,7 @@ export default function AdminInfoOverview() {
                 <select
                   value={createForm.allowPublication}
                   onChange={(e) => setCreateForm({ ...createForm, allowPublication: e.target.value })}
+                  onKeyDown={handleCreateFormSelectKeyDown}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="Nein">No</option>
@@ -1652,6 +1682,7 @@ export default function AdminInfoOverview() {
                 <select
                   value={createForm.allowUsage}
                   onChange={(e) => setCreateForm({ ...createForm, allowUsage: e.target.value })}
+                  onKeyDown={handleCreateFormSelectKeyDown}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="Ja">Yes</option>
