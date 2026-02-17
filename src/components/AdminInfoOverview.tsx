@@ -1088,10 +1088,6 @@ export default function AdminInfoOverview() {
                         />
                       </div>
                     </th>
-
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Captured on Zora
-                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -1182,13 +1178,6 @@ export default function AdminInfoOverview() {
                         </td>
                         <td className="px-4 py-2 text-sm text-gray-900">
                           {supervision.proposal.AdminInfo?.grade ?? '-'}
-                        </td>
-                        <td className="px-4 py-2 text-sm text-gray-900">
-                          {supervision.proposal.AdminInfo?.capturedOnZora === true
-                            ? 'Yes'
-                            : supervision.proposal.AdminInfo?.capturedOnZora === false
-                              ? 'No'
-                              : '-'}
                         </td>
                       </tr>
                     )
