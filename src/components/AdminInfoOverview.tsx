@@ -381,6 +381,11 @@ export default function AdminInfoOverview() {
         : sortedProfessors
 
     return [...source].sort((a, b) => {
+      const aEmail = String(a.email ?? '')
+      const bEmail = String(b.email ?? '')
+      const emailOrder = aEmail.localeCompare(bEmail, undefined, { sensitivity: 'base' })
+      if (emailOrder !== 0) return emailOrder
+
       const aName = String(a.name ?? '')
       const bName = String(b.name ?? '')
       return aName.localeCompare(bName, undefined, { sensitivity: 'base' })
