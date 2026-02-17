@@ -142,6 +142,11 @@ export default function AdminInfoOverview() {
     refetch,
   } = trpc.adminGetResponsiblesOverview.useQuery()
 
+  const {
+    data: createEntryProfessors,
+    isLoading: createEntryProfessorsLoading,
+  } = trpc.getAllPersonsResponsible.useQuery()
+
   const { data: supervisors } = trpc.getAllSupervisors.useQuery()
 
   const { data: topicAreas } = trpc.getTopicAreas.useQuery()
@@ -433,6 +438,19 @@ export default function AdminInfoOverview() {
       }
     })
   }, [professorsOverview, sortColumn, sortDirection])
+
+  const createEntryProfessorOptions = useMemo(() => {
+    const source =
+      createEntryProfessors && createEntryProfessors.length > 0
+        ? createEntryProfessors
+        : sortedProfessors
+
+    return [...source].sort((a, b) => {
+      const aName = String(a.name ?? '')
+      const bName = String(b.name ?? '')
+      return aName.localeCompare(bName, undefined, { sensitivity: 'base' })
+    })
+  }, [createEntryProfessors, sortedProfessors])
 
   const displayedProfessors = useMemo(() => {
     const normalizedStudentFilter = columnFilters.student.trim().toLowerCase()
@@ -1524,8 +1542,12 @@ export default function AdminInfoOverview() {
                   onKeyDown={handleCreateFormSelectKeyDown}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
-                  <option value="">Choose an option</option>
-                  {sortedProfessors.map((prof: any) => (
+                  <option value="">
+                    {createEntryProfessorsLoading && createEntryProfessorOptions.length === 0
+                      ? 'Loading options...'
+                      : 'Choose an option'}
+                  </option>
+                  {createEntryProfessorOptions.map((prof: any) => (
                     <option key={prof.id} value={prof.id}>{prof.email}</option>
                   ))}
                 </select>

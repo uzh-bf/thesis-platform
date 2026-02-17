@@ -297,6 +297,7 @@ export const appRouter = router({
   getAllPersonsResponsible: optionalAuthedProcedure.query(() => {
     return prisma.responsible.findMany({
       select: {
+        id: true,
         name: true,
         email: true,
       },
@@ -1941,24 +1942,29 @@ updateProposalStatus: publicProcedure
         }
       }),
     
-    getTopicAreas: publicProcedure
+  getTopicAreas: publicProcedure
     .query(async () => {
       try {
         const topicAreas = await prisma.topicArea.findMany({
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+          },
           where: {
             department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
           },
           orderBy: {
             name: 'asc',
-          }
-        });
-        return topicAreas;
+          },
+        })
+        return topicAreas
       } catch (error) {
-        console.error('Error fetching topic areas:', error);
+        console.error('Error fetching topic areas:', error)
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to fetch topic areas',
-        });
+        })
       }
     }),
 
@@ -1968,23 +1974,61 @@ updateProposalStatus: publicProcedure
       where: {
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
         supervisions: {
-          include: {
+          select: {
+            id: true,
+            studentEmail: true,
+            supervisorEmail: true,
+            studyLevel: true,
             proposal: {
-              include: {
-                topicArea: true,
-                status: true,
-                type: true,
-                AdminInfo: true,
+              select: {
+                id: true,
+                title: true,
+                statusKey: true,
+                ownedByStudent: true,
+                topicArea: {
+                  select: {
+                    name: true,
+                  },
+                },
+                AdminInfo: {
+                  select: {
+                    id: true,
+                    status: true,
+                    olatCapturedDate: true,
+                    latestSubmissionDate: true,
+                    submissionDate: true,
+                    olatGradeDate: true,
+                    grade: true,
+                    comment: true,
+                    capturedOnZora: true,
+                  },
+                },
                 applications: {
                   where: {
                     statusKey: 'ACCEPTED',
                   },
+                  select: {
+                    statusKey: true,
+                    email: true,
+                    fullName: true,
+                    matriculationNumber: true,
+                    allowPublication: true,
+                    allowUsage: true,
+                  },
+                  take: 1,
                 },
               },
             },
-            supervisor: true,
+            supervisor: {
+              select: {
+                email: true,
+              },
+            },
           },
           orderBy: {
             updatedAt: 'desc',
