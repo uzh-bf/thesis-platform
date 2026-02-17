@@ -14,10 +14,15 @@ flows:
   faqUrlStudent: '$FAQ_URL_STUDENT'
   faqUrlSupervisor: '$FAQ_URL_SUPERVISOR'
 
+azureAd:
+  clientId: '$AZURE_AD_CLIENT_ID'
+  clientSecret: '$AZURE_AD_CLIENT_SECRET'
+  tenantId: '$AZURE_AD_TENANT_ID'
+
 auth0:
-  issuer: '$AUTH0_ISSUER'
-  clientId: '$AUTH0_CLIENT_ID'
-  clientSecret: '$AUTH0_CLIENT_SECRET'
+  issuer: ''
+  clientId: ''
+  clientSecret: ''
 
 azureBlob:
   accessKey: '$AZURE_STORAGE_ACCOUNT_ACCESS_KEY'
