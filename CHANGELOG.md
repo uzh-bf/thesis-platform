@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.86](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.85...v1.1.0-beta.86) (2026-02-17)
+
+
+### Features
+
+* dropdown enter navigation ([db4d878](https://github.com/uzh-bf/thesis-platform/commit/db4d878b8683c1165bc72bb5cfbc45e0273da557))
+* loading of profs on create new entry ([448f867](https://github.com/uzh-bf/thesis-platform/commit/448f8673290a42cd688dead3184b4995bb6524ac))
+* merge profs table into one big table instead of many small ones ([b4daaff](https://github.com/uzh-bf/thesis-platform/commit/b4daaff5ef75ab611a518b4840b81a3e63e4504e))
+
 ## [1.1.0-beta.85](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.84...v1.1.0-beta.85) (2026-02-09)
 
 
