@@ -366,78 +366,13 @@ export default function AdminInfoOverview() {
       return aName.localeCompare(bName, undefined, { sensitivity: 'base' })
     })
 
-    return sortedByName.map((professor) => {
-      // Filter out withdrawn proposals
-      const activeSupervisions = professor.supervisions.filter((supervision: any) => {
-        return supervision.proposal.statusKey !== 'WITHDRAWN'
-      })
-
-      const professorWithActive = { ...professor, supervisions: activeSupervisions }
-
-      if (!sortColumn || !sortDirection) {
-        return professorWithActive
-      }
-
-      const sortedSupervisions = [...activeSupervisions].sort((a, b) => {
-        let aValue: any
-        let bValue: any
-
-        switch (sortColumn) {
-          case 'thesis':
-            aValue = a.proposal.title?.toLowerCase() || ''
-            bValue = b.proposal.title?.toLowerCase() || ''
-            break
-          case 'student':
-            aValue = (
-              a.proposal.applications?.find((app: any) => app.statusKey === 'ACCEPTED')
-                ?.email ||
-              a.studentEmail ||
-              a.proposal.ownedByStudent ||
-              ''
-            ).toLowerCase()
-            bValue = (
-              b.proposal.applications?.find((app: any) => app.statusKey === 'ACCEPTED')
-                ?.email ||
-              b.studentEmail ||
-              b.proposal.ownedByStudent ||
-              ''
-            ).toLowerCase()
-            break
-          case 'supervisor':
-            aValue = (a.supervisor?.email || a.supervisorEmail || '').toLowerCase()
-            bValue = (b.supervisor?.email || b.supervisorEmail || '').toLowerCase()
-            break
-          case 'status':
-            aValue = a.proposal.AdminInfo?.status || ''
-            bValue = b.proposal.AdminInfo?.status || ''
-            break
-          case 'submission':
-            aValue = a.proposal.AdminInfo?.latestSubmissionDate
-              ? new Date(a.proposal.AdminInfo.latestSubmissionDate).getTime()
-              : 0
-            bValue = b.proposal.AdminInfo?.latestSubmissionDate
-              ? new Date(b.proposal.AdminInfo.latestSubmissionDate).getTime()
-              : 0
-            break
-          case 'grade':
-            aValue = a.proposal.AdminInfo?.grade ?? -1
-            bValue = b.proposal.AdminInfo?.grade ?? -1
-            break
-          default:
-            return 0
-        }
-
-        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
-        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
-        return 0
-      })
-
-      return {
-        ...professorWithActive,
-        supervisions: sortedSupervisions,
-      }
-    })
-  }, [professorsOverview, sortColumn, sortDirection])
+    return sortedByName.map((professor) => ({
+      ...professor,
+      supervisions: professor.supervisions.filter(
+        (supervision: any) => supervision.proposal.statusKey !== 'WITHDRAWN'
+      ),
+    }))
+  }, [professorsOverview])
 
   const createEntryProfessorOptions = useMemo(() => {
     const source =
@@ -452,7 +387,7 @@ export default function AdminInfoOverview() {
     })
   }, [createEntryProfessors, sortedProfessors])
 
-  const displayedProfessors = useMemo(() => {
+  const displayedSupervisions = useMemo(() => {
     const normalizedStudentFilter = columnFilters.student.trim().toLowerCase()
     const normalizedSupervisorFilter = columnFilters.supervisor.trim().toLowerCase()
     const normalizedTitleFilter = columnFilters.title.trim().toLowerCase()
@@ -469,12 +404,13 @@ export default function AdminInfoOverview() {
     const gradeMinValue = gradeMin === null || Number.isNaN(gradeMin) ? null : gradeMin
     const gradeMaxValue = gradeMax === null || Number.isNaN(gradeMax) ? null : gradeMax
 
-    let base =
-      selectedResponsibleIds === null
+    const selectedProfessorIds =
+      selectedResponsibleIds === null ? null : new Set(selectedResponsibleIds)
+
+    const base =
+      selectedProfessorIds === null
         ? sortedProfessors
-        : sortedProfessors.filter((r: any) =>
-            new Set(selectedResponsibleIds).has(r.id)
-          )
+        : sortedProfessors.filter((r: any) => selectedProfessorIds.has(r.id))
 
     const matches = (supervision: any) => {
       const proposal = supervision?.proposal
@@ -563,25 +499,102 @@ export default function AdminInfoOverview() {
       return true
     }
 
-    return base
-      .map((r: any) => ({
-        ...r,
-        supervisionsForDisplay: r.supervisions.filter(matches),
-      }))
-      .filter((r: any) => r.supervisionsForDisplay.length > 0)
+    const rows = base.flatMap((professor: any) =>
+      professor.supervisions
+        .filter(matches)
+        .map((supervision: any) => ({ professor, supervision }))
+    )
+
+    if (!sortColumn || !sortDirection) {
+      return rows
+    }
+
+    return [...rows].sort((a: any, b: any) => {
+      let aValue: any
+      let bValue: any
+
+      switch (sortColumn) {
+        case 'thesis':
+          aValue = a.supervision.proposal.title?.toLowerCase() || ''
+          bValue = b.supervision.proposal.title?.toLowerCase() || ''
+          break
+        case 'student': {
+          const aAcceptedApp = a.supervision.proposal.applications?.find(
+            (app: any) => app.statusKey === 'ACCEPTED'
+          )
+          const bAcceptedApp = b.supervision.proposal.applications?.find(
+            (app: any) => app.statusKey === 'ACCEPTED'
+          )
+
+          aValue = (
+            aAcceptedApp?.email ||
+            a.supervision.studentEmail ||
+            a.supervision.proposal.ownedByStudent ||
+            ''
+          ).toLowerCase()
+          bValue = (
+            bAcceptedApp?.email ||
+            b.supervision.studentEmail ||
+            b.supervision.proposal.ownedByStudent ||
+            ''
+          ).toLowerCase()
+          break
+        }
+        case 'supervisor':
+          aValue = (
+            a.supervision.supervisor?.email ||
+            a.supervision.supervisorEmail ||
+            ''
+          ).toLowerCase()
+          bValue = (
+            b.supervision.supervisor?.email ||
+            b.supervision.supervisorEmail ||
+            ''
+          ).toLowerCase()
+          break
+        case 'status':
+          aValue = a.supervision.proposal.AdminInfo?.status || ''
+          bValue = b.supervision.proposal.AdminInfo?.status || ''
+          break
+        case 'submission':
+          aValue = a.supervision.proposal.AdminInfo?.latestSubmissionDate
+            ? new Date(a.supervision.proposal.AdminInfo.latestSubmissionDate).getTime()
+            : 0
+          bValue = b.supervision.proposal.AdminInfo?.latestSubmissionDate
+            ? new Date(b.supervision.proposal.AdminInfo.latestSubmissionDate).getTime()
+            : 0
+          break
+        case 'grade':
+          aValue = a.supervision.proposal.AdminInfo?.grade ?? -1
+          bValue = b.supervision.proposal.AdminInfo?.grade ?? -1
+          break
+        default:
+          return 0
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
+      return 0
+    })
   }, [
     sortedProfessors,
     selectedResponsibleIds,
     selectedStatuses,
     columnFilters,
+    sortColumn,
+    sortDirection,
   ])
 
   const totalDisplayedSupervisions = useMemo(() => {
-    return displayedProfessors.reduce(
-      (acc: number, r: any) => acc + (r.supervisionsForDisplay?.length ?? 0),
-      0
+    return displayedSupervisions.length
+  }, [displayedSupervisions])
+
+  const totalDisplayedProfessors = useMemo(() => {
+    return new Set(
+      displayedSupervisions.map((row: any) => row.professor.id)
     )
-  }, [displayedProfessors])
+      .size
+  }, [displayedSupervisions])
 
   return (
     <>
@@ -590,13 +603,13 @@ export default function AdminInfoOverview() {
           <div>
             <h2 className="text-xl font-bold text-gray-900">AdminInfo Overview</h2>
             <p className="mt-1 text-sm text-gray-600">
-              Overview of AdminInfo entries grouped by professor
+              Overview of AdminInfo entries in one table
             </p>
           </div>
           <div className="text-sm text-gray-600">
             {professorsLoading
               ? 'Loading…'
-              : `${totalDisplayedSupervisions} theses • ${displayedProfessors.length} professors`}
+              : `${totalDisplayedSupervisions} theses • ${totalDisplayedProfessors} professors`}
           </div>
         </div>
 
@@ -974,257 +987,216 @@ export default function AdminInfoOverview() {
       <div className="bg-white rounded-lg shadow p-6">
         {professorsLoading ? (
           <p className="text-gray-600">Loading professors...</p>
-        ) : displayedProfessors.length === 0 ? (
+        ) : displayedSupervisions.length === 0 ? (
           <p className="text-gray-600">No results for the current filters</p>
         ) : (
-          <div className="space-y-3">
-                {displayedProfessors.map((professor: any) => {
-                  const supervisionsToShow =
-                    professor.supervisionsForDisplay ?? professor.supervisions
-                  const total = professor.supervisions.length
-                  const isFiltered = supervisionsToShow.length !== total
-                  const countText = isFiltered
-                    ? `${supervisionsToShow.length}/${total} theses`
-                    : `${total} theses`
+          <div className="border border-gray-200 rounded-md">
+            <div className="flex items-center justify-end gap-2 px-3 py-2 text-xs text-gray-600 bg-gray-50 border-b border-gray-200">
+              <FontAwesomeIcon icon={faArrowsLeftRight} className="text-gray-400" />
+              <span>Scroll horizontally for more columns</span>
+            </div>
+            <div className="overflow-auto max-h-[65vh]">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50 sticky top-0 z-10">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Professor
+                    </th>
 
-                  return (
-                    <details
-                      key={professor.id}
-                      className="border border-gray-200 rounded-md bg-white"
+                    <th
+                      className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('supervisor')}
                     >
-                      <summary className="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-gray-50">
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium text-gray-900 truncate">
+                      <div className="flex items-center gap-2">
+                        Supervisor
+                        <FontAwesomeIcon
+                          icon={getSortIcon('supervisor')}
+                          className="text-gray-400"
+                        />
+                      </div>
+                    </th>
+
+                    <th
+                      className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('student')}
+                    >
+                      <div className="flex items-center gap-2">
+                        Student
+                        <FontAwesomeIcon
+                          icon={getSortIcon('student')}
+                          className="text-gray-400"
+                        />
+                      </div>
+                    </th>
+
+                    <th
+                      className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('thesis')}
+                    >
+                      <div className="flex items-center gap-2">
+                        Title
+                        <FontAwesomeIcon
+                          icon={getSortIcon('thesis')}
+                          className="text-gray-400"
+                        />
+                      </div>
+                    </th>
+
+                    <th
+                      className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('status')}
+                    >
+                      <div className="flex items-center gap-2">
+                        Status
+                        <FontAwesomeIcon
+                          icon={getSortIcon('status')}
+                          className="text-gray-400"
+                        />
+                      </div>
+                    </th>
+
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      OLAT Captured
+                    </th>
+
+                    <th
+                      className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('submission')}
+                    >
+                      <div className="flex items-center gap-2">
+                        Latest Submission
+                        <FontAwesomeIcon
+                          icon={getSortIcon('submission')}
+                          className="text-gray-400"
+                        />
+                      </div>
+                    </th>
+
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Submission Date
+                    </th>
+
+                    <th
+                      className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('grade')}
+                    >
+                      <div className="flex items-center gap-2">
+                        Grade
+                        <FontAwesomeIcon
+                          icon={getSortIcon('grade')}
+                          className="text-gray-400"
+                        />
+                      </div>
+                    </th>
+
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Captured on Zora
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {displayedSupervisions.map(({ professor, supervision }: any) => {
+                    const acceptedApp = supervision.proposal.applications?.find(
+                      (app: any) => app.statusKey === 'ACCEPTED'
+                    )
+                    const studentEmail =
+                      acceptedApp?.email ||
+                      supervision.studentEmail ||
+                      supervision.proposal.ownedByStudent ||
+                      '-'
+
+                    const studentSub = [
+                      acceptedApp?.fullName,
+                      acceptedApp?.matriculationNumber,
+                    ]
+                      .filter(Boolean)
+                      .join(' • ')
+
+                    return (
+                      <tr
+                        key={`${professor.id}-${supervision.id}`}
+                        className="hover:bg-gray-50 cursor-pointer"
+                        onClick={() => openDetailsModal(professor, supervision)}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            openDetailsModal(professor, supervision)
+                          }
+                        }}
+                      >
+                        <td className="px-4 py-2">
+                          <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
                             {professor.name}
                           </div>
-                          <div className="text-xs text-gray-500 truncate">
+                          <div className="text-xs text-gray-500 max-w-xs truncate">
                             {professor.email}
                           </div>
-                        </div>
-                        <div className="text-sm text-gray-600 whitespace-nowrap">
-                          {countText}
-                        </div>
-                      </summary>
-
-                      <div className="p-4 border-t border-gray-200">
-                        {supervisionsToShow.length === 0 ? (
-                          <p className="text-sm text-gray-500">No supervised theses</p>
-                        ) : (
-                          <div className="border border-gray-200 rounded-md">
-                            <div className="flex items-center justify-end gap-2 px-3 py-2 text-xs text-gray-600 bg-gray-50 border-b border-gray-200">
-                              <FontAwesomeIcon icon={faArrowsLeftRight} className="text-gray-400" />
-                              <span>Scroll horizontally for more columns</span>
-                            </div>
-                            <div className="overflow-auto max-h-[65vh]">
-                            <table className="min-w-full divide-y divide-gray-200">
-                              <thead className="bg-gray-50 sticky top-0 z-10">
-                          <tr>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Professor
-                            </th>
-
-                            <th
-                              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                              onClick={() => handleSort('supervisor')}
-                            >
-                              <div className="flex items-center gap-2">
-                                Supervisor
-                                <FontAwesomeIcon
-                                  icon={getSortIcon('supervisor')}
-                                  className="text-gray-400"
-                                />
-                              </div>
-                            </th>
-
-                            <th
-                              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                              onClick={() => handleSort('student')}
-                            >
-                              <div className="flex items-center gap-2">
-                                Student
-                                <FontAwesomeIcon
-                                  icon={getSortIcon('student')}
-                                  className="text-gray-400"
-                                />
-                              </div>
-                            </th>
-
-                            <th
-                              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                              onClick={() => handleSort('thesis')}
-                            >
-                              <div className="flex items-center gap-2">
-                                Title
-                                <FontAwesomeIcon
-                                  icon={getSortIcon('thesis')}
-                                  className="text-gray-400"
-                                />
-                              </div>
-                            </th>
-
-                            <th
-                              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                              onClick={() => handleSort('status')}
-                            >
-                              <div className="flex items-center gap-2">
-                                Status
-                                <FontAwesomeIcon
-                                  icon={getSortIcon('status')}
-                                  className="text-gray-400"
-                                />
-                              </div>
-                            </th>
-
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              OLAT Captured
-                            </th>
-
-                            <th
-                              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                              onClick={() => handleSort('submission')}
-                            >
-                              <div className="flex items-center gap-2">
-                                Latest Submission
-                                <FontAwesomeIcon
-                                  icon={getSortIcon('submission')}
-                                  className="text-gray-400"
-                                />
-                              </div>
-                            </th>
-
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Submission Date
-                            </th>
-
-                            <th
-                              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                              onClick={() => handleSort('grade')}
-                            >
-                              <div className="flex items-center gap-2">
-                                Grade
-                                <FontAwesomeIcon
-                                  icon={getSortIcon('grade')}
-                                  className="text-gray-400"
-                                />
-                              </div>
-                            </th>
-
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Captured on Zora
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {supervisionsToShow.map((supervision: any) => {
-                            const acceptedApp = supervision.proposal.applications?.find(
-                              (app: any) => app.statusKey === 'ACCEPTED'
-                            )
-                            const studentEmail =
-                              acceptedApp?.email ||
-                              supervision.studentEmail ||
-                              supervision.proposal.ownedByStudent ||
-                              '-'
-
-                            const studentSub = [
-                              acceptedApp?.fullName,
-                              acceptedApp?.matriculationNumber,
-                            ]
-                              .filter(Boolean)
-                              .join(' • ')
-
-                            return (
-                            <tr
-                              key={supervision.id}
-                              className="hover:bg-gray-50 cursor-pointer"
-                              onClick={() => openDetailsModal(professor, supervision)}
-                              tabIndex={0}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.preventDefault()
-                                  openDetailsModal(professor, supervision)
-                                }
-                              }}
-                            >
-                              <td className="px-4 py-2">
-                                <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
-                                  {professor.name}
-                                </div>
-                                <div className="text-xs text-gray-500 max-w-xs truncate">
-                                  {professor.email}
-                                </div>
-                              </td>
-                              <td className="px-4 py-2 text-sm text-gray-900">
-                                {supervision.supervisor?.email ||
-                                  supervision.supervisorEmail ||
-                                  '-'}
-                              </td>
-                              <td className="px-4 py-2">
-                                <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
-                                  {studentEmail}
-                                </div>
-                                {studentSub && (
-                                  <div className="text-xs text-gray-500 max-w-xs truncate">
-                                    {studentSub}
-                                  </div>
-                                )}
-                              </td>
-                              <td className="px-4 py-2">
-                                <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
-                                  {supervision.proposal.title}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {supervision.proposal.topicArea?.name}
-                                </div>
-                              </td>
-                              <td className="px-4 py-2 text-sm text-gray-900">
-                                {supervision.proposal.AdminInfo?.status || '-'}
-                              </td>
-                              <td className="px-4 py-2 text-sm text-gray-900">
-                                {supervision.proposal.AdminInfo?.olatCapturedDate
-                                  ? new Date(
-                                      supervision.proposal.AdminInfo.olatCapturedDate
-                                    ).toLocaleDateString()
-                                  : '-'}
-                              </td>
-                              <td className="px-4 py-2 text-sm text-gray-900">
-                                {supervision.proposal.AdminInfo?.latestSubmissionDate
-                                  ? new Date(
-                                      supervision.proposal.AdminInfo.latestSubmissionDate
-                                    ).toLocaleDateString()
-                                  : '-'}
-                              </td>
-                              <td className="px-4 py-2 text-sm text-gray-900">
-                                {supervision.proposal.AdminInfo?.submissionDate
-                                  ? new Date(
-                                      supervision.proposal.AdminInfo.submissionDate
-                                    ).toLocaleDateString()
-                                  : '-'}
-                              </td>
-                              <td className="px-4 py-2 text-sm text-gray-900">
-                                {supervision.proposal.AdminInfo?.grade ?? '-'}
-                              </td>
-                              <td className="px-4 py-2 text-sm text-gray-900">
-                                {supervision.proposal.AdminInfo?.capturedOnZora ===
-                                true
-                                  ? 'Yes'
-                                  : supervision.proposal.AdminInfo?.capturedOnZora ===
-                                      false
-                                    ? 'No'
-                                    : '-'}
-                              </td>
-                            </tr>
-                          )
-                          })}
-                        </tbody>
-                      </table>
-                            </div>
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-900">
+                          {supervision.supervisor?.email ||
+                            supervision.supervisorEmail ||
+                            '-'}
+                        </td>
+                        <td className="px-4 py-2">
+                          <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
+                            {studentEmail}
                           </div>
-                        )}
-                      </div>
-                    </details>
-                  )
-                })}
-              </div>
+                          {studentSub && (
+                            <div className="text-xs text-gray-500 max-w-xs truncate">
+                              {studentSub}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-2">
+                          <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
+                            {supervision.proposal.title}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {supervision.proposal.topicArea?.name}
+                          </div>
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-900">
+                          {supervision.proposal.AdminInfo?.status || '-'}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-900">
+                          {supervision.proposal.AdminInfo?.olatCapturedDate
+                            ? new Date(
+                                supervision.proposal.AdminInfo.olatCapturedDate
+                              ).toLocaleDateString()
+                            : '-'}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-900">
+                          {supervision.proposal.AdminInfo?.latestSubmissionDate
+                            ? new Date(
+                                supervision.proposal.AdminInfo.latestSubmissionDate
+                              ).toLocaleDateString()
+                            : '-'}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-900">
+                          {supervision.proposal.AdminInfo?.submissionDate
+                            ? new Date(
+                                supervision.proposal.AdminInfo.submissionDate
+                              ).toLocaleDateString()
+                            : '-'}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-900">
+                          {supervision.proposal.AdminInfo?.grade ?? '-'}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-900">
+                          {supervision.proposal.AdminInfo?.capturedOnZora === true
+                            ? 'Yes'
+                            : supervision.proposal.AdminInfo?.capturedOnZora === false
+                              ? 'No'
+                              : '-'}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
             )}
       </div>
 
