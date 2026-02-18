@@ -1,8 +1,16 @@
 import {
-  faArrowsLeftRight,
+  faBan,
+  faBoxArchive,
+  faCheck,
+  faCircleQuestion,
+  faClock,
+  faFolderOpen,
+  faPaperPlane,
+  faPen,
   faSort,
   faSortDown,
   faSortUp,
+  faSpinner,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button, Modal } from '@uzh-bf/design-system'
@@ -288,6 +296,53 @@ export default function AdminInfoOverview() {
       return faSort
     }
     return sortDirection === 'asc' ? faSortUp : faSortDown
+  }
+
+  const getStatusIconConfig = (status?: string | null) => {
+    switch (status) {
+      case 'OPEN':
+        return { icon: faFolderOpen, label: 'Offen (OPEN)', className: 'text-blue-600' }
+      case 'SUBMITTED':
+        return {
+          icon: faPaperPlane,
+          label: 'Eingereicht (SUBMITTED)',
+          className: 'text-indigo-600',
+        }
+      case 'IN_PROGRESS':
+        return {
+          icon: faSpinner,
+          label: 'In Bearbeitung (IN_PROGRESS)',
+          className: 'text-blue-600',
+        }
+      case 'GRADING':
+        return { icon: faPen, label: 'In Benotung (GRADING)', className: 'text-purple-600' }
+      case 'WITHDRAWN':
+        return { icon: faBan, label: 'Zurückgezogen (WITHDRAWN)', className: 'text-gray-500' }
+      case 'COMPLETED':
+        return {
+          icon: faCheck,
+          label: 'Abgeschlossen (COMPLETED)',
+          className: 'text-emerald-600',
+        }
+      case 'ARCHIVED':
+        return {
+          icon: faBoxArchive,
+          label: 'Archiviert (ARCHIVED)',
+          className: 'text-slate-500',
+        }
+      case 'OVERDUE':
+        return {
+          icon: faClock,
+          label: 'Überfällig (OVERDUE)',
+          className: 'text-amber-600',
+        }
+      default:
+        return {
+          icon: faCircleQuestion,
+          label: status ? `Unbekannt (${status})` : 'Kein Status',
+          className: 'text-gray-400',
+        }
+    }
   }
 
   const closeDetailsModal = () => {
@@ -985,31 +1040,24 @@ export default function AdminInfoOverview() {
               Create New Entry
             </Button>
           </div>
-        </div>
 
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-6">
-        {professorsLoading ? (
-          <p className="text-gray-600">Loading professors...</p>
-        ) : displayedSupervisions.length === 0 ? (
-          <p className="text-gray-600">No results for the current filters</p>
-        ) : (
-          <div className="border border-gray-200 rounded-md">
-            <div className="flex items-center justify-end gap-2 px-3 py-2 text-xs text-gray-600 bg-gray-50 border-b border-gray-200">
-              <FontAwesomeIcon icon={faArrowsLeftRight} className="text-gray-400" />
-              <span>Scroll horizontally for more columns</span>
-            </div>
-            <div className="overflow-auto max-h-[65vh]">
-              <table className="min-w-full divide-y divide-gray-200">
+          <div className="mt-6">
+            {professorsLoading ? (
+              <p className="text-gray-600">Loading professors...</p>
+            ) : displayedSupervisions.length === 0 ? (
+              <p className="text-gray-600">No results for the current filters</p>
+            ) : (
+              <>
+                <div className="overflow-y-auto max-h-[65vh] border border-gray-400">
+                  <table className="w-full table-fixed divide-y divide-gray-200">
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                       Professor
                     </th>
 
                     <th
-                      className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-32"
                       onClick={() => handleSort('supervisor')}
                     >
                       <div className="flex items-center gap-2">
@@ -1022,7 +1070,7 @@ export default function AdminInfoOverview() {
                     </th>
 
                     <th
-                      className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-32"
                       onClick={() => handleSort('student')}
                     >
                       <div className="flex items-center gap-2">
@@ -1035,7 +1083,7 @@ export default function AdminInfoOverview() {
                     </th>
 
                     <th
-                      className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
                       onClick={() => handleSort('thesis')}
                     >
                       <div className="flex items-center gap-2">
@@ -1048,11 +1096,11 @@ export default function AdminInfoOverview() {
                     </th>
 
                     <th
-                      className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-10"
                       onClick={() => handleSort('status')}
                     >
-                      <div className="flex items-center gap-2">
-                        Status
+                      <div className="flex items-center justify-center" title="Status">
+                        <span className="sr-only">Status</span>
                         <FontAwesomeIcon
                           icon={getSortIcon('status')}
                           className="text-gray-400"
@@ -1060,12 +1108,12 @@ export default function AdminInfoOverview() {
                       </div>
                     </th>
 
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                       OLAT Captured
                     </th>
 
                     <th
-                      className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
                       onClick={() => handleSort('submission')}
                     >
                       <div className="flex items-center gap-2">
@@ -1077,12 +1125,12 @@ export default function AdminInfoOverview() {
                       </div>
                     </th>
 
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
                       Submission Date
                     </th>
 
                     <th
-                      className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-12"
                       onClick={() => handleSort('grade')}
                     >
                       <div className="flex items-center gap-2">
@@ -1112,6 +1160,9 @@ export default function AdminInfoOverview() {
                     ]
                       .filter(Boolean)
                       .join(' • ')
+                    const statusConfig = getStatusIconConfig(
+                      supervision.proposal.AdminInfo?.status
+                    )
 
                     return (
                       <tr
@@ -1126,62 +1177,75 @@ export default function AdminInfoOverview() {
                           }
                         }}
                       >
-                        <td className="px-4 py-2">
-                          <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
+                        <td className="px-2 py-2 w-32">
+                          <div className="text-sm font-medium text-gray-900 truncate">
                             {professor.name}
                           </div>
-                          <div className="text-xs text-gray-500 max-w-xs truncate">
+                          <div className="text-xs text-gray-500 truncate">
                             {professor.email}
                           </div>
                         </td>
-                        <td className="px-4 py-2 text-sm text-gray-900">
-                          {supervision.supervisor?.email ||
-                            supervision.supervisorEmail ||
-                            '-'}
+                        <td className="px-2 py-2 text-sm text-gray-900 w-32">
+                          <div className="truncate">
+                            {supervision.supervisor?.email ||
+                              supervision.supervisorEmail ||
+                              '-'}
+                          </div>
                         </td>
-                        <td className="px-4 py-2">
-                          <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
+                        <td className="px-2 py-2 w-32">
+                          <div className="text-sm font-medium text-gray-900 truncate">
                             {studentEmail}
                           </div>
                           {studentSub && (
-                            <div className="text-xs text-gray-500 max-w-xs truncate">
+                            <div className="text-xs text-gray-500 truncate">
                               {studentSub}
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-2">
-                          <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
+                        <td className="px-2 py-2 w-24">
+                          <div className="text-sm font-medium text-gray-900 truncate">
                             {supervision.proposal.title}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-gray-500 truncate">
                             {supervision.proposal.topicArea?.name}
                           </div>
                         </td>
-                        <td className="px-4 py-2 text-sm text-gray-900">
-                          {supervision.proposal.AdminInfo?.status || '-'}
+                        <td className="px-2 py-2 text-sm text-gray-900 w-10">
+                          <div className="flex items-center justify-center">
+                            <span
+                              title={statusConfig.label}
+                              aria-label={statusConfig.label}
+                              className="inline-flex items-center justify-center"
+                            >
+                              <FontAwesomeIcon
+                                icon={statusConfig.icon}
+                                className={statusConfig.className}
+                              />
+                            </span>
+                          </div>
                         </td>
-                        <td className="px-4 py-2 text-sm text-gray-900">
+                        <td className="px-2 py-2 text-sm text-gray-900 w-20">
                           {supervision.proposal.AdminInfo?.olatCapturedDate
                             ? new Date(
                                 supervision.proposal.AdminInfo.olatCapturedDate
                               ).toLocaleDateString()
                             : '-'}
                         </td>
-                        <td className="px-4 py-2 text-sm text-gray-900">
+                        <td className="px-2 py-2 text-sm text-gray-900 w-24">
                           {supervision.proposal.AdminInfo?.latestSubmissionDate
                             ? new Date(
                                 supervision.proposal.AdminInfo.latestSubmissionDate
                               ).toLocaleDateString()
                             : '-'}
                         </td>
-                        <td className="px-4 py-2 text-sm text-gray-900">
+                        <td className="px-2 py-2 text-sm text-gray-900 w-24">
                           {supervision.proposal.AdminInfo?.submissionDate
                             ? new Date(
                                 supervision.proposal.AdminInfo.submissionDate
                               ).toLocaleDateString()
                             : '-'}
                         </td>
-                        <td className="px-4 py-2 text-sm text-gray-900">
+                        <td className="px-2 py-2 text-sm text-gray-900 w-12">
                           {supervision.proposal.AdminInfo?.grade ?? '-'}
                         </td>
                       </tr>
@@ -1189,9 +1253,12 @@ export default function AdminInfoOverview() {
                   })}
                 </tbody>
               </table>
-            </div>
-          </div>
+              </div>
+              </>
             )}
+          </div>
+        </div>
+
       </div>
 
       {detailsState && (
