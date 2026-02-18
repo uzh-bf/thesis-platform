@@ -17,7 +17,16 @@ import { Button, Modal } from '@uzh-bf/design-system'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { trpc } from 'src/lib/trpc'
 
-type SortColumn = 'thesis' | 'student' | 'supervisor' | 'status' | 'submission' | 'grade'
+type SortColumn =
+  | 'professor'
+  | 'thesis'
+  | 'student'
+  | 'supervisor'
+  | 'status'
+  | 'olatCaptured'
+  | 'latestSubmission'
+  | 'submissionDate'
+  | 'grade'
 type SortDirection = 'asc' | 'desc' | null
 
 type PresenceFilter = 'all' | 'yes' | 'no'
@@ -695,6 +704,10 @@ export default function AdminInfoOverview() {
       let bValue: any
 
       switch (sortColumn) {
+        case 'professor':
+          aValue = a.professor.name?.toLowerCase() || a.professor.email?.toLowerCase() || ''
+          bValue = b.professor.name?.toLowerCase() || b.professor.email?.toLowerCase() || ''
+          break
         case 'thesis':
           aValue = a.supervision.proposal.title?.toLowerCase() || ''
           bValue = b.supervision.proposal.title?.toLowerCase() || ''
@@ -737,12 +750,28 @@ export default function AdminInfoOverview() {
           aValue = a.supervision.proposal.AdminInfo?.status || ''
           bValue = b.supervision.proposal.AdminInfo?.status || ''
           break
-        case 'submission':
+        case 'olatCaptured':
+          aValue = a.supervision.proposal.AdminInfo?.olatCapturedDate
+            ? new Date(a.supervision.proposal.AdminInfo.olatCapturedDate).getTime()
+            : 0
+          bValue = b.supervision.proposal.AdminInfo?.olatCapturedDate
+            ? new Date(b.supervision.proposal.AdminInfo.olatCapturedDate).getTime()
+            : 0
+          break
+        case 'latestSubmission':
           aValue = a.supervision.proposal.AdminInfo?.latestSubmissionDate
             ? new Date(a.supervision.proposal.AdminInfo.latestSubmissionDate).getTime()
             : 0
           bValue = b.supervision.proposal.AdminInfo?.latestSubmissionDate
             ? new Date(b.supervision.proposal.AdminInfo.latestSubmissionDate).getTime()
+            : 0
+          break
+        case 'submissionDate':
+          aValue = a.supervision.proposal.AdminInfo?.submissionDate
+            ? new Date(a.supervision.proposal.AdminInfo.submissionDate).getTime()
+            : 0
+          bValue = b.supervision.proposal.AdminInfo?.submissionDate
+            ? new Date(b.supervision.proposal.AdminInfo.submissionDate).getTime()
             : 0
           break
         case 'grade':
@@ -1173,8 +1202,17 @@ export default function AdminInfoOverview() {
                   <table className="w-full table-fixed divide-y divide-gray-200">
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                      Professor
+                    <th
+                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-32"
+                      onClick={() => handleSort('professor')}
+                    >
+                      <div className="flex items-center gap-2">
+                        Professor
+                        <FontAwesomeIcon
+                          icon={getSortIcon('professor')}
+                          className="text-gray-400"
+                        />
+                      </div>
                     </th>
 
                     <th
@@ -1229,29 +1267,47 @@ export default function AdminInfoOverview() {
                       </div>
                     </th>
 
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
-                      OLAT Captured
-                    </th>
-
                     <th
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
-                      onClick={() => handleSort('submission')}
+                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-20"
+                      onClick={() => handleSort('olatCaptured')}
                     >
                       <div className="flex items-center gap-2">
-                        Latest Submission
+                        OLAT Captured
                         <FontAwesomeIcon
-                          icon={getSortIcon('submission')}
+                          icon={getSortIcon('olatCaptured')}
                           className="text-gray-400"
                         />
                       </div>
                     </th>
 
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
-                      Submission Date
+                    <th
+                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
+                      onClick={() => handleSort('latestSubmission')}
+                    >
+                      <div className="flex items-center gap-2">
+                        Latest Submission
+                        <FontAwesomeIcon
+                          icon={getSortIcon('latestSubmission')}
+                          className="text-gray-400"
+                        />
+                      </div>
                     </th>
 
                     <th
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-12"
+                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
+                      onClick={() => handleSort('submissionDate')}
+                    >
+                      <div className="flex items-center gap-2">
+                        Submission Date
+                        <FontAwesomeIcon
+                          icon={getSortIcon('submissionDate')}
+                          className="text-gray-400"
+                        />
+                      </div>
+                    </th>
+
+                    <th
+                      className="px-2 pr-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-14"
                       onClick={() => handleSort('grade')}
                     >
                       <div className="flex items-center gap-2">
@@ -1366,7 +1422,7 @@ export default function AdminInfoOverview() {
                               ).toLocaleDateString()
                             : '-'}
                         </td>
-                        <td className="px-2 py-2 text-sm text-gray-900 w-12">
+                        <td className="px-2 pr-4 py-2 text-sm text-gray-900 w-12">
                           {supervision.proposal.AdminInfo?.grade ?? '-'}
                         </td>
                       </tr>
