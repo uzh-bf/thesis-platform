@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.90](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.89...v1.1.0-beta.90) (2026-02-18)
+
+
+### Features
+
+* add page navigation for table ([a377100](https://github.com/uzh-bf/thesis-platform/commit/a377100a40966a6c283df48ae9492ee26696bd04))
+
 ## [1.1.0-beta.89](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.88...v1.1.0-beta.89) (2026-02-18)
 
 
