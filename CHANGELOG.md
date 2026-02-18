@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.89](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.88...v1.1.0-beta.89) (2026-02-18)
+
+
+### Bug Fixes
+
+* admininfo typo ([65c09af](https://github.com/uzh-bf/thesis-platform/commit/65c09af1ecb0ea9712e1d86fbe45315c2564f977))
+* optional and grade stuff - overall modal improvements ([44f9c42](https://github.com/uzh-bf/thesis-platform/commit/44f9c423874b08272b6e213040bcb877675e3684))
+
 ## [1.1.0-beta.88](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.87...v1.1.0-beta.88) (2026-02-18)
 
 
