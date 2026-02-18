@@ -20,6 +20,7 @@ import { trpc } from 'src/lib/trpc'
 type SortColumn =
   | 'professor'
   | 'thesis'
+  | 'studyLevel'
   | 'student'
   | 'supervisor'
   | 'status'
@@ -106,6 +107,13 @@ function toShortDateLabel(value: unknown): string {
   const mm = String(date.getMonth() + 1).padStart(2, '0')
   const yy = String(date.getFullYear()).slice(-2)
   return `${dd}/${mm}/${yy}`
+}
+
+function toStudyLevelAbbreviation(studyLevel: unknown): string {
+  const normalizedStudyLevel = String(studyLevel ?? '').toLowerCase()
+  if (normalizedStudyLevel.includes('bachelor')) return 'BA'
+  if (normalizedStudyLevel.includes('master')) return 'MA'
+  return '-'
 }
 
 type AdminInfoWorkflowState = 'OPEN' | 'IN_PROGRESS' | 'GRADING' | 'COMPLETED'
@@ -723,6 +731,14 @@ export default function AdminInfoOverview() {
           aValue = a.supervision.proposal.title?.toLowerCase() || ''
           bValue = b.supervision.proposal.title?.toLowerCase() || ''
           break
+        case 'studyLevel':
+          aValue = toStudyLevelAbbreviation(
+            a.supervision.proposal.studyLevel || a.supervision.studyLevel
+          ).toLowerCase()
+          bValue = toStudyLevelAbbreviation(
+            b.supervision.proposal.studyLevel || b.supervision.studyLevel
+          ).toLowerCase()
+          break
         case 'student': {
           const aAcceptedApp = a.supervision.proposal.applications?.find(
             (app: any) => app.statusKey === 'ACCEPTED'
@@ -824,6 +840,7 @@ export default function AdminInfoOverview() {
           Supervisor: supervision.supervisor?.name || '-',
           Student: acceptedApp?.fullName || '-',
           Title: supervision.proposal.title || '-',
+          'BA / MA': toStudyLevelAbbreviation(supervision.proposal.studyLevel),
           Status: getStatusIconConfig(adminInfo?.status).label,
           'OLAT Captured': toShortDateLabel(adminInfo?.olatCapturedDate),
           'Latest Submission': toShortDateLabel(adminInfo?.latestSubmissionDate),
@@ -1303,6 +1320,19 @@ export default function AdminInfoOverview() {
                     </th>
 
                     <th
+                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-12"
+                      onClick={() => handleSort('studyLevel')}
+                    >
+                      <div className="flex items-center gap-1">
+                        BA/MA
+                        <FontAwesomeIcon
+                          icon={getSortIcon('studyLevel')}
+                          className="text-gray-400"
+                        />
+                      </div>
+                    </th>
+
+                    <th
                       className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-16"
                       onClick={() => handleSort('status')}
                     >
@@ -1411,6 +1441,9 @@ export default function AdminInfoOverview() {
                           <div className="text-sm font-medium text-gray-900 truncate">
                             {supervision.proposal.title}
                           </div>
+                        </td>
+                        <td className="px-2 py-2 text-sm font-medium text-gray-900 w-12">
+                          {toStudyLevelAbbreviation(supervision.proposal.studyLevel)}
                         </td>
                         <td className="px-2 py-2 text-sm text-gray-900 w-10">
                           <div className="flex items-center justify-center">

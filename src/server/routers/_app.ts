@@ -1988,6 +1988,7 @@ updateProposalStatus: publicProcedure
               select: {
                 id: true,
                 title: true,
+                studyLevel: true,
                 statusKey: true,
                 ownedByStudent: true,
                 topicArea: {
