@@ -2051,7 +2051,12 @@ updateProposalStatus: publicProcedure
         latestSubmissionDate: z.string().nullable().optional(),
         submissionDate: z.string().nullable().optional(),
         olatGradeDate: z.string().nullable().optional(),
-        grade: z.number().nullable().optional(),
+        grade: z
+          .number()
+          .min(1, 'Grade must be between 1 and 6.')
+          .max(6, 'Grade must be between 1 and 6.')
+          .nullable()
+          .optional(),
         comment: z.string().nullable().optional(),
         capturedOnZora: z.boolean().nullable().optional(),
       })
@@ -2106,7 +2111,6 @@ updateProposalStatus: publicProcedure
       }
 
       const hasCurrentOlatCapturedDate = adminInfo.olatCapturedDate !== null
-      const hasCurrentLatestSubmissionDate = adminInfo.latestSubmissionDate !== null
       const hasCurrentSubmissionDate = adminInfo.submissionDate !== null
       const hasCurrentGrade = adminInfo.grade !== null && adminInfo.grade !== undefined
 
@@ -2115,7 +2119,7 @@ updateProposalStatus: publicProcedure
         fieldStepRank = 3
       } else if (hasCurrentSubmissionDate) {
         fieldStepRank = 2
-      } else if (hasCurrentOlatCapturedDate && hasCurrentLatestSubmissionDate) {
+      } else if (hasCurrentOlatCapturedDate) {
         fieldStepRank = 1
       }
 
@@ -2149,8 +2153,6 @@ updateProposalStatus: publicProcedure
 
       const hasOlatCapturedDate =
         nextOlatCapturedDate !== null && nextOlatCapturedDate !== undefined
-      const hasLatestSubmissionDate =
-        nextLatestSubmissionDate !== null && nextLatestSubmissionDate !== undefined
       const hasSubmissionDate = nextSubmissionDate !== null && nextSubmissionDate !== undefined
       const hasOlatGradeDate = nextOlatGradeDate !== null && nextOlatGradeDate !== undefined
       const hasGrade = nextGrade !== null && nextGrade !== undefined
@@ -2173,10 +2175,10 @@ updateProposalStatus: publicProcedure
       }
 
       if (currentWorkflowStep === 'OPEN') {
-        if (!hasOlatCapturedDate || !hasLatestSubmissionDate) {
+        if (!hasOlatCapturedDate) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
-            message: 'OLAT Captured Date and Latest Submission Date are required.',
+            message: 'OLAT Captured Date is required.',
           })
         }
 
@@ -2189,10 +2191,10 @@ updateProposalStatus: publicProcedure
       }
 
       if (currentWorkflowStep === 'IN_PROGRESS') {
-        if (!hasOlatCapturedDate || !hasLatestSubmissionDate) {
+        if (!hasOlatCapturedDate) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
-            message: 'OLAT Captured Date and Latest Submission Date must stay filled.',
+            message: 'OLAT Captured Date must stay filled.',
           })
         }
 
@@ -2212,29 +2214,23 @@ updateProposalStatus: publicProcedure
       }
 
       if (currentWorkflowStep === 'GRADING') {
-        if (!hasOlatCapturedDate || !hasLatestSubmissionDate || !hasSubmissionDate) {
+        if (!hasOlatCapturedDate || !hasSubmissionDate) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
             message: 'Previous workflow fields must stay filled.',
           })
         }
 
-        if (!hasGrade || !hasOlatGradeDate) {
+        if (!hasGrade) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
-            message: 'Grade and OLAT Grade Date are required before saving this step.',
+            message: 'Grade is required before saving this step.',
           })
         }
       }
 
       if (currentWorkflowStep === 'COMPLETED') {
-        if (
-          !hasOlatCapturedDate ||
-          !hasLatestSubmissionDate ||
-          !hasSubmissionDate ||
-          !hasOlatGradeDate ||
-          !hasGrade
-        ) {
+        if (!hasOlatCapturedDate || !hasSubmissionDate || !hasGrade) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
             message: 'Completed entries must keep all required workflow fields filled.',

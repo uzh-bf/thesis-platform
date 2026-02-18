@@ -123,7 +123,6 @@ function getAdminInfoWorkflowState(source: AdminInfoWorkflowSource): AdminInfoWo
             : -1
 
   const hasOlatCapturedDate = hasWorkflowValue(source.olatCapturedDate)
-  const hasLatestSubmissionDate = hasWorkflowValue(source.latestSubmissionDate)
   const hasSubmissionDate = hasWorkflowValue(source.submissionDate)
   const hasGrade = hasWorkflowValue(source.grade)
 
@@ -131,7 +130,7 @@ function getAdminInfoWorkflowState(source: AdminInfoWorkflowSource): AdminInfoWo
     ? 3
     : hasSubmissionDate
       ? 2
-      : hasOlatCapturedDate && hasLatestSubmissionDate
+      : hasOlatCapturedDate
         ? 1
         : 0
 
@@ -245,7 +244,7 @@ export default function AdminInfoOverview() {
               typeof status === 'string' &&
               STATUS_FILTER_OPTIONS.includes(status as StatusFilterOption)
           )
-          setSelectedStatuses([...new Set(validStatuses)])
+          setSelectedStatuses(Array.from(new Set(validStatuses)))
         }
       }
     } catch (error) {
@@ -338,6 +337,10 @@ export default function AdminInfoOverview() {
       alert('Grade must be a number')
       return
     }
+    if (gradeValue !== null && (gradeValue < 1 || gradeValue > 6)) {
+      alert('Grade must be between 1 and 6.')
+      return
+    }
 
     const currentAdminInfo = detailsState?.supervision?.proposal?.AdminInfo
     const workflowState = getAdminInfoWorkflowState({
@@ -349,14 +352,13 @@ export default function AdminInfoOverview() {
     })
 
     const hasOlatCapturedDate = editState.olatCapturedDate.trim() !== ''
-    const hasLatestSubmissionDate = editState.latestSubmissionDate.trim() !== ''
     const hasSubmissionDate = editState.submissionDate.trim() !== ''
     const hasOlatGradeDate = editState.olatGradeDate.trim() !== ''
     const hasGrade = gradeValue !== null
 
     if (workflowState === 'OPEN') {
-      if (!hasOlatCapturedDate || !hasLatestSubmissionDate) {
-        alert('Step 1 requires OLAT Captured Date and Latest Submission Date.')
+      if (!hasOlatCapturedDate) {
+        alert('Step 1 requires OLAT Captured Date.')
         return
       }
 
@@ -367,8 +369,8 @@ export default function AdminInfoOverview() {
     }
 
     if (workflowState === 'IN_PROGRESS') {
-      if (!hasOlatCapturedDate || !hasLatestSubmissionDate) {
-        alert('OLAT Captured Date and Latest Submission Date must stay filled.')
+      if (!hasOlatCapturedDate) {
+        alert('OLAT Captured Date must stay filled.')
         return
       }
 
@@ -389,25 +391,19 @@ export default function AdminInfoOverview() {
     }
 
     if (workflowState === 'GRADING') {
-      if (!hasOlatCapturedDate || !hasLatestSubmissionDate || !hasSubmissionDate) {
+      if (!hasOlatCapturedDate || !hasSubmissionDate) {
         alert('Previous workflow fields must stay filled.')
         return
       }
 
-      if (!hasGrade || !hasOlatGradeDate) {
-        alert('Step 3 requires Grade and OLAT Grade Date.')
+      if (!hasGrade) {
+        alert('Step 3 requires Grade.')
         return
       }
     }
 
     if (workflowState === 'COMPLETED') {
-      if (
-        !hasOlatCapturedDate ||
-        !hasLatestSubmissionDate ||
-        !hasSubmissionDate ||
-        !hasOlatGradeDate ||
-        !hasGrade
-      ) {
+      if (!hasOlatCapturedDate || !hasSubmissionDate || !hasGrade) {
         alert('Completed entries must keep all required workflow fields filled.')
         return
       }
@@ -1296,7 +1292,7 @@ export default function AdminInfoOverview() {
           onClose={() => {
             if (!updateAdminInfo.isPending) closeDetailsModal()
           }}
-          className={{ content: 'max-w-3xl max-h-[90vh] overflow-auto' }}
+          className={{ content: 'max-w-5xl max-h-[95vh] overflow-auto' }}
         >
           <div className="relative -m-5 -mt-8 p-5 pt-8">
             <div className="pointer-events-none absolute left-0 top-0 z-10 h-20 w-20 overflow-hidden">
@@ -1308,8 +1304,8 @@ export default function AdminInfoOverview() {
                 {detailsStudyLevelAbbreviation}
               </span>
             </div>
-            <h2 className="text-xl font-bold text-gray-900">Entry Details</h2>
-            <p className="mt-1 text-sm text-gray-600">
+            <h2 className="text-lg font-bold text-gray-900">Entry Details</h2>
+            <p className="mt-0.5 text-xs text-gray-600">
               {detailsState.supervision?.proposal?.title}
             </p>
 
@@ -1329,22 +1325,33 @@ export default function AdminInfoOverview() {
                 workflowState === 'GRADING' || workflowState === 'COMPLETED'
               const isGradeStepUnlocked =
                 workflowState === 'GRADING' || workflowState === 'COMPLETED'
+              const parsedGradeValue =
+                editState !== null && editState.grade.trim() !== ''
+                  ? Number(editState.grade)
+                  : null
+              const isGradeValueInvalid =
+                parsedGradeValue !== null &&
+                (Number.isNaN(parsedGradeValue) ||
+                  parsedGradeValue < 1 ||
+                  parsedGradeValue > 6)
               const isCapturedOnZoraUnlocked =
-                editState !== null &&
-                editState.grade.trim() !== '' &&
-                !Number.isNaN(Number(editState.grade))
+                parsedGradeValue !== null && !isGradeValueInvalid
+              const isOlatCapturedDateRequired = true
+              const isSubmissionDateRequired = workflowState !== 'OPEN'
+              const isGradeRequired =
+                workflowState === 'GRADING' || workflowState === 'COMPLETED'
               const submissionDateLockMessage =
-                'Locked until OLAT Captured Date and Latest Submission Date is saved.'
+                'Locked until OLAT Captured Date is saved.'
               const olatGradeDateLockMessage = 'Locked until Submission Date is saved.'
               const gradeLockMessage = 'Locked until Submission Date is saved.'
               const capturedOnZoraLockMessage = 'Locked until Grade is saved.'
               const workflowStepMessage =
                 workflowState === 'OPEN'
-                  ? 'Step 1: Fill OLAT Captured Date and Latest Submission Date, then save.'
+                  ? 'Step 1: Fill OLAT Captured Date, then save.'
                   : workflowState === 'IN_PROGRESS'
                     ? 'Step 2: Submission Date is now unlocked. Fill it and save to move to GRADING.'
                     : workflowState === 'GRADING'
-                      ? 'Step 3: Grade and OLAT Grade Date are now unlocked. Fill both and save to move to COMPLETED.'
+                      ? 'Step 3: Grade is required. OLAT Grade Date is optional.'
                       : 'Workflow completed.'
               const acceptedApp = proposal?.applications?.find(
                 (app: any) => app.statusKey === 'ACCEPTED'
@@ -1372,7 +1379,7 @@ export default function AdminInfoOverview() {
 
               return (
                 <>
-                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
                     <div>
                       <div className="text-xs font-medium text-gray-500 uppercase">
                         Professor
@@ -1439,15 +1446,6 @@ export default function AdminInfoOverview() {
 
                     <div>
                       <div className="text-xs font-medium text-gray-500 uppercase">
-                        Proposal StatusKey
-                      </div>
-                      <div className="text-sm text-gray-900">
-                        {proposal?.statusKey || '-'}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="text-xs font-medium text-gray-500 uppercase">
                         Thesis Status
                       </div>
                       <div className="text-sm text-gray-900">
@@ -1456,17 +1454,20 @@ export default function AdminInfoOverview() {
                     </div>
                   </div>
 
-                  <div className="mt-6 border-t border-gray-200 pt-6">
-                    <h3 className="text-lg font-semibold text-gray-900">Admin Information</h3>
+                  <div className="mt-4 border-t border-gray-200 pt-4">
+                    <h3 className="text-base font-semibold text-gray-900">Admin Information</h3>
 
                     {editState ? (
                       <>
-                        <p className="mt-2 text-xs text-blue-700">{workflowStepMessage}</p>
+                        <p className="mt-1 text-xs text-blue-700">{workflowStepMessage}</p>
 
-                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               OLAT Captured Date
+                              {isOlatCapturedDateRequired && (
+                                <span className="ml-0.5 text-red-500">*</span>
+                              )}
                             </label>
                             <input
                               type="date"
@@ -1484,6 +1485,9 @@ export default function AdminInfoOverview() {
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Latest Submission Date
+                              <span className="ml-1 text-xs font-normal text-gray-500">
+                                (optional)
+                              </span>
                             </label>
                             <input
                               type="date"
@@ -1501,6 +1505,9 @@ export default function AdminInfoOverview() {
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Submission Date
+                              {isSubmissionDateRequired && (
+                                <span className="ml-0.5 text-red-500">*</span>
+                              )}
                             </label>
                             <div
                               title={
@@ -1535,6 +1542,9 @@ export default function AdminInfoOverview() {
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               OLAT Grade Date
+                              <span className="ml-1 text-xs font-normal text-gray-500">
+                                (optional)
+                              </span>
                             </label>
                             <div
                               title={
@@ -1569,6 +1579,7 @@ export default function AdminInfoOverview() {
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Grade
+                              {isGradeRequired && <span className="ml-0.5 text-red-500">*</span>}
                             </label>
                             <div
                               title={isGradeStepUnlocked ? undefined : gradeLockMessage}
@@ -1577,6 +1588,8 @@ export default function AdminInfoOverview() {
                               <input
                                 type="number"
                                 step="0.1"
+                                min={1}
+                                max={6}
                                 value={editState.grade}
                                 onChange={(e) =>
                                   setEditState({
@@ -1587,11 +1600,18 @@ export default function AdminInfoOverview() {
                                 disabled={!isGradeStepUnlocked}
                                 title={isGradeStepUnlocked ? undefined : gradeLockMessage}
                                 className={`w-full px-3 py-2 border rounded-md ${
-                                  isGradeStepUnlocked
-                                    ? 'border-gray-300'
-                                    : 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed pointer-events-none'
+                                  !isGradeStepUnlocked
+                                    ? 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed pointer-events-none'
+                                    : isGradeValueInvalid
+                                      ? 'border-red-500 bg-red-50 text-red-700 focus:border-red-500 focus:ring-red-500'
+                                      : 'border-gray-300'
                                 }`}
                               />
+                              {isGradeStepUnlocked && isGradeValueInvalid && (
+                                <p className="mt-1 text-xs text-red-600">
+                                  Grade must be between 1 and 6.
+                                </p>
+                              )}
                             </div>
                           </div>
 
@@ -1674,7 +1694,7 @@ export default function AdminInfoOverview() {
                       <Button
                         onClick={handleSaveAdminInfo}
                         className={{ root: 'text-sm' }}
-                        disabled={updateAdminInfo.isPending}
+                        disabled={updateAdminInfo.isPending || isGradeValueInvalid}
                       >
                         {updateAdminInfo.isPending ? 'Saving…' : 'Save'}
                       </Button>
@@ -1703,6 +1723,7 @@ export default function AdminInfoOverview() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Professor Email
+                  <span className="ml-0.5 text-red-500">*</span>
                 </label>
                 <select
                   value={createForm.responsibleId}
@@ -1724,6 +1745,7 @@ export default function AdminInfoOverview() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Supervisor Email
+                  <span className="ml-0.5 text-red-500">*</span>
                 </label>
                 <select
                   value={createForm.supervisorEmail}
@@ -1747,6 +1769,7 @@ export default function AdminInfoOverview() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Student Email
+                  <span className="ml-0.5 text-red-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -1760,6 +1783,7 @@ export default function AdminInfoOverview() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Student Name
+                  <span className="ml-0.5 text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -1773,6 +1797,7 @@ export default function AdminInfoOverview() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Matriculation Number
+                  <span className="ml-0.5 text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -1786,6 +1811,7 @@ export default function AdminInfoOverview() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Title
+                  <span className="ml-0.5 text-red-500">*</span>
                 </label>
                 <textarea
                   value={createForm.title}
@@ -1798,6 +1824,7 @@ export default function AdminInfoOverview() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Language
+                  <span className="ml-0.5 text-red-500">*</span>
                 </label>
                 <select
                   value={createForm.language}
@@ -1814,6 +1841,7 @@ export default function AdminInfoOverview() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Study Level
+                  <span className="ml-0.5 text-red-500">*</span>
                 </label>
                 <select
                   value={createForm.studyLevel}
@@ -1830,6 +1858,7 @@ export default function AdminInfoOverview() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Topic Area
+                  <span className="ml-0.5 text-red-500">*</span>
                 </label>
                 <select
                   value={createForm.topicAreaSlug}

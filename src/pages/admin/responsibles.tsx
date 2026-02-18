@@ -41,6 +41,11 @@ export default function AdminResponsiblesPage() {
   const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
   const [editState, setEditState] = useState<AdminInfoEditState | null>(null)
+  const parsedGradeValue =
+    editState !== null && editState.grade.trim() !== '' ? Number(editState.grade) : null
+  const isGradeValueInvalid =
+    parsedGradeValue !== null &&
+    (Number.isNaN(parsedGradeValue) || parsedGradeValue < 1 || parsedGradeValue > 6)
 
   const {
     data: responsiblesOverview,
@@ -64,6 +69,10 @@ export default function AdminResponsiblesPage() {
     const gradeValue = editState.grade.trim() === '' ? null : Number(editState.grade)
     if (gradeValue !== null && Number.isNaN(gradeValue)) {
       alert('Grade must be a number')
+      return
+    }
+    if (gradeValue !== null && (gradeValue < 1 || gradeValue > 6)) {
+      alert('Grade must be between 1 and 6.')
       return
     }
 
@@ -451,6 +460,7 @@ export default function AdminResponsiblesPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Latest Submission Date
+                    <span className="ml-1 text-xs font-normal text-gray-500">(optional)</span>
                   </label>
                   <input
                     type="date"
@@ -482,6 +492,7 @@ export default function AdminResponsiblesPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     OLAT Grade Date
+                    <span className="ml-1 text-xs font-normal text-gray-500">(optional)</span>
                   </label>
                   <input
                     type="date"
@@ -500,10 +511,20 @@ export default function AdminResponsiblesPage() {
                   <input
                     type="number"
                     step="0.1"
+                    min={1}
+                    max={6}
                     value={editState.grade}
                     onChange={(e) => setEditState({ ...editState, grade: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    aria-invalid={isGradeValueInvalid}
+                    className={`w-full px-3 py-2 border rounded-md ${
+                      isGradeValueInvalid
+                        ? 'border-red-500 bg-red-50 text-red-700 focus:border-red-500 focus:ring-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {isGradeValueInvalid && (
+                    <p className="mt-1 text-xs text-red-600">Grade must be between 1 and 6.</p>
+                  )}
                 </div>
 
                 <div>
@@ -550,7 +571,7 @@ export default function AdminResponsiblesPage() {
                 <Button
                   onClick={handleSaveAdminInfo}
                   className={{ root: 'text-sm' }}
-                  disabled={updateAdminInfo.isPending}
+                  disabled={updateAdminInfo.isPending || isGradeValueInvalid}
                 >
                   {updateAdminInfo.isPending ? 'Saving…' : 'Save'}
                 </Button>
