@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.88](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.87...v1.1.0-beta.88) (2026-02-18)
+
+
+### Features
+
+* add localstorage to overview page with prof filter and statuses selected ([e91614e](https://github.com/uzh-bf/thesis-platform/commit/e91614e9869d61d10bb7700bd8c8110bbde363e5))
+* add MA/BA col / detail info ([9c668fa](https://github.com/uzh-bf/thesis-platform/commit/9c668fa1e071d088a62bcea503e3afe812b609f4))
+* add studyLevel column to overview ([5497c36](https://github.com/uzh-bf/thesis-platform/commit/5497c364e4e80afa4e7babfdd0ed5436dfeeb8f4))
+* filter functionality ([35d794b](https://github.com/uzh-bf/thesis-platform/commit/35d794bfb33aa64f8366c8faf276cc63418726a8))
+
+
+### Bug Fixes
+
+* centered cols ([b6c4b8d](https://github.com/uzh-bf/thesis-platform/commit/b6c4b8df6b849ee9e4f9043a14a4b945ee61eb6c))
+
 ## [1.1.0-beta.87](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.86...v1.1.0-beta.87) (2026-02-18)
 
 
