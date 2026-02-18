@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.92](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.91...v1.1.0-beta.92) (2026-02-18)
+
+
+### Features
+
+* add withdraw button to modal ([bbdc1ae](https://github.com/uzh-bf/thesis-platform/commit/bbdc1ae8d8b75016d98fa0de0049d857db4d17af))
+
 ## [1.1.0-beta.91](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.90...v1.1.0-beta.91) (2026-02-18)
 
 
