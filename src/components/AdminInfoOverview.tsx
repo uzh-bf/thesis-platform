@@ -69,6 +69,48 @@ type DetailsModalState = {
   supervision: any
 }
 
+type CreateEntryFormState = {
+  responsibleId: string
+  supervisorEmail: string
+  studentEmail: string
+  studentName: string
+  matriculationNumber: string
+  title: string
+  language: string
+  studyLevel: string
+  topicAreaSlug: string
+  allowPublication: string
+  allowUsage: string
+}
+
+const INITIAL_CREATE_FORM: CreateEntryFormState = {
+  responsibleId: '',
+  supervisorEmail: '',
+  studentEmail: '',
+  studentName: '',
+  matriculationNumber: '',
+  title: '',
+  language: '',
+  studyLevel: '',
+  topicAreaSlug: '',
+  allowPublication: 'Nein',
+  allowUsage: 'Nein',
+}
+
+const CREATE_REQUIRED_FIELDS: Array<keyof CreateEntryFormState> = [
+  'responsibleId',
+  'supervisorEmail',
+  'studentEmail',
+  'studentName',
+  'matriculationNumber',
+  'title',
+  'language',
+  'studyLevel',
+  'topicAreaSlug',
+  'allowPublication',
+  'allowUsage',
+]
+
 function toDateInputValue(value: unknown): string {
   if (!value) return ''
   const date = new Date(value as any)
@@ -169,21 +211,12 @@ export default function AdminInfoOverview() {
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false)
   const statusDropdownRef = useRef<HTMLDivElement>(null)
   const statusButtonRef = useRef<HTMLButtonElement>(null)
-  
+
   // Create entry form state
-  const [createForm, setCreateForm] = useState({
-    responsibleId: '',
-    supervisorEmail: '',
-    studentEmail: '',
-    studentName: '',
-    matriculationNumber: '',
-    title: '',
-    language: '',
-    studyLevel: '',
-    topicAreaSlug: '',
-    allowPublication: 'Nein',
-    allowUsage: 'Ja',
-  })
+  const [createForm, setCreateForm] = useState<CreateEntryFormState>(
+    INITIAL_CREATE_FORM
+  )
+  const [hasTriedCreateSubmit, setHasTriedCreateSubmit] = useState(false)
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -343,19 +376,8 @@ export default function AdminInfoOverview() {
   const createAdminInfoEntry = trpc.adminCreateAdminInfoEntry.useMutation({
     onSuccess: () => {
       setIsCreateModalOpen(false)
-      setCreateForm({
-        responsibleId: '',
-        supervisorEmail: '',
-        studentEmail: '',
-        studentName: '',
-        matriculationNumber: '',
-        title: '',
-        language: '',
-        studyLevel: '',
-        topicAreaSlug: '',
-        allowPublication: 'Nein',
-        allowUsage: 'Ja',
-      })
+      setCreateForm(INITIAL_CREATE_FORM)
+      setHasTriedCreateSubmit(false)
       refetch()
     },
     onError: (error) => {
@@ -473,22 +495,18 @@ export default function AdminInfoOverview() {
     })
   }
 
+  const isCreateFieldInvalid = (field: keyof CreateEntryFormState) =>
+    hasTriedCreateSubmit && createForm[field].trim() === ''
+
   const handleCreateEntry = () => {
     if (createAdminInfoEntry.isPending) return
+    setHasTriedCreateSubmit(true)
 
-    const missingFields: string[] = []
-    if (!createForm.responsibleId) missingFields.push('Professor Email')
-    if (!createForm.supervisorEmail) missingFields.push('Supervisor Email')
-    if (!createForm.studentEmail) missingFields.push('Student Email')
-    if (!createForm.studentName) missingFields.push('Student Name')
-    if (!createForm.matriculationNumber) missingFields.push('Matriculation Number')
-    if (!createForm.title) missingFields.push('Title')
-    if (!createForm.language) missingFields.push('Language')
-    if (!createForm.studyLevel) missingFields.push('Study Level')
-    if (!createForm.topicAreaSlug) missingFields.push('Topic Area')
+    const hasMissingRequiredFields = CREATE_REQUIRED_FIELDS.some(
+      (field) => createForm[field].trim() === ''
+    )
 
-    if (missingFields.length > 0) {
-      alert(`Please fill in: ${missingFields.join(', ')}`)
+    if (hasMissingRequiredFields) {
       return
     }
 
@@ -1137,7 +1155,10 @@ export default function AdminInfoOverview() {
 
           <div className="flex flex-wrap items-center justify-between gap-2">
             <Button
-              onClick={() => setIsCreateModalOpen(true)}
+              onClick={() => {
+                setHasTriedCreateSubmit(false)
+                setIsCreateModalOpen(true)
+              }}
               className={{ root: 'text-sm bg-blue-600 hover:bg-blue-700 text-white' }}
             >
               Create New Entry
@@ -1890,17 +1911,25 @@ export default function AdminInfoOverview() {
         <Modal
           open={true}
           onClose={() => {
-            if (!createAdminInfoEntry.isPending) setIsCreateModalOpen(false)
+            if (!createAdminInfoEntry.isPending) {
+              setHasTriedCreateSubmit(false)
+              setIsCreateModalOpen(false)
+            }
           }}
-          className={{ content: 'max-w-2xl max-h-[90vh] overflow-auto' }}
+          className={{ content: 'max-w-6xl max-h-[95vh] overflow-auto' }}
         >
-          <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900">Create New Entry</h2>
-            <p className="mt-1 text-sm text-gray-600">Fill in all fields and save.</p>
+          <div className="p-4">
+            <h2 className="text-lg font-bold text-gray-900">Create New Entry</h2>
 
-            <div className="mt-6 space-y-4">
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  className={`block text-sm font-medium mb-1 ${
+                    isCreateFieldInvalid('responsibleId')
+                      ? 'text-red-700'
+                      : 'text-gray-700'
+                  }`}
+                >
                   Professor Email
                   <span className="ml-0.5 text-red-500">*</span>
                 </label>
@@ -1908,7 +1937,12 @@ export default function AdminInfoOverview() {
                   value={createForm.responsibleId}
                   onChange={(e) => setCreateForm({ ...createForm, responsibleId: e.target.value })}
                   onKeyDown={handleCreateFormSelectKeyDown}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  aria-invalid={isCreateFieldInvalid('responsibleId')}
+                  className={`w-full px-3 py-1.5 border rounded-md ${
+                    isCreateFieldInvalid('responsibleId')
+                      ? 'border-red-500 bg-red-50 text-red-700 focus:border-red-500 focus:ring-red-500'
+                      : 'border-gray-300'
+                  }`}
                 >
                   <option value="">
                     {createEntryProfessorsLoading && createEntryProfessorOptions.length === 0
@@ -1922,7 +1956,13 @@ export default function AdminInfoOverview() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  className={`block text-sm font-medium mb-1 ${
+                    isCreateFieldInvalid('supervisorEmail')
+                      ? 'text-red-700'
+                      : 'text-gray-700'
+                  }`}
+                >
                   Supervisor Email
                   <span className="ml-0.5 text-red-500">*</span>
                 </label>
@@ -1930,23 +1970,28 @@ export default function AdminInfoOverview() {
                   value={createForm.supervisorEmail}
                   onChange={(e) => setCreateForm({ ...createForm, supervisorEmail: e.target.value })}
                   onKeyDown={handleCreateFormSelectKeyDown}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  aria-invalid={isCreateFieldInvalid('supervisorEmail')}
+                  className={`w-full px-3 py-1.5 border rounded-md ${
+                    isCreateFieldInvalid('supervisorEmail')
+                      ? 'border-red-500 bg-red-50 text-red-700 focus:border-red-500 focus:ring-red-500'
+                      : 'border-gray-300'
+                  }`}
                 >
                   <option value="">Choose an option</option>
                   {supervisors?.map((supervisor: any) => (
                     <option key={supervisor.email} value={supervisor.email}>{supervisor.email}</option>
                   ))}
                 </select>
-                <p className="mt-1 text-xs text-gray-500 flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  If you cannot find your supervisor here, ask the IT team for help.
-                </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  className={`block text-sm font-medium mb-1 ${
+                    isCreateFieldInvalid('studentEmail')
+                      ? 'text-red-700'
+                      : 'text-gray-700'
+                  }`}
+                >
                   Student Email
                   <span className="ml-0.5 text-red-500">*</span>
                 </label>
@@ -1955,12 +2000,23 @@ export default function AdminInfoOverview() {
                   value={createForm.studentEmail}
                   onChange={(e) => setCreateForm({ ...createForm, studentEmail: e.target.value })}
                   placeholder="e.g. max.mustermann@uzh.ch"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  aria-invalid={isCreateFieldInvalid('studentEmail')}
+                  className={`w-full px-3 py-1.5 border rounded-md ${
+                    isCreateFieldInvalid('studentEmail')
+                      ? 'border-red-500 bg-red-50 text-red-700 focus:border-red-500 focus:ring-red-500'
+                      : 'border-gray-300'
+                  }`}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  className={`block text-sm font-medium mb-1 ${
+                    isCreateFieldInvalid('studentName')
+                      ? 'text-red-700'
+                      : 'text-gray-700'
+                  }`}
+                >
                   Student Name
                   <span className="ml-0.5 text-red-500">*</span>
                 </label>
@@ -1969,12 +2025,23 @@ export default function AdminInfoOverview() {
                   value={createForm.studentName}
                   onChange={(e) => setCreateForm({ ...createForm, studentName: e.target.value })}
                   placeholder="e.g. Max Mustermann"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  aria-invalid={isCreateFieldInvalid('studentName')}
+                  className={`w-full px-3 py-1.5 border rounded-md ${
+                    isCreateFieldInvalid('studentName')
+                      ? 'border-red-500 bg-red-50 text-red-700 focus:border-red-500 focus:ring-red-500'
+                      : 'border-gray-300'
+                  }`}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  className={`block text-sm font-medium mb-1 ${
+                    isCreateFieldInvalid('matriculationNumber')
+                      ? 'text-red-700'
+                      : 'text-gray-700'
+                  }`}
+                >
                   Matriculation Number
                   <span className="ml-0.5 text-red-500">*</span>
                 </label>
@@ -1983,25 +2050,23 @@ export default function AdminInfoOverview() {
                   value={createForm.matriculationNumber}
                   onChange={(e) => setCreateForm({ ...createForm, matriculationNumber: e.target.value })}
                   placeholder="e.g. 24-230-230 or 'No information'"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  aria-invalid={isCreateFieldInvalid('matriculationNumber')}
+                  className={`w-full px-3 py-1.5 border rounded-md ${
+                    isCreateFieldInvalid('matriculationNumber')
+                      ? 'border-red-500 bg-red-50 text-red-700 focus:border-red-500 focus:ring-red-500'
+                      : 'border-gray-300'
+                  }`}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Title
-                  <span className="ml-0.5 text-red-500">*</span>
-                </label>
-                <textarea
-                  value={createForm.title}
-                  onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  className={`block text-sm font-medium mb-1 ${
+                    isCreateFieldInvalid('language')
+                      ? 'text-red-700'
+                      : 'text-gray-700'
+                  }`}
+                >
                   Language
                   <span className="ml-0.5 text-red-500">*</span>
                 </label>
@@ -2009,7 +2074,12 @@ export default function AdminInfoOverview() {
                   value={createForm.language}
                   onChange={(e) => setCreateForm({ ...createForm, language: e.target.value })}
                   onKeyDown={handleCreateFormSelectKeyDown}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  aria-invalid={isCreateFieldInvalid('language')}
+                  className={`w-full px-3 py-1.5 border rounded-md ${
+                    isCreateFieldInvalid('language')
+                      ? 'border-red-500 bg-red-50 text-red-700 focus:border-red-500 focus:ring-red-500'
+                      : 'border-gray-300'
+                  }`}
                 >
                   <option value="">Choose an option</option>
                   <option value="German">German</option>
@@ -2018,7 +2088,13 @@ export default function AdminInfoOverview() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  className={`block text-sm font-medium mb-1 ${
+                    isCreateFieldInvalid('studyLevel')
+                      ? 'text-red-700'
+                      : 'text-gray-700'
+                  }`}
+                >
                   Study Level
                   <span className="ml-0.5 text-red-500">*</span>
                 </label>
@@ -2026,7 +2102,12 @@ export default function AdminInfoOverview() {
                   value={createForm.studyLevel}
                   onChange={(e) => setCreateForm({ ...createForm, studyLevel: e.target.value })}
                   onKeyDown={handleCreateFormSelectKeyDown}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  aria-invalid={isCreateFieldInvalid('studyLevel')}
+                  className={`w-full px-3 py-1.5 border rounded-md ${
+                    isCreateFieldInvalid('studyLevel')
+                      ? 'border-red-500 bg-red-50 text-red-700 focus:border-red-500 focus:ring-red-500'
+                      : 'border-gray-300'
+                  }`}
                 >
                   <option value="">Choose an option</option>
                   <option value="Bachelor Thesis (18 ECTS)">BA (Bachelor)</option>
@@ -2035,7 +2116,13 @@ export default function AdminInfoOverview() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  className={`block text-sm font-medium mb-1 ${
+                    isCreateFieldInvalid('topicAreaSlug')
+                      ? 'text-red-700'
+                      : 'text-gray-700'
+                  }`}
+                >
                   Topic Area
                   <span className="ml-0.5 text-red-500">*</span>
                 </label>
@@ -2043,7 +2130,12 @@ export default function AdminInfoOverview() {
                   value={createForm.topicAreaSlug}
                   onChange={(e) => setCreateForm({ ...createForm, topicAreaSlug: e.target.value })}
                   onKeyDown={handleCreateFormSelectKeyDown}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  aria-invalid={isCreateFieldInvalid('topicAreaSlug')}
+                  className={`w-full px-3 py-1.5 border rounded-md ${
+                    isCreateFieldInvalid('topicAreaSlug')
+                      ? 'border-red-500 bg-red-50 text-red-700 focus:border-red-500 focus:ring-red-500'
+                      : 'border-gray-300'
+                  }`}
                 >
                   <option value="">Choose an option</option>
                   {topicAreas?.map((area: any) => (
@@ -2055,43 +2147,73 @@ export default function AdminInfoOverview() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Allow Publication
+                  <span className="ml-0.5 text-red-500">*</span>
                 </label>
                 <select
                   value={createForm.allowPublication}
                   onChange={(e) => setCreateForm({ ...createForm, allowPublication: e.target.value })}
                   onKeyDown={handleCreateFormSelectKeyDown}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-md"
                 >
                   <option value="Nein">No</option>
                   <option value="Ja">Yes</option>
                 </select>
-                <p className="mt-1 text-xs text-gray-500 flex items-start gap-1">
-                  <svg className="w-4 h-4 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  The student agrees to allow the Department of Finance to publish their work in its entirety or in part on the Internet and distribute printed versions to interested parties.
-                </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Allow Usage
+                  <span className="ml-0.5 text-red-500">*</span>
                 </label>
                 <select
                   value={createForm.allowUsage}
                   onChange={(e) => setCreateForm({ ...createForm, allowUsage: e.target.value })}
                   onKeyDown={handleCreateFormSelectKeyDown}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-md"
                 >
-                  <option value="Ja">Yes</option>
                   <option value="Nein">No</option>
+                  <option value="Ja">Yes</option>
                 </select>
+              </div>
+
+              <div className="md:col-span-2 lg:col-span-3">
+                <label
+                  className={`block text-sm font-medium mb-1 ${
+                    isCreateFieldInvalid('title')
+                      ? 'text-red-700'
+                      : 'text-gray-700'
+                  }`}
+                >
+                  Title
+                  <span className="ml-0.5 text-red-500">*</span>
+                </label>
+                <textarea
+                  value={createForm.title}
+                  onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+                  rows={2}
+                  aria-invalid={isCreateFieldInvalid('title')}
+                  className={`w-full px-3 py-1.5 border rounded-md ${
+                    isCreateFieldInvalid('title')
+                      ? 'border-red-500 bg-red-50 text-red-700 focus:border-red-500 focus:ring-red-500'
+                      : 'border-gray-300'
+                  }`}
+                />
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end gap-2">
+            {hasTriedCreateSubmit &&
+              CREATE_REQUIRED_FIELDS.some((field) => createForm[field].trim() === '') && (
+                <p className="mt-2 text-xs text-red-600">
+                  Please fill the highlighted required fields.
+                </p>
+              )}
+
+            <div className="mt-4 flex justify-end gap-2">
               <Button
-                onClick={() => setIsCreateModalOpen(false)}
+                onClick={() => {
+                  setHasTriedCreateSubmit(false)
+                  setIsCreateModalOpen(false)
+                }}
                 className={{ root: 'text-sm' }}
                 disabled={createAdminInfoEntry.isPending}
               >
