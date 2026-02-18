@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.87](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.86...v1.1.0-beta.87) (2026-02-18)
+
+
+### Features
+
+* add admin info entry process ([ef9265e](https://github.com/uzh-bf/thesis-platform/commit/ef9265ee142e4784a62c83a4653c2aed282030dc))
+* add xlsx button export ([e359593](https://github.com/uzh-bf/thesis-platform/commit/e359593c2fa5d05eb045c4a74df9b8580de4fd02))
+
+
+### Bug Fixes
+
+* add back Status col title ([2103f9c](https://github.com/uzh-bf/thesis-platform/commit/2103f9c97092fe6da249130cbc2dd83292523715))
+* admin info table width ([6a838ee](https://github.com/uzh-bf/thesis-platform/commit/6a838eed7cc1c1ca1882274665b33f462f5aff1b))
+* padding of table ([307e944](https://github.com/uzh-bf/thesis-platform/commit/307e9442de1ed2e3059f5cbba00ceb41fecbfbe1))
+* sort by email ([17578a6](https://github.com/uzh-bf/thesis-platform/commit/17578a6963abd4637fbc0c3030857f1622e7b920))
+* use Azure AD auth configuration in staging ([01a3375](https://github.com/uzh-bf/thesis-platform/commit/01a3375b05f04ef28e087d8979c7e47fd6c7fca6))
+
 ## [1.1.0-beta.86](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.85...v1.1.0-beta.86) (2026-02-17)
 
 
