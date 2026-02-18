@@ -166,6 +166,7 @@ export default function AdminInfoOverview() {
   const [isProfessorDropdownOpen, setIsProfessorDropdownOpen] = useState(false)
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
   const professorDropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
@@ -798,6 +799,53 @@ export default function AdminInfoOverview() {
       .size
   }, [displayedSupervisions])
 
+  const handleExportTable = async () => {
+    if (isExporting) return
+
+    if (displayedSupervisions.length === 0) {
+      alert('No rows to export for the current filters.')
+      return
+    }
+
+    try {
+      setIsExporting(true)
+
+      const xlsxModule = await import('xlsx')
+      const XLSX: any = (xlsxModule as any).default ?? xlsxModule
+
+      const exportRows = displayedSupervisions.map(({ professor, supervision }: any) => {
+        const acceptedApp = supervision.proposal.applications?.find(
+          (app: any) => app.statusKey === 'ACCEPTED'
+        )
+        const adminInfo = supervision.proposal.AdminInfo
+
+        return {
+          Professor: professor.name || '-',
+          Supervisor: supervision.supervisor?.name || '-',
+          Student: acceptedApp?.fullName || '-',
+          Title: supervision.proposal.title || '-',
+          Status: getStatusIconConfig(adminInfo?.status).label,
+          'OLAT Captured': toShortDateLabel(adminInfo?.olatCapturedDate),
+          'Latest Submission': toShortDateLabel(adminInfo?.latestSubmissionDate),
+          'Submission Date': toShortDateLabel(adminInfo?.submissionDate),
+          Grade: adminInfo?.grade ?? '-',
+        }
+      })
+
+      const worksheet = XLSX.utils.json_to_sheet(exportRows)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'AdminInfo')
+
+      const dateStamp = toDateInputValue(new Date()) || 'export'
+      XLSX.writeFile(workbook, `admin-info-overview-${dateStamp}.xlsx`)
+    } catch (error) {
+      console.error('Failed to export AdminInfo overview:', error)
+      alert('Export failed. Please try again.')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   return (
     <>
       <div className="bg-white rounded-lg shadow mb-6 p-6">
@@ -1174,12 +1222,18 @@ export default function AdminInfoOverview() {
             )}
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex items-center justify-between">
             <Button
               onClick={() => setIsCreateModalOpen(true)}
               className={{ root: 'text-sm bg-blue-600 hover:bg-blue-700 text-white' }}
             >
               Create New Entry
+            </Button>
+            <Button
+              onClick={handleExportTable}
+              className={{ root: 'text-sm bg-slate-600 hover:bg-slate-700 text-white' }}
+            >
+              {isExporting ? 'Exporting…' : 'Export XLSX'}
             </Button>
           </div>
 
