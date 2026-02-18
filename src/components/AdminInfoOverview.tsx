@@ -849,12 +849,12 @@ export default function AdminInfoOverview() {
 
       const worksheet = XLSX.utils.json_to_sheet(exportRows)
       const workbook = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'AdminInfo')
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Admin Info')
 
       const dateStamp = toDateInputValue(new Date()) || 'export'
       XLSX.writeFile(workbook, `admin-info-overview-${dateStamp}.xlsx`)
     } catch (error) {
-      console.error('Failed to export AdminInfo overview:', error)
+      console.error('Failed to export Admin Info overview:', error)
       alert('Export failed. Please try again.')
     } finally {
       setIsExporting(false)
@@ -866,9 +866,9 @@ export default function AdminInfoOverview() {
       <div className="bg-white rounded-lg shadow mb-6 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">AdminInfo Overview</h2>
+            <h2 className="text-xl font-bold text-gray-900">Admin Info Overview</h2>
             <p className="mt-1 text-sm text-gray-600">
-              Overview of AdminInfo entries in one table
+              Overview of Admin Info entries in one table
             </p>
           </div>
           <div className="text-sm text-gray-600">
@@ -1657,7 +1657,7 @@ export default function AdminInfoOverview() {
                       </>
                     ) : (
                       <p className="mt-3 text-sm text-gray-500">
-                        No AdminInfo entry exists for this proposal.
+                        No Admin Info entry exists for this proposal.
                       </p>
                     )}
                   </div>

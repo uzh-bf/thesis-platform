@@ -85,7 +85,7 @@ export default function AdminPanel() {
         {
           id: 'admin-tabs-admininfo',
           value: 'admininfo',
-          label: 'AdminInfo',
+          label: 'Admin Info',
         },
         {
           id: 'admin-tabs-users',
@@ -102,7 +102,7 @@ export default function AdminPanel() {
         {
           id: 'admin-tabs-admininfo',
           value: 'admininfo',
-          label: 'AdminInfo',
+          label: 'Admin Info',
         },
       ]
 

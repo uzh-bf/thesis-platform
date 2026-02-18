@@ -185,9 +185,9 @@ export default function AdminResponsiblesPage() {
               Back to Admin Panel
             </Button>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">AdminInfo Overview</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Admin Info Overview</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Overview of AdminInfo entries grouped by person responsible
+            Overview of Admin Info entries grouped by person responsible
           </p>
         </div>
 
@@ -371,7 +371,7 @@ export default function AdminResponsiblesPage() {
                                     onClick={() => {
                                       const adminInfo = supervision.proposal.AdminInfo
                                       if (!adminInfo) {
-                                        alert('No AdminInfo entry exists for this proposal')
+                                        alert('No Admin Info entry exists for this proposal')
                                         return
                                       }
 
@@ -430,7 +430,7 @@ export default function AdminResponsiblesPage() {
             className={{ content: 'max-w-2xl' }}
           >
             <div className="p-6">
-              <h2 className="text-xl font-bold text-gray-900">Edit AdminInfo</h2>
+              <h2 className="text-xl font-bold text-gray-900">Edit Admin Info</h2>
               <p className="mt-1 text-sm text-gray-600">{editState.thesisTitle}</p>
 
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
