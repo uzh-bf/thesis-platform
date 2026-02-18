@@ -1096,11 +1096,11 @@ export default function AdminInfoOverview() {
                     </th>
 
                     <th
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-10"
+                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-16"
                       onClick={() => handleSort('status')}
                     >
-                      <div className="flex items-center justify-center" title="Status">
-                        <span className="sr-only">Status</span>
+                      <div className="flex items-center gap-2">
+                        Status
                         <FontAwesomeIcon
                           icon={getSortIcon('status')}
                           className="text-gray-400"
