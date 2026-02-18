@@ -713,9 +713,13 @@ export default function AdminInfoOverview() {
     const matches = (supervision: any) => {
       const proposal = supervision?.proposal
       const adminInfo = proposal?.AdminInfo
+      const proposalStatus = adminInfo?.status
+
+      if (proposalStatus === 'WITHDRAWN') {
+        return false
+      }
 
       if (selectedStatuses.length > 0) {
-        const proposalStatus = adminInfo?.status
         if (!selectedStatuses.includes(proposalStatus)) {
           return false
         }
@@ -1143,12 +1147,16 @@ export default function AdminInfoOverview() {
               <p className="text-gray-600">No results for the current filters</p>
             ) : (
               <>
-                <div className="overflow-y-auto max-h-[65vh] border border-gray-400">
+                <div
+                  className={`border border-gray-400 overflow-x-auto ${
+                    rowsPerPage === 20 ? '' : 'max-h-[65vh] overflow-y-auto'
+                  }`}
+                >
                   <table className="w-full table-fixed divide-y divide-gray-200">
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
                     <th
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
+                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
                       onClick={() => handleSort('professor')}
                     >
                       <div className="flex items-center gap-2">
@@ -1161,7 +1169,7 @@ export default function AdminInfoOverview() {
                     </th>
 
                     <th
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
+                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
                       onClick={() => handleSort('supervisor')}
                     >
                       <div className="flex items-center gap-2">
@@ -1174,7 +1182,7 @@ export default function AdminInfoOverview() {
                     </th>
 
                     <th
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
+                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
                       onClick={() => handleSort('student')}
                     >
                       <div className="flex items-center gap-2">
@@ -1187,7 +1195,7 @@ export default function AdminInfoOverview() {
                     </th>
 
                     <th
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
+                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
                       onClick={() => handleSort('thesis')}
                     >
                       <div className="flex items-center gap-2">
@@ -1200,7 +1208,7 @@ export default function AdminInfoOverview() {
                     </th>
 
                     <th
-                      className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-12"
+                      className="px-2 py-1 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-12"
                       onClick={() => handleSort('studyLevel')}
                     >
                       <div className="flex items-center justify-center gap-1">
@@ -1213,7 +1221,7 @@ export default function AdminInfoOverview() {
                     </th>
 
                     <th
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-16"
+                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-16"
                       onClick={() => handleSort('status')}
                     >
                       <div className="flex items-center gap-2">
@@ -1226,7 +1234,7 @@ export default function AdminInfoOverview() {
                     </th>
 
                     <th
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-20"
+                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-20"
                       onClick={() => handleSort('olatCaptured')}
                     >
                       <div className="flex items-center gap-2">
@@ -1239,7 +1247,7 @@ export default function AdminInfoOverview() {
                     </th>
 
                     <th
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
+                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
                       onClick={() => handleSort('latestSubmission')}
                     >
                       <div className="flex items-center gap-2">
@@ -1252,7 +1260,7 @@ export default function AdminInfoOverview() {
                     </th>
 
                     <th
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
+                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
                       onClick={() => handleSort('submissionDate')}
                     >
                       <div className="flex items-center gap-2">
@@ -1265,7 +1273,7 @@ export default function AdminInfoOverview() {
                     </th>
 
                     <th
-                      className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-14"
+                      className="px-2 py-1 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-14"
                       onClick={() => handleSort('grade')}
                     >
                       <div className="flex items-center justify-center gap-2">
@@ -1302,30 +1310,30 @@ export default function AdminInfoOverview() {
                           }
                         }}
                       >
-                        <td className="px-2 py-2 w-24">
+                        <td className="px-2 py-1 w-24">
                           <div className="text-sm font-medium text-gray-900 truncate">
                             {professor.name}
                           </div>
                         </td>
-                        <td className="px-2 py-2 text-sm text-gray-900 w-24">
+                        <td className="px-2 py-1 text-sm text-gray-900 w-24">
                           <div className="truncate">
                             {supervisorName}
                           </div>
                         </td>
-                        <td className="px-2 py-2 w-24">
+                        <td className="px-2 py-1 w-24">
                           <div className="text-sm font-medium text-gray-900 truncate">
                             {studentName}
                           </div>
                         </td>
-                        <td className="px-2 py-2 w-24">
+                        <td className="px-2 py-1 w-24">
                           <div className="text-sm font-medium text-gray-900 truncate">
                             {supervision.proposal.title}
                           </div>
                         </td>
-                        <td className="px-2 py-2 text-sm font-medium text-gray-900 text-center w-12">
+                        <td className="px-2 py-1 text-sm font-medium text-gray-900 text-center w-12">
                           {toStudyLevelAbbreviation(supervision.proposal.studyLevel)}
                         </td>
-                        <td className="px-2 py-2 text-sm text-gray-900 w-10">
+                        <td className="px-2 py-1 text-sm text-gray-900 w-10">
                           <div className="flex items-center justify-center">
                             <span
                               title={statusConfig.label}
@@ -1339,22 +1347,22 @@ export default function AdminInfoOverview() {
                             </span>
                           </div>
                         </td>
-                        <td className="px-2 py-2 text-sm text-gray-900 w-20">
+                        <td className="px-2 py-1 text-sm text-gray-900 w-20">
                           {toShortDateLabel(
                             supervision.proposal.AdminInfo?.olatCapturedDate
                           )}
                         </td>
-                        <td className="px-2 py-2 text-sm text-gray-900 w-24">
+                        <td className="px-2 py-1 text-sm text-gray-900 w-24">
                           {toShortDateLabel(
                             supervision.proposal.AdminInfo?.latestSubmissionDate
                           )}
                         </td>
-                        <td className="px-2 py-2 text-sm text-gray-900 w-24">
+                        <td className="px-2 py-1 text-sm text-gray-900 w-24">
                           {toShortDateLabel(
                             supervision.proposal.AdminInfo?.submissionDate
                           )}
                         </td>
-                        <td className="px-2 py-2 text-sm text-gray-900 text-center w-12">
+                        <td className="px-2 py-1 text-sm text-gray-900 text-center w-12">
                           {supervision.proposal.AdminInfo?.grade ?? '-'}
                         </td>
                       </tr>
