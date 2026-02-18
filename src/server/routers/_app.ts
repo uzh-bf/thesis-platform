@@ -2026,6 +2026,7 @@ updateProposalStatus: publicProcedure
             },
             supervisor: {
               select: {
+                name: true,
                 email: true,
               },
             },

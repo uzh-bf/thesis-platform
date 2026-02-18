@@ -98,6 +98,16 @@ function parseDateInput(value: string, endOfDay = false): number | null {
   return Number.isNaN(time) ? null : time
 }
 
+function toShortDateLabel(value: unknown): string {
+  if (!value) return '-'
+  const date = new Date(value as any)
+  if (Number.isNaN(date.getTime())) return '-'
+  const dd = String(date.getDate()).padStart(2, '0')
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const yy = String(date.getFullYear()).slice(-2)
+  return `${dd}/${mm}/${yy}`
+}
+
 type AdminInfoWorkflowState = 'OPEN' | 'IN_PROGRESS' | 'GRADING' | 'COMPLETED'
 
 type AdminInfoWorkflowSource = {
@@ -720,31 +730,13 @@ export default function AdminInfoOverview() {
             (app: any) => app.statusKey === 'ACCEPTED'
           )
 
-          aValue = (
-            aAcceptedApp?.email ||
-            a.supervision.studentEmail ||
-            a.supervision.proposal.ownedByStudent ||
-            ''
-          ).toLowerCase()
-          bValue = (
-            bAcceptedApp?.email ||
-            b.supervision.studentEmail ||
-            b.supervision.proposal.ownedByStudent ||
-            ''
-          ).toLowerCase()
+          aValue = (aAcceptedApp?.fullName || '').toLowerCase()
+          bValue = (bAcceptedApp?.fullName || '').toLowerCase()
           break
         }
         case 'supervisor':
-          aValue = (
-            a.supervision.supervisor?.email ||
-            a.supervision.supervisorEmail ||
-            ''
-          ).toLowerCase()
-          bValue = (
-            b.supervision.supervisor?.email ||
-            b.supervision.supervisorEmail ||
-            ''
-          ).toLowerCase()
+          aValue = (a.supervision.supervisor?.name || '').toLowerCase()
+          bValue = (b.supervision.supervisor?.name || '').toLowerCase()
           break
         case 'status':
           aValue = a.supervision.proposal.AdminInfo?.status || ''
@@ -1325,18 +1317,8 @@ export default function AdminInfoOverview() {
                     const acceptedApp = supervision.proposal.applications?.find(
                       (app: any) => app.statusKey === 'ACCEPTED'
                     )
-                    const studentEmail =
-                      acceptedApp?.email ||
-                      supervision.studentEmail ||
-                      supervision.proposal.ownedByStudent ||
-                      '-'
-
-                    const studentSub = [
-                      acceptedApp?.fullName,
-                      acceptedApp?.matriculationNumber,
-                    ]
-                      .filter(Boolean)
-                      .join(' • ')
+                    const supervisorName = supervision.supervisor?.name || '-'
+                    const studentName = acceptedApp?.fullName || '-'
                     const statusConfig = getStatusIconConfig(
                       supervision.proposal.AdminInfo?.status
                     )
@@ -1358,33 +1340,20 @@ export default function AdminInfoOverview() {
                           <div className="text-sm font-medium text-gray-900 truncate">
                             {professor.name}
                           </div>
-                          <div className="text-xs text-gray-500 truncate">
-                            {professor.email}
-                          </div>
                         </td>
                         <td className="px-2 py-2 text-sm text-gray-900 w-32">
                           <div className="truncate">
-                            {supervision.supervisor?.email ||
-                              supervision.supervisorEmail ||
-                              '-'}
+                            {supervisorName}
                           </div>
                         </td>
                         <td className="px-2 py-2 w-32">
                           <div className="text-sm font-medium text-gray-900 truncate">
-                            {studentEmail}
+                            {studentName}
                           </div>
-                          {studentSub && (
-                            <div className="text-xs text-gray-500 truncate">
-                              {studentSub}
-                            </div>
-                          )}
                         </td>
                         <td className="px-2 py-2 w-24">
                           <div className="text-sm font-medium text-gray-900 truncate">
                             {supervision.proposal.title}
-                          </div>
-                          <div className="text-xs text-gray-500 truncate">
-                            {supervision.proposal.topicArea?.name}
                           </div>
                         </td>
                         <td className="px-2 py-2 text-sm text-gray-900 w-10">
@@ -1402,25 +1371,19 @@ export default function AdminInfoOverview() {
                           </div>
                         </td>
                         <td className="px-2 py-2 text-sm text-gray-900 w-20">
-                          {supervision.proposal.AdminInfo?.olatCapturedDate
-                            ? new Date(
-                                supervision.proposal.AdminInfo.olatCapturedDate
-                              ).toLocaleDateString()
-                            : '-'}
+                          {toShortDateLabel(
+                            supervision.proposal.AdminInfo?.olatCapturedDate
+                          )}
                         </td>
                         <td className="px-2 py-2 text-sm text-gray-900 w-24">
-                          {supervision.proposal.AdminInfo?.latestSubmissionDate
-                            ? new Date(
-                                supervision.proposal.AdminInfo.latestSubmissionDate
-                              ).toLocaleDateString()
-                            : '-'}
+                          {toShortDateLabel(
+                            supervision.proposal.AdminInfo?.latestSubmissionDate
+                          )}
                         </td>
                         <td className="px-2 py-2 text-sm text-gray-900 w-24">
-                          {supervision.proposal.AdminInfo?.submissionDate
-                            ? new Date(
-                                supervision.proposal.AdminInfo.submissionDate
-                              ).toLocaleDateString()
-                            : '-'}
+                          {toShortDateLabel(
+                            supervision.proposal.AdminInfo?.submissionDate
+                          )}
                         </td>
                         <td className="px-2 pr-4 py-2 text-sm text-gray-900 w-12">
                           {supervision.proposal.AdminInfo?.grade ?? '-'}
