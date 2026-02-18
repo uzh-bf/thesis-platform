@@ -2058,6 +2058,7 @@ updateProposalStatus: publicProcedure
           .max(6, 'Grade must be between 1 and 6.')
           .nullable()
           .optional(),
+        markWithdrawn: z.boolean().optional(),
         comment: z.string().nullable().optional(),
         capturedOnZora: z.boolean().nullable().optional(),
       })
@@ -2084,6 +2085,15 @@ updateProposalStatus: publicProcedure
       const envDepartment = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
       if (adminInfo.department && adminInfo.department !== envDepartment) {
         throw new TRPCError({ code: 'FORBIDDEN' })
+      }
+
+      if (input.markWithdrawn) {
+        await prisma.adminInfo.update({
+          where: { id: input.adminInfoId },
+          data: { status: 'WITHDRAWN' },
+        })
+
+        return { success: true }
       }
 
       const parseDate = (value: string | null | undefined) => {

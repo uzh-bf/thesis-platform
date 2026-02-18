@@ -458,6 +458,21 @@ export default function AdminInfoOverview() {
     })
   }
 
+  const handleWithdrawAdminInfo = () => {
+    if (!editState || updateAdminInfo.isPending) return
+
+    const isConfirmed = window.confirm(
+      'Are you sure you want to withdraw this thesis? This will set the thesis status to WITHDRAWN.'
+    )
+
+    if (!isConfirmed) return
+
+    updateAdminInfo.mutate({
+      adminInfoId: editState.adminInfoId,
+      markWithdrawn: true,
+    })
+  }
+
   const handleCreateEntry = () => {
     if (createAdminInfoEntry.isPending) return
 
@@ -1463,6 +1478,7 @@ export default function AdminInfoOverview() {
               const supervision = detailsState.supervision
               const proposal = supervision?.proposal
               const adminInfo = proposal?.AdminInfo
+              const isWithdrawn = adminInfo?.status === 'WITHDRAWN'
               const workflowState = getAdminInfoWorkflowState({
                 status: adminInfo?.status,
                 olatCapturedDate: adminInfo?.olatCapturedDate,
@@ -1832,23 +1848,39 @@ export default function AdminInfoOverview() {
                     )}
                   </div>
 
-                  <div className="mt-6 flex justify-end gap-2">
-                    <Button
-                      onClick={closeDetailsModal}
-                      className={{ root: 'text-sm' }}
-                      disabled={updateAdminInfo.isPending}
-                    >
-                      Close
-                    </Button>
-                    {editState && (
+                  <div className="mt-6 flex items-center justify-between gap-2">
+                    <div>
+                      {editState && !isWithdrawn && (
+                        <Button
+                          onClick={handleWithdrawAdminInfo}
+                          className={{
+                            root: 'text-sm bg-red-600 hover:bg-red-700 text-white',
+                          }}
+                          disabled={updateAdminInfo.isPending}
+                        >
+                          Withdraw
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
                       <Button
-                        onClick={handleSaveAdminInfo}
+                        onClick={closeDetailsModal}
                         className={{ root: 'text-sm' }}
-                        disabled={updateAdminInfo.isPending || isGradeValueInvalid}
+                        disabled={updateAdminInfo.isPending}
                       >
-                        {updateAdminInfo.isPending ? 'Saving…' : 'Save'}
+                        Close
                       </Button>
-                    )}
+                      {editState && (
+                        <Button
+                          onClick={handleSaveAdminInfo}
+                          className={{ root: 'text-sm' }}
+                          disabled={updateAdminInfo.isPending || isGradeValueInvalid}
+                        >
+                          {updateAdminInfo.isPending ? 'Saving…' : 'Save'}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </>
               )
