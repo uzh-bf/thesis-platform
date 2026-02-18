@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.93](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.92...v1.1.0-beta.93) (2026-02-18)
+
+
+### Bug Fixes
+
+* improved create entry modal ([b2a5262](https://github.com/uzh-bf/thesis-platform/commit/b2a5262f7ceaf2edc3ed6a5350568eec0881a84d))
+
 ## [1.1.0-beta.92](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.91...v1.1.0-beta.92) (2026-02-18)
 
 
