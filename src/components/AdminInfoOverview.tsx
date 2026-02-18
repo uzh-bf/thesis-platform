@@ -1031,10 +1031,10 @@ export default function AdminInfoOverview() {
                     </th>
 
                     <th
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-12"
+                      className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-12"
                       onClick={() => handleSort('studyLevel')}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-center gap-1">
                         BA/MA
                         <FontAwesomeIcon
                           icon={getSortIcon('studyLevel')}
@@ -1096,10 +1096,10 @@ export default function AdminInfoOverview() {
                     </th>
 
                     <th
-                      className="px-2 pr-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-14"
+                      className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-14"
                       onClick={() => handleSort('grade')}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center gap-2">
                         Grade
                         <FontAwesomeIcon
                           icon={getSortIcon('grade')}
@@ -1153,7 +1153,7 @@ export default function AdminInfoOverview() {
                             {supervision.proposal.title}
                           </div>
                         </td>
-                        <td className="px-2 py-2 text-sm font-medium text-gray-900 w-12">
+                        <td className="px-2 py-2 text-sm font-medium text-gray-900 text-center w-12">
                           {toStudyLevelAbbreviation(supervision.proposal.studyLevel)}
                         </td>
                         <td className="px-2 py-2 text-sm text-gray-900 w-10">
@@ -1185,7 +1185,7 @@ export default function AdminInfoOverview() {
                             supervision.proposal.AdminInfo?.submissionDate
                           )}
                         </td>
-                        <td className="px-2 pr-4 py-2 text-sm text-gray-900 w-12">
+                        <td className="px-2 py-2 text-sm text-gray-900 text-center w-12">
                           {supervision.proposal.AdminInfo?.grade ?? '-'}
                         </td>
                       </tr>
