@@ -2,6 +2,8 @@ import {
   faBan,
   faBoxArchive,
   faCheck,
+  faChevronLeft,
+  faChevronRight,
   faCircleQuestion,
   faClock,
   faFolderOpen,
@@ -29,6 +31,9 @@ type SortColumn =
   | 'submissionDate'
   | 'grade'
 type SortDirection = 'asc' | 'desc' | null
+type PageSizeOption = 20 | 50 | 100 | 'all'
+
+const PAGE_SIZE_OPTIONS: PageSizeOption[] = [20, 50, 100, 'all']
 
 const STATUS_FILTER_OPTIONS = [
   'OPEN',
@@ -44,6 +49,7 @@ type StatusFilterOption = (typeof STATUS_FILTER_OPTIONS)[number]
 const PROFESSOR_FILTER_STORAGE_KEY =
   'admin-info-overview:selectedResponsibleIds'
 const STATUS_FILTER_STORAGE_KEY = 'admin-info-overview:selectedStatuses'
+const ROWS_PER_PAGE_STORAGE_KEY = 'admin-info-overview:rowsPerPage'
 
 type AdminInfoEditState = {
   adminInfoId: string
@@ -145,6 +151,8 @@ function getAdminInfoWorkflowState(source: AdminInfoWorkflowSource): AdminInfoWo
 export default function AdminInfoOverview() {
   const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
+  const [rowsPerPage, setRowsPerPage] = useState<PageSizeOption>(20)
+  const [currentPage, setCurrentPage] = useState(1)
   const [editState, setEditState] = useState<AdminInfoEditState | null>(null)
   const [detailsState, setDetailsState] = useState<DetailsModalState | null>(null)
   const [selectedResponsibleIds, setSelectedResponsibleIds] = useState<null | string[]>(
@@ -247,6 +255,19 @@ export default function AdminInfoOverview() {
           setSelectedStatuses(Array.from(new Set(validStatuses)))
         }
       }
+
+      const storedRowsPerPage = window.localStorage.getItem(ROWS_PER_PAGE_STORAGE_KEY)
+      if (storedRowsPerPage !== null) {
+        const parsedRowsPerPage = JSON.parse(storedRowsPerPage)
+        if (
+          parsedRowsPerPage === 20 ||
+          parsedRowsPerPage === 50 ||
+          parsedRowsPerPage === 100 ||
+          parsedRowsPerPage === 'all'
+        ) {
+          setRowsPerPage(parsedRowsPerPage)
+        }
+      }
     } catch (error) {
       console.error(error)
     } finally {
@@ -279,6 +300,19 @@ export default function AdminInfoOverview() {
       console.error(error)
     }
   }, [hasLoadedPersistedFilters, selectedStatuses])
+
+  useEffect(() => {
+    if (!hasLoadedPersistedFilters) return
+
+    try {
+      window.localStorage.setItem(
+        ROWS_PER_PAGE_STORAGE_KEY,
+        JSON.stringify(rowsPerPage)
+      )
+    } catch (error) {
+      console.error(error)
+    }
+  }, [hasLoadedPersistedFilters, rowsPerPage])
 
   const {
     data: professorsOverview,
@@ -705,7 +739,16 @@ export default function AdminInfoOverview() {
     )
 
     if (!sortColumn || !sortDirection) {
-      return rows
+      return [...rows].sort((a: any, b: any) => {
+        const aUpdatedAt = a.supervision?.updatedAt
+          ? new Date(a.supervision.updatedAt).getTime()
+          : 0
+        const bUpdatedAt = b.supervision?.updatedAt
+          ? new Date(b.supervision.updatedAt).getTime()
+          : 0
+
+        return bUpdatedAt - aUpdatedAt
+      })
     }
 
     return [...rows].sort((a: any, b: any) => {
@@ -793,6 +836,47 @@ export default function AdminInfoOverview() {
     sortColumn,
     sortDirection,
   ])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [
+    selectedResponsibleIds,
+    selectedStatuses,
+    studentSearch,
+    sortColumn,
+    sortDirection,
+    rowsPerPage,
+  ])
+
+  const totalPages = useMemo(() => {
+    if (rowsPerPage === 'all') return 1
+    return Math.max(1, Math.ceil(displayedSupervisions.length / rowsPerPage))
+  }, [displayedSupervisions.length, rowsPerPage])
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [currentPage, totalPages])
+
+  const paginatedSupervisions = useMemo(() => {
+    if (rowsPerPage === 'all') return displayedSupervisions
+
+    const startIndex = (currentPage - 1) * rowsPerPage
+    return displayedSupervisions.slice(startIndex, startIndex + rowsPerPage)
+  }, [displayedSupervisions, currentPage, rowsPerPage])
+
+  const visibleStart =
+    displayedSupervisions.length === 0
+      ? 0
+      : rowsPerPage === 'all'
+        ? 1
+        : (currentPage - 1) * rowsPerPage + 1
+
+  const visibleEnd =
+    rowsPerPage === 'all'
+      ? displayedSupervisions.length
+      : Math.min(currentPage * rowsPerPage, displayedSupervisions.length)
 
   const totalDisplayedSupervisions = useMemo(() => {
     return displayedSupervisions.length
@@ -1195,7 +1279,7 @@ export default function AdminInfoOverview() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {displayedSupervisions.map(({ professor, supervision }: any) => {
+                  {paginatedSupervisions.map(({ professor, supervision }: any) => {
                     const acceptedApp = supervision.proposal.applications?.find(
                       (app: any) => app.statusKey === 'ACCEPTED'
                     )
@@ -1278,6 +1362,64 @@ export default function AdminInfoOverview() {
                   })}
                 </tbody>
               </table>
+              </div>
+
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-xs text-gray-600">
+                  Showing {visibleStart}-{visibleEnd} of {displayedSupervisions.length}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-600">Rows</span>
+
+                  <div className="inline-flex items-center rounded-md border border-gray-300 bg-white p-0.5">
+                    {PAGE_SIZE_OPTIONS.map((option) => {
+                      const isActive = rowsPerPage === option
+
+                      return (
+                        <button
+                          key={String(option)}
+                          type="button"
+                          onClick={() => setRowsPerPage(option)}
+                          className={`h-7 min-w-[34px] rounded px-2 text-xs font-medium ${
+                            isActive
+                              ? 'bg-blue-600 text-white'
+                              : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                          aria-label={`Show ${option === 'all' ? 'all' : option} rows`}
+                        >
+                          {option === 'all' ? 'All' : option}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    disabled={rowsPerPage === 'all' || currentPage === 1}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label="Previous page"
+                  >
+                    <FontAwesomeIcon icon={faChevronLeft} />
+                  </button>
+
+                  <span className="text-xs text-gray-600 min-w-[48px] text-center">
+                    {rowsPerPage === 'all' ? '1 / 1' : `${currentPage} / ${totalPages}`}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                    }
+                    disabled={rowsPerPage === 'all' || currentPage >= totalPages}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label="Next page"
+                  >
+                    <FontAwesomeIcon icon={faChevronRight} />
+                  </button>
+                </div>
               </div>
               </>
             )}

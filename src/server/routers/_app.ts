@@ -1981,6 +1981,7 @@ updateProposalStatus: publicProcedure
         supervisions: {
           select: {
             id: true,
+            updatedAt: true,
             studentEmail: true,
             supervisorEmail: true,
             studyLevel: true,
