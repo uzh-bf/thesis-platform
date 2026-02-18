@@ -1229,12 +1229,14 @@ export default function AdminInfoOverview() {
             >
               Create New Entry
             </Button>
-            <Button
-              onClick={handleExportTable}
-              className={{ root: 'text-sm bg-slate-600 hover:bg-slate-700 text-white' }}
-            >
-              {isExporting ? 'Exporting…' : 'Export XLSX'}
-            </Button>
+            <div title="Exports the currently filtered and sorted table to an XLSX file.">
+              <Button
+                onClick={handleExportTable}
+                className={{ root: 'text-sm bg-slate-600 hover:bg-slate-700 text-white' }}
+              >
+                {isExporting ? 'Exporting…' : 'Export XLSX'}
+              </Button>
+            </div>
           </div>
 
           <div className="mt-6">
