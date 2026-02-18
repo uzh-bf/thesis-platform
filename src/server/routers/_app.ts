@@ -24,6 +24,86 @@ import { ProposalStatusFilter } from 'src/types/app'
 import { z } from 'zod'
 import { v4 as uuidv4 } from 'uuid'
 
+async function applyAdminInfoStatusAutomation(department: Department) {
+  const todayStart = dayjs().startOf('day').toDate()
+  const oneMonthAgo = dayjs().subtract(1, 'month').startOf('day').toDate()
+
+  await prisma.adminInfo.updateMany({
+    where: {
+      department,
+      grade: {
+        not: null,
+      },
+      status: {
+        not: 'WITHDRAWN',
+      },
+      OR: [
+        {
+          olatGradeDate: {
+            not: null,
+            lte: oneMonthAgo,
+          },
+        },
+        {
+          olatGradeDate: null,
+          updatedAt: {
+            lte: oneMonthAgo,
+          },
+        },
+      ],
+    },
+    data: {
+      status: 'ARCHIVED',
+    },
+  })
+
+  await prisma.adminInfo.updateMany({
+    where: {
+      department,
+      grade: {
+        not: null,
+      },
+      status: {
+        notIn: ['WITHDRAWN', 'ARCHIVED'],
+      },
+      OR: [
+        {
+          olatGradeDate: {
+            not: null,
+            gt: oneMonthAgo,
+          },
+        },
+        {
+          olatGradeDate: null,
+          updatedAt: {
+            gt: oneMonthAgo,
+          },
+        },
+      ],
+    },
+    data: {
+      status: 'COMPLETED',
+    },
+  })
+
+  await prisma.adminInfo.updateMany({
+    where: {
+      department,
+      grade: null,
+      latestSubmissionDate: {
+        not: null,
+        lt: todayStart,
+      },
+      status: {
+        notIn: ['WITHDRAWN', 'ARCHIVED', 'COMPLETED'],
+      },
+    },
+    data: {
+      status: 'OVERDUE',
+    },
+  })
+}
+
 async function getStudentProposals({ ctx, filters }) {
   const proposals = await prisma.proposal.findMany({
     where: {
@@ -1970,9 +2050,13 @@ updateProposalStatus: publicProcedure
 
   // Admin routes
   adminGetResponsiblesOverview: adminProcedure.query(async () => {
+    const envDepartment = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+
+    await applyAdminInfoStatusAutomation(envDepartment)
+
     return prisma.responsible.findMany({
       where: {
-        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+        department: envDepartment,
       },
       select: {
         id: true,
@@ -2092,6 +2176,8 @@ updateProposalStatus: publicProcedure
           where: { id: input.adminInfoId },
           data: { status: 'WITHDRAWN' },
         })
+
+        await applyAdminInfoStatusAutomation(envDepartment)
 
         return { success: true }
       }
@@ -2269,6 +2355,8 @@ updateProposalStatus: publicProcedure
         where: { id: input.adminInfoId },
         data,
       })
+
+      await applyAdminInfoStatusAutomation(envDepartment)
 
       return { success: true }
     }),
