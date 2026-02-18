@@ -30,6 +30,21 @@ type SortColumn =
   | 'grade'
 type SortDirection = 'asc' | 'desc' | null
 
+const STATUS_FILTER_OPTIONS = [
+  'OPEN',
+  'IN_PROGRESS',
+  'OVERDUE',
+  'GRADING',
+  'COMPLETED',
+  'ARCHIVED',
+] as const
+
+type StatusFilterOption = (typeof STATUS_FILTER_OPTIONS)[number]
+
+const PROFESSOR_FILTER_STORAGE_KEY =
+  'admin-info-overview:selectedResponsibleIds'
+const STATUS_FILTER_STORAGE_KEY = 'admin-info-overview:selectedStatuses'
+
 type AdminInfoEditState = {
   adminInfoId: string
   thesisTitle: string
@@ -141,7 +156,8 @@ export default function AdminInfoOverview() {
   const [isExporting, setIsExporting] = useState(false)
   const professorDropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
+  const [selectedStatuses, setSelectedStatuses] = useState<StatusFilterOption[]>([])
+  const [hasLoadedPersistedFilters, setHasLoadedPersistedFilters] = useState(false)
   const [studentSearch, setStudentSearch] = useState('')
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false)
   const statusDropdownRef = useRef<HTMLDivElement>(null)
@@ -202,6 +218,68 @@ export default function AdminInfoOverview() {
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [isStatusDropdownOpen])
+
+  useEffect(() => {
+    try {
+      const storedResponsibleIds = window.localStorage.getItem(
+        PROFESSOR_FILTER_STORAGE_KEY
+      )
+      if (storedResponsibleIds !== null) {
+        const parsedResponsibleIds = JSON.parse(storedResponsibleIds)
+        if (parsedResponsibleIds === null) {
+          setSelectedResponsibleIds(null)
+        } else if (
+          Array.isArray(parsedResponsibleIds) &&
+          parsedResponsibleIds.every((id) => typeof id === 'string')
+        ) {
+          setSelectedResponsibleIds(parsedResponsibleIds)
+        }
+      }
+
+      const storedStatuses = window.localStorage.getItem(STATUS_FILTER_STORAGE_KEY)
+      if (storedStatuses !== null) {
+        const parsedStatuses = JSON.parse(storedStatuses)
+        if (Array.isArray(parsedStatuses)) {
+          const validStatuses = parsedStatuses.filter(
+            (status): status is StatusFilterOption =>
+              typeof status === 'string' &&
+              STATUS_FILTER_OPTIONS.includes(status as StatusFilterOption)
+          )
+          setSelectedStatuses([...new Set(validStatuses)])
+        }
+      }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setHasLoadedPersistedFilters(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!hasLoadedPersistedFilters) return
+
+    try {
+      window.localStorage.setItem(
+        PROFESSOR_FILTER_STORAGE_KEY,
+        JSON.stringify(selectedResponsibleIds)
+      )
+    } catch (error) {
+      console.error(error)
+    }
+  }, [hasLoadedPersistedFilters, selectedResponsibleIds])
+
+  useEffect(() => {
+    if (!hasLoadedPersistedFilters) return
+
+    try {
+      window.localStorage.setItem(
+        STATUS_FILTER_STORAGE_KEY,
+        JSON.stringify(selectedStatuses)
+      )
+    } catch (error) {
+      console.error(error)
+    }
+  }, [hasLoadedPersistedFilters, selectedStatuses])
 
   const {
     data: professorsOverview,
@@ -562,6 +640,17 @@ export default function AdminInfoOverview() {
     }))
   }, [professorsOverview])
 
+  useEffect(() => {
+    if (!professorsOverview || selectedResponsibleIds === null) return
+
+    const validIds = new Set(professorsOverview.map((professor) => professor.id))
+    const sanitizedSelectedIds = selectedResponsibleIds.filter((id) => validIds.has(id))
+
+    if (sanitizedSelectedIds.length !== selectedResponsibleIds.length) {
+      setSelectedResponsibleIds(sanitizedSelectedIds)
+    }
+  }, [professorsOverview, selectedResponsibleIds])
+
   const createEntryProfessorOptions = useMemo(() => {
     const source =
       createEntryProfessors && createEntryProfessors.length > 0
@@ -918,7 +1007,7 @@ export default function AdminInfoOverview() {
                       Clear
                     </button>
                   </div>
-                  {['OPEN', 'IN_PROGRESS', 'OVERDUE', 'GRADING', 'COMPLETED', 'ARCHIVED'].map((status) => (
+                  {STATUS_FILTER_OPTIONS.map((status) => (
                     <label
                       key={status}
                       className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer"
