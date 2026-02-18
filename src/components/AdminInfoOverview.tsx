@@ -116,6 +116,12 @@ function toStudyLevelAbbreviation(studyLevel: unknown): string {
   return '-'
 }
 
+function getStudyLevelFlagGradient(studyLevelAbbreviation: string): string {
+  if (studyLevelAbbreviation === 'BA') return 'from-blue-600 to-cyan-500'
+  if (studyLevelAbbreviation === 'MA') return 'from-violet-600 to-fuchsia-500'
+  return 'from-gray-500 to-gray-400'
+}
+
 type AdminInfoWorkflowState = 'OPEN' | 'IN_PROGRESS' | 'GRADING' | 'COMPLETED'
 
 type AdminInfoWorkflowSource = {
@@ -815,6 +821,10 @@ export default function AdminInfoOverview() {
       .size
   }, [displayedSupervisions])
 
+  const detailsStudyLevelAbbreviation = toStudyLevelAbbreviation(
+    detailsState?.supervision?.proposal?.studyLevel || detailsState?.supervision?.studyLevel
+  )
+
   const handleExportTable = async () => {
     if (isExporting) return
 
@@ -1498,7 +1508,16 @@ export default function AdminInfoOverview() {
           }}
           className={{ content: 'max-w-3xl max-h-[90vh] overflow-auto' }}
         >
-          <div className="p-6">
+          <div className="relative -m-5 -mt-8 p-5 pt-8">
+            <div className="pointer-events-none absolute left-0 top-0 z-10 h-20 w-20 overflow-hidden">
+              <span
+                className={`absolute -left-7 top-4 inline-flex w-24 -rotate-45 items-center justify-center bg-gradient-to-r px-2 py-1 text-[10px] font-semibold tracking-[0.22em] text-white shadow-sm ${getStudyLevelFlagGradient(
+                  detailsStudyLevelAbbreviation
+                )}`}
+              >
+                {detailsStudyLevelAbbreviation}
+              </span>
+            </div>
             <h2 className="text-xl font-bold text-gray-900">Entry Details</h2>
             <p className="mt-1 text-sm text-gray-600">
               {detailsState.supervision?.proposal?.title}
@@ -1518,7 +1537,8 @@ export default function AdminInfoOverview() {
               const isSubmissionStepUnlocked = workflowState !== 'OPEN'
               const isOlatGradeDateUnlocked =
                 workflowState === 'GRADING' || workflowState === 'COMPLETED'
-              const isGradeStepUnlocked = workflowState === 'GRADING'
+              const isGradeStepUnlocked =
+                workflowState === 'GRADING' || workflowState === 'COMPLETED'
               const isCapturedOnZoraUnlocked =
                 editState !== null &&
                 editState.grade.trim() !== '' &&
