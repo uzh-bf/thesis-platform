@@ -2058,7 +2058,15 @@ updateProposalStatus: publicProcedure
     .mutation(async ({ input }) => {
       const adminInfo = await prisma.adminInfo.findUnique({
         where: { id: input.adminInfoId },
-        select: { id: true, department: true },
+        select: {
+          id: true,
+          department: true,
+          status: true,
+          olatCapturedDate: true,
+          latestSubmissionDate: true,
+          submissionDate: true,
+          grade: true,
+        },
       })
 
       if (!adminInfo) {
@@ -2080,14 +2088,173 @@ updateProposalStatus: publicProcedure
         return date
       }
 
+      const getStatusStepRank = (status: string | null | undefined) => {
+        switch (status) {
+          case 'OPEN':
+            return 0
+          case 'IN_PROGRESS':
+            return 1
+          case 'GRADING':
+            return 2
+          case 'COMPLETED':
+            return 3
+          default:
+            return -1
+        }
+      }
+
+      const hasCurrentOlatCapturedDate = adminInfo.olatCapturedDate !== null
+      const hasCurrentLatestSubmissionDate = adminInfo.latestSubmissionDate !== null
+      const hasCurrentSubmissionDate = adminInfo.submissionDate !== null
+      const hasCurrentGrade = adminInfo.grade !== null && adminInfo.grade !== undefined
+
+      let fieldStepRank = 0
+      if (hasCurrentGrade) {
+        fieldStepRank = 3
+      } else if (hasCurrentSubmissionDate) {
+        fieldStepRank = 2
+      } else if (hasCurrentOlatCapturedDate && hasCurrentLatestSubmissionDate) {
+        fieldStepRank = 1
+      }
+
+      const workflowStepRank = Math.max(getStatusStepRank(adminInfo.status), fieldStepRank)
+      const currentWorkflowStep =
+        workflowStepRank >= 3
+          ? 'COMPLETED'
+          : workflowStepRank === 2
+            ? 'GRADING'
+            : workflowStepRank === 1
+              ? 'IN_PROGRESS'
+              : 'OPEN'
+
+      const nextOlatCapturedDate =
+        'olatCapturedDate' in input
+          ? parseDate(input.olatCapturedDate)
+          : adminInfo.olatCapturedDate
+      const nextLatestSubmissionDate =
+        'latestSubmissionDate' in input
+          ? parseDate(input.latestSubmissionDate)
+          : adminInfo.latestSubmissionDate
+      const nextSubmissionDate =
+        'submissionDate' in input
+          ? parseDate(input.submissionDate)
+          : adminInfo.submissionDate
+      const nextOlatGradeDate =
+        'olatGradeDate' in input
+          ? parseDate(input.olatGradeDate)
+          : undefined
+      const nextGrade = 'grade' in input ? input.grade : adminInfo.grade
+
+      const hasOlatCapturedDate =
+        nextOlatCapturedDate !== null && nextOlatCapturedDate !== undefined
+      const hasLatestSubmissionDate =
+        nextLatestSubmissionDate !== null && nextLatestSubmissionDate !== undefined
+      const hasSubmissionDate = nextSubmissionDate !== null && nextSubmissionDate !== undefined
+      const hasOlatGradeDate = nextOlatGradeDate !== null && nextOlatGradeDate !== undefined
+      const hasGrade = nextGrade !== null && nextGrade !== undefined
+
+      if ('capturedOnZora' in input && input.capturedOnZora !== null && !hasGrade) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Captured on Zora can only be set after Grade is provided.',
+        })
+      }
+
+      if (
+        (currentWorkflowStep === 'OPEN' || currentWorkflowStep === 'IN_PROGRESS') &&
+        hasOlatGradeDate
+      ) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'OLAT Grade Date can only be set after Submission Date is saved.',
+        })
+      }
+
+      if (currentWorkflowStep === 'OPEN') {
+        if (!hasOlatCapturedDate || !hasLatestSubmissionDate) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'OLAT Captured Date and Latest Submission Date are required.',
+          })
+        }
+
+        if (hasSubmissionDate || hasGrade) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Submission Date and Grade are locked until step 1 is completed.',
+          })
+        }
+      }
+
+      if (currentWorkflowStep === 'IN_PROGRESS') {
+        if (!hasOlatCapturedDate || !hasLatestSubmissionDate) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'OLAT Captured Date and Latest Submission Date must stay filled.',
+          })
+        }
+
+        if (!hasSubmissionDate) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Submission Date is required before saving this step.',
+          })
+        }
+
+        if (hasGrade) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Grade is locked until the grading step.',
+          })
+        }
+      }
+
+      if (currentWorkflowStep === 'GRADING') {
+        if (!hasOlatCapturedDate || !hasLatestSubmissionDate || !hasSubmissionDate) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Previous workflow fields must stay filled.',
+          })
+        }
+
+        if (!hasGrade || !hasOlatGradeDate) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Grade and OLAT Grade Date are required before saving this step.',
+          })
+        }
+      }
+
+      if (currentWorkflowStep === 'COMPLETED') {
+        if (
+          !hasOlatCapturedDate ||
+          !hasLatestSubmissionDate ||
+          !hasSubmissionDate ||
+          !hasOlatGradeDate ||
+          !hasGrade
+        ) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Completed entries must keep all required workflow fields filled.',
+          })
+        }
+      }
+
       const data: any = {}
-      if ('olatCapturedDate' in input) data.olatCapturedDate = parseDate(input.olatCapturedDate)
-      if ('latestSubmissionDate' in input) data.latestSubmissionDate = parseDate(input.latestSubmissionDate)
-      if ('submissionDate' in input) data.submissionDate = parseDate(input.submissionDate)
-      if ('olatGradeDate' in input) data.olatGradeDate = parseDate(input.olatGradeDate)
+      if ('olatCapturedDate' in input) data.olatCapturedDate = nextOlatCapturedDate
+      if ('latestSubmissionDate' in input) data.latestSubmissionDate = nextLatestSubmissionDate
+      if ('submissionDate' in input) data.submissionDate = nextSubmissionDate
+      if ('olatGradeDate' in input) data.olatGradeDate = nextOlatGradeDate
       if ('grade' in input) data.grade = input.grade
       if ('comment' in input) data.comment = input.comment
       if ('capturedOnZora' in input) data.capturedOnZora = input.capturedOnZora
+
+      data.status =
+        currentWorkflowStep === 'OPEN'
+          ? 'IN_PROGRESS'
+          : currentWorkflowStep === 'IN_PROGRESS'
+            ? 'GRADING'
+            : 'COMPLETED'
 
       await prisma.adminInfo.update({
         where: { id: input.adminInfoId },

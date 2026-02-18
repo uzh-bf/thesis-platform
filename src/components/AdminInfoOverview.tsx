@@ -89,6 +89,53 @@ function parseDateInput(value: string, endOfDay = false): number | null {
   return Number.isNaN(time) ? null : time
 }
 
+type AdminInfoWorkflowState = 'OPEN' | 'IN_PROGRESS' | 'GRADING' | 'COMPLETED'
+
+type AdminInfoWorkflowSource = {
+  status?: string | null
+  olatCapturedDate?: unknown
+  latestSubmissionDate?: unknown
+  submissionDate?: unknown
+  grade?: unknown
+}
+
+function hasWorkflowValue(value: unknown): boolean {
+  return value !== null && value !== undefined && value !== ''
+}
+
+function getAdminInfoWorkflowState(source: AdminInfoWorkflowSource): AdminInfoWorkflowState {
+  const statusRank =
+    source.status === 'OPEN'
+      ? 0
+      : source.status === 'IN_PROGRESS'
+        ? 1
+        : source.status === 'GRADING'
+          ? 2
+          : source.status === 'COMPLETED'
+            ? 3
+            : -1
+
+  const hasOlatCapturedDate = hasWorkflowValue(source.olatCapturedDate)
+  const hasLatestSubmissionDate = hasWorkflowValue(source.latestSubmissionDate)
+  const hasSubmissionDate = hasWorkflowValue(source.submissionDate)
+  const hasGrade = hasWorkflowValue(source.grade)
+
+  const dataRank = hasGrade
+    ? 3
+    : hasSubmissionDate
+      ? 2
+      : hasOlatCapturedDate && hasLatestSubmissionDate
+        ? 1
+        : 0
+
+  const workflowRank = Math.max(statusRank, dataRank)
+
+  if (workflowRank >= 3) return 'COMPLETED'
+  if (workflowRank === 2) return 'GRADING'
+  if (workflowRank === 1) return 'IN_PROGRESS'
+  return 'OPEN'
+}
+
 export default function AdminInfoOverview() {
   const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
@@ -200,6 +247,80 @@ export default function AdminInfoOverview() {
     if (gradeValue !== null && Number.isNaN(gradeValue)) {
       alert('Grade must be a number')
       return
+    }
+
+    const currentAdminInfo = detailsState?.supervision?.proposal?.AdminInfo
+    const workflowState = getAdminInfoWorkflowState({
+      status: currentAdminInfo?.status,
+      olatCapturedDate: currentAdminInfo?.olatCapturedDate,
+      latestSubmissionDate: currentAdminInfo?.latestSubmissionDate,
+      submissionDate: currentAdminInfo?.submissionDate,
+      grade: currentAdminInfo?.grade,
+    })
+
+    const hasOlatCapturedDate = editState.olatCapturedDate.trim() !== ''
+    const hasLatestSubmissionDate = editState.latestSubmissionDate.trim() !== ''
+    const hasSubmissionDate = editState.submissionDate.trim() !== ''
+    const hasOlatGradeDate = editState.olatGradeDate.trim() !== ''
+    const hasGrade = gradeValue !== null
+
+    if (workflowState === 'OPEN') {
+      if (!hasOlatCapturedDate || !hasLatestSubmissionDate) {
+        alert('Step 1 requires OLAT Captured Date and Latest Submission Date.')
+        return
+      }
+
+      if (hasSubmissionDate || hasOlatGradeDate || hasGrade) {
+        alert('Submission Date, OLAT Grade Date and Grade are locked until step 1 is saved.')
+        return
+      }
+    }
+
+    if (workflowState === 'IN_PROGRESS') {
+      if (!hasOlatCapturedDate || !hasLatestSubmissionDate) {
+        alert('OLAT Captured Date and Latest Submission Date must stay filled.')
+        return
+      }
+
+      if (!hasSubmissionDate) {
+        alert('Step 2 requires Submission Date.')
+        return
+      }
+
+      if (hasOlatGradeDate) {
+        alert('OLAT Grade Date is locked until Submission Date is saved.')
+        return
+      }
+
+      if (hasGrade) {
+        alert('Grade is locked until step 2 is saved.')
+        return
+      }
+    }
+
+    if (workflowState === 'GRADING') {
+      if (!hasOlatCapturedDate || !hasLatestSubmissionDate || !hasSubmissionDate) {
+        alert('Previous workflow fields must stay filled.')
+        return
+      }
+
+      if (!hasGrade || !hasOlatGradeDate) {
+        alert('Step 3 requires Grade and OLAT Grade Date.')
+        return
+      }
+    }
+
+    if (workflowState === 'COMPLETED') {
+      if (
+        !hasOlatCapturedDate ||
+        !hasLatestSubmissionDate ||
+        !hasSubmissionDate ||
+        !hasOlatGradeDate ||
+        !hasGrade
+      ) {
+        alert('Completed entries must keep all required workflow fields filled.')
+        return
+      }
     }
 
     updateAdminInfo.mutate({
@@ -1279,6 +1400,34 @@ export default function AdminInfoOverview() {
               const supervision = detailsState.supervision
               const proposal = supervision?.proposal
               const adminInfo = proposal?.AdminInfo
+              const workflowState = getAdminInfoWorkflowState({
+                status: adminInfo?.status,
+                olatCapturedDate: adminInfo?.olatCapturedDate,
+                latestSubmissionDate: adminInfo?.latestSubmissionDate,
+                submissionDate: adminInfo?.submissionDate,
+                grade: adminInfo?.grade,
+              })
+              const isSubmissionStepUnlocked = workflowState !== 'OPEN'
+              const isOlatGradeDateUnlocked =
+                workflowState === 'GRADING' || workflowState === 'COMPLETED'
+              const isGradeStepUnlocked = workflowState === 'GRADING'
+              const isCapturedOnZoraUnlocked =
+                editState !== null &&
+                editState.grade.trim() !== '' &&
+                !Number.isNaN(Number(editState.grade))
+              const submissionDateLockMessage =
+                'Locked until OLAT Captured Date and Latest Submission Date is saved.'
+              const olatGradeDateLockMessage = 'Locked until Submission Date is saved.'
+              const gradeLockMessage = 'Locked until Submission Date is saved.'
+              const capturedOnZoraLockMessage = 'Locked until Grade is saved.'
+              const workflowStepMessage =
+                workflowState === 'OPEN'
+                  ? 'Step 1: Fill OLAT Captured Date and Latest Submission Date, then save.'
+                  : workflowState === 'IN_PROGRESS'
+                    ? 'Step 2: Submission Date is now unlocked. Fill it and save to move to GRADING.'
+                    : workflowState === 'GRADING'
+                      ? 'Step 3: Grade and OLAT Grade Date are now unlocked. Fill both and save to move to COMPLETED.'
+                      : 'Workflow completed.'
               const acceptedApp = proposal?.applications?.find(
                 (app: any) => app.statusKey === 'ACCEPTED'
               )
@@ -1394,6 +1543,8 @@ export default function AdminInfoOverview() {
 
                     {editState ? (
                       <>
+                        <p className="mt-2 text-xs text-blue-700">{workflowStepMessage}</p>
+
                         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1433,73 +1584,139 @@ export default function AdminInfoOverview() {
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Submission Date
                             </label>
-                            <input
-                              type="date"
-                              value={editState.submissionDate}
-                              onChange={(e) =>
-                                setEditState({
-                                  ...editState,
-                                  submissionDate: e.target.value,
-                                })
+                            <div
+                              title={
+                                isSubmissionStepUnlocked ? undefined : submissionDateLockMessage
                               }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                            />
+                              className={
+                                isSubmissionStepUnlocked ? undefined : 'cursor-not-allowed'
+                              }
+                            >
+                              <input
+                                type="date"
+                                value={editState.submissionDate}
+                                onChange={(e) =>
+                                  setEditState({
+                                    ...editState,
+                                    submissionDate: e.target.value,
+                                  })
+                                }
+                                disabled={!isSubmissionStepUnlocked}
+                                title={
+                                  isSubmissionStepUnlocked ? undefined : submissionDateLockMessage
+                                }
+                                className={`w-full px-3 py-2 border rounded-md ${
+                                  isSubmissionStepUnlocked
+                                    ? 'border-gray-300'
+                                    : 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed pointer-events-none'
+                                }`}
+                              />
+                            </div>
                           </div>
 
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               OLAT Grade Date
                             </label>
-                            <input
-                              type="date"
-                              value={editState.olatGradeDate}
-                              onChange={(e) =>
-                                setEditState({
-                                  ...editState,
-                                  olatGradeDate: e.target.value,
-                                })
+                            <div
+                              title={
+                                isOlatGradeDateUnlocked ? undefined : olatGradeDateLockMessage
                               }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                            />
+                              className={
+                                isOlatGradeDateUnlocked ? undefined : 'cursor-not-allowed'
+                              }
+                            >
+                              <input
+                                type="date"
+                                value={editState.olatGradeDate}
+                                onChange={(e) =>
+                                  setEditState({
+                                    ...editState,
+                                    olatGradeDate: e.target.value,
+                                  })
+                                }
+                                disabled={!isOlatGradeDateUnlocked}
+                                title={
+                                  isOlatGradeDateUnlocked ? undefined : olatGradeDateLockMessage
+                                }
+                                className={`w-full px-3 py-2 border rounded-md ${
+                                  isOlatGradeDateUnlocked
+                                    ? 'border-gray-300'
+                                    : 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed pointer-events-none'
+                                }`}
+                              />
+                            </div>
                           </div>
 
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Grade
                             </label>
-                            <input
-                              type="number"
-                              step="0.1"
-                              value={editState.grade}
-                              onChange={(e) =>
-                                setEditState({
-                                  ...editState,
-                                  grade: e.target.value,
-                                })
-                              }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                            />
+                            <div
+                              title={isGradeStepUnlocked ? undefined : gradeLockMessage}
+                              className={isGradeStepUnlocked ? undefined : 'cursor-not-allowed'}
+                            >
+                              <input
+                                type="number"
+                                step="0.1"
+                                value={editState.grade}
+                                onChange={(e) =>
+                                  setEditState({
+                                    ...editState,
+                                    grade: e.target.value,
+                                  })
+                                }
+                                disabled={!isGradeStepUnlocked}
+                                title={isGradeStepUnlocked ? undefined : gradeLockMessage}
+                                className={`w-full px-3 py-2 border rounded-md ${
+                                  isGradeStepUnlocked
+                                    ? 'border-gray-300'
+                                    : 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed pointer-events-none'
+                                }`}
+                              />
+                            </div>
                           </div>
 
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Captured on Zora
                             </label>
-                            <select
-                              value={editState.capturedOnZora}
-                              onChange={(e) =>
-                                setEditState({
-                                  ...editState,
-                                  capturedOnZora: e.target
-                                    .value as AdminInfoEditState['capturedOnZora'],
-                                })
+                            <div
+                              title={
+                                isCapturedOnZoraUnlocked
+                                  ? undefined
+                                  : capturedOnZoraLockMessage
                               }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                              className={
+                                isCapturedOnZoraUnlocked ? undefined : 'cursor-not-allowed'
+                              }
                             >
-                              <option value="">-</option>
-                              <option value="true">Yes</option>
-                              <option value="false">No</option>
-                            </select>
+                              <select
+                                value={editState.capturedOnZora}
+                                onChange={(e) =>
+                                  setEditState({
+                                    ...editState,
+                                    capturedOnZora: e.target
+                                      .value as AdminInfoEditState['capturedOnZora'],
+                                  })
+                                }
+                                disabled={!isCapturedOnZoraUnlocked}
+                                title={
+                                  isCapturedOnZoraUnlocked
+                                    ? undefined
+                                    : capturedOnZoraLockMessage
+                                }
+                                className={`w-full px-3 py-2 border rounded-md ${
+                                  isCapturedOnZoraUnlocked
+                                    ? 'border-gray-300 bg-white'
+                                    : 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed pointer-events-none'
+                                }`}
+                              >
+                                <option value="">-</option>
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                              </select>
+                            </div>
                           </div>
                         </div>
 
