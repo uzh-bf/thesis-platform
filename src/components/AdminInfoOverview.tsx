@@ -30,36 +30,6 @@ type SortColumn =
   | 'grade'
 type SortDirection = 'asc' | 'desc' | null
 
-type PresenceFilter = 'all' | 'yes' | 'no'
-
-type ColumnFilters = {
-  student: string
-  title: string
-  supervisor: string
-  olatCaptured: PresenceFilter
-  latestSubmissionFrom: string
-  latestSubmissionTo: string
-  submissionFrom: string
-  submissionTo: string
-  gradeMin: string
-  gradeMax: string
-  capturedOnZora: PresenceFilter
-}
-
-const DEFAULT_COLUMN_FILTERS: ColumnFilters = {
-  student: '',
-  title: '',
-  supervisor: '',
-  olatCaptured: 'all',
-  latestSubmissionFrom: '',
-  latestSubmissionTo: '',
-  submissionFrom: '',
-  submissionTo: '',
-  gradeMin: '',
-  gradeMax: '',
-  capturedOnZora: 'all',
-}
-
 type AdminInfoEditState = {
   adminInfoId: string
   thesisTitle: string
@@ -86,17 +56,6 @@ function toDateInputValue(value: unknown): string {
   const mm = String(date.getMonth() + 1).padStart(2, '0')
   const dd = String(date.getDate()).padStart(2, '0')
   return `${yyyy}-${mm}-${dd}`
-}
-
-function parseDateInput(value: string, endOfDay = false): number | null {
-  if (!value) return null
-  const [y, m, d] = value.split('-').map((part) => Number(part))
-  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null
-  const date = endOfDay
-    ? new Date(y, m - 1, d, 23, 59, 59, 999)
-    : new Date(y, m - 1, d, 0, 0, 0, 0)
-  const time = date.getTime()
-  return Number.isNaN(time) ? null : time
 }
 
 function toShortDateLabel(value: unknown): string {
@@ -178,16 +137,15 @@ export default function AdminInfoOverview() {
     null
   )
   const [isProfessorDropdownOpen, setIsProfessorDropdownOpen] = useState(false)
-  const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const professorDropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
-  const [isColumnFiltersOpen, setIsColumnFiltersOpen] = useState(false)
-  const [columnFilters, setColumnFilters] = useState<ColumnFilters>(
-    DEFAULT_COLUMN_FILTERS
-  )
+  const [studentSearch, setStudentSearch] = useState('')
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false)
+  const statusDropdownRef = useRef<HTMLDivElement>(null)
+  const statusButtonRef = useRef<HTMLButtonElement>(null)
   
   // Create entry form state
   const [createForm, setCreateForm] = useState({
@@ -224,6 +182,26 @@ export default function AdminInfoOverview() {
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [isProfessorDropdownOpen])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const targetNode = event.target as Node
+      if (
+        isStatusDropdownOpen &&
+        statusDropdownRef.current &&
+        !statusDropdownRef.current.contains(targetNode) &&
+        statusButtonRef.current &&
+        !statusButtonRef.current.contains(targetNode)
+      ) {
+        setIsStatusDropdownOpen(false)
+      }
+    }
+
+    if (isStatusDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isStatusDropdownOpen])
 
   const {
     data: professorsOverview,
@@ -603,21 +581,7 @@ export default function AdminInfoOverview() {
   }, [createEntryProfessors, sortedProfessors])
 
   const displayedSupervisions = useMemo(() => {
-    const normalizedStudentFilter = columnFilters.student.trim().toLowerCase()
-    const normalizedSupervisorFilter = columnFilters.supervisor.trim().toLowerCase()
-    const normalizedTitleFilter = columnFilters.title.trim().toLowerCase()
-
-    const latestSubmissionFrom = parseDateInput(columnFilters.latestSubmissionFrom)
-    const latestSubmissionTo = parseDateInput(columnFilters.latestSubmissionTo, true)
-    const submissionFrom = parseDateInput(columnFilters.submissionFrom)
-    const submissionTo = parseDateInput(columnFilters.submissionTo, true)
-
-    const gradeMinRaw = columnFilters.gradeMin.trim()
-    const gradeMaxRaw = columnFilters.gradeMax.trim()
-    const gradeMin = gradeMinRaw === '' ? null : Number(gradeMinRaw)
-    const gradeMax = gradeMaxRaw === '' ? null : Number(gradeMaxRaw)
-    const gradeMinValue = gradeMin === null || Number.isNaN(gradeMin) ? null : gradeMin
-    const gradeMaxValue = gradeMax === null || Number.isNaN(gradeMax) ? null : gradeMax
+    const normalizedStudentFilter = studentSearch.trim().toLowerCase()
 
     const selectedProfessorIds =
       selectedResponsibleIds === null ? null : new Set(selectedResponsibleIds)
@@ -630,85 +594,20 @@ export default function AdminInfoOverview() {
     const matches = (supervision: any) => {
       const proposal = supervision?.proposal
       const adminInfo = proposal?.AdminInfo
-      
-      // Check status filter
+
       if (selectedStatuses.length > 0) {
         const proposalStatus = adminInfo?.status
         if (!selectedStatuses.includes(proposalStatus)) {
           return false
         }
       }
-      
-      // Check student filter
+
       if (normalizedStudentFilter) {
         const acceptedApp = proposal?.applications?.find(
           (app: any) => app.statusKey === 'ACCEPTED'
         )
-        const studentName = acceptedApp?.fullName || ''
-        const matrikelNumber = acceptedApp?.matriculationNumber || ''
-        const studentEmail =
-          acceptedApp?.email ||
-          supervision?.studentEmail ||
-          proposal?.ownedByStudent ||
-          ''
-
-        const haystack = `${studentName} ${matrikelNumber} ${studentEmail}`.toLowerCase()
-        if (!haystack.includes(normalizedStudentFilter)) return false
-      }
-
-      if (normalizedSupervisorFilter) {
-        const supervisorEmail = (
-          supervision?.supervisor?.email || supervision?.supervisorEmail || ''
-        ).toLowerCase()
-        if (!supervisorEmail.includes(normalizedSupervisorFilter)) return false
-      }
-
-      if (normalizedTitleFilter) {
-        const titleHaystack = `${proposal?.title || ''} ${proposal?.topicArea?.name || ''}`
-          .toLowerCase()
-          .trim()
-        if (!titleHaystack.includes(normalizedTitleFilter)) return false
-      }
-
-      if (columnFilters.olatCaptured === 'yes' && !adminInfo?.olatCapturedDate) {
-        return false
-      }
-      if (columnFilters.olatCaptured === 'no' && adminInfo?.olatCapturedDate) {
-        return false
-      }
-
-      if (columnFilters.capturedOnZora === 'yes' && adminInfo?.capturedOnZora !== true) {
-        return false
-      }
-      if (columnFilters.capturedOnZora === 'no' && adminInfo?.capturedOnZora !== false) {
-        return false
-      }
-
-      if (latestSubmissionFrom !== null || latestSubmissionTo !== null) {
-        const latestTime = adminInfo?.latestSubmissionDate
-          ? new Date(adminInfo.latestSubmissionDate).getTime()
-          : null
-        if (latestTime === null || Number.isNaN(latestTime)) return false
-        if (latestSubmissionFrom !== null && latestTime < latestSubmissionFrom) return false
-        if (latestSubmissionTo !== null && latestTime > latestSubmissionTo) return false
-      }
-
-      if (submissionFrom !== null || submissionTo !== null) {
-        const submissionTime = adminInfo?.submissionDate
-          ? new Date(adminInfo.submissionDate).getTime()
-          : null
-        if (submissionTime === null || Number.isNaN(submissionTime)) return false
-        if (submissionFrom !== null && submissionTime < submissionFrom) return false
-        if (submissionTo !== null && submissionTime > submissionTo) return false
-      }
-
-      if (gradeMinValue !== null || gradeMaxValue !== null) {
-        const grade = adminInfo?.grade
-        if (grade === null || grade === undefined) return false
-        const gradeValue = Number(grade)
-        if (Number.isNaN(gradeValue)) return false
-        if (gradeMinValue !== null && gradeValue < gradeMinValue) return false
-        if (gradeMaxValue !== null && gradeValue > gradeMaxValue) return false
+        const studentName = (acceptedApp?.fullName || '').toLowerCase()
+        if (!studentName.includes(normalizedStudentFilter)) return false
       }
 
       return true
@@ -805,7 +704,7 @@ export default function AdminInfoOverview() {
     sortedProfessors,
     selectedResponsibleIds,
     selectedStatuses,
-    columnFilters,
+    studentSearch,
     sortColumn,
     sortDirection,
   ])
@@ -891,362 +790,164 @@ export default function AdminInfoOverview() {
         </div>
 
         <div className="mt-4 space-y-4">
-          <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Professors
-            </label>
-            <button
-              ref={buttonRef}
-              type="button"
-              onClick={() => setIsProfessorDropdownOpen(!isProfessorDropdownOpen)}
-              className="w-full px-4 py-2 text-left border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between"
-            >
-              <span className="text-sm text-gray-700">
-                {selectedResponsibleIds === null
-                  ? 'All professors'
-                  : selectedResponsibleIds.length === 0
-                    ? 'None selected'
-                    : `${selectedResponsibleIds.length} professor${selectedResponsibleIds.length === 1 ? '' : 's'} selected`}
-              </span>
-              <svg
-                className={`w-4 h-4 text-gray-500 transition-transform ${isProfessorDropdownOpen ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Professors
+              </label>
+              <button
+                ref={buttonRef}
+                type="button"
+                onClick={() => setIsProfessorDropdownOpen(!isProfessorDropdownOpen)}
+                className="w-full px-4 py-2 text-left border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
+                <span className="text-sm text-gray-700">
+                  {selectedResponsibleIds === null
+                    ? 'All professors'
+                    : selectedResponsibleIds.length === 0
+                      ? 'None selected'
+                      : `${selectedResponsibleIds.length} professor${selectedResponsibleIds.length === 1 ? '' : 's'} selected`}
+                </span>
+                <svg
+                  className={`w-4 h-4 text-gray-500 transition-transform ${isProfessorDropdownOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
-            {isProfessorDropdownOpen && (
-              <div className="absolute top-full left-0 right-0 z-20 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-64 overflow-auto" ref={professorDropdownRef}>
-                <div className="sticky top-0 bg-white border-b border-gray-200 p-2 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={selectAllProfessors}
-                    className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    Select all
-                  </button>
-                  <span className="text-gray-300">|</span>
-                  <button
-                    type="button"
-                    onClick={clearAllProfessors}
-                    className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    Clear
-                  </button>
+              {isProfessorDropdownOpen && (
+                <div className="absolute top-full left-0 right-0 z-20 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-64 overflow-auto" ref={professorDropdownRef}>
+                  <div className="sticky top-0 bg-white border-b border-gray-200 p-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={selectAllProfessors}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Select all
+                    </button>
+                    <span className="text-gray-300">|</span>
+                    <button
+                      type="button"
+                      onClick={clearAllProfessors}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Clear
+                    </button>
+                  </div>
+
+                  {professorsLoading ? (
+                    <p className="p-3 text-sm text-gray-600">Loading professors...</p>
+                  ) : sortedProfessors.length === 0 ? (
+                    <p className="p-3 text-sm text-gray-600">No professors found</p>
+                  ) : (
+                    sortedProfessors.map((professor: any) => (
+                      <label
+                        key={professor.id}
+                        className="flex items-start gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isProfessorSelected(professor.id)}
+                          onChange={() => toggleProfessor(professor.id)}
+                          className="mt-0.5"
+                        />
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate">
+                            {professor.name}
+                          </div>
+                          <div className="text-xs text-gray-500 truncate">
+                            {professor.email}
+                          </div>
+                        </div>
+                      </label>
+                    ))
+                  )}
                 </div>
+              )}
+            </div>
 
-                {professorsLoading ? (
-                  <p className="p-3 text-sm text-gray-600">Loading professors...</p>
-                ) : sortedProfessors.length === 0 ? (
-                  <p className="p-3 text-sm text-gray-600">No professors found</p>
-                ) : (
-                  sortedProfessors.map((professor: any) => (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Student
+              </label>
+              <input
+                type="text"
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+                placeholder="Filter by student name…"
+                className="w-full px-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Status
+              </label>
+              <button
+                ref={statusButtonRef}
+                type="button"
+                onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                className="w-full px-4 py-2 text-left border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between"
+              >
+                <span className="text-sm text-gray-700">
+                  {selectedStatuses.length === 0
+                    ? 'All statuses'
+                    : `${selectedStatuses.length} status${selectedStatuses.length === 1 ? '' : 'es'} selected`}
+                </span>
+                <svg
+                  className={`w-4 h-4 text-gray-500 transition-transform ${isStatusDropdownOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {isStatusDropdownOpen && (
+                <div className="absolute top-full left-0 right-0 z-20 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-64 overflow-auto" ref={statusDropdownRef}>
+                  <div className="sticky top-0 bg-white border-b border-gray-200 p-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedStatuses([])}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  {['OPEN', 'IN_PROGRESS', 'OVERDUE', 'GRADING', 'COMPLETED', 'ARCHIVED'].map((status) => (
                     <label
-                      key={professor.id}
-                      className="flex items-start gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                      key={status}
+                      className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer"
                     >
                       <input
                         type="checkbox"
-                        checked={isProfessorSelected(professor.id)}
-                        onChange={() => toggleProfessor(professor.id)}
-                        className="mt-0.5"
+                        checked={selectedStatuses.includes(status)}
+                        onChange={() =>
+                          setSelectedStatuses((prev) =>
+                            prev.includes(status)
+                              ? prev.filter((s) => s !== status)
+                              : [...prev, status]
+                          )
+                        }
+                        className="mt-0"
                       />
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium text-gray-900 truncate">
-                          {professor.name}
-                        </div>
-                        <div className="text-xs text-gray-500 truncate">
-                          {professor.email}
-                        </div>
-                      </div>
+                      <span className="text-sm text-gray-900">
+                        {status === 'OPEN' && 'Offen (OPEN)'}
+                        {status === 'IN_PROGRESS' && 'In Bearbeitung (IN_PROGRESS)'}
+                        {status === 'OVERDUE' && 'Überfällig (OVERDUE)'}
+                        {status === 'GRADING' && 'In Benotung (GRADING)'}
+                        {status === 'COMPLETED' && 'Abgeschlossen (COMPLETED)'}
+                        {status === 'ARCHIVED' && 'Archiviert (ARCHIVED)'}
+                      </span>
                     </label>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <button
-              type="button"
-              onClick={() => setIsStatusFilterOpen(!isStatusFilterOpen)}
-              className="text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center gap-2"
-            >
-              <svg 
-                className={`w-4 h-4 transition-transform ${isStatusFilterOpen ? 'rotate-90' : ''}`} 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-              Show Theses by Status
-            </button>
-            
-            {isStatusFilterOpen && (
-              <div className="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
-                <div className="text-xs text-gray-500 mb-2">
-                  ({selectedStatuses.length === 0 ? 'All' : selectedStatuses.length}) Offen (OPEN), In Bearbeitung (IN_PROGRESS), Überfällig (OVERDUE), In Benotung (GRADING), Abgeschlossen (COMPLETED), Archiviert (ARCHIVED)
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {['OPEN', 'IN_PROGRESS', 'OVERDUE', 'GRADING', 'COMPLETED', 'ARCHIVED'].map((status) => (
-                    <button
-                      key={status}
-                      type="button"
-                      onClick={() => {
-                        setSelectedStatuses((prev) =>
-                          prev.includes(status)
-                            ? prev.filter((s) => s !== status)
-                            : [...prev, status]
-                        )
-                      }}
-                      className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                        selectedStatuses.includes(status)
-                          ? 'bg-blue-100 border-blue-300 text-blue-800'
-                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-100'
-                      }`}
-                    >
-                      {status === 'OPEN' && 'Offen (OPEN)'}
-                      {status === 'IN_PROGRESS' && 'In Bearbeitung (IN_PROGRESS)'}
-                      {status === 'OVERDUE' && 'Überfällig (OVERDUE)'}
-                      {status === 'GRADING' && 'In Benotung (GRADING)'}
-                      {status === 'COMPLETED' && 'Abgeschlossen (COMPLETED)'}
-                      {status === 'ARCHIVED' && 'Archiviert (ARCHIVED)'}
-                    </button>
                   ))}
                 </div>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <button
-              type="button"
-              onClick={() => setIsColumnFiltersOpen(!isColumnFiltersOpen)}
-              className="text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center gap-2"
-            >
-              <svg
-                className={`w-4 h-4 transition-transform ${isColumnFiltersOpen ? 'rotate-90' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-              Column filters
-            </button>
-
-            {isColumnFiltersOpen && (
-              <div className="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200 space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  <div className="md:col-span-2 lg:col-span-3">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Student
-                    </label>
-                    <input
-                      type="text"
-                      value={columnFilters.student}
-                      onChange={(e) =>
-                        setColumnFilters((prev) => ({
-                          ...prev,
-                          student: e.target.value,
-                        }))
-                      }
-                      placeholder="Filter by student name, email or matriculation number…"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Supervisor
-                    </label>
-                    <input
-                      type="text"
-                      value={columnFilters.supervisor}
-                      onChange={(e) =>
-                        setColumnFilters((prev) => ({
-                          ...prev,
-                          supervisor: e.target.value,
-                        }))
-                      }
-                      placeholder="Email contains…"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Title
-                    </label>
-                    <input
-                      type="text"
-                      value={columnFilters.title}
-                      onChange={(e) =>
-                        setColumnFilters((prev) => ({
-                          ...prev,
-                          title: e.target.value,
-                        }))
-                      }
-                      placeholder="Title contains…"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      OLAT Captured
-                    </label>
-                    <select
-                      value={columnFilters.olatCaptured}
-                      onChange={(e) =>
-                        setColumnFilters((prev) => ({
-                          ...prev,
-                          olatCaptured: e.target.value as PresenceFilter,
-                        }))
-                      }
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white"
-                    >
-                      <option value="all">All</option>
-                      <option value="yes">Captured</option>
-                      <option value="no">Not captured</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Latest Submission
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="date"
-                        value={columnFilters.latestSubmissionFrom}
-                        onChange={(e) =>
-                          setColumnFilters((prev) => ({
-                            ...prev,
-                            latestSubmissionFrom: e.target.value,
-                          }))
-                        }
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
-                      />
-                      <input
-                        type="date"
-                        value={columnFilters.latestSubmissionTo}
-                        onChange={(e) =>
-                          setColumnFilters((prev) => ({
-                            ...prev,
-                            latestSubmissionTo: e.target.value,
-                          }))
-                        }
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Submission Date
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="date"
-                        value={columnFilters.submissionFrom}
-                        onChange={(e) =>
-                          setColumnFilters((prev) => ({
-                            ...prev,
-                            submissionFrom: e.target.value,
-                          }))
-                        }
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
-                      />
-                      <input
-                        type="date"
-                        value={columnFilters.submissionTo}
-                        onChange={(e) =>
-                          setColumnFilters((prev) => ({
-                            ...prev,
-                            submissionTo: e.target.value,
-                          }))
-                        }
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Grade
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={columnFilters.gradeMin}
-                        onChange={(e) =>
-                          setColumnFilters((prev) => ({
-                            ...prev,
-                            gradeMin: e.target.value,
-                          }))
-                        }
-                        placeholder="Min"
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
-                      />
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={columnFilters.gradeMax}
-                        onChange={(e) =>
-                          setColumnFilters((prev) => ({
-                            ...prev,
-                            gradeMax: e.target.value,
-                          }))
-                        }
-                        placeholder="Max"
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Captured on Zora
-                    </label>
-                    <select
-                      value={columnFilters.capturedOnZora}
-                      onChange={(e) =>
-                        setColumnFilters((prev) => ({
-                          ...prev,
-                          capturedOnZora: e.target.value as PresenceFilter,
-                        }))
-                      }
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white"
-                    >
-                      <option value="all">All</option>
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setColumnFilters(DEFAULT_COLUMN_FILTERS)}
-                    className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    Reset column filters
-                  </button>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           <div className="flex items-center justify-between">
@@ -1278,7 +979,7 @@ export default function AdminInfoOverview() {
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
                     <th
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-32"
+                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
                       onClick={() => handleSort('professor')}
                     >
                       <div className="flex items-center gap-2">
@@ -1291,7 +992,7 @@ export default function AdminInfoOverview() {
                     </th>
 
                     <th
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-32"
+                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
                       onClick={() => handleSort('supervisor')}
                     >
                       <div className="flex items-center gap-2">
@@ -1304,7 +1005,7 @@ export default function AdminInfoOverview() {
                     </th>
 
                     <th
-                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-32"
+                      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
                       onClick={() => handleSort('student')}
                     >
                       <div className="flex items-center gap-2">
@@ -1432,17 +1133,17 @@ export default function AdminInfoOverview() {
                           }
                         }}
                       >
-                        <td className="px-2 py-2 w-32">
+                        <td className="px-2 py-2 w-24">
                           <div className="text-sm font-medium text-gray-900 truncate">
                             {professor.name}
                           </div>
                         </td>
-                        <td className="px-2 py-2 text-sm text-gray-900 w-32">
+                        <td className="px-2 py-2 text-sm text-gray-900 w-24">
                           <div className="truncate">
                             {supervisorName}
                           </div>
                         </td>
-                        <td className="px-2 py-2 w-32">
+                        <td className="px-2 py-2 w-24">
                           <div className="text-sm font-medium text-gray-900 truncate">
                             {studentName}
                           </div>
