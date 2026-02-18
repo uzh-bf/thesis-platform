@@ -962,32 +962,29 @@ export default function AdminInfoOverview() {
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow mb-6 p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">Admin Info Overview</h2>
-            <p className="mt-1 text-sm text-gray-600">
-              Overview of Admin Info entries in one table
-            </p>
-          </div>
-          <div className="text-sm text-gray-600">
+      <div className="bg-white rounded-lg shadow mb-4 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Admin Panel · Admin Info Overview
+          </h2>
+          <div className="text-xs text-gray-600">
             {professorsLoading
               ? 'Loading…'
               : `${totalDisplayedSupervisions} theses • ${totalDisplayedProfessors} professors`}
           </div>
         </div>
 
-        <div className="mt-4 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="mt-3 space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
             <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-gray-700 mb-0.5">
                 Professors
               </label>
               <button
                 ref={buttonRef}
                 type="button"
                 onClick={() => setIsProfessorDropdownOpen(!isProfessorDropdownOpen)}
-                className="w-full px-4 py-2 text-left border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between"
+                className="w-full px-3 py-1.5 text-left border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between"
               >
                 <span className="text-sm text-gray-700">
                   {selectedResponsibleIds === null
@@ -1058,7 +1055,7 @@ export default function AdminInfoOverview() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-gray-700 mb-0.5">
                 Student
               </label>
               <input
@@ -1066,19 +1063,19 @@ export default function AdminInfoOverview() {
                 value={studentSearch}
                 onChange={(e) => setStudentSearch(e.target.value)}
                 placeholder="Filter by student name…"
-                className="w-full px-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-gray-700 mb-0.5">
                 Status
               </label>
               <button
                 ref={statusButtonRef}
                 type="button"
                 onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-                className="w-full px-4 py-2 text-left border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between"
+                className="w-full px-3 py-1.5 text-left border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between"
               >
                 <span className="text-sm text-gray-700">
                   {selectedStatuses.length === 0
@@ -1138,7 +1135,7 @@ export default function AdminInfoOverview() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <Button
               onClick={() => setIsCreateModalOpen(true)}
               className={{ root: 'text-sm bg-blue-600 hover:bg-blue-700 text-white' }}
@@ -1155,7 +1152,7 @@ export default function AdminInfoOverview() {
             </div>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-3">
             {professorsLoading ? (
               <p className="text-gray-600">Loading professors...</p>
             ) : displayedSupervisions.length === 0 ? (
