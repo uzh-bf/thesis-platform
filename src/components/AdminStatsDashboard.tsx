@@ -15,15 +15,15 @@ function CountBar({ count, max }: { count: number; max: number }) {
   const width = max > 0 ? Math.round((count / max) * 100) : 0
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="w-40 bg-gray-100 rounded h-2 overflow-hidden">
+    <div className="flex items-center gap-2">
+      <div className="w-32 bg-gray-100 rounded h-1.5 overflow-hidden">
         <div
-          className="bg-blue-600 h-2"
+          className="bg-blue-600 h-1.5"
           style={{ width: `${width}%` }}
           aria-hidden={true}
         />
       </div>
-      <div className="text-sm font-mono tabular-nums text-gray-900">{count}</div>
+      <div className="text-xs font-mono tabular-nums text-gray-900">{count}</div>
     </div>
   )
 }
@@ -165,23 +165,23 @@ export default function AdminStatsDashboard() {
   }, [data?.supervisions, view, responsibleFilterId, supervisorFilterEmail])
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div className="space-y-4">
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Statistics</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Statistics</h2>
             <p className="mt-1 text-sm text-gray-600">
               Supervised proposals per year (grouped by supervisor or responsible)
             </p>
           </div>
-          <div className="text-sm text-gray-600">
+          <div className="text-xs text-gray-600">
             {isLoading ? 'Loading…' : `${viewTotal} supervised in ${selectedYear}`}
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="mt-3 grid grid-cols-1 md:grid-cols-4 gap-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs font-medium text-gray-700 mb-0.5">
               Year
             </label>
             <Select
@@ -193,7 +193,7 @@ export default function AdminStatsDashboard() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs font-medium text-gray-700 mb-0.5">
               {view === 'supervisors' ? 'Responsible filter' : 'Supervisor filter'}
             </label>
             {view === 'supervisors' ? (
@@ -214,7 +214,7 @@ export default function AdminStatsDashboard() {
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs font-medium text-gray-700 mb-0.5">
               Search
             </label>
             <input
@@ -222,12 +222,12 @@ export default function AdminStatsDashboard() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search name or email…"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-3">
           <Button
             onClick={() => {
               setSearch('')
@@ -241,7 +241,7 @@ export default function AdminStatsDashboard() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-4">
         {error ? (
           <p className="text-sm text-red-600">{error.message}</p>
         ) : isLoading ? (
@@ -266,15 +266,15 @@ export default function AdminStatsDashboard() {
               },
             ]}
           >
-            <TabContent value="supervisors" className={{ root: 'pt-6' }}>
-              <div className="overflow-auto max-h-[65vh] border border-gray-200 rounded-md">
-                <table className="min-w-full divide-y divide-gray-200">
+            <TabContent value="supervisors" className={{ root: 'pt-3' }}>
+              <div className="overflow-auto max-h-[65vh] border border-gray-400">
+                <table className="w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50 sticky top-0 z-10">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[65%]">
                         Supervisor
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[35%]">
                         Supervisions
                       </th>
                     </tr>
@@ -282,7 +282,7 @@ export default function AdminStatsDashboard() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {supervisorRows.map((r) => (
                       <tr key={r.key} className="hover:bg-gray-50">
-                        <td className="px-4 py-3">
+                        <td className="px-2 py-1">
                           <div className="text-sm font-medium text-gray-900 truncate">
                             {r.label}
                           </div>
@@ -292,7 +292,7 @@ export default function AdminStatsDashboard() {
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-2 py-1">
                           <CountBar count={r.count} max={maxCount} />
                         </td>
                       </tr>
@@ -302,15 +302,15 @@ export default function AdminStatsDashboard() {
               </div>
             </TabContent>
 
-            <TabContent value="responsibles" className={{ root: 'pt-6' }}>
-              <div className="overflow-auto max-h-[65vh] border border-gray-200 rounded-md">
-                <table className="min-w-full divide-y divide-gray-200">
+            <TabContent value="responsibles" className={{ root: 'pt-3' }}>
+              <div className="overflow-auto max-h-[65vh] border border-gray-400">
+                <table className="w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50 sticky top-0 z-10">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[65%]">
                         Responsible
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[35%]">
                         Supervisions
                       </th>
                     </tr>
@@ -318,7 +318,7 @@ export default function AdminStatsDashboard() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {responsibleRows.map((r) => (
                       <tr key={r.key} className="hover:bg-gray-50">
-                        <td className="px-4 py-3">
+                        <td className="px-2 py-1">
                           <div className="text-sm font-medium text-gray-900 truncate">
                             {r.label}
                           </div>
@@ -328,7 +328,7 @@ export default function AdminStatsDashboard() {
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-2 py-1">
                           <CountBar count={r.count} max={maxCount} />
                         </td>
                       </tr>

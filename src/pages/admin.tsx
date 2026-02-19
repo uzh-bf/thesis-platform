@@ -1,13 +1,22 @@
-import { Button, Modal, Select, TabContent, Tabs } from '@uzh-bf/design-system'
+import { Button, Modal, TabContent, Tabs } from '@uzh-bf/design-system'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import AdminInfoOverview from 'src/components/AdminInfoOverview'
 import AdminStatsDashboard from 'src/components/AdminStatsDashboard'
 import AdminUserRoles from 'src/components/AdminUserRoles'
-import { ProposalStatus, ProposalType } from 'src/lib/constants'
+import { ProposalStatus } from 'src/lib/constants'
 import useUserRole from 'src/lib/hooks/useUserRole'
 import { trpc } from 'src/lib/trpc'
+
+type SortColumn =
+  | 'title'
+  | 'type'
+  | 'status'
+  | 'student'
+  | 'supervisor'
+  | 'created'
+type SortDirection = 'asc' | 'desc'
 
 export default function AdminPanel() {
   const router = useRouter()
@@ -16,15 +25,12 @@ export default function AdminPanel() {
   const isAdminOnly = session?.user?.adminRole === 'ADMIN'
   const [activeTab, setActiveTab] = useState('proposals')
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('OPEN')
-  const [typeFilter, setTypeFilter] = useState('STUDENT')
+  const [sortColumn, setSortColumn] = useState<SortColumn>('created')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [selectedProposal, setSelectedProposal] = useState<any>(null)
 
   const { data: proposals, isLoading, refetch } = trpc.adminGetAllProposals.useQuery(
-    {
-      search,
-      statusFilter,
-    },
+    {},
     {
       enabled: isAdminOnly,
     }
@@ -116,26 +122,139 @@ export default function AdminPanel() {
     }
   }
 
-  const statusOptions = [
-    { value: 'ALL', label: 'All Statuses' },
-    ...Object.values(ProposalStatus).map(status => ({
-      value: status,
-      label: status.replace(/_/g, ' '),
-    })),
-  ]
+  const getLinkedApplication = (proposal: any) => {
+    const isOpenSupervisorProposal =
+      proposal.type?.key === 'SUPERVISOR' &&
+      proposal.statusKey === ProposalStatus.OPEN
 
-  const typeOptions = [
-    { value: 'ALL', label: 'All Types' },
-    { value: ProposalType.STUDENT, label: 'Student Proposals' },
-    { value: ProposalType.SUPERVISOR, label: 'Supervisor Proposals' },
-  ]
+    if (isOpenSupervisorProposal) {
+      return null
+    }
 
-  const filteredProposals = proposals?.filter(p => {
-    if (typeFilter !== 'ALL' && p.typeKey !== typeFilter) {
+    const applications = proposal.applications ?? []
+    if (!applications.length) return null
+
+    const supervisionId = proposal.supervisedBy?.[0]?.id
+    if (!supervisionId) {
+      return applications[0]
+    }
+
+    return (
+      applications.find((app: any) => app.supervisionId === supervisionId) ??
+      applications[0]
+    )
+  }
+
+  const getStudentFullName = (proposal: any) =>
+    getLinkedApplication(proposal)?.fullName ?? null
+
+  const getSupervisorFullName = (proposal: any) =>
+    proposal.supervisedBy?.[0]?.supervisor?.name ?? null
+
+  const normalizedSearch = search.trim().toLowerCase()
+
+  const filteredProposals = proposals?.filter((p) => {
+    const visibleStatuses = [
+      ProposalStatus.OPEN,
+      ProposalStatus.MATCHED,
+      ProposalStatus.MATCHED_TENTATIVE,
+    ]
+
+    if (!visibleStatuses.includes(p.statusKey as ProposalStatus)) {
       return false
     }
-    return true
+
+    if (!normalizedSearch) {
+      return true
+    }
+
+    const titleMatch = p.title.toLowerCase().includes(normalizedSearch)
+    const studentNameMatch = (getStudentFullName(p) ?? '')
+      .toLowerCase()
+      .includes(normalizedSearch)
+    const supervisorNameMatch = (getSupervisorFullName(p) ?? '')
+      .toLowerCase()
+      .includes(normalizedSearch)
+
+    return titleMatch || studentNameMatch || supervisorNameMatch
   })
+
+  const formatDateShort = (date: string | Date) =>
+    new Date(date).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
+    })
+
+  const sortedProposals = (() => {
+    if (!filteredProposals) return []
+
+    return [...filteredProposals].sort((a, b) => {
+      let compareValue = 0
+
+      switch (sortColumn) {
+        case 'title':
+          compareValue = a.title.localeCompare(b.title, undefined, {
+            sensitivity: 'base',
+          })
+          break
+        case 'type':
+          compareValue = a.type.key.localeCompare(b.type.key, undefined, {
+            sensitivity: 'base',
+          })
+          break
+        case 'status':
+          compareValue = a.status.key.localeCompare(b.status.key, undefined, {
+            sensitivity: 'base',
+          })
+          break
+        case 'student':
+          compareValue = (getStudentFullName(a) ?? '').localeCompare(
+            getStudentFullName(b) ?? '',
+            undefined,
+            {
+              sensitivity: 'base',
+            }
+          )
+          break
+        case 'supervisor':
+          compareValue = (getSupervisorFullName(a) ?? '').localeCompare(
+            getSupervisorFullName(b) ?? '',
+            undefined,
+            {
+              sensitivity: 'base',
+            }
+          )
+          break
+        case 'created':
+          compareValue =
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          break
+      }
+
+      return sortDirection === 'asc' ? compareValue : -compareValue
+    })
+  })()
+
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+      return
+    }
+
+    setSortColumn(column)
+    setSortDirection(column === 'created' ? 'desc' : 'asc')
+  }
+
+  const getSortIndicator = (column: SortColumn) => {
+    if (sortColumn !== column) return '↕'
+    return sortDirection === 'asc' ? '↑' : '↓'
+  }
+
+  const selectedApplication = selectedProposal
+    ? getLinkedApplication(selectedProposal)
+    : null
+  const selectedSupervisor = selectedProposal?.supervisedBy?.[0]?.supervisor ?? null
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -155,93 +274,115 @@ export default function AdminPanel() {
           >
           {isAdminOnly && (
             <TabContent value="proposals" className={{ root: 'pt-3' }}>
-              <div className="bg-white rounded-lg shadow mb-6 p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white rounded-lg shadow mb-4 p-4">
+                <div className="grid grid-cols-1">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-0.5">
                       Search
                     </label>
                     <input
                       type="text"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search by title, email, or student..."
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Proposal Type
-                    </label>
-                    <Select
-                      value={typeFilter}
-                      onChange={(value) => setTypeFilter(value as string)}
-                      items={typeOptions}
-                      className={{ root: 'w-full' }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Status Filter
-                    </label>
-                    <Select
-                      value={statusFilter}
-                      onChange={(value) => setStatusFilter(value as string)}
-                      items={statusOptions}
-                      className={{ root: 'w-full' }}
+                      placeholder="Search by title, student name, or supervisor name..."
+                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 </div>
               </div>
 
               {isLoading ? (
-                <div className="bg-white rounded-lg shadow p-6 text-center">
+                <div className="bg-white rounded-lg shadow p-4 text-center">
                   <p className="text-gray-600">Loading proposals...</p>
                 </div>
               ) : !filteredProposals || filteredProposals.length === 0 ? (
-                <div className="bg-white rounded-lg shadow p-6 text-center">
+                <div className="bg-white rounded-lg shadow p-4 text-center">
                   <p className="text-gray-600">No proposals found</p>
                 </div>
               ) : (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
+                <div className="bg-white rounded-lg shadow p-4">
+                  <div className="text-xs text-gray-600 mb-3">
+                    {sortedProposals.length} proposals
+                  </div>
+
+                  <div className="border border-gray-400 overflow-x-auto">
+                    <table className="w-full table-fixed divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Title
+                          <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">
+                            <button
+                              type="button"
+                              onClick={() => handleSort('title')}
+                              className="inline-flex items-center gap-1 hover:text-gray-700"
+                            >
+                              Title <span>{getSortIndicator('title')}</span>
+                            </button>
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Type
+                          <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">
+                            <button
+                              type="button"
+                              onClick={() => handleSort('type')}
+                              className="inline-flex items-center gap-1 hover:text-gray-700"
+                            >
+                              Type <span>{getSortIndicator('type')}</span>
+                            </button>
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Status
+                          <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]">
+                            <button
+                              type="button"
+                              onClick={() => handleSort('status')}
+                              className="inline-flex items-center gap-1 hover:text-gray-700"
+                            >
+                              Status <span>{getSortIndicator('status')}</span>
+                            </button>
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Owner
+                          <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[18%]">
+                            <button
+                              type="button"
+                              onClick={() => handleSort('student')}
+                              className="inline-flex items-center gap-1 hover:text-gray-700"
+                            >
+                              Student <span>{getSortIndicator('student')}</span>
+                            </button>
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Created
+                          <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[18%]">
+                            <button
+                              type="button"
+                              onClick={() => handleSort('supervisor')}
+                              className="inline-flex items-center gap-1 hover:text-gray-700"
+                            >
+                              Supervisor <span>{getSortIndicator('supervisor')}</span>
+                            </button>
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
+                            <button
+                              type="button"
+                              onClick={() => handleSort('created')}
+                              className="inline-flex items-center gap-1 hover:text-gray-700"
+                            >
+                              Created <span>{getSortIndicator('created')}</span>
+                            </button>
+                          </th>
+                          <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[14%]">
                             Actions
                           </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredProposals.map((proposal) => (
+                        {sortedProposals.map((proposal) => {
+                          const studentName = getStudentFullName(proposal)
+                          const supervisorName = getSupervisorFullName(proposal)
+
+                          return (
                           <tr key={proposal.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4">
-                              <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
+                            <td className="px-2 py-1 max-w-0">
+                              <div className="text-sm font-medium text-gray-900 truncate">
                                 {proposal.title}
                               </div>
-                              <div className="text-xs text-gray-500">
-                                {proposal.topicArea.name}
-                              </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-2 py-1 whitespace-nowrap">
                               <span
-                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                className={`inline-flex px-1.5 py-0.5 text-[11px] font-semibold rounded-full ${
                                   proposal.type.key === 'STUDENT'
                                     ? 'bg-purple-100 text-purple-800'
                                     : 'bg-blue-100 text-blue-800'
@@ -250,9 +391,9 @@ export default function AdminPanel() {
                                 {proposal.type.key}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-2 py-1 whitespace-nowrap">
                               <span
-                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                className={`inline-flex px-1.5 py-0.5 text-[11px] font-semibold rounded-full ${
                                   proposal.statusKey === 'WITHDRAWN'
                                     ? 'bg-red-100 text-red-800'
                                     : proposal.statusKey === 'MATCHED'
@@ -265,26 +406,20 @@ export default function AdminPanel() {
                                 {proposal.status.key.replace(/_/g, ' ')}
                               </span>
                             </td>
-                            <td className="px-6 py-4">
-                              <div className="text-sm text-gray-900">
-                                {proposal.type.key === 'STUDENT' &&
-                                proposal.applications?.[0]
-                                  ? proposal.applications[0].email
-                                  : proposal.ownedByUser?.email ||
-                                    proposal.ownedByStudent ||
-                                    'N/A'}
+                            <td className="px-2 py-1 max-w-0">
+                              <div className="text-sm text-gray-900 truncate">
+                                {studentName || '-'}
                               </div>
-                              {proposal.type.key === 'STUDENT' &&
-                                proposal.applications?.[0] && (
-                                  <div className="text-xs text-gray-500">
-                                    {proposal.applications[0].fullName}
-                                  </div>
-                                )}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {new Date(proposal.createdAt).toLocaleDateString()}
+                            <td className="px-2 py-1 max-w-0">
+                              <div className="text-sm text-gray-900 truncate">
+                                {supervisorName || '-'}
+                              </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-500">
+                              {formatDateShort(proposal.createdAt)}
+                            </td>
+                            <td className="px-2 py-1 whitespace-nowrap text-sm">
                               <div className="flex gap-2">
                                 <Button
                                   onClick={() => setSelectedProposal(proposal)}
@@ -308,7 +443,8 @@ export default function AdminPanel() {
                               </div>
                             </td>
                           </tr>
-                        ))}
+                          )
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -368,70 +504,66 @@ export default function AdminPanel() {
                       </div>
 
                       <div>
-                        <p className="text-sm font-medium text-gray-500">
-                          {selectedProposal.type.key === 'STUDENT'
-                            ? 'Student Applicant'
-                            : 'Owner'}
-                        </p>
-                        {selectedProposal.type.key === 'STUDENT' &&
-                        selectedProposal.applications?.[0] ? (
+                        <p className="text-sm font-medium text-gray-500">Student</p>
+                        {selectedApplication ? (
                           <div className="mt-1">
                             <p className="text-sm text-gray-900">
-                              {selectedProposal.applications[0].fullName}
+                              {selectedApplication.fullName}
                             </p>
                             <p className="text-sm text-gray-600">
-                              {selectedProposal.applications[0].email}
+                              {selectedApplication.email}
                             </p>
                             <p className="text-xs text-gray-500">
-                              Matric:{' '}
-                              {
-                                selectedProposal.applications[0]
-                                  .matriculationNumber
-                              }
+                              Matric: {selectedApplication.matriculationNumber}
                             </p>
                           </div>
                         ) : (
                           <p className="mt-1 text-sm text-gray-900">
-                            {selectedProposal.ownedByUser?.email ||
-                              selectedProposal.ownedByStudent ||
-                              'N/A'}
+                            No student matched yet
                           </p>
                         )}
                       </div>
 
-                      {selectedProposal.supervisedBy?.[0]?.supervisor && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">
-                            Supervisor
-                          </p>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Supervisor</p>
+                        {selectedSupervisor ? (
+                          <div className="mt-1">
+                            <p className="text-sm text-gray-900">
+                              {selectedSupervisor.name}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {selectedSupervisor.email}
+                            </p>
+                          </div>
+                        ) : (
                           <p className="mt-1 text-sm text-gray-900">
-                            {selectedProposal.supervisedBy[0].supervisor.email}
+                            No supervisor matched yet
                           </p>
-                        </div>
-                      )}
+                        )}
+                      </div>
 
                       {selectedProposal.type.key === 'STUDENT' &&
-                        selectedProposal.applications?.[0] && (
+                        selectedApplication && (
                           <div>
                             <p className="text-sm font-medium text-gray-500">
                               Planned Start
                             </p>
                             <p className="mt-1 text-sm text-gray-900">
                               {new Date(
-                                selectedProposal.applications[0].plannedStartAt
+                                selectedApplication.plannedStartAt
                               ).toLocaleDateString()}
                             </p>
                           </div>
                         )}
 
                       {selectedProposal.type.key === 'STUDENT' &&
-                        selectedProposal.applications?.[0]?.motivation && (
+                        selectedApplication?.motivation && (
                           <div>
                             <p className="text-sm font-medium text-gray-500">
                               Motivation
                             </p>
                             <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">
-                              {selectedProposal.applications[0].motivation}
+                              {selectedApplication.motivation}
                             </p>
                           </div>
                         )}

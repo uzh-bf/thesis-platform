@@ -117,10 +117,10 @@ export default function AdminUserRoles() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div className="bg-white rounded-lg shadow p-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">User Roles</h2>
+          <h2 className="text-lg font-semibold text-gray-900">User Roles</h2>
           <p className="mt-1 text-sm text-gray-600">
             Modify <span className="font-medium">Role</span> and{' '}
             <span className="font-medium">AdminRole</span> for users (your own row is
@@ -129,43 +129,43 @@ export default function AdminUserRoles() {
         </div>
 
         <div className="w-full md:w-80">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+          <label className="block text-xs font-medium text-gray-700 mb-0.5">Search</label>
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or email..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-3">
         {isLoading ? (
           <p className="text-gray-600">Loading users...</p>
         ) : !users || users.length === 0 ? (
           <p className="text-gray-600">No users found.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+          <div className="border border-gray-400 overflow-x-auto">
+            <table className="w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[17%]">
                     Name
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[24%]">
                     Email
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[16%]">
                     Role
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[16%]">
                     AdminRole
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
                     Department
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[17%]">
                     Actions
                   </th>
                 </tr>
@@ -179,23 +179,23 @@ export default function AdminUserRoles() {
 
                   return (
                     <tr key={user.id} className={isSelf ? 'bg-gray-50' : 'hover:bg-gray-50'}>
-                      <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+                      <td className="px-2 py-1 text-sm text-gray-900 whitespace-nowrap">
                         {user.name}
                         {isSelf && (
                           <span className="ml-2 text-xs text-gray-500">(you)</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                      <td className="px-2 py-1 text-sm text-gray-700 whitespace-nowrap">
                         {user.email}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-1">
                         <select
                           value={role}
                           disabled={isSelf || updateUserRoles.isPending}
                           onChange={(e) =>
                             setDraftField(user.id, 'role', e.target.value as RoleOption)
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md disabled:bg-gray-100"
+                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md disabled:bg-gray-100"
                         >
                           {ROLE_OPTIONS.map((opt) => (
                             <option key={opt} value={opt}>
@@ -204,7 +204,7 @@ export default function AdminUserRoles() {
                           ))}
                         </select>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-1">
                         <select
                           value={adminRole}
                           disabled={isSelf || updateUserRoles.isPending}
@@ -215,7 +215,7 @@ export default function AdminUserRoles() {
                               e.target.value as AdminRoleOption
                             )
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md disabled:bg-gray-100"
+                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md disabled:bg-gray-100"
                         >
                           {ADMIN_ROLE_OPTIONS.map((opt) => (
                             <option key={opt} value={opt}>
@@ -224,10 +224,10 @@ export default function AdminUserRoles() {
                           ))}
                         </select>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                      <td className="px-2 py-1 text-sm text-gray-700 whitespace-nowrap">
                         {user.department ?? '-'}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-2 py-1 whitespace-nowrap">
                         <div className="flex gap-2">
                           <Button
                             onClick={() => handleSave(user)}
