@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.95](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.94...v1.1.0-beta.95) (2026-02-19)
+
+
+### Bug Fixes
+
+* Admin WITHDRAW button now called delete entry and sets proposal status as well as admin status to WITHDRAWN ([aac6bb0](https://github.com/uzh-bf/thesis-platform/commit/aac6bb002dce75460521be3ec1b12bd089dcca6a))
+
 ## [1.1.0-beta.94](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.93...v1.1.0-beta.94) (2026-02-18)
 
 
