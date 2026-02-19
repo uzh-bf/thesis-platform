@@ -484,7 +484,7 @@ export default function AdminInfoOverview() {
     if (!editState || updateAdminInfo.isPending) return
 
     const isConfirmed = window.confirm(
-      'Are you sure you want to withdraw this thesis? This will set the thesis status to WITHDRAWN.'
+      'Are you sure you want to delete this entry?'
     )
 
     if (!isConfirmed) return
@@ -1876,7 +1876,7 @@ export default function AdminInfoOverview() {
                           }}
                           disabled={updateAdminInfo.isPending}
                         >
-                          Withdraw
+                          Delete Entry
                         </Button>
                       )}
                     </div>

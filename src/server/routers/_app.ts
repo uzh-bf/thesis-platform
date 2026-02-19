@@ -2153,6 +2153,7 @@ updateProposalStatus: publicProcedure
         where: { id: input.adminInfoId },
         select: {
           id: true,
+          proposalId: true,
           department: true,
           status: true,
           olatCapturedDate: true,
@@ -2172,10 +2173,16 @@ updateProposalStatus: publicProcedure
       }
 
       if (input.markWithdrawn) {
-        await prisma.adminInfo.update({
-          where: { id: input.adminInfoId },
-          data: { status: 'WITHDRAWN' },
-        })
+        await prisma.$transaction([
+          prisma.adminInfo.update({
+            where: { id: input.adminInfoId },
+            data: { status: 'WITHDRAWN' },
+          }),
+          prisma.proposal.update({
+            where: { id: adminInfo.proposalId },
+            data: { statusKey: ProposalStatus.WITHDRAWN },
+          }),
+        ])
 
         await applyAdminInfoStatusAutomation(envDepartment)
 
