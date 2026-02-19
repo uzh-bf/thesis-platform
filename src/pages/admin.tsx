@@ -1,3 +1,11 @@
+import {
+  faChevronLeft,
+  faChevronRight,
+  faSort,
+  faSortDown,
+  faSortUp,
+} from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button, Modal, TabContent, Tabs } from '@uzh-bf/design-system'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
@@ -17,6 +25,9 @@ type SortColumn =
   | 'supervisor'
   | 'created'
 type SortDirection = 'asc' | 'desc'
+type PageSizeOption = 20 | 50 | 100 | 'all'
+
+const PAGE_SIZE_OPTIONS: PageSizeOption[] = [20, 50, 100, 'all']
 
 export default function AdminPanel() {
   const router = useRouter()
@@ -27,6 +38,8 @@ export default function AdminPanel() {
   const [search, setSearch] = useState('')
   const [sortColumn, setSortColumn] = useState<SortColumn>('created')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
+  const [rowsPerPage, setRowsPerPage] = useState<PageSizeOption>(20)
+  const [currentPage, setCurrentPage] = useState(1)
   const [selectedProposal, setSelectedProposal] = useState<any>(null)
 
   const { data: proposals, isLoading, refetch } = trpc.adminGetAllProposals.useQuery(
@@ -246,10 +259,37 @@ export default function AdminPanel() {
     setSortDirection(column === 'created' ? 'desc' : 'asc')
   }
 
-  const getSortIndicator = (column: SortColumn) => {
-    if (sortColumn !== column) return '↕'
-    return sortDirection === 'asc' ? '↑' : '↓'
+  const getSortIcon = (column: SortColumn) => {
+    if (sortColumn !== column) return faSort
+    return sortDirection === 'asc' ? faSortUp : faSortDown
   }
+
+  const totalPages =
+    rowsPerPage === 'all'
+      ? 1
+      : Math.max(1, Math.ceil(sortedProposals.length / rowsPerPage))
+
+  const effectiveCurrentPage = Math.min(currentPage, totalPages)
+
+  const paginatedProposals =
+    rowsPerPage === 'all'
+      ? sortedProposals
+      : sortedProposals.slice(
+          (effectiveCurrentPage - 1) * rowsPerPage,
+          effectiveCurrentPage * rowsPerPage
+        )
+
+  const visibleStart =
+    sortedProposals.length === 0
+      ? 0
+      : rowsPerPage === 'all'
+        ? 1
+        : (effectiveCurrentPage - 1) * rowsPerPage + 1
+
+  const visibleEnd =
+    rowsPerPage === 'all'
+      ? sortedProposals.length
+      : Math.min(effectiveCurrentPage * rowsPerPage, sortedProposals.length)
 
   const selectedApplication = selectedProposal
     ? getLinkedApplication(selectedProposal)
@@ -305,63 +345,85 @@ export default function AdminPanel() {
                     {sortedProposals.length} proposals
                   </div>
 
-                  <div className="border border-gray-400 overflow-x-auto">
+                  <div
+                    className={`border border-gray-400 overflow-x-auto ${
+                      rowsPerPage === 20 ? '' : 'max-h-[65vh] overflow-y-auto'
+                    }`}
+                  >
                     <table className="w-full table-fixed divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-gray-50 sticky top-0 z-10">
                         <tr>
-                          <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">
-                            <button
-                              type="button"
-                              onClick={() => handleSort('title')}
-                              className="inline-flex items-center gap-1 hover:text-gray-700"
-                            >
-                              Title <span>{getSortIndicator('title')}</span>
-                            </button>
+                          <th
+                            className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-[20%]"
+                            onClick={() => handleSort('title')}
+                          >
+                            <div className="flex items-center gap-2">
+                              Title
+                              <FontAwesomeIcon
+                                icon={getSortIcon('title')}
+                                className="text-gray-400"
+                              />
+                            </div>
                           </th>
-                          <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">
-                            <button
-                              type="button"
-                              onClick={() => handleSort('type')}
-                              className="inline-flex items-center gap-1 hover:text-gray-700"
-                            >
-                              Type <span>{getSortIndicator('type')}</span>
-                            </button>
+                          <th
+                            className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-[8%]"
+                            onClick={() => handleSort('type')}
+                          >
+                            <div className="flex items-center gap-2">
+                              Type
+                              <FontAwesomeIcon
+                                icon={getSortIcon('type')}
+                                className="text-gray-400"
+                              />
+                            </div>
                           </th>
-                          <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]">
-                            <button
-                              type="button"
-                              onClick={() => handleSort('status')}
-                              className="inline-flex items-center gap-1 hover:text-gray-700"
-                            >
-                              Status <span>{getSortIndicator('status')}</span>
-                            </button>
+                          <th
+                            className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-[12%]"
+                            onClick={() => handleSort('status')}
+                          >
+                            <div className="flex items-center gap-2">
+                              Status
+                              <FontAwesomeIcon
+                                icon={getSortIcon('status')}
+                                className="text-gray-400"
+                              />
+                            </div>
                           </th>
-                          <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[18%]">
-                            <button
-                              type="button"
-                              onClick={() => handleSort('student')}
-                              className="inline-flex items-center gap-1 hover:text-gray-700"
-                            >
-                              Student <span>{getSortIndicator('student')}</span>
-                            </button>
+                          <th
+                            className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-[18%]"
+                            onClick={() => handleSort('student')}
+                          >
+                            <div className="flex items-center gap-2">
+                              Student
+                              <FontAwesomeIcon
+                                icon={getSortIcon('student')}
+                                className="text-gray-400"
+                              />
+                            </div>
                           </th>
-                          <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[18%]">
-                            <button
-                              type="button"
-                              onClick={() => handleSort('supervisor')}
-                              className="inline-flex items-center gap-1 hover:text-gray-700"
-                            >
-                              Supervisor <span>{getSortIndicator('supervisor')}</span>
-                            </button>
+                          <th
+                            className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-[18%]"
+                            onClick={() => handleSort('supervisor')}
+                          >
+                            <div className="flex items-center gap-2">
+                              Supervisor
+                              <FontAwesomeIcon
+                                icon={getSortIcon('supervisor')}
+                                className="text-gray-400"
+                              />
+                            </div>
                           </th>
-                          <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
-                            <button
-                              type="button"
-                              onClick={() => handleSort('created')}
-                              className="inline-flex items-center gap-1 hover:text-gray-700"
-                            >
-                              Created <span>{getSortIndicator('created')}</span>
-                            </button>
+                          <th
+                            className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-[10%]"
+                            onClick={() => handleSort('created')}
+                          >
+                            <div className="flex items-center gap-2">
+                              Created
+                              <FontAwesomeIcon
+                                icon={getSortIcon('created')}
+                                className="text-gray-400"
+                              />
+                            </div>
                           </th>
                           <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[14%]">
                             Actions
@@ -369,84 +431,153 @@ export default function AdminPanel() {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {sortedProposals.map((proposal) => {
+                        {paginatedProposals.map((proposal) => {
                           const studentName = getStudentFullName(proposal)
                           const supervisorName = getSupervisorFullName(proposal)
 
                           return (
-                          <tr key={proposal.id} className="hover:bg-gray-50">
-                            <td className="px-2 py-1 max-w-0">
-                              <div className="text-sm font-medium text-gray-900 truncate">
-                                {proposal.title}
-                              </div>
-                            </td>
-                            <td className="px-2 py-1 whitespace-nowrap">
-                              <span
-                                className={`inline-flex px-1.5 py-0.5 text-[11px] font-semibold rounded-full ${
-                                  proposal.type.key === 'STUDENT'
-                                    ? 'bg-purple-100 text-purple-800'
-                                    : 'bg-blue-100 text-blue-800'
-                                }`}
-                              >
-                                {proposal.type.key}
-                              </span>
-                            </td>
-                            <td className="px-2 py-1 whitespace-nowrap">
-                              <span
-                                className={`inline-flex px-1.5 py-0.5 text-[11px] font-semibold rounded-full ${
-                                  proposal.statusKey === 'WITHDRAWN'
-                                    ? 'bg-red-100 text-red-800'
-                                    : proposal.statusKey === 'MATCHED'
-                                      ? 'bg-green-100 text-green-800'
-                                      : proposal.statusKey === 'OPEN'
-                                        ? 'bg-blue-100 text-blue-800'
-                                        : 'bg-gray-100 text-gray-800'
-                                }`}
-                              >
-                                {proposal.status.key.replace(/_/g, ' ')}
-                              </span>
-                            </td>
-                            <td className="px-2 py-1 max-w-0">
-                              <div className="text-sm text-gray-900 truncate">
-                                {studentName || '-'}
-                              </div>
-                            </td>
-                            <td className="px-2 py-1 max-w-0">
-                              <div className="text-sm text-gray-900 truncate">
-                                {supervisorName || '-'}
-                              </div>
-                            </td>
-                            <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-500">
-                              {formatDateShort(proposal.createdAt)}
-                            </td>
-                            <td className="px-2 py-1 whitespace-nowrap text-sm">
-                              <div className="flex gap-2">
-                                <Button
-                                  onClick={() => setSelectedProposal(proposal)}
-                                  className={{ root: 'text-xs' }}
+                            <tr key={proposal.id} className="hover:bg-gray-50">
+                              <td className="px-2 py-1 max-w-0">
+                                <div className="text-sm font-medium text-gray-900 truncate">
+                                  {proposal.title}
+                                </div>
+                              </td>
+                              <td className="px-2 py-1 whitespace-nowrap">
+                                <span
+                                  className={`inline-flex px-1.5 py-0.5 text-[11px] font-semibold rounded-full ${
+                                    proposal.type.key === 'STUDENT'
+                                      ? 'bg-purple-100 text-purple-800'
+                                      : 'bg-blue-100 text-blue-800'
+                                  }`}
                                 >
-                                  View
-                                </Button>
-                                {proposal.statusKey !== ProposalStatus.WITHDRAWN && (
+                                  {proposal.type.key}
+                                </span>
+                              </td>
+                              <td className="px-2 py-1 whitespace-nowrap">
+                                <span
+                                  className={`inline-flex px-1.5 py-0.5 text-[11px] font-semibold rounded-full ${
+                                    proposal.statusKey === 'WITHDRAWN'
+                                      ? 'bg-red-100 text-red-800'
+                                      : proposal.statusKey === 'MATCHED'
+                                        ? 'bg-green-100 text-green-800'
+                                        : proposal.statusKey === 'OPEN'
+                                          ? 'bg-blue-100 text-blue-800'
+                                          : 'bg-gray-100 text-gray-800'
+                                  }`}
+                                >
+                                  {proposal.status.key.replace(/_/g, ' ')}
+                                </span>
+                              </td>
+                              <td className="px-2 py-1 max-w-0">
+                                <div className="text-sm text-gray-900 truncate">
+                                  {studentName || '-'}
+                                </div>
+                              </td>
+                              <td className="px-2 py-1 max-w-0">
+                                <div className="text-sm text-gray-900 truncate">
+                                  {supervisorName || '-'}
+                                </div>
+                              </td>
+                              <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-500">
+                                {formatDateShort(proposal.createdAt)}
+                              </td>
+                              <td className="px-2 py-1 whitespace-nowrap text-sm">
+                                <div className="flex gap-2">
                                   <Button
-                                    onClick={() =>
-                                      handleWithdraw(proposal.id, proposal.title)
-                                    }
-                                    disabled={withdrawProposal.isPending}
-                                    className={{
-                                      root: 'text-xs bg-red-600 hover:bg-red-700',
-                                    }}
+                                    onClick={() => setSelectedProposal(proposal)}
+                                    className={{ root: 'text-xs' }}
                                   >
-                                    Withdraw
+                                    View
                                   </Button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
+                                  {proposal.statusKey !== ProposalStatus.WITHDRAWN && (
+                                    <Button
+                                      onClick={() =>
+                                        handleWithdraw(proposal.id, proposal.title)
+                                      }
+                                      disabled={withdrawProposal.isPending}
+                                      className={{
+                                        root: 'text-xs bg-red-600 hover:bg-red-700',
+                                      }}
+                                    >
+                                      Withdraw
+                                    </Button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
                           )
                         })}
                       </tbody>
                     </table>
+                  </div>
+
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="text-xs text-gray-600">
+                      Showing {visibleStart}-{visibleEnd} of {sortedProposals.length}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-600">Rows</span>
+
+                      <div className="inline-flex items-center rounded-md border border-gray-300 bg-white p-0.5">
+                        {PAGE_SIZE_OPTIONS.map((option) => {
+                          const isActive = rowsPerPage === option
+
+                          return (
+                            <button
+                              key={String(option)}
+                              type="button"
+                              onClick={() => {
+                                setRowsPerPage(option)
+                                setCurrentPage(1)
+                              }}
+                              className={`h-7 min-w-[34px] rounded px-2 text-xs font-medium ${
+                                isActive
+                                  ? 'bg-blue-600 text-white'
+                                  : 'text-gray-700 hover:bg-gray-100'
+                              }`}
+                              aria-label={`Show ${option === 'all' ? 'all' : option} rows`}
+                            >
+                              {option === 'all' ? 'All' : option}
+                            </button>
+                          )
+                        })}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.max(1, Math.min(prev, totalPages) - 1)
+                          )
+                        }
+                        disabled={rowsPerPage === 'all' || effectiveCurrentPage === 1}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        aria-label="Previous page"
+                      >
+                        <FontAwesomeIcon icon={faChevronLeft} />
+                      </button>
+
+                      <span className="text-xs text-gray-600 min-w-[48px] text-center">
+                        {rowsPerPage === 'all'
+                          ? '1 / 1'
+                          : `${effectiveCurrentPage} / ${totalPages}`}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.min(totalPages, Math.min(prev, totalPages) + 1)
+                          )
+                        }
+                        disabled={rowsPerPage === 'all' || effectiveCurrentPage >= totalPages}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        aria-label="Next page"
+                      >
+                        <FontAwesomeIcon icon={faChevronRight} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -455,171 +586,154 @@ export default function AdminPanel() {
                 <Modal
                   open={true}
                   onClose={() => setSelectedProposal(null)}
-                  className={{ content: 'max-w-4xl' }}
+                  className={{ content: 'max-w-5xl max-h-[95vh] overflow-auto' }}
                 >
-                  <div className="p-6">
-                    <div className="mb-4">
-                      <h2 className="text-2xl font-bold text-gray-900">
-                        {selectedProposal.title}
-                      </h2>
+                  <div className="relative -m-5 -mt-8 p-5 pt-8">
+                    <h2 className="text-lg font-bold text-gray-900">Entry Details</h2>
+                    <p className="mt-0.5 text-xs text-gray-600">
+                      {selectedProposal.title}
+                    </p>
+
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase">Type</div>
+                        <div className="text-sm text-gray-900">{selectedProposal.type.key}</div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase">Status</div>
+                        <div className="text-sm text-gray-900">
+                          {selectedProposal.status.key.replace(/_/g, ' ')}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase">
+                          Topic Area
+                        </div>
+                        <div className="text-sm text-gray-900">
+                          {selectedProposal.topicArea.name}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase">
+                          Student Name
+                        </div>
+                        <div className="text-sm text-gray-900">
+                          {selectedApplication?.fullName || '-'}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase">
+                          Student Email
+                        </div>
+                        <div className="text-sm text-gray-900">
+                          {selectedApplication?.email || '-'}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase">
+                          Matriculation Number
+                        </div>
+                        <div className="text-sm text-gray-900">
+                          {selectedApplication?.matriculationNumber || '-'}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase">
+                          Supervisor
+                        </div>
+                        <div className="text-sm text-gray-900">
+                          {selectedSupervisor?.name || '-'}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase">
+                          Supervisor Email
+                        </div>
+                        <div className="text-sm text-gray-900">
+                          {selectedSupervisor?.email || '-'}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase">Created</div>
+                        <div className="text-sm text-gray-900">
+                          {formatDateShort(selectedProposal.createdAt)}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase">Language</div>
+                        <div className="text-sm text-gray-900">{selectedProposal.language}</div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase">
+                          Study Level
+                        </div>
+                        <div className="text-sm text-gray-900">{selectedProposal.studyLevel}</div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase">
+                          Time Frame
+                        </div>
+                        <div className="text-sm text-gray-900">
+                          {selectedProposal.timeFrame || '-'}
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Type</p>
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              selectedProposal.type.key === 'STUDENT'
-                                ? 'bg-purple-100 text-purple-800'
-                                : 'bg-blue-100 text-blue-800'
-                            }`}
-                          >
-                            {selectedProposal.type.key}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Status</p>
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              selectedProposal.statusKey === 'WITHDRAWN'
-                                ? 'bg-red-100 text-red-800'
-                                : selectedProposal.statusKey === 'MATCHED'
-                                  ? 'bg-green-100 text-green-800'
-                                  : selectedProposal.statusKey === 'OPEN'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : 'bg-gray-100 text-gray-800'
-                            }`}
-                          >
-                            {selectedProposal.status.key.replace(/_/g, ' ')}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">Topic Area</p>
-                        <p className="mt-1 text-sm text-gray-900">
-                          {selectedProposal.topicArea.name}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">Student</p>
-                        {selectedApplication ? (
-                          <div className="mt-1">
-                            <p className="text-sm text-gray-900">
-                              {selectedApplication.fullName}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              {selectedApplication.email}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Matric: {selectedApplication.matriculationNumber}
-                            </p>
-                          </div>
-                        ) : (
-                          <p className="mt-1 text-sm text-gray-900">
-                            No student matched yet
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">Supervisor</p>
-                        {selectedSupervisor ? (
-                          <div className="mt-1">
-                            <p className="text-sm text-gray-900">
-                              {selectedSupervisor.name}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              {selectedSupervisor.email}
-                            </p>
-                          </div>
-                        ) : (
-                          <p className="mt-1 text-sm text-gray-900">
-                            No supervisor matched yet
-                          </p>
-                        )}
-                      </div>
+                    <div className="mt-4 border-t border-gray-200 pt-4">
+                      <h3 className="text-base font-semibold text-gray-900">
+                        Proposal Information
+                      </h3>
 
                       {selectedProposal.type.key === 'STUDENT' &&
-                        selectedApplication && (
-                          <div>
-                            <p className="text-sm font-medium text-gray-500">
+                        selectedApplication?.plannedStartAt && (
+                          <div className="mt-3">
+                            <div className="text-xs font-medium text-gray-500 uppercase">
                               Planned Start
-                            </p>
+                            </div>
                             <p className="mt-1 text-sm text-gray-900">
-                              {new Date(
-                                selectedApplication.plannedStartAt
-                              ).toLocaleDateString()}
+                              {formatDateShort(selectedApplication.plannedStartAt)}
                             </p>
                           </div>
                         )}
 
                       {selectedProposal.type.key === 'STUDENT' &&
                         selectedApplication?.motivation && (
-                          <div>
-                            <p className="text-sm font-medium text-gray-500">
+                          <div className="mt-3">
+                            <div className="text-xs font-medium text-gray-500 uppercase">
                               Motivation
-                            </p>
+                            </div>
                             <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">
                               {selectedApplication.motivation}
                             </p>
                           </div>
                         )}
 
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">
+                      <div className="mt-3">
+                        <div className="text-xs font-medium text-gray-500 uppercase">
                           Description
-                        </p>
+                        </div>
                         <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">
                           {selectedProposal.description}
                         </p>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">
-                            Language
-                          </p>
-                          <p className="mt-1 text-sm text-gray-900">
-                            {selectedProposal.language}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">
-                            Study Level
-                          </p>
-                          <p className="mt-1 text-sm text-gray-900">
-                            {selectedProposal.studyLevel}
-                          </p>
-                        </div>
-                      </div>
-
-                      {selectedProposal.timeFrame && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">
-                            Time Frame
-                          </p>
-                          <p className="mt-1 text-sm text-gray-900">
-                            {selectedProposal.timeFrame}
-                          </p>
-                        </div>
-                      )}
-
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">Created</p>
-                        <p className="mt-1 text-sm text-gray-900">
-                          {new Date(selectedProposal.createdAt).toLocaleString()}
-                        </p>
-                      </div>
-
                       {selectedProposal.attachments?.length > 0 && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-500 mb-2">
+                        <div className="mt-3">
+                          <div className="text-xs font-medium text-gray-500 uppercase">
                             Attachments
-                          </p>
-                          <div className="space-y-1">
+                          </div>
+                          <div className="mt-1 space-y-1">
                             {selectedProposal.attachments.map((att: any) => (
                               <a
                                 key={att.id}
@@ -636,25 +750,34 @@ export default function AdminPanel() {
                       )}
                     </div>
 
-                    {selectedProposal.statusKey !== ProposalStatus.WITHDRAWN && (
-                      <div className="mt-6 flex justify-end">
+                    <div className="mt-6 flex items-center justify-between gap-2">
+                      <div>
+                        {selectedProposal.statusKey !== ProposalStatus.WITHDRAWN && (
+                          <Button
+                            onClick={() => {
+                              handleWithdraw(selectedProposal.id, selectedProposal.title)
+                              setSelectedProposal(null)
+                            }}
+                            disabled={withdrawProposal.isPending}
+                            className={{
+                              root: 'text-sm bg-red-600 hover:bg-red-700 text-white',
+                            }}
+                          >
+                            Withdraw
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
                         <Button
-                          onClick={() => {
-                            handleWithdraw(
-                              selectedProposal.id,
-                              selectedProposal.title
-                            )
-                            setSelectedProposal(null)
-                          }}
+                          onClick={() => setSelectedProposal(null)}
+                          className={{ root: 'text-sm' }}
                           disabled={withdrawProposal.isPending}
-                          className={{
-                            root: 'text-sm bg-red-600 hover:bg-red-700',
-                          }}
                         >
-                          Withdraw
+                          Close
                         </Button>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </Modal>
               )}

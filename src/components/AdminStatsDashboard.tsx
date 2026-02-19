@@ -1,5 +1,7 @@
+import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button, Select, TabContent, Tabs } from '@uzh-bf/design-system'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { trpc } from 'src/lib/trpc'
 
 type StatsView = 'supervisors' | 'responsibles'
@@ -10,6 +12,10 @@ type StatsRow = {
   subLabel?: string
   count: number
 }
+
+type PageSizeOption = 20 | 50 | 100 | 'all'
+
+const PAGE_SIZE_OPTIONS: PageSizeOption[] = [20, 50, 100, 'all']
 
 function CountBar({ count, max }: { count: number; max: number }) {
   const width = max > 0 ? Math.round((count / max) * 100) : 0
@@ -34,6 +40,8 @@ export default function AdminStatsDashboard() {
   const [search, setSearch] = useState('')
   const [responsibleFilterId, setResponsibleFilterId] = useState('ALL')
   const [supervisorFilterEmail, setSupervisorFilterEmail] = useState('ALL')
+  const [rowsPerPage, setRowsPerPage] = useState<PageSizeOption>(20)
+  const [currentPage, setCurrentPage] = useState(1)
 
   const { data, isLoading, error } = trpc.adminGetSupervisionStats.useQuery(
     year ? { year } : undefined
@@ -143,6 +151,39 @@ export default function AdminStatsDashboard() {
 
   const rows = view === 'supervisors' ? supervisorRows : responsibleRows
   const maxCount = rows.reduce((acc, r) => Math.max(acc, r.count), 0)
+
+  const totalPages =
+    rowsPerPage === 'all' ? 1 : Math.max(1, Math.ceil(rows.length / rowsPerPage))
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [currentPage, totalPages])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [view, search, year, responsibleFilterId, supervisorFilterEmail])
+
+  const paginatedRows =
+    rowsPerPage === 'all'
+      ? rows
+      : rows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+
+  const visibleStart =
+    rows.length === 0
+      ? 0
+      : rowsPerPage === 'all'
+        ? 1
+        : (currentPage - 1) * rowsPerPage + 1
+
+  const visibleEnd =
+    rowsPerPage === 'all' ? rows.length : Math.min(currentPage * rowsPerPage, rows.length)
+
+  const paginatedSupervisorRows =
+    view === 'supervisors' ? paginatedRows : supervisorRows
+  const paginatedResponsibleRows =
+    view === 'responsibles' ? paginatedRows : responsibleRows
 
   const viewTotal = useMemo(() => {
     if (!data?.supervisions) return 0
@@ -267,8 +308,12 @@ export default function AdminStatsDashboard() {
             ]}
           >
             <TabContent value="supervisors" className={{ root: 'pt-3' }}>
-              <div className="overflow-auto max-h-[65vh] border border-gray-400">
-                <table className="w-full divide-y divide-gray-200">
+              <div
+                className={`border border-gray-400 overflow-x-auto ${
+                  rowsPerPage === 20 ? '' : 'max-h-[65vh] overflow-y-auto'
+                }`}
+              >
+                <table className="w-full table-fixed divide-y divide-gray-200">
                   <thead className="bg-gray-50 sticky top-0 z-10">
                     <tr>
                       <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[65%]">
@@ -280,7 +325,7 @@ export default function AdminStatsDashboard() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {supervisorRows.map((r) => (
+                    {paginatedSupervisorRows.map((r) => (
                       <tr key={r.key} className="hover:bg-gray-50">
                         <td className="px-2 py-1">
                           <div className="text-sm font-medium text-gray-900 truncate">
@@ -300,11 +345,74 @@ export default function AdminStatsDashboard() {
                   </tbody>
                 </table>
               </div>
+
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-xs text-gray-600">
+                  Showing {visibleStart}-{visibleEnd} of {rows.length}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-600">Rows</span>
+
+                  <div className="inline-flex items-center rounded-md border border-gray-300 bg-white p-0.5">
+                    {PAGE_SIZE_OPTIONS.map((option) => {
+                      const isActive = rowsPerPage === option
+
+                      return (
+                        <button
+                          key={String(option)}
+                          type="button"
+                          onClick={() => {
+                            setRowsPerPage(option)
+                            setCurrentPage(1)
+                          }}
+                          className={`h-7 min-w-[34px] rounded px-2 text-xs font-medium ${
+                            isActive
+                              ? 'bg-blue-600 text-white'
+                              : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                          aria-label={`Show ${option === 'all' ? 'all' : option} rows`}
+                        >
+                          {option === 'all' ? 'All' : option}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    disabled={rowsPerPage === 'all' || currentPage === 1}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label="Previous page"
+                  >
+                    <FontAwesomeIcon icon={faChevronLeft} />
+                  </button>
+
+                  <span className="text-xs text-gray-600 min-w-[48px] text-center">
+                    {rowsPerPage === 'all' ? '1 / 1' : `${currentPage} / ${totalPages}`}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                    disabled={rowsPerPage === 'all' || currentPage >= totalPages}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label="Next page"
+                  >
+                    <FontAwesomeIcon icon={faChevronRight} />
+                  </button>
+                </div>
+              </div>
             </TabContent>
 
             <TabContent value="responsibles" className={{ root: 'pt-3' }}>
-              <div className="overflow-auto max-h-[65vh] border border-gray-400">
-                <table className="w-full divide-y divide-gray-200">
+              <div
+                className={`border border-gray-400 overflow-x-auto ${
+                  rowsPerPage === 20 ? '' : 'max-h-[65vh] overflow-y-auto'
+                }`}
+              >
+                <table className="w-full table-fixed divide-y divide-gray-200">
                   <thead className="bg-gray-50 sticky top-0 z-10">
                     <tr>
                       <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[65%]">
@@ -316,7 +424,7 @@ export default function AdminStatsDashboard() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {responsibleRows.map((r) => (
+                    {paginatedResponsibleRows.map((r) => (
                       <tr key={r.key} className="hover:bg-gray-50">
                         <td className="px-2 py-1">
                           <div className="text-sm font-medium text-gray-900 truncate">
@@ -335,6 +443,65 @@ export default function AdminStatsDashboard() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-xs text-gray-600">
+                  Showing {visibleStart}-{visibleEnd} of {rows.length}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-600">Rows</span>
+
+                  <div className="inline-flex items-center rounded-md border border-gray-300 bg-white p-0.5">
+                    {PAGE_SIZE_OPTIONS.map((option) => {
+                      const isActive = rowsPerPage === option
+
+                      return (
+                        <button
+                          key={String(option)}
+                          type="button"
+                          onClick={() => {
+                            setRowsPerPage(option)
+                            setCurrentPage(1)
+                          }}
+                          className={`h-7 min-w-[34px] rounded px-2 text-xs font-medium ${
+                            isActive
+                              ? 'bg-blue-600 text-white'
+                              : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                          aria-label={`Show ${option === 'all' ? 'all' : option} rows`}
+                        >
+                          {option === 'all' ? 'All' : option}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    disabled={rowsPerPage === 'all' || currentPage === 1}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label="Previous page"
+                  >
+                    <FontAwesomeIcon icon={faChevronLeft} />
+                  </button>
+
+                  <span className="text-xs text-gray-600 min-w-[48px] text-center">
+                    {rowsPerPage === 'all' ? '1 / 1' : `${currentPage} / ${totalPages}`}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                    disabled={rowsPerPage === 'all' || currentPage >= totalPages}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label="Next page"
+                  >
+                    <FontAwesomeIcon icon={faChevronRight} />
+                  </button>
+                </div>
               </div>
             </TabContent>
           </Tabs>
