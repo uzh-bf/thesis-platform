@@ -2494,13 +2494,14 @@ updateProposalStatus: publicProcedure
       z.object({
         proposalId: z.string(),
         supervisorEmail: z.string().email(),
+        responsibleId: z.string(),
       })
     )
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input }) => {
       const envDepartment = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
 
-      const [proposal, supervisor] = await Promise.all([
+      const [proposal, supervisor, responsible] = await Promise.all([
         prisma.proposal.findFirst({
           where: {
             id: input.proposalId,
@@ -2522,40 +2523,48 @@ updateProposalStatus: publicProcedure
             email: true,
           },
         }),
+        prisma.responsible.findFirst({
+          where: {
+            id: input.responsibleId,
+            department: envDepartment,
+          },
+          select: {
+            id: true,
+          },
+        }),
       ])
 
       if (!proposal) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Proposal not found' })
       }
 
-      const isStudentProposal = proposal.typeKey === ProposalType.STUDENT
-      const isSupervisorProposal = proposal.typeKey === ProposalType.SUPERVISOR
-
-      if (!isStudentProposal && !isSupervisorProposal) {
+      if (proposal.typeKey !== ProposalType.STUDENT) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Supervisor can only be adjusted for student or supervisor proposals',
+          message: 'Supervisor and responsible can only be adjusted for student proposals',
         })
       }
 
-      const allowedStatuses = isStudentProposal
-        ? [
-            ProposalStatus.OPEN,
-            ProposalStatus.MATCHED,
-            ProposalStatus.MATCHED_TENTATIVE,
-          ]
-        : [ProposalStatus.MATCHED, ProposalStatus.MATCHED_TENTATIVE]
+      const allowedStatuses = [
+        ProposalStatus.OPEN,
+        ProposalStatus.MATCHED,
+        ProposalStatus.MATCHED_TENTATIVE,
+      ]
 
       if (!allowedStatuses.includes(proposal.statusKey as ProposalStatus)) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message:
-            'Supervisor can only be adjusted for OPEN/MATCHED student proposals or MATCHED supervisor proposals',
+            'Supervisor and responsible can only be adjusted for OPEN, MATCHED, or MATCHED_TENTATIVE student proposals',
         })
       }
 
       if (!supervisor) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Supervisor not found' })
+      }
+
+      if (!responsible) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Responsible person not found' })
       }
 
       await prisma.$transaction([
@@ -2564,7 +2573,7 @@ updateProposalStatus: publicProcedure
           data: {
             ownedByUserEmail: input.supervisorEmail,
             statusKey:
-              isStudentProposal && proposal.statusKey === ProposalStatus.OPEN
+              proposal.statusKey === ProposalStatus.OPEN
                 ? ProposalStatus.MATCHED
                 : proposal.statusKey,
           },
@@ -2577,9 +2586,11 @@ updateProposalStatus: publicProcedure
             id: uuidv4(),
             proposalId: input.proposalId,
             supervisorEmail: input.supervisorEmail,
+            responsibleId: input.responsibleId,
           },
           update: {
             supervisorEmail: input.supervisorEmail,
+            responsibleId: input.responsibleId,
           },
         }),
       ])

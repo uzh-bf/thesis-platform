@@ -46,6 +46,10 @@ export default function AdminPanel() {
   const [isSupervisorDropdownOpen, setIsSupervisorDropdownOpen] = useState(false)
   const [supervisorDropdownSearch, setSupervisorDropdownSearch] = useState('')
   const supervisorDropdownRef = useRef<HTMLDivElement | null>(null)
+  const [selectedResponsibleId, setSelectedResponsibleId] = useState('')
+  const [isResponsibleDropdownOpen, setIsResponsibleDropdownOpen] = useState(false)
+  const [responsibleDropdownSearch, setResponsibleDropdownSearch] = useState('')
+  const responsibleDropdownRef = useRef<HTMLDivElement | null>(null)
 
   const { data: proposals, isLoading, refetch } = trpc.adminGetAllProposals.useQuery(
     {},
@@ -55,6 +59,10 @@ export default function AdminPanel() {
   )
 
   const { data: supervisors } = trpc.getAllSupervisors.useQuery(undefined, {
+    enabled: isAdminOnly,
+  })
+
+  const { data: responsibles } = trpc.getAllPersonsResponsible.useQuery(undefined, {
     enabled: isAdminOnly,
   })
 
@@ -78,9 +86,12 @@ export default function AdminPanel() {
         setSelectedSupervisorEmail(
           updatedProposal.supervisedBy?.[0]?.supervisor?.email ?? variables.supervisorEmail
         )
+        setSelectedResponsibleId(
+          updatedProposal.supervisedBy?.[0]?.responsibleId ?? variables.responsibleId
+        )
       })
 
-      alert('Supervisor saved successfully')
+      alert('Assignment saved successfully')
     },
     onError: (error) => {
       alert(`Error: ${error.message}`)
@@ -122,8 +133,11 @@ export default function AdminPanel() {
     setSelectedSupervisorEmail(
       selectedProposal?.supervisedBy?.[0]?.supervisor?.email ?? ''
     )
+    setSelectedResponsibleId(selectedProposal?.supervisedBy?.[0]?.responsibleId ?? '')
     setIsSupervisorDropdownOpen(false)
+    setIsResponsibleDropdownOpen(false)
     setSupervisorDropdownSearch('')
+    setResponsibleDropdownSearch('')
   }, [selectedProposal])
 
   useEffect(() => {
@@ -143,6 +157,24 @@ export default function AdminPanel() {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [isSupervisorDropdownOpen])
+
+  useEffect(() => {
+    if (!isResponsibleDropdownOpen) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!responsibleDropdownRef.current) return
+      if (responsibleDropdownRef.current.contains(event.target as Node)) return
+
+      setIsResponsibleDropdownOpen(false)
+      setResponsibleDropdownSearch('')
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isResponsibleDropdownOpen])
 
   if (!session?.user || !isAdmin) {
     return null
@@ -197,9 +229,24 @@ export default function AdminPanel() {
       return
     }
 
+    if (!responsibles?.length) {
+      alert('Responsible list is still loading.')
+      return
+    }
+
     const supervisorEmail = selectedSupervisorEmail.trim()
+    const responsibleId = selectedResponsibleId.trim()
+
+    if (!responsibleId) {
+      alert('Please select a person responsible from the list.')
+      return
+    }
+
     const supervisorExists = supervisors.some((supervisor) =>
       supervisor.email.toLowerCase() === supervisorEmail.toLowerCase()
+    )
+    const responsibleExists = responsibles.some(
+      (responsible) => responsible.id === responsibleId
     )
 
     if (!supervisorExists) {
@@ -207,12 +254,20 @@ export default function AdminPanel() {
       return
     }
 
+    if (!responsibleExists) {
+      alert('Please select a person responsible from the list.')
+      return
+    }
+
     setIsSupervisorDropdownOpen(false)
+    setIsResponsibleDropdownOpen(false)
     setSupervisorDropdownSearch('')
+    setResponsibleDropdownSearch('')
 
     assignSupervisor.mutate({
       proposalId: selectedProposal.id,
       supervisorEmail,
+      responsibleId,
     })
   }
 
@@ -235,6 +290,28 @@ export default function AdminPanel() {
       supervisor.email.toLowerCase().includes(normalizedSupervisorSearch)
     )
   })
+
+  const selectedResponsibleOption =
+    !selectedResponsibleId || !responsibles?.length
+      ? null
+      : responsibles.find((responsible) => responsible.id === selectedResponsibleId) ?? null
+
+  const normalizedResponsibleSearch = responsibleDropdownSearch.trim().toLowerCase()
+  const filteredResponsibleOptions = (responsibles ?? []).filter((responsible) => {
+    if (!normalizedResponsibleSearch) return true
+
+    const normalizedName = (responsible.name ?? '').toLowerCase()
+
+    return (
+      normalizedName.includes(normalizedResponsibleSearch) ||
+      responsible.email.toLowerCase().includes(normalizedResponsibleSearch)
+    )
+  })
+
+  const canSaveAssignment =
+    !assignSupervisor.isPending &&
+    !!selectedSupervisorOption &&
+    !!selectedResponsibleOption
 
   const getLinkedApplication = (proposal: any) => {
     const isOpenSupervisorProposal =
@@ -400,16 +477,12 @@ export default function AdminPanel() {
   const selectedProposalStatus = selectedProposal?.statusKey as ProposalStatus | undefined
 
   const canAdjustSupervisor =
-    (selectedProposalType === 'STUDENT' &&
-      [
-        ProposalStatus.OPEN,
-        ProposalStatus.MATCHED,
-        ProposalStatus.MATCHED_TENTATIVE,
-      ].includes(selectedProposalStatus as ProposalStatus)) ||
-    (selectedProposalType === 'SUPERVISOR' &&
-      [ProposalStatus.MATCHED, ProposalStatus.MATCHED_TENTATIVE].includes(
-        selectedProposalStatus as ProposalStatus
-      ))
+    selectedProposalType === 'STUDENT' &&
+    [
+      ProposalStatus.OPEN,
+      ProposalStatus.MATCHED,
+      ProposalStatus.MATCHED_TENTATIVE,
+    ].includes(selectedProposalStatus as ProposalStatus)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -799,17 +872,20 @@ export default function AdminPanel() {
                       </h3>
 
                       {canAdjustSupervisor && (
-                          <div className="mt-3">
+                        <div className="mt-3 space-y-3">
+                          <div>
                             <div className="text-xs font-medium text-gray-500 uppercase">
                               Assign Supervisor
                             </div>
-                            <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-start">
-                              <div ref={supervisorDropdownRef} className="relative w-full">
+                            <div className="mt-1" ref={supervisorDropdownRef}>
+                              <div className="relative">
                                 <button
                                   type="button"
-                                  onClick={() =>
+                                  onClick={() => {
                                     setIsSupervisorDropdownOpen((open) => !open)
-                                  }
+                                    setIsResponsibleDropdownOpen(false)
+                                    setResponsibleDropdownSearch('')
+                                  }}
                                   disabled={assignSupervisor.isPending}
                                   className="flex w-full items-center justify-between gap-2 rounded-md border border-gray-300 px-3 py-1.5 text-left"
                                   aria-haspopup="listbox"
@@ -900,19 +976,125 @@ export default function AdminPanel() {
                                   </div>
                                 )}
                               </div>
-
-                              <Button
-                                onClick={handleAssignSupervisor}
-                                disabled={assignSupervisor.isPending}
-                                className={{ root: 'text-sm whitespace-nowrap' }}
-                              >
-                                {assignSupervisor.isPending
-                                  ? 'Saving...'
-                                  : 'Save supervisor'}
-                              </Button>
                             </div>
                           </div>
-                        )}
+
+                          <div>
+                            <div className="text-xs font-medium text-gray-500 uppercase">
+                              Assign Responsible Person
+                            </div>
+                            <div className="mt-1" ref={responsibleDropdownRef}>
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setIsResponsibleDropdownOpen((open) => !open)
+                                    setIsSupervisorDropdownOpen(false)
+                                    setSupervisorDropdownSearch('')
+                                  }}
+                                  disabled={assignSupervisor.isPending}
+                                  className="flex w-full items-center justify-between gap-2 rounded-md border border-gray-300 px-3 py-1.5 text-left"
+                                  aria-haspopup="listbox"
+                                  aria-expanded={isResponsibleDropdownOpen}
+                                >
+                                  <div className="min-w-0 flex-1">
+                                    {selectedResponsibleOption ? (
+                                      <>
+                                        <div className="truncate text-sm text-gray-900">
+                                          {selectedResponsibleOption.name ??
+                                            selectedResponsibleOption.email}
+                                        </div>
+                                        <div className="truncate text-xs text-gray-500">
+                                          {selectedResponsibleOption.email}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <div className="truncate text-sm text-gray-500">
+                                        Select responsible person...
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <FontAwesomeIcon
+                                    icon={faChevronDown}
+                                    className={`text-xs text-gray-500 transition-transform ${
+                                      isResponsibleDropdownOpen ? 'rotate-180' : ''
+                                    }`}
+                                  />
+                                </button>
+
+                                {isResponsibleDropdownOpen && (
+                                  <div className="absolute z-20 mt-1 w-full rounded-md border border-gray-300 bg-white shadow-lg">
+                                    <div className="border-b border-gray-200 p-2">
+                                      <input
+                                        type="text"
+                                        autoFocus
+                                        value={responsibleDropdownSearch}
+                                        onChange={(event) =>
+                                          setResponsibleDropdownSearch(event.target.value)
+                                        }
+                                        onKeyDown={(event) => {
+                                          if (event.key === 'Escape') {
+                                            setIsResponsibleDropdownOpen(false)
+                                            setResponsibleDropdownSearch('')
+                                          }
+                                        }}
+                                        placeholder="Search responsible person..."
+                                        className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                                      />
+                                    </div>
+
+                                    <div className="max-h-56 overflow-y-auto py-1">
+                                      {filteredResponsibleOptions.length === 0 ? (
+                                        <div className="px-3 py-2 text-xs text-gray-500">
+                                          No responsible persons found
+                                        </div>
+                                      ) : (
+                                        filteredResponsibleOptions.map((responsible) => {
+                                          const isSelected =
+                                            selectedResponsibleId === responsible.id
+
+                                          return (
+                                            <button
+                                              key={responsible.id}
+                                              type="button"
+                                              onClick={() => {
+                                                setSelectedResponsibleId(responsible.id)
+                                                setIsResponsibleDropdownOpen(false)
+                                                setResponsibleDropdownSearch('')
+                                              }}
+                                              className={`w-full px-3 py-2 text-left hover:bg-gray-50 ${
+                                                isSelected ? 'bg-blue-50' : ''
+                                              }`}
+                                            >
+                                              <div className="truncate text-sm text-gray-900">
+                                                {responsible.name ?? responsible.email}
+                                              </div>
+                                              <div className="truncate text-xs text-gray-500">
+                                                {responsible.email}
+                                              </div>
+                                            </button>
+                                          )
+                                        })
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <Button
+                              onClick={handleAssignSupervisor}
+                              disabled={!canSaveAssignment}
+                              className={{ root: 'text-sm whitespace-nowrap' }}
+                            >
+                              {assignSupervisor.isPending ? 'Saving...' : 'Save assignment'}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
 
                       {selectedProposal.type.key === 'STUDENT' &&
                         selectedApplication?.plannedStartAt && (
