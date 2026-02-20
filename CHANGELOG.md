@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.97](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.96...v1.1.0-beta.97) (2026-02-20)
+
+
+### Features
+
+* add after matched editing of supervisor on student proposal ([726008e](https://github.com/uzh-bf/thesis-platform/commit/726008ef1fa0887e82a1b331eed8b713b388b009))
+* manual matching of open student proposal with supervisor ([3815282](https://github.com/uzh-bf/thesis-platform/commit/381528241da3aa5d318273dbc4cc30427e674e82))
+
+
+### Bug Fixes
+
+* validation for both dropdowns ([e1357b6](https://github.com/uzh-bf/thesis-platform/commit/e1357b6782abab2540d88e426353039856b760db))
+
 ## [1.1.0-beta.96](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.95...v1.1.0-beta.96) (2026-02-20)
 
 
