@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.96](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.95...v1.1.0-beta.96) (2026-02-20)
+
+
+### Bug Fixes
+
+* design of other tab pages in admin panel ([4a0038c](https://github.com/uzh-bf/thesis-platform/commit/4a0038c12520c90948633cfa36f961a5a0bea4c1))
+* proposals view ([4fcc974](https://github.com/uzh-bf/thesis-platform/commit/4fcc97409221c59d129c3666c15c1b95e17d57ee))
+* stats ([7fbf412](https://github.com/uzh-bf/thesis-platform/commit/7fbf4128a417fad3293822b97c1611cc15724810))
+
 ## [1.1.0-beta.95](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.94...v1.1.0-beta.95) (2026-02-19)
 
 
