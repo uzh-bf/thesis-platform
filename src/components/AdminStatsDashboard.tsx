@@ -1,6 +1,12 @@
-import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import {
+  faChevronLeft,
+  faChevronRight,
+  faSort,
+  faSortDown,
+  faSortUp,
+} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Button, Select, TabContent, Tabs } from '@uzh-bf/design-system'
+import { Select, TabContent, Tabs } from '@uzh-bf/design-system'
 import { useEffect, useMemo, useState } from 'react'
 import { trpc } from 'src/lib/trpc'
 
@@ -14,6 +20,8 @@ type StatsRow = {
 }
 
 type PageSizeOption = 20 | 50 | 100 | 'all'
+type SortColumn = 'label' | 'count'
+type SortDirection = 'asc' | 'desc'
 
 const PAGE_SIZE_OPTIONS: PageSizeOption[] = [20, 50, 100, 'all']
 
@@ -38,10 +46,10 @@ export default function AdminStatsDashboard() {
   const [view, setView] = useState<StatsView>('supervisors')
   const [year, setYear] = useState<number | undefined>(undefined)
   const [search, setSearch] = useState('')
-  const [responsibleFilterId, setResponsibleFilterId] = useState('ALL')
-  const [supervisorFilterEmail, setSupervisorFilterEmail] = useState('ALL')
   const [rowsPerPage, setRowsPerPage] = useState<PageSizeOption>(20)
   const [currentPage, setCurrentPage] = useState(1)
+  const [sortColumn, setSortColumn] = useState<SortColumn>('count')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
   const { data, isLoading, error } = trpc.adminGetSupervisionStats.useQuery(
     year ? { year } : undefined
@@ -54,28 +62,6 @@ export default function AdminStatsDashboard() {
     return years.map((y) => ({ value: String(y), label: String(y) }))
   }, [data?.years, selectedYear])
 
-  const responsibleItems = useMemo(() => {
-    const list = data?.responsibles ?? []
-    return [
-      { value: 'ALL', label: 'All responsibles' },
-      ...list.map((r) => ({
-        value: r.id,
-        label: `${r.name} (${r.email})`,
-      })),
-    ]
-  }, [data?.responsibles])
-
-  const supervisorItems = useMemo(() => {
-    const list = data?.supervisors ?? []
-    return [
-      { value: 'ALL', label: 'All supervisors' },
-      ...list.map((s) => ({
-        value: s.email,
-        label: `${s.name ?? s.email} (${s.email})`,
-      })),
-    ]
-  }, [data?.supervisors])
-
   const normalizedSearch = search.trim().toLowerCase()
 
   const supervisorRows = useMemo(() => {
@@ -84,9 +70,6 @@ export default function AdminStatsDashboard() {
 
     const counts = new Map<string, number>()
     for (const s of supervisions) {
-      if (responsibleFilterId !== 'ALL' && s.responsibleId !== responsibleFilterId) {
-        continue
-      }
       if (!s.supervisorEmail) continue
       counts.set(s.supervisorEmail, (counts.get(s.supervisorEmail) ?? 0) + 1)
     }
@@ -104,13 +87,8 @@ export default function AdminStatsDashboard() {
         )
       : rows
 
-    filtered.sort((a, b) => {
-      if (b.count !== a.count) return b.count - a.count
-      return a.label.localeCompare(b.label)
-    })
-
     return filtered
-  }, [data?.supervisions, data?.supervisors, responsibleFilterId, normalizedSearch])
+  }, [data?.supervisions, data?.supervisors, normalizedSearch])
 
   const responsibleRows = useMemo(() => {
     const supervisions = data?.supervisions ?? []
@@ -118,12 +96,6 @@ export default function AdminStatsDashboard() {
 
     const counts = new Map<string, number>()
     for (const s of supervisions) {
-      if (
-        supervisorFilterEmail !== 'ALL' &&
-        s.supervisorEmail !== supervisorFilterEmail
-      ) {
-        continue
-      }
       if (!s.responsibleId) continue
       counts.set(s.responsibleId, (counts.get(s.responsibleId) ?? 0) + 1)
     }
@@ -141,44 +113,65 @@ export default function AdminStatsDashboard() {
         )
       : rows
 
-    filtered.sort((a, b) => {
-      if (b.count !== a.count) return b.count - a.count
-      return a.label.localeCompare(b.label)
-    })
-
     return filtered
-  }, [data?.supervisions, data?.responsibles, supervisorFilterEmail, normalizedSearch])
+  }, [data?.supervisions, data?.responsibles, normalizedSearch])
 
   const rows = view === 'supervisors' ? supervisorRows : responsibleRows
-  const maxCount = rows.reduce((acc, r) => Math.max(acc, r.count), 0)
+
+  const sortedRows = useMemo(() => {
+    return [...rows].sort((a, b) => {
+      let compareValue = 0
+
+      switch (sortColumn) {
+        case 'label':
+          compareValue = a.label.localeCompare(b.label, undefined, {
+            sensitivity: 'base',
+          })
+          break
+        case 'count':
+          compareValue = a.count - b.count
+          if (compareValue === 0) {
+            compareValue = a.label.localeCompare(b.label, undefined, {
+              sensitivity: 'base',
+            })
+          }
+          break
+      }
+
+      return sortDirection === 'asc' ? compareValue : -compareValue
+    })
+  }, [rows, sortColumn, sortDirection])
+
+  const maxCount = sortedRows.reduce((acc, r) => Math.max(acc, r.count), 0)
 
   const totalPages =
-    rowsPerPage === 'all' ? 1 : Math.max(1, Math.ceil(rows.length / rowsPerPage))
+    rowsPerPage === 'all' ? 1 : Math.max(1, Math.ceil(sortedRows.length / rowsPerPage))
 
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages)
-    }
-  }, [currentPage, totalPages])
+  const effectiveCurrentPage = Math.min(currentPage, totalPages)
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [view, search, year, responsibleFilterId, supervisorFilterEmail])
+  }, [view, search, year])
 
   const paginatedRows =
     rowsPerPage === 'all'
-      ? rows
-      : rows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+      ? sortedRows
+      : sortedRows.slice(
+          (effectiveCurrentPage - 1) * rowsPerPage,
+          effectiveCurrentPage * rowsPerPage
+        )
 
   const visibleStart =
-    rows.length === 0
+    sortedRows.length === 0
       ? 0
       : rowsPerPage === 'all'
         ? 1
-        : (currentPage - 1) * rowsPerPage + 1
+        : (effectiveCurrentPage - 1) * rowsPerPage + 1
 
   const visibleEnd =
-    rowsPerPage === 'all' ? rows.length : Math.min(currentPage * rowsPerPage, rows.length)
+    rowsPerPage === 'all'
+      ? sortedRows.length
+      : Math.min(effectiveCurrentPage * rowsPerPage, sortedRows.length)
 
   const paginatedSupervisorRows =
     view === 'supervisors' ? paginatedRows : supervisorRows
@@ -189,21 +182,27 @@ export default function AdminStatsDashboard() {
     if (!data?.supervisions) return 0
 
     if (view === 'supervisors') {
-      return data.supervisions.filter((s) => {
-        if (responsibleFilterId !== 'ALL' && s.responsibleId !== responsibleFilterId) {
-          return false
-        }
-        return Boolean(s.supervisorEmail)
-      }).length
+      return data.supervisions.filter((s) => Boolean(s.supervisorEmail)).length
     }
 
-    return data.supervisions.filter((s) => {
-      if (supervisorFilterEmail !== 'ALL' && s.supervisorEmail !== supervisorFilterEmail) {
-        return false
-      }
-      return Boolean(s.responsibleId)
-    }).length
-  }, [data?.supervisions, view, responsibleFilterId, supervisorFilterEmail])
+    return data.supervisions.filter((s) => Boolean(s.responsibleId)).length
+  }, [data?.supervisions, view])
+
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortColumn(column)
+      setSortDirection(column === 'count' ? 'desc' : 'asc')
+    }
+
+    setCurrentPage(1)
+  }
+
+  const getSortIcon = (column: SortColumn) => {
+    if (sortColumn !== column) return faSort
+    return sortDirection === 'asc' ? faSortUp : faSortDown
+  }
 
   return (
     <div className="space-y-4">
@@ -233,28 +232,7 @@ export default function AdminStatsDashboard() {
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-0.5">
-              {view === 'supervisors' ? 'Responsible filter' : 'Supervisor filter'}
-            </label>
-            {view === 'supervisors' ? (
-              <Select
-                value={responsibleFilterId}
-                onChange={(value) => setResponsibleFilterId(value as string)}
-                items={responsibleItems}
-                className={{ root: 'w-full' }}
-              />
-            ) : (
-              <Select
-                value={supervisorFilterEmail}
-                onChange={(value) => setSupervisorFilterEmail(value as string)}
-                items={supervisorItems}
-                className={{ root: 'w-full' }}
-              />
-            )}
-          </div>
-
-          <div className="md:col-span-2">
+          <div className="md:col-span-3">
             <label className="block text-xs font-medium text-gray-700 mb-0.5">
               Search
             </label>
@@ -266,19 +244,6 @@ export default function AdminStatsDashboard() {
               className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-        </div>
-
-        <div className="mt-3">
-          <Button
-            onClick={() => {
-              setSearch('')
-              setResponsibleFilterId('ALL')
-              setSupervisorFilterEmail('ALL')
-            }}
-            className={{ root: 'text-xs' }}
-          >
-            Reset filters
-          </Button>
         </div>
       </div>
 
@@ -316,11 +281,23 @@ export default function AdminStatsDashboard() {
                 <table className="w-full table-fixed divide-y divide-gray-200">
                   <thead className="bg-gray-50 sticky top-0 z-10">
                     <tr>
-                      <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[65%]">
-                        Supervisor
+                      <th
+                        onClick={() => handleSort('label')}
+                        className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[65%] cursor-pointer hover:bg-gray-100"
+                      >
+                        <div className="flex items-center gap-2">
+                          Supervisor
+                          <FontAwesomeIcon icon={getSortIcon('label')} className="text-gray-400" />
+                        </div>
                       </th>
-                      <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[35%]">
-                        Supervisions
+                      <th
+                        onClick={() => handleSort('count')}
+                        className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[35%] cursor-pointer hover:bg-gray-100"
+                      >
+                        <div className="flex items-center gap-2">
+                          Supervisions
+                          <FontAwesomeIcon icon={getSortIcon('count')} className="text-gray-400" />
+                        </div>
                       </th>
                     </tr>
                   </thead>
@@ -348,7 +325,7 @@ export default function AdminStatsDashboard() {
 
               <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-xs text-gray-600">
-                  Showing {visibleStart}-{visibleEnd} of {rows.length}
+                  Showing {visibleStart}-{visibleEnd} of {sortedRows.length}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -381,8 +358,12 @@ export default function AdminStatsDashboard() {
 
                   <button
                     type="button"
-                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                    disabled={rowsPerPage === 'all' || currentPage === 1}
+                    onClick={() =>
+                      setCurrentPage((prev) =>
+                        Math.max(1, Math.min(prev, totalPages) - 1)
+                      )
+                    }
+                    disabled={rowsPerPage === 'all' || effectiveCurrentPage === 1}
                     className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label="Previous page"
                   >
@@ -390,13 +371,19 @@ export default function AdminStatsDashboard() {
                   </button>
 
                   <span className="text-xs text-gray-600 min-w-[48px] text-center">
-                    {rowsPerPage === 'all' ? '1 / 1' : `${currentPage} / ${totalPages}`}
+                    {rowsPerPage === 'all'
+                      ? '1 / 1'
+                      : `${effectiveCurrentPage} / ${totalPages}`}
                   </span>
 
                   <button
                     type="button"
-                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                    disabled={rowsPerPage === 'all' || currentPage >= totalPages}
+                    onClick={() =>
+                      setCurrentPage((prev) =>
+                        Math.min(totalPages, Math.min(prev, totalPages) + 1)
+                      )
+                    }
+                    disabled={rowsPerPage === 'all' || effectiveCurrentPage >= totalPages}
                     className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label="Next page"
                   >
@@ -415,11 +402,23 @@ export default function AdminStatsDashboard() {
                 <table className="w-full table-fixed divide-y divide-gray-200">
                   <thead className="bg-gray-50 sticky top-0 z-10">
                     <tr>
-                      <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[65%]">
-                        Responsible
+                      <th
+                        onClick={() => handleSort('label')}
+                        className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[65%] cursor-pointer hover:bg-gray-100"
+                      >
+                        <div className="flex items-center gap-2">
+                          Responsible
+                          <FontAwesomeIcon icon={getSortIcon('label')} className="text-gray-400" />
+                        </div>
                       </th>
-                      <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[35%]">
-                        Supervisions
+                      <th
+                        onClick={() => handleSort('count')}
+                        className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[35%] cursor-pointer hover:bg-gray-100"
+                      >
+                        <div className="flex items-center gap-2">
+                          Supervisions
+                          <FontAwesomeIcon icon={getSortIcon('count')} className="text-gray-400" />
+                        </div>
                       </th>
                     </tr>
                   </thead>
@@ -447,7 +446,7 @@ export default function AdminStatsDashboard() {
 
               <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-xs text-gray-600">
-                  Showing {visibleStart}-{visibleEnd} of {rows.length}
+                  Showing {visibleStart}-{visibleEnd} of {sortedRows.length}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -480,8 +479,12 @@ export default function AdminStatsDashboard() {
 
                   <button
                     type="button"
-                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                    disabled={rowsPerPage === 'all' || currentPage === 1}
+                    onClick={() =>
+                      setCurrentPage((prev) =>
+                        Math.max(1, Math.min(prev, totalPages) - 1)
+                      )
+                    }
+                    disabled={rowsPerPage === 'all' || effectiveCurrentPage === 1}
                     className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label="Previous page"
                   >
@@ -489,13 +492,19 @@ export default function AdminStatsDashboard() {
                   </button>
 
                   <span className="text-xs text-gray-600 min-w-[48px] text-center">
-                    {rowsPerPage === 'all' ? '1 / 1' : `${currentPage} / ${totalPages}`}
+                    {rowsPerPage === 'all'
+                      ? '1 / 1'
+                      : `${effectiveCurrentPage} / ${totalPages}`}
                   </span>
 
                   <button
                     type="button"
-                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                    disabled={rowsPerPage === 'all' || currentPage >= totalPages}
+                    onClick={() =>
+                      setCurrentPage((prev) =>
+                        Math.min(totalPages, Math.min(prev, totalPages) + 1)
+                      )
+                    }
+                    disabled={rowsPerPage === 'all' || effectiveCurrentPage >= totalPages}
                     className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label="Next page"
                   >

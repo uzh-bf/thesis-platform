@@ -1,4 +1,10 @@
-import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import {
+  faChevronLeft,
+  faChevronRight,
+  faSort,
+  faSortDown,
+  faSortUp,
+} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button } from '@uzh-bf/design-system'
 import { useSession } from 'next-auth/react'
@@ -17,6 +23,8 @@ const ADMIN_ROLE_OPTIONS = ['UNSET', 'COORDINATOR', 'ADMIN'] as const
 type RoleOption = (typeof ROLE_OPTIONS)[number]
 type AdminRoleOption = (typeof ADMIN_ROLE_OPTIONS)[number]
 type PageSizeOption = 20 | 50 | 100 | 'all'
+type SortColumn = 'name' | 'email' | 'role' | 'adminRole' | 'department'
+type SortDirection = 'asc' | 'desc'
 
 const PAGE_SIZE_OPTIONS: PageSizeOption[] = [20, 50, 100, 'all']
 
@@ -41,6 +49,8 @@ export default function AdminUserRoles() {
   const [savingUserId, setSavingUserId] = useState<string | null>(null)
   const [rowsPerPage, setRowsPerPage] = useState<PageSizeOption>(20)
   const [currentPage, setCurrentPage] = useState(1)
+  const [sortColumn, setSortColumn] = useState<SortColumn>('name')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
 
   const {
     data: users,
@@ -77,37 +87,80 @@ export default function AdminUserRoles() {
     })
   }, [users, search])
 
+  const sortedUsers = useMemo(() => {
+    return [...filteredUsers].sort((a, b) => {
+      let compareValue = 0
+
+      switch (sortColumn) {
+        case 'name':
+          compareValue = (a.name ?? '').localeCompare(b.name ?? '', undefined, {
+            sensitivity: 'base',
+          })
+          break
+        case 'email':
+          compareValue = (a.email ?? '').localeCompare(b.email ?? '', undefined, {
+            sensitivity: 'base',
+          })
+          break
+        case 'role': {
+          const aRole = draftByUserId[a.id]?.role ?? normalizeRole(a.role)
+          const bRole = draftByUserId[b.id]?.role ?? normalizeRole(b.role)
+          compareValue = aRole.localeCompare(bRole, undefined, {
+            sensitivity: 'base',
+          })
+          break
+        }
+        case 'adminRole': {
+          const aAdminRole =
+            draftByUserId[a.id]?.adminRole ?? normalizeAdminRole(a.adminRole)
+          const bAdminRole =
+            draftByUserId[b.id]?.adminRole ?? normalizeAdminRole(b.adminRole)
+          compareValue = aAdminRole.localeCompare(bAdminRole, undefined, {
+            sensitivity: 'base',
+          })
+          break
+        }
+        case 'department':
+          compareValue = (a.department ?? '').localeCompare(b.department ?? '', undefined, {
+            sensitivity: 'base',
+          })
+          break
+      }
+
+      return sortDirection === 'asc' ? compareValue : -compareValue
+    })
+  }, [filteredUsers, sortColumn, sortDirection, draftByUserId])
+
   const totalPages =
     rowsPerPage === 'all'
       ? 1
-      : Math.max(1, Math.ceil(filteredUsers.length / rowsPerPage))
+      : Math.max(1, Math.ceil(sortedUsers.length / rowsPerPage))
+
+  const effectiveCurrentPage = Math.min(currentPage, totalPages)
 
   useEffect(() => {
     setCurrentPage(1)
   }, [search])
 
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages)
-    }
-  }, [currentPage, totalPages])
-
   const paginatedUsers =
     rowsPerPage === 'all'
-      ? filteredUsers
-      : filteredUsers.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+      ? sortedUsers
+      : sortedUsers.slice(
+          (effectiveCurrentPage - 1) * rowsPerPage,
+          effectiveCurrentPage * rowsPerPage
+        )
 
   const visibleStart =
-    filteredUsers.length === 0
+    sortedUsers.length === 0
       ? 0
       : rowsPerPage === 'all'
         ? 1
-        : (currentPage - 1) * rowsPerPage + 1
+        : (effectiveCurrentPage - 1) * rowsPerPage + 1
 
   const visibleEnd =
     rowsPerPage === 'all'
-      ? filteredUsers.length
-      : Math.min(currentPage * rowsPerPage, filteredUsers.length)
+      ? sortedUsers.length
+      : Math.min(effectiveCurrentPage * rowsPerPage, sortedUsers.length)
 
   const getDraft = (user: (typeof filteredUsers)[number]) => {
     const role = draftByUserId[user.id]?.role ?? normalizeRole(user.role)
@@ -155,6 +208,22 @@ export default function AdminUserRoles() {
     })
   }
 
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+
+    setCurrentPage(1)
+  }
+
+  const getSortIcon = (column: SortColumn) => {
+    if (sortColumn !== column) return faSort
+    return sortDirection === 'asc' ? faSortUp : faSortDown
+  }
+
   return (
     <div className="bg-white rounded-lg shadow p-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -196,20 +265,56 @@ export default function AdminUserRoles() {
               <table className="w-full table-fixed divide-y divide-gray-200">
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
-                    <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[17%]">
-                      Name
+                    <th
+                      onClick={() => handleSort('name')}
+                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[17%] cursor-pointer hover:bg-gray-100"
+                    >
+                      <div className="flex items-center gap-2">
+                        Name
+                        <FontAwesomeIcon icon={getSortIcon('name')} className="text-gray-400" />
+                      </div>
                     </th>
-                    <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[24%]">
-                      Email
+                    <th
+                      onClick={() => handleSort('email')}
+                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[24%] cursor-pointer hover:bg-gray-100"
+                    >
+                      <div className="flex items-center gap-2">
+                        Email
+                        <FontAwesomeIcon icon={getSortIcon('email')} className="text-gray-400" />
+                      </div>
                     </th>
-                    <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[16%]">
-                      Role
+                    <th
+                      onClick={() => handleSort('role')}
+                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[16%] cursor-pointer hover:bg-gray-100"
+                    >
+                      <div className="flex items-center gap-2">
+                        Role
+                        <FontAwesomeIcon icon={getSortIcon('role')} className="text-gray-400" />
+                      </div>
                     </th>
-                    <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[16%]">
-                      AdminRole
+                    <th
+                      onClick={() => handleSort('adminRole')}
+                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[16%] cursor-pointer hover:bg-gray-100"
+                    >
+                      <div className="flex items-center gap-2">
+                        AdminRole
+                        <FontAwesomeIcon
+                          icon={getSortIcon('adminRole')}
+                          className="text-gray-400"
+                        />
+                      </div>
                     </th>
-                    <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
-                      Department
+                    <th
+                      onClick={() => handleSort('department')}
+                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%] cursor-pointer hover:bg-gray-100"
+                    >
+                      <div className="flex items-center gap-2">
+                        Department
+                        <FontAwesomeIcon
+                          icon={getSortIcon('department')}
+                          className="text-gray-400"
+                        />
+                      </div>
                     </th>
                     <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[17%]">
                       Actions
@@ -306,7 +411,7 @@ export default function AdminUserRoles() {
 
             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-xs text-gray-600">
-                Showing {visibleStart}-{visibleEnd} of {filteredUsers.length}
+                Showing {visibleStart}-{visibleEnd} of {sortedUsers.length}
               </div>
 
               <div className="flex items-center gap-2">
@@ -339,8 +444,10 @@ export default function AdminUserRoles() {
 
                 <button
                   type="button"
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                  disabled={rowsPerPage === 'all' || currentPage === 1}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, Math.min(prev, totalPages) - 1))
+                  }
+                  disabled={rowsPerPage === 'all' || effectiveCurrentPage === 1}
                   className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label="Previous page"
                 >
@@ -348,13 +455,19 @@ export default function AdminUserRoles() {
                 </button>
 
                 <span className="text-xs text-gray-600 min-w-[48px] text-center">
-                  {rowsPerPage === 'all' ? '1 / 1' : `${currentPage} / ${totalPages}`}
+                  {rowsPerPage === 'all'
+                    ? '1 / 1'
+                    : `${effectiveCurrentPage} / ${totalPages}`}
                 </span>
 
                 <button
                   type="button"
-                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                  disabled={rowsPerPage === 'all' || currentPage >= totalPages}
+                  onClick={() =>
+                    setCurrentPage((prev) =>
+                      Math.min(totalPages, Math.min(prev, totalPages) + 1)
+                    )
+                  }
+                  disabled={rowsPerPage === 'all' || effectiveCurrentPage >= totalPages}
                   className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label="Next page"
                 >
