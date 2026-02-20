@@ -178,15 +178,10 @@ export default function AdminStatsDashboard() {
   const paginatedResponsibleRows =
     view === 'responsibles' ? paginatedRows : responsibleRows
 
-  const viewTotal = useMemo(() => {
-    if (!data?.supervisions) return 0
-
-    if (view === 'supervisors') {
-      return data.supervisions.filter((s) => Boolean(s.supervisorEmail)).length
-    }
-
-    return data.supervisions.filter((s) => Boolean(s.responsibleId)).length
-  }, [data?.supervisions, view])
+  const viewTotal = useMemo(
+    () => rows.reduce((sum, row) => sum + row.count, 0),
+    [rows]
+  )
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
