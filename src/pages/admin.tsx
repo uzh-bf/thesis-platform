@@ -317,9 +317,14 @@ export default function AdminPanel() {
               <div className="bg-white rounded-lg shadow mb-4 p-4">
                 <div className="grid grid-cols-1">
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-0.5">
-                      Search
-                    </label>
+                    <div className="mb-0.5 flex items-center justify-between">
+                      <label className="block text-xs font-medium text-gray-700">
+                        Search
+                      </label>
+                      <div className="text-xs text-gray-600">
+                        {sortedProposals.length} proposals
+                      </div>
+                    </div>
                     <input
                       type="text"
                       value={search}
@@ -341,10 +346,6 @@ export default function AdminPanel() {
                 </div>
               ) : (
                 <div className="bg-white rounded-lg shadow p-4">
-                  <div className="text-xs text-gray-600 mb-3">
-                    {sortedProposals.length} proposals
-                  </div>
-
                   <div
                     className={`border border-gray-400 overflow-x-auto ${
                       rowsPerPage === 20 ? '' : 'max-h-[65vh] overflow-y-auto'
