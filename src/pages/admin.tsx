@@ -1,4 +1,5 @@
 import {
+  faChevronDown,
   faChevronLeft,
   faChevronRight,
   faSort,
@@ -9,7 +10,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button, Modal, TabContent, Tabs } from '@uzh-bf/design-system'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import AdminInfoOverview from 'src/components/AdminInfoOverview'
 import AdminStatsDashboard from 'src/components/AdminStatsDashboard'
 import AdminUserRoles from 'src/components/AdminUserRoles'
@@ -41,6 +42,10 @@ export default function AdminPanel() {
   const [rowsPerPage, setRowsPerPage] = useState<PageSizeOption>(20)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedProposal, setSelectedProposal] = useState<any>(null)
+  const [selectedSupervisorEmail, setSelectedSupervisorEmail] = useState('')
+  const [isSupervisorDropdownOpen, setIsSupervisorDropdownOpen] = useState(false)
+  const [supervisorDropdownSearch, setSupervisorDropdownSearch] = useState('')
+  const supervisorDropdownRef = useRef<HTMLDivElement | null>(null)
 
   const { data: proposals, isLoading, refetch } = trpc.adminGetAllProposals.useQuery(
     {},
@@ -49,10 +54,33 @@ export default function AdminPanel() {
     }
   )
 
+  const { data: supervisors } = trpc.getAllSupervisors.useQuery(undefined, {
+    enabled: isAdminOnly,
+  })
+
   const withdrawProposal = trpc.adminWithdrawProposal.useMutation({
     onSuccess: () => {
       refetch()
       alert('Proposal withdrawn successfully')
+    },
+    onError: (error) => {
+      alert(`Error: ${error.message}`)
+    },
+  })
+
+  const assignSupervisor = trpc.adminAssignSupervisorToStudentProposal.useMutation({
+    onSuccess: (_, variables) => {
+      void refetch().then((result) => {
+        const updatedProposal = result.data?.find((p) => p.id === variables.proposalId)
+        if (!updatedProposal) return
+
+        setSelectedProposal(updatedProposal)
+        setSelectedSupervisorEmail(
+          updatedProposal.supervisedBy?.[0]?.supervisor?.email ?? variables.supervisorEmail
+        )
+      })
+
+      alert('Supervisor saved successfully')
     },
     onError: (error) => {
       alert(`Error: ${error.message}`)
@@ -89,6 +117,32 @@ export default function AdminPanel() {
       setActiveTab('admininfo')
     }
   }, [isAdminOnly, activeTab])
+
+  useEffect(() => {
+    setSelectedSupervisorEmail(
+      selectedProposal?.supervisedBy?.[0]?.supervisor?.email ?? ''
+    )
+    setIsSupervisorDropdownOpen(false)
+    setSupervisorDropdownSearch('')
+  }, [selectedProposal])
+
+  useEffect(() => {
+    if (!isSupervisorDropdownOpen) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!supervisorDropdownRef.current) return
+      if (supervisorDropdownRef.current.contains(event.target as Node)) return
+
+      setIsSupervisorDropdownOpen(false)
+      setSupervisorDropdownSearch('')
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isSupervisorDropdownOpen])
 
   if (!session?.user || !isAdmin) {
     return null
@@ -134,6 +188,53 @@ export default function AdminPanel() {
       withdrawProposal.mutate({ proposalId })
     }
   }
+
+  const handleAssignSupervisor = () => {
+    if (!selectedProposal) return
+
+    if (!supervisors?.length) {
+      alert('Supervisor list is still loading.')
+      return
+    }
+
+    const supervisorEmail = selectedSupervisorEmail.trim()
+    const supervisorExists = supervisors.some((supervisor) =>
+      supervisor.email.toLowerCase() === supervisorEmail.toLowerCase()
+    )
+
+    if (!supervisorExists) {
+      alert('Please select a supervisor from the list.')
+      return
+    }
+
+    setIsSupervisorDropdownOpen(false)
+    setSupervisorDropdownSearch('')
+
+    assignSupervisor.mutate({
+      proposalId: selectedProposal.id,
+      supervisorEmail,
+    })
+  }
+
+  const selectedSupervisorOption =
+    !selectedSupervisorEmail || !supervisors?.length
+      ? null
+      : supervisors.find(
+          (supervisor) =>
+            supervisor.email.toLowerCase() === selectedSupervisorEmail.toLowerCase()
+        ) ?? null
+
+  const normalizedSupervisorSearch = supervisorDropdownSearch.trim().toLowerCase()
+  const filteredSupervisorOptions = (supervisors ?? []).filter((supervisor) => {
+    if (!normalizedSupervisorSearch) return true
+
+    const normalizedName = (supervisor.name ?? '').toLowerCase()
+
+    return (
+      normalizedName.includes(normalizedSupervisorSearch) ||
+      supervisor.email.toLowerCase().includes(normalizedSupervisorSearch)
+    )
+  })
 
   const getLinkedApplication = (proposal: any) => {
     const isOpenSupervisorProposal =
@@ -490,19 +591,6 @@ export default function AdminPanel() {
                                   >
                                     View
                                   </Button>
-                                  {proposal.statusKey !== ProposalStatus.WITHDRAWN && (
-                                    <Button
-                                      onClick={() =>
-                                        handleWithdraw(proposal.id, proposal.title)
-                                      }
-                                      disabled={withdrawProposal.isPending}
-                                      className={{
-                                        root: 'text-xs bg-red-600 hover:bg-red-700',
-                                      }}
-                                    >
-                                      Withdraw
-                                    </Button>
-                                  )}
                                 </div>
                               </td>
                             </tr>
@@ -697,6 +785,123 @@ export default function AdminPanel() {
                       </h3>
 
                       {selectedProposal.type.key === 'STUDENT' &&
+                        selectedProposal.statusKey === ProposalStatus.OPEN && (
+                          <div className="mt-3">
+                            <div className="text-xs font-medium text-gray-500 uppercase">
+                              Assign Supervisor
+                            </div>
+                            <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-start">
+                              <div ref={supervisorDropdownRef} className="relative w-full">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setIsSupervisorDropdownOpen((open) => !open)
+                                  }
+                                  disabled={assignSupervisor.isPending}
+                                  className="flex w-full items-center justify-between gap-2 rounded-md border border-gray-300 px-3 py-1.5 text-left"
+                                  aria-haspopup="listbox"
+                                  aria-expanded={isSupervisorDropdownOpen}
+                                >
+                                  <div className="min-w-0 flex-1">
+                                    {selectedSupervisorOption ? (
+                                      <>
+                                        <div className="truncate text-sm text-gray-900">
+                                          {selectedSupervisorOption.name ??
+                                            selectedSupervisorOption.email}
+                                        </div>
+                                        <div className="truncate text-xs text-gray-500">
+                                          {selectedSupervisorOption.email}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <div className="truncate text-sm text-gray-500">
+                                        Select supervisor...
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <FontAwesomeIcon
+                                    icon={faChevronDown}
+                                    className={`text-xs text-gray-500 transition-transform ${
+                                      isSupervisorDropdownOpen ? 'rotate-180' : ''
+                                    }`}
+                                  />
+                                </button>
+
+                                {isSupervisorDropdownOpen && (
+                                  <div className="absolute z-20 mt-1 w-full rounded-md border border-gray-300 bg-white shadow-lg">
+                                    <div className="border-b border-gray-200 p-2">
+                                      <input
+                                        type="text"
+                                        autoFocus
+                                        value={supervisorDropdownSearch}
+                                        onChange={(event) =>
+                                          setSupervisorDropdownSearch(event.target.value)
+                                        }
+                                        onKeyDown={(event) => {
+                                          if (event.key === 'Escape') {
+                                            setIsSupervisorDropdownOpen(false)
+                                            setSupervisorDropdownSearch('')
+                                          }
+                                        }}
+                                        placeholder="Search supervisor..."
+                                        className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                                      />
+                                    </div>
+
+                                    <div className="max-h-56 overflow-y-auto py-1">
+                                      {filteredSupervisorOptions.length === 0 ? (
+                                        <div className="px-3 py-2 text-xs text-gray-500">
+                                          No supervisors found
+                                        </div>
+                                      ) : (
+                                        filteredSupervisorOptions.map((supervisor) => {
+                                          const isSelected =
+                                            selectedSupervisorEmail.toLowerCase() ===
+                                            supervisor.email.toLowerCase()
+
+                                          return (
+                                            <button
+                                              key={supervisor.email}
+                                              type="button"
+                                              onClick={() => {
+                                                setSelectedSupervisorEmail(supervisor.email)
+                                                setIsSupervisorDropdownOpen(false)
+                                                setSupervisorDropdownSearch('')
+                                              }}
+                                              className={`w-full px-3 py-2 text-left hover:bg-gray-50 ${
+                                                isSelected ? 'bg-blue-50' : ''
+                                              }`}
+                                            >
+                                              <div className="truncate text-sm text-gray-900">
+                                                {supervisor.name ?? supervisor.email}
+                                              </div>
+                                              <div className="truncate text-xs text-gray-500">
+                                                {supervisor.email}
+                                              </div>
+                                            </button>
+                                          )
+                                        })
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              <Button
+                                onClick={handleAssignSupervisor}
+                                disabled={assignSupervisor.isPending}
+                                className={{ root: 'text-sm whitespace-nowrap' }}
+                              >
+                                {assignSupervisor.isPending
+                                  ? 'Saving...'
+                                  : 'Save supervisor'}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                      {selectedProposal.type.key === 'STUDENT' &&
                         selectedApplication?.plannedStartAt && (
                           <div className="mt-3">
                             <div className="text-xs font-medium text-gray-500 uppercase">
@@ -759,7 +964,7 @@ export default function AdminPanel() {
                               handleWithdraw(selectedProposal.id, selectedProposal.title)
                               setSelectedProposal(null)
                             }}
-                            disabled={withdrawProposal.isPending}
+                            disabled={withdrawProposal.isPending || assignSupervisor.isPending}
                             className={{
                               root: 'text-sm bg-red-600 hover:bg-red-700 text-white',
                             }}
@@ -773,7 +978,7 @@ export default function AdminPanel() {
                         <Button
                           onClick={() => setSelectedProposal(null)}
                           className={{ root: 'text-sm' }}
-                          disabled={withdrawProposal.isPending}
+                          disabled={withdrawProposal.isPending || assignSupervisor.isPending}
                         >
                           Close
                         </Button>

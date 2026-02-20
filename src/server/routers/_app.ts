@@ -2489,6 +2489,89 @@ updateProposalStatus: publicProcedure
       return { success: true, proposalId }
     }),
 
+  adminAssignSupervisorToStudentProposal: adminOnlyProcedure
+    .input(
+      z.object({
+        proposalId: z.string(),
+        supervisorEmail: z.string().email(),
+      })
+    )
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ input }) => {
+      const envDepartment = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+
+      const [proposal, supervisor] = await Promise.all([
+        prisma.proposal.findFirst({
+          where: {
+            id: input.proposalId,
+            department: envDepartment,
+          },
+          select: {
+            id: true,
+            typeKey: true,
+            statusKey: true,
+          },
+        }),
+        prisma.user.findFirst({
+          where: {
+            email: input.supervisorEmail,
+            role: UserRole.SUPERVISOR,
+            department: envDepartment,
+          },
+          select: {
+            email: true,
+          },
+        }),
+      ])
+
+      if (!proposal) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Proposal not found' })
+      }
+
+      if (proposal.typeKey !== ProposalType.STUDENT) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Supervisor can only be assigned for student proposals',
+        })
+      }
+
+      if (proposal.statusKey !== ProposalStatus.OPEN) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Supervisor can only be assigned while proposal is OPEN',
+        })
+      }
+
+      if (!supervisor) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Supervisor not found' })
+      }
+
+      await prisma.$transaction([
+        prisma.proposal.update({
+          where: { id: input.proposalId },
+          data: {
+            ownedByUserEmail: input.supervisorEmail,
+            statusKey: ProposalStatus.MATCHED,
+          },
+        }),
+        prisma.userProposalSupervision.upsert({
+          where: {
+            proposalId: input.proposalId,
+          },
+          create: {
+            id: uuidv4(),
+            proposalId: input.proposalId,
+            supervisorEmail: input.supervisorEmail,
+          },
+          update: {
+            supervisorEmail: input.supervisorEmail,
+          },
+        }),
+      ])
+
+      return { success: true }
+    }),
+
   adminGetAllProposals: adminOnlyProcedure
     .input(
       z.object({
