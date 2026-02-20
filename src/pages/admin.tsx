@@ -396,6 +396,20 @@ export default function AdminPanel() {
     ? getLinkedApplication(selectedProposal)
     : null
   const selectedSupervisor = selectedProposal?.supervisedBy?.[0]?.supervisor ?? null
+  const selectedProposalType = selectedProposal?.type?.key
+  const selectedProposalStatus = selectedProposal?.statusKey as ProposalStatus | undefined
+
+  const canAdjustSupervisor =
+    (selectedProposalType === 'STUDENT' &&
+      [
+        ProposalStatus.OPEN,
+        ProposalStatus.MATCHED,
+        ProposalStatus.MATCHED_TENTATIVE,
+      ].includes(selectedProposalStatus as ProposalStatus)) ||
+    (selectedProposalType === 'SUPERVISOR' &&
+      [ProposalStatus.MATCHED, ProposalStatus.MATCHED_TENTATIVE].includes(
+        selectedProposalStatus as ProposalStatus
+      ))
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -784,8 +798,7 @@ export default function AdminPanel() {
                         Proposal Information
                       </h3>
 
-                      {selectedProposal.type.key === 'STUDENT' &&
-                        selectedProposal.statusKey === ProposalStatus.OPEN && (
+                      {canAdjustSupervisor && (
                           <div className="mt-3">
                             <div className="text-xs font-medium text-gray-500 uppercase">
                               Assign Supervisor

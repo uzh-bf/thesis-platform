@@ -2528,17 +2528,29 @@ updateProposalStatus: publicProcedure
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Proposal not found' })
       }
 
-      if (proposal.typeKey !== ProposalType.STUDENT) {
+      const isStudentProposal = proposal.typeKey === ProposalType.STUDENT
+      const isSupervisorProposal = proposal.typeKey === ProposalType.SUPERVISOR
+
+      if (!isStudentProposal && !isSupervisorProposal) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Supervisor can only be assigned for student proposals',
+          message: 'Supervisor can only be adjusted for student or supervisor proposals',
         })
       }
 
-      if (proposal.statusKey !== ProposalStatus.OPEN) {
+      const allowedStatuses = isStudentProposal
+        ? [
+            ProposalStatus.OPEN,
+            ProposalStatus.MATCHED,
+            ProposalStatus.MATCHED_TENTATIVE,
+          ]
+        : [ProposalStatus.MATCHED, ProposalStatus.MATCHED_TENTATIVE]
+
+      if (!allowedStatuses.includes(proposal.statusKey as ProposalStatus)) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Supervisor can only be assigned while proposal is OPEN',
+          message:
+            'Supervisor can only be adjusted for OPEN/MATCHED student proposals or MATCHED supervisor proposals',
         })
       }
 
@@ -2551,7 +2563,10 @@ updateProposalStatus: publicProcedure
           where: { id: input.proposalId },
           data: {
             ownedByUserEmail: input.supervisorEmail,
-            statusKey: ProposalStatus.MATCHED,
+            statusKey:
+              isStudentProposal && proposal.statusKey === ProposalStatus.OPEN
+                ? ProposalStatus.MATCHED
+                : proposal.statusKey,
           },
         }),
         prisma.userProposalSupervision.upsert({
