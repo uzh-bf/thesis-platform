@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.99](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.98...v1.1.0-beta.99) (2026-02-23)
+
+
+### Features
+
+* add staging environment to admin change notification recipients ([57c43ce](https://github.com/uzh-bf/thesis-platform/commit/57c43ce9d8122d131c5fdb3ae48a86c441ca8e8b))
+
 ## [1.1.0-beta.98](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.97...v1.1.0-beta.98) (2026-02-23)
 
 
