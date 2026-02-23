@@ -1,0 +1,229 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "uzhbf_thesisplatform_sharePoint_ref"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "uzhbf_thesisplatform_outlook365_ref"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)": {
+          "defaultValue": "https://uzh.sharepoint.com/sites/UZHBFThesisPlatformDEV",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_sharepoint_site_env_var"
+          }
+        },
+        "Supervisors List Name (uzhbf_thesisplatform_supervisors_list_name_env_var)": {
+          "defaultValue": "Thesis Supervisors",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_supervisors_list_name_env_var"
+          }
+        },
+        "Environment (uzhbf_thesisplatform_environment_env_var)": {
+          "defaultValue": "DEV",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_environment_env_var"
+          }
+        },
+        "Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)": {
+          "defaultValue": "ibf-srv-powplatf@d.uzh.ch",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_outlook_from_address_env_var"
+          }
+        },
+        "Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)": {
+          "defaultValue": "flow@bf.uzh.ch",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_email_failure_env_var"
+          }
+        },
+        "Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)": {
+          "defaultValue": "abcd",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_flow_secret_env_var"
+          }
+        },
+        "Root URL (uzhbf_thesisplatform_root_url_env_var)": {
+          "defaultValue": "https://mentally-ace-maggot.ngrok-free.app",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_root_url_env_var"
+          }
+        }
+      },
+      "triggers": {
+        "When_an_item_is_created_or_modified": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
+              "table": "@parameters('Supervisors List Name (uzhbf_thesisplatform_supervisors_list_name_env_var)')"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "GetOnUpdatedItems",
+              "connectionName": "shared_sharepointonline"
+            }
+          },
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Minute"
+          },
+          "splitOn": "@triggerOutputs()?['body/value']",
+          "metadata": {
+            "operationMetadataId": "1351e91a-c982-4336-8c57-f2b6b2a9700c"
+          }
+        }
+      },
+      "actions": {
+        "Try": {
+          "type": "Scope",
+          "actions": {
+            "createUserWithSupervisorRole": {
+              "type": "Http",
+              "inputs": {
+                "uri": "@{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/api/createUserWithSupervisorRole",
+                "method": "POST",
+                "body": {
+                  "flowSecret": "@parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')",
+                  "name": "@triggerOutputs()?['body/Name']",
+                  "email": "@triggerBody()?['Person/Email']"
+                }
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              },
+              "metadata": {
+                "operationMetadataId": "6a8614e4-df6e-4fe2-9a15-1a9b620c28b5"
+              }
+            }
+          },
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "282845bf-8592-4d9f-b2e5-d5d7260bcb05"
+          }
+        },
+        "Catch": {
+          "type": "Scope",
+          "actions": {
+            "FilterForFailedOrTimedOutStatus": {
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Try')",
+                "where": "@or(equals(item()?['Status'], 'Failed'), equals(item()?['Status'], 'TimedOut'))"
+              },
+              "metadata": {
+                "operationMetadataId": "ca1bedd8-7555-4a99-a290-1c22c2e6e229"
+              }
+            },
+            "CreateHtmlTable": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('FilterForFailedOrTimedOutStatus')",
+                "format": "HTML",
+                "columns": [
+                  {
+                    "header": "ErrorCode",
+                    "value": "@item()?['code']"
+                  }
+                ]
+              },
+              "runAfter": {
+                "FilterForFailedOrTimedOutStatus": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "34b6a96f-64c6-43fd-89a3-fe7d5ef245ff"
+              }
+            },
+            "Terminate": {
+              "type": "Terminate",
+              "inputs": {
+                "runStatus": "Cancelled"
+              },
+              "runAfter": {
+                "SendFailureNotification": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "0f41eff7-41db-4eae-8e12-46f64d545e8b"
+              }
+            },
+            "SendFailureNotification": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
+                  "emailMessage/To": "@parameters('Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)')",
+                  "emailMessage/Subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Thesis Platform - Thesis Student Reminder",
+                  "emailMessage/Body": "<p>@{body('CreateHtmlTable')}</p>",
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SharedMailboxSendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "CreateHtmlTable": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "a7e78abe-4a5a-401c-bf9e-8b66ac344927"
+              }
+            }
+          },
+          "runAfter": {
+            "Try": [
+              "Skipped",
+              "Failed",
+              "TimedOut"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "054f28a3-080c-4f8a-9529-1183121f12f9"
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

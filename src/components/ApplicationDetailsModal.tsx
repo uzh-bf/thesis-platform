@@ -7,12 +7,8 @@ import { ApplicationDetails } from 'src/types/app'
 
 function ApplicationDetailsModal({
   row,
-  isModalOpen,
-  setIsModalOpen,
 }: {
   row: ApplicationDetails
-  isModalOpen: boolean
-  setIsModalOpen: (isOpen: boolean) => void
 }) {
   const FileTypeIconMap: Record<string, IconDefinition> = {
     'application/pdf': faFilePdf,
@@ -28,6 +24,7 @@ function ApplicationDetailsModal({
           onClick={() => {
             setIsOpen(true)
           }}
+          size="sm"
         >
           More
         </Button>

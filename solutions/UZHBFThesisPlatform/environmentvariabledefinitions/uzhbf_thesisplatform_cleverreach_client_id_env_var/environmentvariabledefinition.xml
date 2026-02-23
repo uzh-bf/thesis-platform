@@ -1,0 +1,10 @@
+<environmentvariabledefinition schemaname="uzhbf_thesisplatform_cleverreach_client_id_env_var">
+  <displayname default="Cleverreach Client Id">
+    <label description="Cleverreach Client Id" languagecode="1033" />
+  </displayname>
+  <introducedversion>0.0.0.4</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>

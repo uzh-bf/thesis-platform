@@ -7,6 +7,7 @@ export enum ProposalStatus {
   SUBMITTED = 'SUBMITTED',
   REVIEWED = 'REVIEWED',
   CLOSED = 'CLOSED',
+  WITHDRAWN = 'WITHDRAWN',
 }
 
 export enum ApplicationStatus {
@@ -25,15 +26,16 @@ export enum ProposalType {
 export enum ProposalFeedbackType {
   ACCEPTED = 'ACCEPTED',
   ACCEPTED_TENTATIVE = 'ACCEPTED_TENTATIVE',
-  REJECTED_TOO_BROAD = 'REJECTED_TOO_BROAD',
-  REJECTED_FORMAT = 'REJECTED_FORMAT',
-  REJECTED_NOT_SCIENTIFIC = 'REJECTED_NOT_SCIENTIFIC',
-  REJECTED_NOT_CLEAR = 'REJECTED_NOT_CLEAR',
-  REJECTED_FORMAT_UNSUITABLE = 'REJECTED_FORMAT_UNSUITABLE',
-  REJECTED_TOPIC_AREA_INVALID = 'REJECTED_TOPIC_AREA_INVALID',
   DECLINED_LACKING_INTEREST = 'DECLINED_LACKING_INTEREST',
-  DECLINED_PERSONAL_WORKLOAD = 'DECLINED_PERSONAL_WORKLOAD',
   DECLINED_LANGUAGE = 'DECLINED_LANGUAGE',
+  DECLINED_PERSONAL_WORKLOAD = 'DECLINED_PERSONAL_WORKLOAD',
+  DECLINED_WORKLOAD = 'DECLINED_WORKLOAD',
+  REJECTED_CONTENT = 'REJECTED_CONTENT',
+  REJECTED_FORMAT_UNSUITABLE = 'REJECTED_FORMAT_UNSUITABLE',
+  REJECTED_NOT_CLEAR = 'REJECTED_NOT_CLEAR',
+  REJECTED_NOT_SCIENTIFIC = 'REJECTED_NOT_SCIENTIFIC',
+  REJECTED_TOO_BROAD = 'REJECTED_TOO_BROAD',
+  REJECTED_TOPIC_AREA_INVALID = 'REJECTED_TOPIC_AREA_INVALID',
 }
 
 export enum UserRole {
@@ -48,4 +50,17 @@ export enum TopicAreas {
   financial_economics = 'Financial Economics',
   quantitative_finance = 'Quantitative Finance',
   sustainable_finance = 'Sustainable Finance',
+}
+
+export enum TopicAreasIBW {
+  accounting = 'Accounting',
+  personnel_and_leadership = 'Personnel & Leadership',
+  strategy_organization_and_innovation = 'Strategy, Organization & Innovation',
+  marketing_digital_transformation_and_entrepreneurship = 'Marketing, Digital Transformation & Entrepreneurship',
+  business_analytics_and_operations = 'Business Analytics & Operations',
+}
+
+export enum Department {
+  DF = 'DF',
+  IBW = 'IBW',
 }

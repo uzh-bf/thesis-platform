@@ -1,54 +1,45 @@
 {
   "properties": {
     "connectionReferences": {
-      "shared_azuremysql": {
-        "runtimeSource": "embedded",
-        "connection": {
-          "connectionReferenceLogicalName": "uzhbf_thesisplatform_sql_ref"
-        },
-        "api": {
-          "name": "shared_azuremysql"
-        }
-      },
-      "shared_sharepointonline": {
-        "runtimeSource": "embedded",
-        "connection": {
-          "connectionReferenceLogicalName": "uzhbf_thesisplatform_sharePoint_ref"
-        },
-        "api": {
-          "name": "shared_sharepointonline"
-        }
-      },
       "shared_office365_1": {
-        "runtimeSource": "embedded",
+        "api": {
+          "name": "shared_office365"
+        },
         "connection": {
           "connectionReferenceLogicalName": "uzhbf_thesisplatform_outlook365_ref"
         },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
         "api": {
-          "name": "shared_office365"
-        }
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "uzhbf_thesisplatform_sharePoint_ref"
+        },
+        "runtimeSource": "embedded"
       },
       "shared_sendmail-2": {
-        "runtimeSource": "embedded",
+        "api": {
+          "name": "shared_sendmail"
+        },
         "connection": {
           "connectionReferenceLogicalName": "uzhbf_thesisplatform_mail_ref"
         },
-        "api": {
-          "name": "shared_sendmail"
-        }
+        "runtimeSource": "embedded"
       }
     },
     "definition": {
       "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
       "contentVersion": "1.0.0.0",
       "parameters": {
-        "$connections": {
-          "defaultValue": {},
-          "type": "Object"
-        },
         "$authentication": {
           "defaultValue": {},
           "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
         },
         "Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)": {
           "defaultValue": "https://uzh.sharepoint.com/sites/UZHBFThesisPlatformDEV",
@@ -58,14 +49,14 @@
           }
         },
         "Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)": {
-          "defaultValue": "maximilian.weber@bf.uzh.ch",
+          "defaultValue": "ibf-srv-powplatf@d.uzh.ch",
           "type": "String",
           "metadata": {
             "schemaName": "uzhbf_thesisplatform_outlook_from_address_env_var"
           }
         },
         "Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)": {
-          "defaultValue": "maximilian.weber@bf.uzh.ch",
+          "defaultValue": "ibf-srv-powplatf@d.uzh.ch",
           "type": "String",
           "metadata": {
             "schemaName": "uzhbf_thesisplatform_thesis_inbox_env_var"
@@ -100,23 +91,31 @@
           }
         },
         "Department (uzhbf_thesisplatform_department_env_var)": {
-          "defaultValue": "DBF",
+          "defaultValue": "DF",
           "type": "String",
           "metadata": {
             "schemaName": "uzhbf_thesisplatform_department_env_var"
+          }
+        },
+        "Root URL (uzhbf_thesisplatform_root_url_env_var)": {
+          "defaultValue": "https://mentally-ace-maggot.ngrok-free.app",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_root_url_env_var"
           }
         }
       },
       "triggers": {
         "manual": {
-          "metadata": {
-            "operationMetadataId": "2b6f39ba-1e41-4c77-a663-f7004d0a07bc"
-          },
           "type": "Request",
           "kind": "Http",
           "inputs": {
+            "triggerAuthenticationType": "All",
             "schema": {
               "properties": {
+                "personResponsible": {
+                  "type": "string"
+                },
                 "comment": {
                   "type": "string"
                 },
@@ -155,148 +154,47 @@
                 }
               },
               "type": "object"
-            },
-            "triggerAuthenticationType": "All"
+            }
           },
-          "conditions": []
+          "conditions": [],
+          "metadata": {
+            "operationMetadataId": "2b6f39ba-1e41-4c77-a663-f7004d0a07bc"
+          }
         }
       },
       "actions": {
         "Try": {
+          "type": "Scope",
           "actions": {
-            "DummyCompose": {
-              "runAfter": {},
-              "metadata": {
-                "operationMetadataId": "17a1a8f0-2e50-4873-85ba-308b2695fa8a"
-              },
-              "type": "Compose",
-              "inputs": "DoNothing"
-            },
-            "GetMatchingProposal": {
-              "runAfter": {
-                "DummyCompose": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "979db1ef-80b7-44c7-9a52-47de305a3e9f"
-              },
-              "type": "OpenApiConnection",
-              "inputs": {
-                "host": {
-                  "connectionName": "shared_azuremysql",
-                  "operationId": "GetItems",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                },
-                "parameters": {
-                  "server": "default",
-                  "database": "default",
-                  "table": "[main].[proposal]",
-                  "$filter": "id eq '@{triggerBody()?['proposalId']}'",
-                  "$top": 1
-                },
-                "authentication": "@parameters('$authentication')"
-              }
-            },
-            "MatchingSupervisor": {
-              "runAfter": {
-                "DummyCompose": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "bd22650b-e96a-448f-9483-fb98a6b2a917"
-              },
-              "type": "OpenApiConnection",
-              "inputs": {
-                "host": {
-                  "connectionName": "shared_sharepointonline",
-                  "operationId": "GetItems",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
-                },
-                "parameters": {
-                  "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
-                  "table": "@parameters('Supervisors List Name (uzhbf_thesisplatform_supervisors_list_name_env_var)')",
-                  "$filter": "Title eq '@{triggerBody()?['supervisoremail']}'",
-                  "$top": 1
-                },
-                "authentication": "@parameters('$authentication')"
-              }
-            },
-            "GetProposalApplication": {
-              "runAfter": {
-                "DummyCompose": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "baa5f673-ab9b-4eda-abc3-3da844e3921c"
-              },
-              "type": "OpenApiConnection",
-              "inputs": {
-                "host": {
-                  "connectionName": "shared_azuremysql",
-                  "operationId": "GetItems",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                },
-                "parameters": {
-                  "server": "default",
-                  "database": "default",
-                  "table": "[main].[proposalapplication]",
-                  "$filter": "proposalId eq '@{triggerBody()?['proposalid']}'"
-                },
-                "authentication": "@parameters('$authentication')"
-              }
-            },
-            "ProposalDetails": {
-              "runAfter": {
-                "GetMatchingProposal": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "07c8716c-ce34-4692-a313-e524ee356789"
-              },
-              "type": "Compose",
-              "inputs": "@first(body('GetMatchingProposal')['value'])"
-            },
-            "SupervisorDetails": {
-              "runAfter": {
-                "MatchingSupervisor": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "4fed7a55-4515-4bf4-95fa-a1e295c50e03"
-              },
-              "type": "Compose",
-              "inputs": "@first(body('MatchingSupervisor')['value'])"
-            },
-            "ApplicationDetails": {
-              "runAfter": {
-                "GetProposalApplication": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "725427ad-a396-4f7f-94fe-18202dcffc15"
-              },
-              "type": "Compose",
-              "inputs": "@first(body('GetProposalApplication')['value'])"
-            },
             "IsAutoInvokedAction": {
+              "type": "If",
+              "expression": {
+                "equals": [
+                  "@triggerBody()?['actionType']",
+                  "REFETCH"
+                ]
+              },
               "actions": {
                 "IsAlreadyAccepted": {
-                  "actions": {
-                    "Response": {
-                      "runAfter": {
-                        "ComposeAlreadyAcceptedResponse": [
-                          "Succeeded"
+                  "type": "If",
+                  "expression": {
+                    "or": [
+                      {
+                        "equals": [
+                          "@body('Parse_getProposalAndProposalApplication')?['proposalApplication']?['statusKey']",
+                          "ACCEPTED"
                         ]
                       },
-                      "metadata": {
-                        "operationMetadataId": "587d7896-600a-4582-88f4-f7adb0b524f3"
-                      },
+                      {
+                        "equals": [
+                          "@body('Parse_getProposalAndProposalApplication')?['proposalApplication']?['statusKey']",
+                          "ACCEPTED_TENTATIVE"
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Response": {
                       "type": "Response",
                       "kind": "Http",
                       "inputs": {
@@ -305,9 +203,21 @@
                           "CARD-UPDATE-IN-BODY": "true"
                         },
                         "body": "@outputs('ComposeAlreadyAcceptedResponse')"
+                      },
+                      "runAfter": {
+                        "ComposeAlreadyAcceptedResponse": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "587d7896-600a-4582-88f4-f7adb0b524f3"
                       }
                     },
                     "Terminate_2": {
+                      "type": "Terminate",
+                      "inputs": {
+                        "runStatus": "Succeeded"
+                      },
                       "runAfter": {
                         "Response": [
                           "Succeeded"
@@ -315,75 +225,86 @@
                       },
                       "metadata": {
                         "operationMetadataId": "30e0b4b9-13f6-451b-8582-402df8cbf50a"
-                      },
-                      "type": "Terminate",
-                      "inputs": {
-                        "runStatus": "Succeeded"
-                      }
-                    },
-                    "GetAcceptedSupervisor": {
-                      "runAfter": {},
-                      "metadata": {
-                        "operationMetadataId": "19d31a2a-f034-4f8a-a629-02c16a319f8e"
-                      },
-                      "type": "OpenApiConnection",
-                      "inputs": {
-                        "host": {
-                          "connectionName": "shared_azuremysql",
-                          "operationId": "GetItems",
-                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                        },
-                        "parameters": {
-                          "server": "default",
-                          "database": "default",
-                          "table": "[main].[userproposalsupervision]",
-                          "$filter": "id eq '@{triggerBody()?['proposalid']}'",
-                          "$top": 1
-                        },
-                        "authentication": "@parameters('$authentication')"
                       }
                     },
                     "ComposeAlreadyAcceptedResponse": {
-                      "runAfter": {
-                        "AcceptedSupervisorDetails": [
-                          "Succeeded"
-                        ]
-                      },
-                      "metadata": {
-                        "operationMetadataId": "e2871993-5858-486e-b8e6-9a3e8a89ee6a"
-                      },
                       "type": "Compose",
                       "inputs": {
                         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
                         "body": [
                           {
                             "size": "Medium",
-                            "text": "Thesis Proposal was already accepted by @{outputs('AcceptedSupervisorDetails')['supervisorEmail']} (@{outputs('ApplicationDetails')['statusKey']})",
+                            "text": "Thesis Proposal was already accepted by @{body('Parse_getAcceptedSupervisor')?['supervisor']?['email']} (@{body('Parse_getProposalAndProposalApplication')?['proposalApplication']?['statusKey']})",
                             "type": "TextBlock",
                             "weight": "Bolder"
                           }
                         ],
                         "type": "AdaptiveCard",
                         "version": "1.0"
-                      }
-                    },
-                    "AcceptedSupervisorDetails": {
+                      },
                       "runAfter": {
-                        "GetAcceptedSupervisor": [
+                        "Parse_getAcceptedSupervisor": [
                           "Succeeded"
                         ]
                       },
                       "metadata": {
-                        "operationMetadataId": "df3def8f-9776-4c1e-89cd-f538ca85a6ba"
+                        "operationMetadataId": "e2871993-5858-486e-b8e6-9a3e8a89ee6a"
+                      }
+                    },
+                    "Parse_getAcceptedSupervisor": {
+                      "type": "ParseJson",
+                      "inputs": {
+                        "content": "@body('getAcceptedSupervisor')",
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "supervisor": {
+                              "type": "object",
+                              "properties": {
+                                "email": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
                       },
-                      "type": "Compose",
-                      "inputs": "@first(body('GetAcceptedSupervisor')['value'])"
+                      "runAfter": {
+                        "getAcceptedSupervisor": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "86273126-42bc-4163-a045-3047e42ebc49"
+                      }
+                    },
+                    "getAcceptedSupervisor": {
+                      "type": "Http",
+                      "inputs": {
+                        "uri": "@{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/api/getAcceptedSupervisor",
+                        "method": "POST",
+                        "body": {
+                          "flowSecret": "@parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')",
+                          "proposalId": "@triggerBody()?['proposalId']"
+                        }
+                      },
+                      "runtimeConfiguration": {
+                        "contentTransfer": {
+                          "transferMode": "Chunked"
+                        }
+                      },
+                      "metadata": {
+                        "operationMetadataId": "f3e553b7-8469-41e3-8444-22191fdf2621"
+                      }
                     }
                   },
-                  "runAfter": {},
                   "else": {
                     "actions": {
                       "Terminate": {
+                        "type": "Terminate",
+                        "inputs": {
+                          "runStatus": "Succeeded"
+                        },
                         "runAfter": {
                           "Scope": [
                             "Failed",
@@ -392,42 +313,25 @@
                         },
                         "metadata": {
                           "operationMetadataId": "5fb1e9d7-d829-4b1d-8daa-895dccb71412"
-                        },
-                        "type": "Terminate",
-                        "inputs": {
-                          "runStatus": "Succeeded"
                         }
                       },
                       "Scope": {
+                        "type": "Scope",
                         "actions": {
-                          "GetProvidedFeedbackEntries": {
-                            "runAfter": {},
-                            "metadata": {
-                              "operationMetadataId": "85c00d53-3213-40c6-b64c-825e1df04411"
-                            },
-                            "type": "OpenApiConnection",
-                            "inputs": {
-                              "host": {
-                                "connectionName": "shared_azuremysql",
-                                "operationId": "GetItems",
-                                "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                              },
-                              "parameters": {
-                                "server": "default",
-                                "database": "default",
-                                "table": "[main].[userproposalfeedback]",
-                                "$filter": "proposalId eq '@{triggerBody()?['proposalId']}' and userEmail eq '@{triggerBody()?['supervisorEmail']}'"
-                              },
-                              "authentication": "@parameters('$authentication')"
-                            }
-                          },
                           "Condition": {
+                            "type": "If",
+                            "expression": {
+                              "and": [
+                                {
+                                  "equals": [
+                                    "@body('Parse_getProvidedFeedbackEntriesHTTP')?['userEmail']",
+                                    "@triggerBody()?['supervisorEmail']"
+                                  ]
+                                }
+                              ]
+                            },
                             "actions": {
                               "ComposeAlreadyProvidedFeedback": {
-                                "runAfter": {},
-                                "metadata": {
-                                  "operationMetadataId": "e2871993-5858-486e-b8e6-9a3e8a89ee6a"
-                                },
                                 "type": "Compose",
                                 "inputs": {
                                   "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
@@ -441,17 +345,12 @@
                                   ],
                                   "type": "AdaptiveCard",
                                   "version": "1.0"
+                                },
+                                "metadata": {
+                                  "operationMetadataId": "e2871993-5858-486e-b8e6-9a3e8a89ee6a"
                                 }
                               },
                               "ResponseFeedback": {
-                                "runAfter": {
-                                  "ComposeAlreadyProvidedFeedback": [
-                                    "Succeeded"
-                                  ]
-                                },
-                                "metadata": {
-                                  "operationMetadataId": "587d7896-600a-4582-88f4-f7adb0b524f3"
-                                },
                                 "type": "Response",
                                 "kind": "Http",
                                 "inputs": {
@@ -460,9 +359,21 @@
                                     "CARD-UPDATE-IN-BODY": "true"
                                   },
                                   "body": "@outputs('ComposeAlreadyProvidedFeedback')"
+                                },
+                                "runAfter": {
+                                  "ComposeAlreadyProvidedFeedback": [
+                                    "Succeeded"
+                                  ]
+                                },
+                                "metadata": {
+                                  "operationMetadataId": "587d7896-600a-4582-88f4-f7adb0b524f3"
                                 }
                               },
                               "Terminate_4": {
+                                "type": "Terminate",
+                                "inputs": {
+                                  "runStatus": "Succeeded"
+                                },
                                 "runAfter": {
                                   "ResponseFeedback": [
                                     "Succeeded"
@@ -470,220 +381,145 @@
                                 },
                                 "metadata": {
                                   "operationMetadataId": "5fb1e9d7-d829-4b1d-8daa-895dccb71412"
-                                },
-                                "type": "Terminate",
-                                "inputs": {
-                                  "runStatus": "Succeeded"
                                 }
                               }
-                            },
-                            "runAfter": {
-                              "Compose": [
-                                "Succeeded"
-                              ]
                             },
                             "else": {
                               "actions": {
                                 "Terminate_5": {
-                                  "runAfter": {},
-                                  "metadata": {
-                                    "operationMetadataId": "5fb1e9d7-d829-4b1d-8daa-895dccb71412"
-                                  },
                                   "type": "Terminate",
                                   "inputs": {
                                     "runStatus": "Succeeded"
+                                  },
+                                  "metadata": {
+                                    "operationMetadataId": "5fb1e9d7-d829-4b1d-8daa-895dccb71412"
                                   }
                                 }
                               }
                             },
-                            "expression": {
-                              "equals": [
-                                "@outputs('Compose')['userEmail']",
-                                "@triggerBody()?['supervisorEmail']"
-                              ]
-                            },
-                            "metadata": {
-                              "operationMetadataId": "f65d1d1d-20d9-47cd-8291-b6c8f00e9f7f"
-                            },
-                            "type": "If"
-                          },
-                          "Compose": {
                             "runAfter": {
-                              "GetProvidedFeedbackEntries": [
+                              "Parse_getProvidedFeedbackEntriesHTTP": [
                                 "Succeeded"
                               ]
                             },
                             "metadata": {
-                              "operationMetadataId": "24d52f92-3c1f-4177-b401-12d10649b0a3"
+                              "operationMetadataId": "f65d1d1d-20d9-47cd-8291-b6c8f00e9f7f"
+                            }
+                          },
+                          "Parse_getProvidedFeedbackEntriesHTTP": {
+                            "type": "ParseJson",
+                            "inputs": {
+                              "content": "@body('getProvidedFeedbackEntriesHTTP')",
+                              "schema": {
+                                "type": "object",
+                                "properties": {
+                                  "userEmail": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
                             },
-                            "type": "Compose",
-                            "inputs": "@first(outputs('GetProvidedFeedbackEntries')?['body/value'])"
+                            "runAfter": {
+                              "getProvidedFeedbackEntriesHTTP": [
+                                "Succeeded"
+                              ]
+                            },
+                            "metadata": {
+                              "operationMetadataId": "77581465-ef57-49a7-ad8e-fcccad81cde5"
+                            }
+                          },
+                          "getProvidedFeedbackEntriesHTTP": {
+                            "type": "Http",
+                            "inputs": {
+                              "uri": "@{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/api/getProvidedFeedbackEntries",
+                              "method": "POST",
+                              "body": {
+                                "flowSecret": "@parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')",
+                                "proposalId": "@triggerBody()?['proposalId']",
+                                "supervisorEmail": "@triggerBody()?['supervisorEmail']"
+                              }
+                            },
+                            "runtimeConfiguration": {
+                              "contentTransfer": {
+                                "transferMode": "Chunked"
+                              }
+                            },
+                            "metadata": {
+                              "operationMetadataId": "1ac66080-5ca3-4236-ae3e-0cfae39a7014"
+                            }
                           }
                         },
-                        "runAfter": {},
                         "metadata": {
                           "operationMetadataId": "001e4862-207d-4d76-8244-fd9d0b2d5afa"
-                        },
-                        "type": "Scope"
+                        }
                       }
                     }
                   },
-                  "expression": {
-                    "or": [
-                      {
-                        "equals": [
-                          "@outputs('ApplicationDetails')['statusKey']",
-                          "ACCEPTED"
-                        ]
-                      },
-                      {
-                        "equals": [
-                          "@outputs('ApplicationDetails')['statusKey']",
-                          "ACCEPTED_TENTATIVE"
-                        ]
-                      }
-                    ]
-                  },
                   "metadata": {
                     "operationMetadataId": "9bd9abc8-9ac9-4134-a2e3-72100f394b43"
-                  },
-                  "type": "If"
+                  }
                 }
               },
+              "else": {
+                "actions": {}
+              },
               "runAfter": {
-                "ApplicationDetails": [
-                  "Succeeded"
-                ],
-                "ProposalDetails": [
-                  "Succeeded"
-                ],
                 "SupervisorDetails": [
                   "Succeeded"
                 ]
               },
-              "expression": {
-                "equals": [
-                  "@triggerBody()?['actionType']",
-                  "REFETCH"
-                ]
-              },
               "metadata": {
                 "operationMetadataId": "7d582be1-075d-4223-8d22-7c7e4fb1dd8e"
-              },
-              "type": "If"
+              }
             },
             "Switch": {
-              "runAfter": {
-                "IsAutoInvokedAction": [
-                  "Succeeded"
-                ]
+              "type": "Switch",
+              "expression": "@triggerBody()?['actionType']",
+              "default": {
+                "actions": {
+                  "Response_4": {
+                    "type": "Response",
+                    "kind": "Http",
+                    "inputs": {
+                      "statusCode": 200
+                    },
+                    "metadata": {
+                      "operationMetadataId": "00598947-556d-4afd-8e0c-11c0310f81cc"
+                    }
+                  }
+                }
               },
               "cases": {
                 "Accept": {
-                  "case": "ACCEPT",
                   "actions": {
-                    "UpdateProposalStatusAccept": {
-                      "runAfter": {},
-                      "metadata": {
-                        "operationMetadataId": "7535e2a2-c386-4e8f-abaf-6af7cf4c0159"
-                      },
-                      "type": "OpenApiConnection",
-                      "inputs": {
-                        "host": {
-                          "connectionName": "shared_azuremysql",
-                          "operationId": "PatchItem",
-                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                        },
-                        "parameters": {
-                          "server": "default",
-                          "database": "default",
-                          "table": "[main].[proposal]",
-                          "id": "@triggerBody()?['proposalid']",
-                          "item/createdAt": "@outputs('ProposalDetails')['createdAt']",
-                          "item/description": "@outputs('ProposalDetails')['description']",
-                          "item/language": "@outputs('ProposalDetails')['language']",
-                          "item/statusKey": "MATCHED",
-                          "item/studyLevel": "@outputs('ProposalDetails')['studyLevel']",
-                          "item/title": "@outputs('ProposalDetails')['title']",
-                          "item/topicAreaSlug": "@outputs('ProposalDetails')['topicAreaSlug']",
-                          "item/typeKey": "@outputs('ProposalDetails')['typeKey']",
-                          "item/updatedAt": "@utcNow()"
-                        },
-                        "authentication": "@parameters('$authentication')"
-                      }
-                    },
-                    "UpdateStudentApplicationAccept": {
-                      "runAfter": {
-                        "IsStatusKeyOpen": [
-                          "Succeeded"
-                        ]
-                      },
-                      "metadata": {
-                        "operationMetadataId": "7a443136-70e4-4642-a1eb-b0beee17972b"
-                      },
-                      "type": "OpenApiConnection",
-                      "inputs": {
-                        "host": {
-                          "connectionName": "shared_azuremysql",
-                          "operationId": "PatchItem",
-                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                        },
-                        "parameters": {
-                          "server": "default",
-                          "database": "default",
-                          "table": "[main].[proposalapplication]",
-                          "id": "@triggerBody()?['proposalId']",
-                          "item/createdAt": "@outputs('ApplicationDetails')['createdAt']",
-                          "item/email": "@outputs('ApplicationDetails')['email']",
-                          "item/fullName": "@outputs('ApplicationDetails')['fullName']",
-                          "item/matriculationNumber": "@outputs('ApplicationDetails')['matriculationNumber']",
-                          "item/motivation": "@outputs('ApplicationDetails')['motivation']",
-                          "item/plannedStartAt": "@outputs('ApplicationDetails')['plannedStartAt']",
-                          "item/proposalId": "@outputs('ApplicationDetails')['proposalId']",
-                          "item/statusKey": "ACCEPTED",
-                          "item/updatedAt": "@utcNow()"
-                        },
-                        "authentication": "@parameters('$authentication')"
-                      }
-                    },
                     "AcceptanceNotification": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
+                          "emailMessage/To": "@{body('Parse_getProposalAndProposalApplication')?['proposalApplication']?['email']};@{triggerBody()?['supervisorEmail']}",
+                          "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Your Proposal has been accepted",
+                          "emailMessage/Body": "<p class=\"editor-paragraph\">Dear @{body('Parse_getProposalAndProposalApplication')?['proposalApplication']?['fullName']},<br><br>Your proposal on \"@{body('Parse_getProposalAndProposalApplication')?['proposal']?['title']}\" has been accepted by a supervisor. Please get in touch with your supervisor \"@{triggerBody()?['supervisorEmail']}\" to get started with the thesis process (just reply to this email).<br><br>Best regards,<br>@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Thesis Coordinator<br><br>---<br><br>Message of your supervisor: @{triggerBody()?['comment']}</p>",
+                          "emailMessage/Bcc": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
+                          "emailMessage/ReplyTo": "@triggerBody()?['supervisorEmail']",
+                          "emailMessage/Importance": "Normal"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                          "operationId": "SharedMailboxSendEmailV2",
+                          "connectionName": "shared_office365_1"
+                        }
+                      },
                       "runAfter": {
-                        "UpdateStudentApplicationAccept": [
+                        "PersistProposalFeedbackAccept": [
                           "Succeeded"
                         ]
                       },
                       "metadata": {
                         "operationMetadataId": "df532c74-17e4-4547-ab22-d8685e1eb082"
-                      },
-                      "type": "OpenApiConnection",
-                      "inputs": {
-                        "host": {
-                          "connectionName": "shared_office365_1",
-                          "operationId": "SharedMailboxSendEmailV2",
-                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
-                        },
-                        "parameters": {
-                          "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
-                          "emailMessage/To": "@{outputs('ApplicationDetails')['email']};@{triggerBody()?['supervisorEmail']}",
-                          "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Your Proposal has been accepted",
-                          "emailMessage/Body": "<p>Dear @{outputs('ApplicationDetails')['fullName']},<br>\n<br>\nYour proposal on \"@{outputs('ProposalDetails')['title']}\" has been accepted by a supervisor. Please get in touch with your supervisor \"@{triggerBody()?['supervisorEmail']}\" to get started with the thesis process (just reply to this email).<br>\n<br>\nBest regards,<br>\n@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Thesis Coordinator<br>\n<br>\n---<br>\n<br>\nMessage of your supervisor: @{triggerBody()?['comment']}</p>",
-                          "emailMessage/Cc": "@outputs('CreateAcceptSupervision')?['body/supervisorEmail']",
-                          "emailMessage/Bcc": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
-                          "emailMessage/ReplyTo": "@triggerBody()?['supervisorEmail']",
-                          "emailMessage/Importance": "Normal"
-                        },
-                        "authentication": "@parameters('$authentication')"
                       }
                     },
                     "ComposeAcceptResponse": {
-                      "runAfter": {
-                        "AcceptanceNotification": [
-                          "Succeeded"
-                        ]
-                      },
-                      "metadata": {
-                        "operationMetadataId": "2cdc3e44-0062-4866-a6f9-eca6b8231044"
-                      },
                       "type": "Compose",
                       "inputs": {
                         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
@@ -697,17 +533,17 @@
                         ],
                         "type": "AdaptiveCard",
                         "version": "1.0"
-                      }
-                    },
-                    "AcceptResponse": {
+                      },
                       "runAfter": {
-                        "ComposeAcceptResponse": [
+                        "AcceptanceNotification": [
                           "Succeeded"
                         ]
                       },
                       "metadata": {
-                        "operationMetadataId": "b28276f8-db87-4742-afc2-bf8251d4cb6b"
-                      },
+                        "operationMetadataId": "2cdc3e44-0062-4866-a6f9-eca6b8231044"
+                      }
+                    },
+                    "AcceptResponse": {
                       "type": "Response",
                       "kind": "Http",
                       "inputs": {
@@ -716,188 +552,71 @@
                           "CARD-UPDATE-IN-BODY": "true"
                         },
                         "body": "@outputs('ComposeAcceptResponse')"
+                      },
+                      "runAfter": {
+                        "ComposeAcceptResponse": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "b28276f8-db87-4742-afc2-bf8251d4cb6b"
                       }
                     },
-                    "IsStatusKeyOpen": {
-                      "actions": {
-                        "CreateAcceptSupervision": {
-                          "runAfter": {},
-                          "metadata": {
-                            "operationMetadataId": "b2bca9b1-69a4-4e1d-8b9f-46ffa7645a5b"
-                          },
-                          "type": "OpenApiConnection",
-                          "inputs": {
-                            "host": {
-                              "connectionName": "shared_azuremysql",
-                              "operationId": "PostItem",
-                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                            },
-                            "parameters": {
-                              "server": "default",
-                              "database": "default",
-                              "table": "[main].[userproposalsupervision]",
-                              "item/createdAt": "@utcNow()",
-                              "item/id": "@triggerBody()?['proposalId']",
-                              "item/proposalId": "@triggerBody()?['proposalId']",
-                              "item/updatedAt": "@utcNow()",
-                              "item/supervisorEmail": "@triggerBody()?['supervisorEmail']"
-                            },
-                            "authentication": "@parameters('$authentication')"
-                          }
+                    "PersistProposalFeedbackAccept": {
+                      "type": "Http",
+                      "inputs": {
+                        "uri": "@{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/api/persistProposalFeedbackAccept",
+                        "method": "POST",
+                        "body": {
+                          "flowSecret": "@parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')",
+                          "proposalId": "@triggerBody()?['proposalId']",
+                          "supervisorEmail": "@triggerBody()?['supervisorEmail']",
+                          "personResponsibleName": "@{triggerBody()?['personResponsible']}"
                         }
                       },
-                      "runAfter": {
-                        "UpdateProposalStatusAccept": [
-                          "Succeeded"
-                        ]
-                      },
-                      "expression": {
-                        "equals": [
-                          "@outputs('ApplicationDetails')['statusKey']",
-                          "OPEN"
-                        ]
+                      "runtimeConfiguration": {
+                        "contentTransfer": {
+                          "transferMode": "Chunked"
+                        }
                       },
                       "metadata": {
-                        "operationMetadataId": "d2bc87da-0e52-4a9e-9bb2-54e6fedabe6b"
-                      },
-                      "type": "If"
+                        "operationMetadataId": "a582787c-aeb6-44e8-9963-64933c3f6b62"
+                      }
                     }
-                  }
+                  },
+                  "case": "ACCEPT"
                 },
                 "Accept_Tentative": {
-                  "case": "ACCEPT_TENTATIVE",
                   "actions": {
-                    "UpdateProposalStatusAcceptTentative": {
-                      "runAfter": {},
-                      "metadata": {
-                        "operationMetadataId": "4331e6c0-ad64-47f4-b1a2-702a4c6ac25f"
-                      },
-                      "type": "OpenApiConnection",
-                      "inputs": {
-                        "host": {
-                          "connectionName": "shared_azuremysql",
-                          "operationId": "PatchItem",
-                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                        },
-                        "parameters": {
-                          "server": "default",
-                          "database": "default",
-                          "table": "[main].[proposal]",
-                          "id": "@triggerBody()?['proposalId']",
-                          "item/createdAt": "@outputs('ProposalDetails')['createdAt']",
-                          "item/description": "@outputs('ProposalDetails')['description']",
-                          "item/language": "@outputs('ProposalDetails')['language']",
-                          "item/statusKey": "MATCHED_TENTATIVE",
-                          "item/studyLevel": "@outputs('ProposalDetails')['studyLevel']",
-                          "item/title": "@outputs('ProposalDetails')['title']",
-                          "item/topicAreaSlug": "@outputs('ProposalDetails')['topicAreaSlug']",
-                          "item/typeKey": "@outputs('ProposalDetails')['typeKey']",
-                          "item/updatedAt": "@utcNow()"
-                        },
-                        "authentication": "@parameters('$authentication')"
-                      }
-                    },
-                    "CreateTentativeAcceptSupervision": {
-                      "runAfter": {
-                        "UpdateProposalStatusAcceptTentative": [
-                          "Succeeded"
-                        ]
-                      },
-                      "metadata": {
-                        "operationMetadataId": "add79b87-4eeb-4e50-b802-6aadde3db15c"
-                      },
-                      "type": "OpenApiConnection",
-                      "inputs": {
-                        "host": {
-                          "connectionName": "shared_azuremysql",
-                          "operationId": "PostItem",
-                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                        },
-                        "parameters": {
-                          "server": "default",
-                          "database": "default",
-                          "table": "[main].[userproposalsupervision]",
-                          "item/createdAt": "@utcNow()",
-                          "item/id": "@triggerBody()?['proposalId']",
-                          "item/proposalId": "@triggerBody()?['proposalId']",
-                          "item/updatedAt": "@utcNow()",
-                          "item/supervisorEmail": "@triggerBody()?['supervisorEmail']"
-                        },
-                        "authentication": "@parameters('$authentication')"
-                      }
-                    },
-                    "UpdateStudentApplicationAcceptTentative": {
-                      "runAfter": {
-                        "CreateTentativeAcceptSupervision": [
-                          "Succeeded"
-                        ]
-                      },
-                      "metadata": {
-                        "operationMetadataId": "72b788ae-9d04-4c4c-886e-2f8f5be3bc33"
-                      },
-                      "type": "OpenApiConnection",
-                      "inputs": {
-                        "host": {
-                          "connectionName": "shared_azuremysql",
-                          "operationId": "PatchItem",
-                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                        },
-                        "parameters": {
-                          "server": "default",
-                          "database": "default",
-                          "table": "[main].[proposalapplication]",
-                          "id": "@triggerBody()?['proposalId']",
-                          "item/createdAt": "@outputs('ApplicationDetails')['createdAt']",
-                          "item/email": "@outputs('ApplicationDetails')['email']",
-                          "item/fullName": "@outputs('ApplicationDetails')['fullName']",
-                          "item/matriculationNumber": "@outputs('ApplicationDetails')['matriculationNumber']",
-                          "item/motivation": "@outputs('ApplicationDetails')['motivation']",
-                          "item/plannedStartAt": "@outputs('ApplicationDetails')['plannedStartAt']",
-                          "item/proposalId": "@outputs('ApplicationDetails')['proposalId']",
-                          "item/statusKey": "ACCEPTED_TENTATIVE",
-                          "item/updatedAt": "@utcNow()"
-                        },
-                        "authentication": "@parameters('$authentication')"
-                      }
-                    },
                     "TentativeAcceptanceNotification": {
-                      "runAfter": {
-                        "UpdateStudentApplicationAcceptTentative": [
-                          "Succeeded"
-                        ]
-                      },
-                      "metadata": {
-                        "operationMetadataId": "fb0316ef-5a1a-4a75-b425-a805eba40653"
-                      },
                       "type": "OpenApiConnection",
                       "inputs": {
-                        "host": {
-                          "connectionName": "shared_office365_1",
-                          "operationId": "SharedMailboxSendEmailV2",
-                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
-                        },
                         "parameters": {
                           "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
-                          "emailMessage/To": "@{outputs('ApplicationDetails')['email']};@{triggerBody()?['supervisorEmail']}",
+                          "emailMessage/To": "@{body('Parse_getProposalAndProposalApplication')?['proposalApplication']?['email']};@{triggerBody()?['supervisorEmail']}",
                           "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Your Proposal has attracted interest",
-                          "emailMessage/Body": "<p>Dear @{outputs('ApplicationDetails')['fullName']},<br>\n<br>\nYour proposal on \"@{outputs('ProposalDetails')['title']}\" has attracted the interest of a supervisor on the condition that the proposal is improved in certain areas. Please review the supervisor feedback, adjust your proposal as needed, and get in touch with your potential supervisor \"@{triggerBody()?['supervisorEmail']}\" (just reply to this email).<br>\n<br>\nBest regards,<br>\n@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Thesis Coordinator<br>\n<br>\n---<br>\n<br>\nFeedback of your potential supervisor: @{triggerBody()?['comment']}</p>",
+                          "emailMessage/Body": "<p class=\"editor-paragraph\">Dear @{body('Parse_getProposalAndProposalApplication')?['proposalApplication']?['fullName']},<br><br>Your proposal on \"@{body('Parse_getProposalAndProposalApplication')?['proposal']?['title']}\" has attracted the interest of a supervisor on the condition that the proposal is improved in certain areas. Please review the supervisor feedback, adjust your proposal as needed, and get in touch with your potential supervisor \"@{triggerBody()?['supervisorEmail']}\" (just reply to this email).<br><br>Best regards,<br>@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Thesis Coordinator<br><br>---<br><br>Feedback of your potential supervisor: @{triggerBody()?['comment']}</p>",
                           "emailMessage/Cc": "@triggerBody()?['supervisorEmail']",
                           "emailMessage/Bcc": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
                           "emailMessage/ReplyTo": "@triggerBody()?['supervisorEmail']",
                           "emailMessage/Importance": "Normal"
                         },
-                        "authentication": "@parameters('$authentication')"
-                      }
-                    },
-                    "ComposeAcceptTentativeResponse": {
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                          "operationId": "SharedMailboxSendEmailV2",
+                          "connectionName": "shared_office365_1"
+                        }
+                      },
                       "runAfter": {
-                        "TentativeAcceptanceNotification": [
+                        "PersistProposalFeedbackAcceptTentative": [
                           "Succeeded"
                         ]
                       },
                       "metadata": {
-                        "operationMetadataId": "3b8a8234-2ea8-4734-bc8c-7d2a2086e40b"
-                      },
+                        "operationMetadataId": "fb0316ef-5a1a-4a75-b425-a805eba40653"
+                      }
+                    },
+                    "ComposeAcceptTentativeResponse": {
                       "type": "Compose",
                       "inputs": {
                         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
@@ -911,17 +630,17 @@
                         ],
                         "type": "AdaptiveCard",
                         "version": "1.0"
-                      }
-                    },
-                    "AcceptTentativeResponse": {
+                      },
                       "runAfter": {
-                        "ComposeAcceptTentativeResponse": [
+                        "TentativeAcceptanceNotification": [
                           "Succeeded"
                         ]
                       },
                       "metadata": {
-                        "operationMetadataId": "4ed555d0-c4a0-49b2-90f4-cd829feeb041"
-                      },
+                        "operationMetadataId": "3b8a8234-2ea8-4734-bc8c-7d2a2086e40b"
+                      }
+                    },
+                    "AcceptTentativeResponse": {
                       "type": "Response",
                       "kind": "Http",
                       "inputs": {
@@ -930,76 +649,67 @@
                           "CARD-UPDATE-IN-BODY": "true"
                         },
                         "body": "@outputs('ComposeAcceptTentativeResponse')"
-                      }
-                    }
-                  }
-                },
-                "Decline": {
-                  "case": "DECLINE",
-                  "actions": {
-                    "PersistDeclineFeedback": {
-                      "runAfter": {},
-                      "metadata": {
-                        "operationMetadataId": "5bc2b7d0-6c92-43d5-bc81-0473ac0f025e"
                       },
-                      "type": "OpenApiConnection",
-                      "inputs": {
-                        "host": {
-                          "connectionName": "shared_azuremysql",
-                          "operationId": "PostItem",
-                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                        },
-                        "parameters": {
-                          "server": "default",
-                          "database": "default",
-                          "table": "[main].[userproposalfeedback]",
-                          "item/comment": "@triggerBody()?['comment']",
-                          "item/createdAt": "@utcNow()",
-                          "item/id": "@guid()",
-                          "item/proposalId": "@triggerBody()?['proposalId']",
-                          "item/reason": "@triggerBody()?['reason']",
-                          "item/typeKey": "DECLINED_@{triggerBody()?['reason']}",
-                          "item/updatedAt": "@utcNow()",
-                          "item/userEmail": "@triggerBody()?['supervisorEmail']"
-                        },
-                        "authentication": "@parameters('$authentication')"
+                      "runAfter": {
+                        "ComposeAcceptTentativeResponse": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "4ed555d0-c4a0-49b2-90f4-cd829feeb041"
                       }
                     },
+                    "PersistProposalFeedbackAcceptTentative": {
+                      "type": "Http",
+                      "inputs": {
+                        "uri": "@{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/api/persistProposalFeedbackAcceptTentative",
+                        "method": "POST",
+                        "body": {
+                          "flowSecret": "@{parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')}",
+                          "proposalId": "@{triggerBody()?['proposalId']}",
+                          "supervisorEmail": "@{triggerBody()?['supervisorEmail']}"
+                        }
+                      },
+                      "runtimeConfiguration": {
+                        "contentTransfer": {
+                          "transferMode": "Chunked"
+                        }
+                      },
+                      "metadata": {
+                        "operationMetadataId": "dd44226d-cd36-41e9-b01e-dab1a000207b"
+                      }
+                    }
+                  },
+                  "case": "ACCEPT_TENTATIVE"
+                },
+                "Decline": {
+                  "actions": {
                     "DeclineNotification": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
+                          "emailMessage/To": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
+                          "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Proposal declined (@{body('Parse_getProposalAndProposalApplication')?['proposal']?['title']})",
+                          "emailMessage/Body": "<p class=\"editor-paragraph\">The proposal \"@{body('Parse_getProposalAndProposalApplication')?['proposal']?['title']}\" has been declined by \"@{triggerBody()?['supervisorEmail']}\".<br><br><b><strong class=\"editor-text-bold\">Reason: </strong></b>@{triggerBody()?['reason']}<br><b><strong class=\"editor-text-bold\">Comment:</strong></b> @{triggerBody()?['comment']}</p>",
+                          "emailMessage/Importance": "Normal"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                          "operationId": "SharedMailboxSendEmailV2",
+                          "connectionName": "shared_office365_1"
+                        }
+                      },
                       "runAfter": {
-                        "PersistDeclineFeedback": [
+                        "PersistProposalFeedbackDecline": [
                           "Succeeded"
                         ]
                       },
                       "metadata": {
                         "operationMetadataId": "c71259f9-094e-4c1d-86ec-684e6f6380cd"
-                      },
-                      "type": "OpenApiConnection",
-                      "inputs": {
-                        "host": {
-                          "connectionName": "shared_office365_1",
-                          "operationId": "SharedMailboxSendEmailV2",
-                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
-                        },
-                        "parameters": {
-                          "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
-                          "emailMessage/To": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
-                          "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Proposal declined (@{outputs('ProposalDetails')['title']})",
-                          "emailMessage/Body": "<p>The proposal \"@{outputs('ProposalDetails')['title']}\" has been declined by \"@{triggerBody()?['supervisorEmail']}\".<br>\n<br>\n<strong>Reason: </strong>@{triggerBody()?['reason']}<br>\n<strong>Comment:</strong> @{triggerBody()?['comment']}</p>",
-                          "emailMessage/Importance": "Normal"
-                        },
-                        "authentication": "@parameters('$authentication')"
                       }
                     },
                     "ComposeDeclineResponse": {
-                      "runAfter": {
-                        "DeclineNotification": [
-                          "Succeeded"
-                        ]
-                      },
-                      "metadata": {
-                        "operationMetadataId": "381fa989-f265-46ee-bbd4-b5fe2c8bca59"
-                      },
                       "type": "Compose",
                       "inputs": {
                         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
@@ -1013,17 +723,17 @@
                         ],
                         "type": "AdaptiveCard",
                         "version": "1.0"
-                      }
-                    },
-                    "DeclineResponse": {
+                      },
                       "runAfter": {
-                        "ComposeDeclineResponse": [
+                        "DeclineNotification": [
                           "Succeeded"
                         ]
                       },
                       "metadata": {
-                        "operationMetadataId": "35a799df-bc89-4032-829d-6f943524cff6"
-                      },
+                        "operationMetadataId": "381fa989-f265-46ee-bbd4-b5fe2c8bca59"
+                      }
+                    },
+                    "DeclineResponse": {
                       "type": "Response",
                       "kind": "Http",
                       "inputs": {
@@ -1032,48 +742,69 @@
                           "CARD-UPDATE-IN-BODY": "true"
                         },
                         "body": "@outputs('ComposeDeclineResponse')"
+                      },
+                      "runAfter": {
+                        "ComposeDeclineResponse": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "35a799df-bc89-4032-829d-6f943524cff6"
+                      }
+                    },
+                    "PersistProposalFeedbackDecline": {
+                      "type": "Http",
+                      "inputs": {
+                        "uri": "@{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/api/persistProposalFeedbackDecline",
+                        "method": "POST",
+                        "body": {
+                          "flowSecret": "@{parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')}",
+                          "proposalId": "@{triggerBody()?['proposalId']}",
+                          "supervisorEmail": "@{triggerBody()?['supervisorEmail']}",
+                          "reason": "@{triggerBody()?['reason']}",
+                          "comment": "@{triggerBody()?['comment']}"
+                        }
+                      },
+                      "runtimeConfiguration": {
+                        "contentTransfer": {
+                          "transferMode": "Chunked"
+                        }
+                      },
+                      "metadata": {
+                        "operationMetadataId": "ce062279-2862-470d-84f6-81bfacce17b8"
                       }
                     }
-                  }
+                  },
+                  "case": "DECLINE"
                 },
                 "Reject": {
-                  "case": "REJECT",
                   "actions": {
                     "RejectNotification": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
+                          "emailMessage/To": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
+                          "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Proposal rejected (@{body('Parse_getProposalAndProposalApplication')?['proposal']?['title']})",
+                          "emailMessage/Body": "<p class=\"editor-paragraph\">The proposal \"@{body('Parse_getProposalAndProposalApplication')?['proposal']?['title']}\" has been rejected by \"@{triggerBody()?['supervisorEmail']}\".<br><br>Reason: @{triggerBody()?['reason']}<br>Comment: @{triggerBody()?['comment']}</p>",
+                          "emailMessage/Importance": "Normal"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                          "operationId": "SharedMailboxSendEmailV2",
+                          "connectionName": "shared_office365_1"
+                        }
+                      },
                       "runAfter": {
-                        "PersistRejectFeedback": [
+                        "PersistProposalFeedbackReject": [
                           "Succeeded"
                         ]
                       },
                       "metadata": {
                         "operationMetadataId": "647c1798-dde8-4ed4-a921-6572d4b5cd77"
-                      },
-                      "type": "OpenApiConnection",
-                      "inputs": {
-                        "host": {
-                          "connectionName": "shared_office365_1",
-                          "operationId": "SharedMailboxSendEmailV2",
-                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
-                        },
-                        "parameters": {
-                          "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
-                          "emailMessage/To": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
-                          "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Proposal rejected (@{outputs('ProposalDetails')['title']})",
-                          "emailMessage/Body": "<p>The proposal \"@{outputs('ProposalDetails')['title']}\" has been rejected by \"@{triggerBody()?['supervisorEmail']}\".<br>\n<br>\nReason: @{triggerBody()?['reason']}<br>\nComment: @{triggerBody()?['comment']}</p>",
-                          "emailMessage/Importance": "Normal"
-                        },
-                        "authentication": "@parameters('$authentication')"
                       }
                     },
                     "ComposeRejectResponse": {
-                      "runAfter": {
-                        "RejectNotification": [
-                          "Succeeded"
-                        ]
-                      },
-                      "metadata": {
-                        "operationMetadataId": "bc91fc1b-3a49-494d-adab-6585a07d0f0f"
-                      },
                       "type": "Compose",
                       "inputs": {
                         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
@@ -1087,17 +818,17 @@
                         ],
                         "type": "AdaptiveCard",
                         "version": "1.0"
-                      }
-                    },
-                    "RejectResponse": {
+                      },
                       "runAfter": {
-                        "ComposeRejectResponse": [
+                        "RejectNotification": [
                           "Succeeded"
                         ]
                       },
                       "metadata": {
-                        "operationMetadataId": "841ddf7a-a2fb-4073-868b-e31da5fe675e"
-                      },
+                        "operationMetadataId": "bc91fc1b-3a49-494d-adab-6585a07d0f0f"
+                      }
+                    },
+                    "RejectResponse": {
                       "type": "Response",
                       "kind": "Http",
                       "inputs": {
@@ -1106,167 +837,204 @@
                           "CARD-UPDATE-IN-BODY": "true"
                         },
                         "body": "@outputs('ComposeRejectResponse')"
-                      }
-                    },
-                    "IsStatusKeyAcceptedTentative": {
-                      "actions": {
-                        "DeleteSupervision": {
-                          "runAfter": {},
-                          "metadata": {
-                            "operationMetadataId": "cdf7798e-3049-40c7-8cde-4ef065861c2e"
-                          },
-                          "type": "OpenApiConnection",
-                          "inputs": {
-                            "host": {
-                              "connectionName": "shared_azuremysql",
-                              "operationId": "DeleteItem",
-                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                            },
-                            "parameters": {
-                              "server": "default",
-                              "database": "default",
-                              "table": "[main].[userproposalsupervision]",
-                              "id": "@triggerBody()?['proposalId']"
-                            },
-                            "authentication": "@parameters('$authentication')"
-                          }
-                        },
-                        "UpdateProposalStatusKeyOpen": {
-                          "runAfter": {
-                            "UpdateProposalApplicationStatusKeyOpen": [
-                              "Succeeded"
-                            ]
-                          },
-                          "metadata": {
-                            "operationMetadataId": "aa93c012-cb6d-42c6-bd72-ef1574acb2f6"
-                          },
-                          "type": "OpenApiConnection",
-                          "inputs": {
-                            "host": {
-                              "connectionName": "shared_azuremysql",
-                              "operationId": "PatchItem",
-                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                            },
-                            "parameters": {
-                              "server": "default",
-                              "database": "default",
-                              "table": "[main].[proposal]",
-                              "id": "@triggerBody()?['proposalId']",
-                              "item/createdAt": "@outputs('ProposalDetails')['createdAt']",
-                              "item/description": "@outputs('ProposalDetails')['description']",
-                              "item/language": "@outputs('ProposalDetails')['language']",
-                              "item/statusKey": "OPEN",
-                              "item/studyLevel": "@outputs('ProposalDetails')['studyLevel']",
-                              "item/title": "@outputs('ProposalDetails')['title']",
-                              "item/topicAreaSlug": "@outputs('ProposalDetails')['topicAreaSlug']",
-                              "item/typeKey": "@outputs('ProposalDetails')['typeKey']",
-                              "item/updatedAt": "@utcNow()"
-                            },
-                            "authentication": "@parameters('$authentication')"
-                          }
-                        },
-                        "UpdateProposalApplicationStatusKeyOpen": {
-                          "runAfter": {
-                            "DeleteSupervision": [
-                              "Succeeded"
-                            ]
-                          },
-                          "metadata": {
-                            "operationMetadataId": "311d5cd3-d344-47a3-99b8-9b0664a34f4e"
-                          },
-                          "type": "OpenApiConnection",
-                          "inputs": {
-                            "host": {
-                              "connectionName": "shared_azuremysql",
-                              "operationId": "PatchItem",
-                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
-                            },
-                            "parameters": {
-                              "server": "default",
-                              "database": "default",
-                              "table": "[main].[proposalapplication]",
-                              "id": "@triggerBody()?['proposalId']",
-                              "item/createdAt": "@outputs('ApplicationDetails')['createdAt']",
-                              "item/email": "@outputs('ApplicationDetails')['email']",
-                              "item/fullName": "@outputs('ApplicationDetails')['fullName']",
-                              "item/matriculationNumber": "@outputs('ApplicationDetails')['matriculationNumber']",
-                              "item/motivation": "@outputs('ApplicationDetails')['motivation']",
-                              "item/plannedStartAt": "@outputs('ApplicationDetails')['plannedStartAt']",
-                              "item/proposalId": "@triggerBody()?['proposalId']",
-                              "item/statusKey": "OPEN",
-                              "item/updatedAt": "@utcNow()"
-                            },
-                            "authentication": "@parameters('$authentication')"
-                          }
-                        }
                       },
-                      "runAfter": {},
-                      "expression": {
-                        "equals": [
-                          "@outputs('ApplicationDetails')['statusKey']",
-                          "ACCEPTED_TENTATIVE"
-                        ]
-                      },
-                      "metadata": {
-                        "operationMetadataId": "ffc51d56-fc50-474a-8db9-d35eedebc5fc"
-                      },
-                      "type": "If"
-                    },
-                    "PersistRejectFeedback": {
                       "runAfter": {
-                        "IsStatusKeyAcceptedTentative": [
+                        "ComposeRejectResponse": [
                           "Succeeded"
                         ]
                       },
                       "metadata": {
-                        "operationMetadataId": "f305428c-9d61-40a0-8cb6-b53c26852d0c"
-                      },
-                      "type": "OpenApiConnection",
+                        "operationMetadataId": "841ddf7a-a2fb-4073-868b-e31da5fe675e"
+                      }
+                    },
+                    "PersistProposalFeedbackReject": {
+                      "type": "Http",
                       "inputs": {
-                        "host": {
-                          "connectionName": "shared_azuremysql",
-                          "operationId": "PostItem",
-                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_azuremysql"
+                        "uri": "@{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/api/persistProposalFeedbackReject",
+                        "method": "POST",
+                        "body": {
+                          "flowSecret": "@{parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')}",
+                          "proposalId": "@{triggerBody()?['proposalId']}",
+                          "supervisorEmail": "@{triggerBody()?['supervisorEmail']}",
+                          "reason": "@{triggerBody()?['reason']}",
+                          "comment": "@{triggerBody()?['comment']}"
+                        }
+                      },
+                      "runtimeConfiguration": {
+                        "contentTransfer": {
+                          "transferMode": "Chunked"
+                        }
+                      },
+                      "metadata": {
+                        "operationMetadataId": "cf6f2414-0580-499f-ac8e-9606dfd90ab2"
+                      }
+                    }
+                  },
+                  "case": "REJECT"
+                }
+              },
+              "runAfter": {
+                "IsAutoInvokedAction": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "5c463cf4-8eb0-443f-99c0-d7807cd879b1"
+              }
+            },
+            "getProposalAndProposalApplication": {
+              "type": "Http",
+              "inputs": {
+                "uri": "@{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/api/getProposalAndProposalApplication",
+                "method": "POST",
+                "body": {
+                  "flowSecret": "@parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')",
+                  "proposalId": "@triggerBody()?['proposalId']"
+                }
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              },
+              "metadata": {
+                "operationMetadataId": "027e2a2c-7f9c-4530-8e40-eeafc801e28b"
+              }
+            },
+            "Parse_getProposalAndProposalApplication": {
+              "type": "ParseJson",
+              "inputs": {
+                "content": "@body('getProposalAndProposalApplication')",
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "proposal": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
                         },
-                        "parameters": {
-                          "server": "default",
-                          "database": "default",
-                          "table": "[main].[userproposalfeedback]",
-                          "item/comment": "@triggerBody()?['comment']",
-                          "item/createdAt": "@utcNow()",
-                          "item/id": "@guid()",
-                          "item/proposalId": "@triggerBody()?['proposalId']",
-                          "item/reason": "@triggerBody()?['reason']",
-                          "item/typeKey": "REJECTED_@{triggerBody()?['reason']}",
-                          "item/updatedAt": "@utcNow()",
-                          "item/userEmail": "@triggerBody()?['supervisorEmail']"
+                        "title": {
+                          "type": "string"
                         },
-                        "authentication": "@parameters('$authentication')"
+                        "description": {
+                          "type": "string"
+                        },
+                        "language": {
+                          "type": "string"
+                        },
+                        "studyLevel": {
+                          "type": "string"
+                        },
+                        "timeFrame": {},
+                        "additionalStudentComment": {
+                          "type": "string"
+                        },
+                        "topicAreaSlug": {
+                          "type": "string"
+                        },
+                        "typeKey": {
+                          "type": "string"
+                        },
+                        "statusKey": {
+                          "type": "string"
+                        },
+                        "ownedByUserEmail": {},
+                        "ownedByStudent": {},
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "proposalApplication": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "statusKey": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "matriculationNumber": {
+                          "type": "string"
+                        },
+                        "fullName": {
+                          "type": "string"
+                        },
+                        "plannedStartAt": {
+                          "type": "string"
+                        },
+                        "motivation": {
+                          "type": "string"
+                        },
+                        "supervisionId": {},
+                        "allowPublication": {
+                          "type": "boolean"
+                        },
+                        "allowUsage": {
+                          "type": "boolean"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
                       }
                     }
                   }
                 }
               },
-              "default": {
-                "actions": {
-                  "Response_4": {
-                    "runAfter": {},
-                    "metadata": {
-                      "operationMetadataId": "00598947-556d-4afd-8e0c-11c0310f81cc"
-                    },
-                    "type": "Response",
-                    "kind": "Http",
-                    "inputs": {
-                      "statusCode": 200
-                    }
-                  }
+              "runAfter": {
+                "getProposalAndProposalApplication": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "f32625ab-9cc9-48b0-ae09-c225e0021029"
+              }
+            },
+            "MatchingSupervisor": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
+                  "table": "@parameters('Supervisors List Name (uzhbf_thesisplatform_supervisors_list_name_env_var)')",
+                  "$filter": "Title eq '@{triggerBody()?['supervisoremail']}'",
+                  "$top": 1
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "GetItems",
+                  "connectionName": "shared_sharepointonline"
                 }
               },
-              "expression": "@triggerBody()?['actionType']",
-              "metadata": {
-                "operationMetadataId": "5c463cf4-8eb0-443f-99c0-d7807cd879b1"
+              "runAfter": {
+                "Parse_getProposalAndProposalApplication": [
+                  "Succeeded"
+                ]
               },
-              "type": "Switch"
+              "metadata": {
+                "operationMetadataId": "bd22650b-e96a-448f-9483-fb98a6b2a917"
+              }
+            },
+            "SupervisorDetails": {
+              "type": "Compose",
+              "inputs": "@first(body('MatchingSupervisor')['value'])",
+              "runAfter": {
+                "MatchingSupervisor": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "4fed7a55-4515-4bf4-95fa-a1e295c50e03"
+              }
             }
           },
           "runAfter": {
@@ -1276,31 +1044,22 @@
           },
           "metadata": {
             "operationMetadataId": "ad624be4-2c6e-4ba6-a6ea-289d2a7b8ca9"
-          },
-          "type": "Scope"
+          }
         },
         "Catch": {
+          "type": "Scope",
           "actions": {
             "FilterForFailedOrTimedOutStatus": {
-              "runAfter": {},
-              "metadata": {
-                "operationMetadataId": "ca1bedd8-7555-4a99-a290-1c22c2e6e229"
-              },
               "type": "Query",
               "inputs": {
                 "from": "@result('Try')",
                 "where": "@or(equals(item()?['Status'], 'Failed'), equals(item()?['Status'], 'TimedOut'))"
+              },
+              "metadata": {
+                "operationMetadataId": "ca1bedd8-7555-4a99-a290-1c22c2e6e229"
               }
             },
             "CreateHtmlTable": {
-              "runAfter": {
-                "FilterForFailedOrTimedOutStatus": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "34b6a96f-64c6-43fd-89a3-fe7d5ef245ff"
-              },
               "type": "Table",
               "inputs": {
                 "from": "@body('FilterForFailedOrTimedOutStatus')",
@@ -1323,9 +1082,21 @@
                     "value": "@item()?['code']"
                   }
                 ]
+              },
+              "runAfter": {
+                "FilterForFailedOrTimedOutStatus": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "34b6a96f-64c6-43fd-89a3-fe7d5ef245ff"
               }
             },
             "Terminate_3": {
+              "type": "Terminate",
+              "inputs": {
+                "runStatus": "Cancelled"
+              },
               "runAfter": {
                 "SendFailureNotification": [
                   "Succeeded"
@@ -1333,13 +1104,22 @@
               },
               "metadata": {
                 "operationMetadataId": "0f41eff7-41db-4eae-8e12-46f64d545e8b"
-              },
-              "type": "Terminate",
-              "inputs": {
-                "runStatus": "Cancelled"
               }
             },
             "SendFailureNotification": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "request/to": "@{parameters('Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)')};",
+                  "request/subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Thesis Platform - Thesis Proposal Feedback",
+                  "request/text": "<p>@{body('CreateHtmlTable')}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sendmail",
+                  "operationId": "SendEmailV3",
+                  "connectionName": "shared_sendmail-2"
+                }
+              },
               "runAfter": {
                 "CreateHtmlTable": [
                   "Succeeded"
@@ -1347,20 +1127,6 @@
               },
               "metadata": {
                 "operationMetadataId": "e7c370de-36de-45b2-ae99-b7d0e7013242"
-              },
-              "type": "OpenApiConnection",
-              "inputs": {
-                "host": {
-                  "connectionName": "shared_sendmail-2",
-                  "operationId": "SendEmailV3",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sendmail"
-                },
-                "parameters": {
-                  "request/to": "@{parameters('Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)')};",
-                  "request/subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Thesis Platform - Thesis Proposal Feedback",
-                  "request/text": "<p>@{body('CreateHtmlTable')}</p>"
-                },
-                "authentication": "@parameters('$authentication')"
               }
             }
           },
@@ -1372,40 +1138,38 @@
           },
           "metadata": {
             "operationMetadataId": "054f28a3-080c-4f8a-9529-1183121f12f9"
-          },
-          "type": "Scope"
+          }
         },
         "IsFLowSecretCorrect": {
-          "actions": {},
-          "runAfter": {},
-          "else": {
-            "actions": {
-              "Terminate_6": {
-                "runAfter": {},
-                "metadata": {
-                  "operationMetadataId": "b0e5bdca-638d-4f99-bf6a-88e22b939ecb"
-                },
-                "type": "Terminate",
-                "inputs": {
-                  "runStatus": "Cancelled"
-                }
-              }
-            }
-          },
+          "type": "If",
           "expression": {
             "equals": [
               "@triggerOutputs()['headers']['secretKey']",
               "@parameters('Flow Secret (uzhbf_thesisplatform_flow_secret_env_var)')"
             ]
           },
+          "actions": {},
+          "else": {
+            "actions": {
+              "Terminate_6": {
+                "type": "Terminate",
+                "inputs": {
+                  "runStatus": "Cancelled"
+                },
+                "metadata": {
+                  "operationMetadataId": "b0e5bdca-638d-4f99-bf6a-88e22b939ecb"
+                }
+              }
+            }
+          },
+          "runAfter": {},
           "metadata": {
             "operationMetadataId": "2e8497de-b65d-41bd-bc3e-8d913d2aba3c"
-          },
-          "type": "If"
+          }
         }
       }
     },
-    "templateName": ""
+    "templateName": null
   },
   "schemaVersion": "1.0.0.0"
 }

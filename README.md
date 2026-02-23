@@ -43,7 +43,12 @@ The following instructions will guide you through the deployment process step by
 Your system should have the following installed:
 
 - [Helm](https://helm.sh/)
+- [Helmfile](https://helmfile.readthedocs.io/en/latest/)
+- [Helm diff plugin](https://github.com/databus23/helm-diff)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [az cli](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
+  - `az login`
+  - `az aks get-credentials --resource-group ibf_devops_rg --name bf-k8s463ba113`
 
 ### Deployment steps
 

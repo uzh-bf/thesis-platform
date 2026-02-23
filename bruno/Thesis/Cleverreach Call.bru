@@ -1,0 +1,44 @@
+meta {
+  name: Cleverreach Call
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{cleverreach_url}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "template_name": "THESIS_POSTING_TEST",
+    "replacements": [
+      {
+        "placeholder": "{{INTRO_TEXT}}",
+        "replacement": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+      },
+      {
+        "placeholder": "{{THESIS_TITLE}}",
+        "replacement": "ASDF"
+      },
+      {
+        "placeholder": "{{ADDITIONAL_INFORMATION}}",
+        "replacement": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+      },
+      {
+        "placeholder": "{{DEPARTMENT_NAME}}",
+        "replacement": "DF"
+      }
+    ],
+    "sender_email": "maximilian.weber@bluewin.ch",
+    "sender_name": "Max",
+    "subject": "ABC",
+    "receiver_group_id": "571328",
+    "mailing_name": "TEST_FROM_BRUNO"
+  }
+}
+
+settings {
+  encodeUrl: false
+}

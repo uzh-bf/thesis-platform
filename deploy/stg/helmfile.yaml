@@ -1,0 +1,10 @@
+releases:
+  - name: thesis-platform
+    namespace: '{{ env "NAMESPACE" | default "thesis-platform-stage" }}'
+    createNamespace: true
+    chart: ../chart
+    version: '{{ env "CHART_VERSION" | default "0.1.0" }}'
+    installed: true
+    kubeContext: bf-k8s463ba113
+    values:
+      - .values-SECRET.yaml

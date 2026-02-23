@@ -1,7 +1,9 @@
 import { faAdd } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Button } from '@uzh-bf/design-system'
+import { Button, Modal } from '@uzh-bf/design-system'
 import Link from 'next/link'
+import { useState } from 'react'
+import ProposalPublishForm from './ProposalPublishForm'
 
 interface NewProposalButtonProps {
   isSupervisor: boolean
@@ -10,21 +12,38 @@ interface NewProposalButtonProps {
 export default function NewProposalButton({
   isSupervisor,
 }: NewProposalButtonProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  if (isSupervisor) {
+    return (
+      <Modal
+        title="Publish New Supervisor Proposal"
+        open={isModalOpen}
+        trigger={
+          <Button 
+            onClick={() => setIsModalOpen(true)}
+            className={{root: "flex items-center"}}
+          >
+            <FontAwesomeIcon icon={faAdd} className="mr-2" />
+            New Proposal
+          </Button>
+        }
+        onClose={() => setIsModalOpen(false)}
+      >
+        <ProposalPublishForm onSuccess={() => setIsModalOpen(false)} />
+      </Modal>
+    )
+  }
+
   return (
     <div>
       <Link
         target="_blank"
-        href={
-          isSupervisor
-            ? (process.env.NEXT_PUBLIC_FORMS_URL_PUBLISH as string)
-            : (process.env.NEXT_PUBLIC_FORMS_URL_SUBMIT as string)
-        }
+        href={process.env.NEXT_PUBLIC_FORMS_URL_SUBMIT as string}
       >
-        <Button>
-          <Button.Icon>
-            <FontAwesomeIcon icon={faAdd} />
-          </Button.Icon>
-          <Button.Label>New Proposal</Button.Label>
+        <Button className={{root: "flex items-center"}}>
+          <FontAwesomeIcon icon={faAdd} className='mr-2'/>
+          New Proposal
         </Button>
       </Link>
     </div>

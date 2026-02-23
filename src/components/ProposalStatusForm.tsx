@@ -1,5 +1,5 @@
 import { useSessionStorage } from '@uidotdev/usehooks'
-import { Tabs, UserNotification } from '@uzh-bf/design-system'
+import { TabContent, Tabs, UserNotification } from '@uzh-bf/design-system'
 import { useSession } from 'next-auth/react'
 import { ProposalDetails } from 'src/types/app'
 import AcceptProposalForm from './AcceptProposalForm' // Import AcceptProposalForm and other form components
@@ -32,44 +32,45 @@ export default function ProposalStatusForm({
           This proposal is tentatively matched with a student. Please accept or
           reject the proposal.
         </UserNotification>
-        <div className="">
-          <Tabs defaultValue="accept">
-            <Tabs.TabList className={{ root: 'md:flex-row border' }}>
-              <Tabs.Tab key="accept" value="accept" label="Accept" />
-              <Tabs.Tab key="reject" value="reject" label="Reject" />
-            </Tabs.TabList>
-            <Tabs.TabContent
-              key="accept"
+        <Tabs defaultValue="accept" tabs={[
+            {
+              id: 'tentative-tabs-accept',
+              value: 'accept',
+              label: 'Accept',
+            },
+            {
+              id: 'tentative-tabs-reject',
+              value: 'reject',
+              label: 'Reject',
+            },
+          ]}>
+            <TabContent
               value="accept"
               className={{
                 root: 'border border-t-0 rounded-none px-4',
               }}
             >
               <AcceptProposalForm
-                key={proposalDetails?.id}
                 proposalName={proposalDetails?.title}
                 proposalId={proposalDetails?.id}
                 supervisorEmail={session?.user?.email as string}
                 setProvidedFeedback={setProvidedFeedback}
               />
-            </Tabs.TabContent>
-            <Tabs.TabContent
-              key="reject"
+            </TabContent>
+            <TabContent
               value="reject"
               className={{
                 root: 'border border-t-0 rounded-none px-4',
               }}
             >
               <RejectProposalForm
-                key={proposalDetails?.id}
                 proposalName={proposalDetails?.title}
                 proposalId={proposalDetails?.id}
                 supervisorEmail={session?.user?.email as string}
                 setProvidedFeedback={setProvidedFeedback}
               />
-            </Tabs.TabContent>
+            </TabContent>
           </Tabs>
-        </div>
       </>
     )
   } else if (
@@ -91,80 +92,81 @@ export default function ProposalStatusForm({
     )
   } else if (proposalDetails?.typeKey === 'STUDENT') {
     return (
-      <div className="">
-        <Tabs defaultValue="accept">
-          <Tabs.TabList className={{ root: 'md:flex-row border' }}>
-            <Tabs.Tab key="accept" value="accept" label="Accept" />
-            <Tabs.Tab
-              key="acceptTentative"
-              value="acceptTentative"
-              label="Accept (Tentative)"
-            />
-            <Tabs.Tab key="reject" value="reject" label="Reject" />
-            <Tabs.Tab key="decline" value="decline" label="Decline" />
-          </Tabs.TabList>
-          <Tabs.TabContent
-            key="accept"
+        <Tabs defaultValue="accept" tabs={[
+          {
+            id: 'student-tabs-accept',
+            value: 'accept',
+            label: 'Accept',
+          },
+          {
+            id: 'student-tabs-accept-tentative',
+            value: 'acceptTentative',
+            label: 'Accept (Tentative)',
+          },
+          {
+            id: 'student-tabs-reject',
+            value: 'reject',
+            label: 'Reject',
+          },
+          {
+            id: 'student-tabs-decline',
+            value: 'decline',
+            label: 'Decline',
+          },
+        ]}>
+          <TabContent
             value="accept"
             className={{
               root: 'border border-t-0 rounded-none px-4',
             }}
           >
             <AcceptProposalForm
-              key={proposalDetails?.id}
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
               setProvidedFeedback={setProvidedFeedback}
             />
-          </Tabs.TabContent>
-          <Tabs.TabContent
-            key="acceptTentative"
+          </TabContent>
+          <TabContent
             value="acceptTentative"
             className={{
               root: 'border border-t-0 rounded-none px-4',
             }}
           >
             <TentativeAcceptProposalForm
-              key={proposalDetails?.id}
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
               setProvidedFeedback={setProvidedFeedback}
             />
-          </Tabs.TabContent>
-          <Tabs.TabContent
-            key="decline"
+          </TabContent>
+          <TabContent
             value="decline"
             className={{
               root: 'border border-t-0 rounded-none px-4',
             }}
           >
             <DeclineProposalForm
-              key={proposalDetails?.id}
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
               setProvidedFeedback={setProvidedFeedback}
             />
-          </Tabs.TabContent>
-          <Tabs.TabContent
-            key="reject"
+          </TabContent>
+          <TabContent
             value="reject"
             className={{
               root: 'border border-t-0 rounded-none px-4',
             }}
           >
             <RejectProposalForm
-              key={proposalDetails?.id}
               proposalName={proposalDetails?.title}
               proposalId={proposalDetails?.id}
               supervisorEmail={session?.user?.email as string}
               setProvidedFeedback={setProvidedFeedback}
             />
-          </Tabs.TabContent>
+          </TabContent>
         </Tabs>
-      </div>
     )
   }
 }

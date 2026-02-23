@@ -6,6 +6,7 @@ import AzureADProvider from 'next-auth/providers/azure-ad'
 // import EmailProvider from 'next-auth/providers/email'
 
 import prisma from '../server/prisma'
+import { UserRole } from './constants'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -27,6 +28,14 @@ export const authOptions: NextAuthOptions = {
         clientId: process.env.AZURE_AD_CLIENT_ID as string,
         clientSecret: process.env.AZURE_AD_CLIENT_SECRET as string,
         tenantId: process.env.AZURE_AD_TENANT_ID as string,
+        authorization: {
+          params: {
+            prompt: 'login', // Force users to re-enter credentials on each login
+            scope: 'openid profile email',
+          },
+        },
+        // Allow linking OAuth account to existing user with same email
+        allowDangerousEmailAccountLinking: true,
       }),
     typeof process.env.AUTH0_CLIENT_ID === 'string' &&
       process.env.AUTH0_CLIENT_ID !== '' &&
@@ -34,6 +43,8 @@ export const authOptions: NextAuthOptions = {
         clientId: process.env.AUTH0_CLIENT_ID as string,
         clientSecret: process.env.AUTH0_CLIENT_SECRET as string,
         issuer: process.env.AUTH0_ISSUER as string,
+        // Allow linking OAuth account to existing user with same email
+        allowDangerousEmailAccountLinking: true,
       }) as any),
   ],
   session: {
@@ -43,18 +54,57 @@ export const authOptions: NextAuthOptions = {
     encode,
     decode,
   },
+  // Add events to handle user creation
+  events: {
+    async createUser({ user }) {
+      // Update the newly created user with department from environment variable
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { 
+          department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as any // Cast as any since department is an enum
+        }
+      });
+    },
+    async signOut({ token }) {
+      // This event is called when the user signs out
+      // The session will be cleared automatically by NextAuth
+      console.log('User signed out:', token.sub);
+    },
+  },
   callbacks: {
-    async jwt({ token, user, account, profile }) {
-      if (account) {
+    async jwt({ token, user, account, profile, trigger }) {
+      if (account && user) {
+        // Fetch the full user with role from database
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+        })
+        
         token.sub = user.id
-        token.role = user.role
+        token.role = dbUser?.role || 'UNSET'
+        token.adminRole = dbUser?.adminRole ?? 'UNSET'
+        token.isAdmin = token.adminRole !== 'UNSET'
+      } else if (trigger === 'update' || token.adminRole === undefined || token.adminRole !== 'ADMIN') {
+        // Refresh user data from database on session update or if user is not admin
+        // This allows immediate reflection when admin access is granted (just refresh the page)
+        // Once user becomes admin, we stop checking the database on every request
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.sub as string },
+        })
+        
+        if (dbUser) {
+          token.role = dbUser.role
+          token.adminRole = dbUser.adminRole
+          token.isAdmin = dbUser.adminRole !== 'UNSET'
+        }
       }
       return token
     },
     async session({ session, user, token }) {
       if (session.user && token.sub && token.role) {
-        session.user.sub = token.sub
-        session.user.role = token.role
+        session.user.sub = token.sub as string
+        session.user.role = token.role as UserRole
+        session.user.isAdmin = token.isAdmin as boolean
+        session.user.adminRole = token.adminRole as any
       }
       return session
     },

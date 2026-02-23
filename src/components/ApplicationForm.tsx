@@ -1,7 +1,8 @@
 import { BlobServiceClient } from '@azure/storage-blob'
 import {
   Button,
-  FormikDateChanger,
+  FormikDatePicker,
+  FormikSwitchField,
   FormikTextField,
   FormikTextareaField,
 } from '@uzh-bf/design-system'
@@ -93,6 +94,8 @@ export default function ApplicationForm({
       .required('Required'),
     cvFile: Yup.string().required('Required'),
     transcriptFile: Yup.string().required('Required'),
+    allowUsage: Yup.boolean().required('Required'),
+    allowPublication: Yup.boolean().required('Required'),
   })
 
   return submitted === null ? (
@@ -109,6 +112,8 @@ export default function ApplicationForm({
         proposalId: proposalId,
         cvFile: null,
         transcriptFile: null,
+        allowUsage: true,
+        allowPublication: true,
       }}
       validationSchema={SignupSchema}
       onSubmit={async (values, { resetForm }) => {
@@ -158,11 +163,11 @@ export default function ApplicationForm({
               field: 'flex-col',
             }}
           />
-          <FormikDateChanger
+          <FormikDatePicker
             required
             name="startingDate"
             className={{
-              root: 'pt-2 font-sans font-bold text-lg',
+              label: 'pt-2 font-sans font-bold text-lg',
             }}
             label="Starting Date"
           />
@@ -235,6 +240,28 @@ export default function ApplicationForm({
               </section>
             )}
           </Dropzone>
+          <div className="flex pt-2 text-lg font-bold">
+            <div className="flex-1">
+              <FormikSwitchField
+                name="allowUsage"
+                label="Allow Usage"
+                tooltip={`I hereby consent and grant the University of Zurich, represented by the ${process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME}, the rights of use to my written work and all artifacts under copyright protection created in the context of my academic work.`}
+                required
+                size="sm"
+                className={{ tooltip: 'w-96' }}
+              />
+            </div>
+            <div className="flex-1">
+              <FormikSwitchField
+                name="allowPublication"
+                label="Allow Publication"
+                tooltip={`I agree to allow the University of Zurich, represented by the ${process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME}, to publish my work in its entirety or in part on the Internet and distribute printed versions to interested parties.`}
+                required
+                size="sm"
+                className={{ tooltip: 'w-96' }}
+              />
+            </div>
+          </div>
           <div>
             <Button className={{ root: 'mt-2' }} type="submit">
               Submit Application

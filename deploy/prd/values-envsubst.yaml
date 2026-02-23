@@ -1,0 +1,26 @@
+appSecret: '$NEXTAUTH_SECRET'
+appUrl: '$APP_URL'
+
+image:
+  tag: '$APP_VERSION'
+
+flows:
+  secret: '$FLOW_SECRET'
+  application: '$APPLICATION_URL'
+  proposalFeedback: '$PROPOSAL_FEEDBACK_URL'
+  proposalPublish: '$PROPOSAL_PUBLISH_URL'
+  applicationAcceptance: '$APPLICATION_ACCEPTANCE_URL'
+  emailNotification: '$EMAIL_NOTIFICATION_URL'
+  faqUrlStudent: '$FAQ_URL_STUDENT'
+  faqUrlSupervisor: '$FAQ_URL_SUPERVISOR'
+
+azureAd:
+  clientId: '$AZURE_AD_CLIENT_ID'
+  clientSecret: '$AZURE_AD_CLIENT_SECRET'
+  tenantId: '$AZURE_AD_TENANT_ID'
+
+azureBlob:
+  accessKey: '$AZURE_STORAGE_ACCOUNT_ACCESS_KEY'
+
+database:
+  url: '$DATABASE_URL'

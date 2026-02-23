@@ -1,11 +1,15 @@
 import { initTRPC, TRPCError } from '@trpc/server'
+import { OpenApiMeta } from 'trpc-to-openapi'
 import { Context } from './context'
 
-const t = initTRPC.context<Context>().create({
-  errorFormatter({ shape }) {
-    return shape
-  },
-})
+const t = initTRPC
+  .meta<OpenApiMeta>()
+  .context<Context>()
+  .create({
+    errorFormatter({ shape }) {
+      return shape
+    },
+  })
 
 export const router = t.router
 export const publicProcedure = t.procedure
@@ -35,3 +39,42 @@ const isAuthed = middleware(({ next, ctx }) => {
 })
 
 export const authedProcedure = t.procedure.use(isAuthed)
+
+const isAdmin = middleware(({ next, ctx }) => {
+  const user = ctx.session?.user
+
+  if (!user?.name) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  }
+
+  if (!user?.isAdmin) {
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Admin access required' })
+  }
+
+  return next({
+    ctx: { user },
+  })
+})
+
+export const adminProcedure = t.procedure.use(isAdmin)
+
+const isAdminOnly = middleware(({ next, ctx }) => {
+  const user = ctx.session?.user
+
+  if (!user?.name) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  }
+
+  if (user.adminRole !== 'ADMIN') {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Admin role required',
+    })
+  }
+
+  return next({
+    ctx: { user },
+  })
+})
+
+export const adminOnlyProcedure = t.procedure.use(isAdminOnly)

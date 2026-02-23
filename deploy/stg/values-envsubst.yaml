@@ -1,0 +1,41 @@
+appSecret: '$NEXTAUTH_SECRET'
+appUrl: '$APP_URL'
+
+image:
+  tag: '$APP_VERSION'
+
+flows:
+  secret: '$FLOW_SECRET'
+  application: '$APPLICATION_URL'
+  proposalFeedback: '$PROPOSAL_FEEDBACK_URL'
+  proposalPublish: '$PROPOSAL_PUBLISH_URL'
+  applicationAcceptance: '$APPLICATION_ACCEPTANCE_URL'
+  emailNotification: '$EMAIL_NOTIFICATION_URL'
+  faqUrlStudent: '$FAQ_URL_STUDENT'
+  faqUrlSupervisor: '$FAQ_URL_SUPERVISOR'
+
+azureAd:
+  clientId: ''
+  clientSecret: ''
+  tenantId: ''
+
+auth0:
+  issuer: '$AUTH0_ISSUER'
+  clientId: '$AUTH0_CLIENT_ID'
+  clientSecret: '$AUTH0_CLIENT_SECRET'
+
+azureBlob:
+  accessKey: '$AZURE_STORAGE_ACCOUNT_ACCESS_KEY'
+
+database:
+  url: '$DATABASE_URL'
+
+ingress:
+  hosts:
+    - host: theses.stage.env.bf-app.ch
+      paths:
+        - /
+  tls:
+    - secretName: thesis-platform-stage-tls
+      hosts:
+        - theses.stage.env.bf-app.ch

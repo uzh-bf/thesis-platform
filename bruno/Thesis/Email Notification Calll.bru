@@ -1,0 +1,28 @@
+meta {
+  name: Email Notification Calll
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{email_notification_url}}
+  body: json
+  auth: none
+}
+
+headers {
+  secretKey: {{secret_key}}
+  Content-Type: application/json
+}
+
+body:json {
+  {
+      "recipients": ["ibf-srv-powplatf@d.uzh.ch"],
+      "subject": "Hello",
+      "content": "Test Email Body!"
+  }
+}
+
+settings {
+  encodeUrl: false
+}
