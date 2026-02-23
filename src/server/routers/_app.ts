@@ -2519,13 +2519,6 @@ updateProposalStatus: publicProcedure
           })
         }
 
-        if (!hasSubmissionDate) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Submission Date is required before saving this step.',
-          })
-        }
-
         if (hasGrade) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
@@ -2572,7 +2565,9 @@ updateProposalStatus: publicProcedure
         currentWorkflowStep === 'OPEN'
           ? 'IN_PROGRESS'
           : currentWorkflowStep === 'IN_PROGRESS'
-            ? 'GRADING'
+            ? hasSubmissionDate
+              ? 'GRADING'
+              : 'IN_PROGRESS'
             : 'COMPLETED'
 
       await prisma.adminInfo.update({

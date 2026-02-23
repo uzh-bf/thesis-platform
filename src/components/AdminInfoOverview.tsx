@@ -94,7 +94,7 @@ const INITIAL_CREATE_FORM: CreateEntryFormState = {
   studyLevel: '',
   topicAreaSlug: '',
   allowPublication: 'Nein',
-  allowUsage: 'Nein',
+  allowUsage: 'Ja',
 }
 
 const CREATE_REQUIRED_FIELDS: Array<keyof CreateEntryFormState> = [
@@ -427,11 +427,6 @@ export default function AdminInfoOverview() {
     if (workflowState === 'IN_PROGRESS') {
       if (!hasOlatCapturedDate) {
         alert('OLAT Captured Date must stay filled.')
-        return
-      }
-
-      if (!hasSubmissionDate) {
-        alert('Step 2 requires Submission Date.')
         return
       }
 
@@ -1533,7 +1528,7 @@ export default function AdminInfoOverview() {
                 workflowState === 'OPEN'
                   ? 'Step 1: Fill OLAT Captured Date, then save.'
                   : workflowState === 'IN_PROGRESS'
-                    ? 'Step 2: Submission Date is now unlocked. Fill it and save to move to GRADING.'
+                    ? 'Step 2: Submission Date is unlocked. Latest Submission Date can be saved now; set Submission Date to move to GRADING.'
                     : workflowState === 'GRADING'
                       ? 'Step 3: Grade is required. OLAT Grade Date is optional.'
                       : 'Workflow completed.'
