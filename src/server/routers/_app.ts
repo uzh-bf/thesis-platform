@@ -24,6 +24,221 @@ import { ProposalStatusFilter } from 'src/types/app'
 import { z } from 'zod'
 import { v4 as uuidv4 } from 'uuid'
 
+const ADMIN_CHANGE_NOTIFICATION_RECIPIENTS = {
+  DEV: 'ibf-srv-powplatf@d.uzh.ch',
+  PROD: 'theses@df.uzh.ch',
+  PRD_IBW: 'theses@business.uzh.ch',
+} as const
+
+type NotificationEnvironment =
+  keyof typeof ADMIN_CHANGE_NOTIFICATION_RECIPIENTS
+
+type AdminChangeNotificationInput = {
+  tab: 'Proposals' | 'Users'
+  action: string
+  actor: {
+    userId?: string
+    name?: string | null
+    email?: string | null
+    role?: string | null
+    adminRole?: string | null
+  }
+  entityId: string
+  details: string
+  oldState: unknown
+  newState: unknown
+}
+
+const formatNotificationState = (value: unknown): string => {
+  const serialized = JSON.stringify(
+    value,
+    (_key, jsonValue) =>
+      jsonValue instanceof Date ? jsonValue.toISOString() : jsonValue,
+    2
+  )
+
+  if (serialized !== undefined) {
+    return serialized
+  }
+
+  if (value === undefined) {
+    return 'undefined'
+  }
+
+  return String(value)
+}
+
+const hasNotificationStateChanged = (oldState: unknown, newState: unknown) =>
+  formatNotificationState(oldState) !== formatNotificationState(newState)
+
+const getNotificationEnvironment = (): NotificationEnvironment => {
+  const dopplerConfig = (process.env.DOPPLER_CONFIG ?? '').toLowerCase()
+
+  if (dopplerConfig === 'prd_ibw') return 'PRD_IBW'
+  if (dopplerConfig === 'prd') return 'PROD'
+  if (dopplerConfig === 'dev') return 'DEV'
+
+  if (process.env.NODE_ENV === 'production') {
+    const department = (process.env.NEXT_PUBLIC_DEPARTMENT_NAME ?? '').toUpperCase()
+    if (department === 'IBW') return 'PRD_IBW'
+    return 'PROD'
+  }
+
+  return 'DEV'
+}
+
+const escapeHtml = (value: unknown): string =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
+const buildAdminChangeNotificationHtmlContent = ({
+  environment,
+  tab,
+  action,
+  timestamp,
+  actor,
+  entityId,
+  details,
+  oldState,
+  newState,
+}: {
+  environment: NotificationEnvironment
+  tab: AdminChangeNotificationInput['tab']
+  action: string
+  timestamp: string
+  actor: AdminChangeNotificationInput['actor']
+  entityId: string
+  details: string
+  oldState: unknown
+  newState: unknown
+}) => {
+  const actorDisplayName = actor.name ?? 'Unknown'
+  const actorDisplayEmail = actor.email ?? 'Unknown'
+  const detailsContent =
+    details.trim() === '' ? 'No additional details provided.' : details
+
+  return `
+<div style="font-family: Arial, sans-serif; color: #111827; line-height: 1.5;">
+  <h2 style="margin: 0 0 12px;">Admin change notification</h2>
+
+  <table style="border-collapse: collapse; margin: 0 0 16px;">
+    <tr>
+      <td style="padding: 2px 12px 2px 0;"><strong>Environment</strong></td>
+      <td>${escapeHtml(environment)}</td>
+    </tr>
+    <tr>
+      <td style="padding: 2px 12px 2px 0;"><strong>Tab</strong></td>
+      <td>${escapeHtml(tab)}</td>
+    </tr>
+    <tr>
+      <td style="padding: 2px 12px 2px 0;"><strong>Action</strong></td>
+      <td>${escapeHtml(action)}</td>
+    </tr>
+    <tr>
+      <td style="padding: 2px 12px 2px 0;"><strong>Timestamp (UTC)</strong></td>
+      <td>${escapeHtml(timestamp)}</td>
+    </tr>
+    <tr>
+      <td style="padding: 2px 12px 2px 0;"><strong>Actor</strong></td>
+      <td>${escapeHtml(actorDisplayName)} (${escapeHtml(actorDisplayEmail)})</td>
+    </tr>
+    <tr>
+      <td style="padding: 2px 12px 2px 0;"><strong>Actor User ID</strong></td>
+      <td>${escapeHtml(actor.userId ?? 'Unknown')}</td>
+    </tr>
+    <tr>
+      <td style="padding: 2px 12px 2px 0;"><strong>Actor Role</strong></td>
+      <td>${escapeHtml(actor.role ?? 'Unknown')}</td>
+    </tr>
+    <tr>
+      <td style="padding: 2px 12px 2px 0;"><strong>Actor Admin Role</strong></td>
+      <td>${escapeHtml(actor.adminRole ?? 'Unknown')}</td>
+    </tr>
+    <tr>
+      <td style="padding: 2px 12px 2px 0;"><strong>Entity ID</strong></td>
+      <td>${escapeHtml(entityId)}</td>
+    </tr>
+  </table>
+
+  <h3 style="margin: 0 0 8px;">Details</h3>
+  <pre style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; white-space: pre-wrap; word-break: break-word; margin: 0 0 16px;">${escapeHtml(
+    detailsContent
+  )}</pre>
+
+  <h3 style="margin: 0 0 8px;">Old state</h3>
+  <pre style="background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; white-space: pre-wrap; word-break: break-word; margin: 0 0 16px;">${escapeHtml(
+    formatNotificationState(oldState)
+  )}</pre>
+
+  <h3 style="margin: 0 0 8px;">New state</h3>
+  <pre style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 12px; white-space: pre-wrap; word-break: break-word; margin: 0;">${escapeHtml(
+    formatNotificationState(newState)
+  )}</pre>
+</div>
+`.trim()
+}
+
+async function sendAdminChangeNotification({
+  tab,
+  action,
+  actor,
+  entityId,
+  details,
+  oldState,
+  newState,
+}: AdminChangeNotificationInput) {
+  const notificationUrl = process.env.EMAIL_NOTIFICATION_URL
+
+  if (!notificationUrl) {
+    console.warn(
+      'EMAIL_NOTIFICATION_URL not configured. Skipping admin change notification.'
+    )
+    return
+  }
+
+  const environment = getNotificationEnvironment()
+  const recipients = [ADMIN_CHANGE_NOTIFICATION_RECIPIENTS[environment]]
+  const timestamp = new Date().toISOString()
+  const departmentName =
+    process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME ?? 'Thesis Platform'
+  const subject = `[${environment}] ${departmentName} - Admin ${tab} change: ${action}`
+  const content = buildAdminChangeNotificationHtmlContent({
+    environment,
+    tab,
+    action,
+    timestamp,
+    actor,
+    entityId,
+    details,
+    oldState,
+    newState,
+  })
+
+  try {
+    await axios.post(
+      notificationUrl,
+      {
+        recipients,
+        subject,
+        content,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          secretkey: process.env.FLOW_SECRET as string,
+        },
+        timeout: 8000,
+      }
+    )
+  } catch (error) {
+    console.error('Error sending admin change notification:', error)
+  }
+}
+
 async function applyAdminInfoStatusAutomation(department: Department) {
   const todayStart = dayjs().startOf('day').toDate()
   const oneMonthAgo = dayjs().subtract(1, 'month').startOf('day').toDate()
@@ -2498,7 +2713,7 @@ updateProposalStatus: publicProcedure
       })
     )
     .output(z.object({ success: z.boolean() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const envDepartment = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
 
       const [proposal, supervisor, responsible] = await Promise.all([
@@ -2509,8 +2724,23 @@ updateProposalStatus: publicProcedure
           },
           select: {
             id: true,
+            title: true,
             typeKey: true,
             statusKey: true,
+            ownedByUserEmail: true,
+            supervisedBy: {
+              select: {
+                supervisorEmail: true,
+                responsibleId: true,
+                responsible: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
           },
         }),
         prisma.user.findFirst({
@@ -2521,6 +2751,7 @@ updateProposalStatus: publicProcedure
           },
           select: {
             email: true,
+            name: true,
           },
         }),
         prisma.responsible.findFirst({
@@ -2530,6 +2761,8 @@ updateProposalStatus: publicProcedure
           },
           select: {
             id: true,
+            name: true,
+            email: true,
           },
         }),
       ])
@@ -2567,6 +2800,18 @@ updateProposalStatus: publicProcedure
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Responsible person not found' })
       }
 
+      const previousSupervision = proposal.supervisedBy?.[0] ?? null
+      const oldState = {
+        proposalTitle: proposal.title,
+        statusKey: proposal.statusKey,
+        ownedByUserEmail: proposal.ownedByUserEmail,
+        supervisedBy: {
+          supervisorEmail: previousSupervision?.supervisorEmail ?? null,
+          responsibleId: previousSupervision?.responsibleId ?? null,
+          responsible: previousSupervision?.responsible ?? null,
+        },
+      }
+
       await prisma.$transaction([
         prisma.proposal.update({
           where: { id: input.proposalId },
@@ -2594,6 +2839,66 @@ updateProposalStatus: publicProcedure
           },
         }),
       ])
+
+      const updatedProposal = await prisma.proposal.findUnique({
+        where: {
+          id: input.proposalId,
+        },
+        select: {
+          id: true,
+          title: true,
+          statusKey: true,
+          ownedByUserEmail: true,
+          supervisedBy: {
+            select: {
+              supervisorEmail: true,
+              responsibleId: true,
+              responsible: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+          },
+        },
+      })
+
+      const nextSupervision = updatedProposal?.supervisedBy?.[0] ?? null
+      const newState = {
+        proposalTitle: updatedProposal?.title ?? proposal.title,
+        statusKey: updatedProposal?.statusKey ?? proposal.statusKey,
+        ownedByUserEmail:
+          updatedProposal?.ownedByUserEmail ?? proposal.ownedByUserEmail,
+        supervisedBy: {
+          supervisorEmail: nextSupervision?.supervisorEmail ?? null,
+          responsibleId: nextSupervision?.responsibleId ?? null,
+          responsible: nextSupervision?.responsible ?? null,
+        },
+      }
+
+      if (hasNotificationStateChanged(oldState, newState)) {
+        await sendAdminChangeNotification({
+          tab: 'Proposals',
+          action: 'Assign supervisor and responsible',
+          actor: {
+            userId: ctx.user.sub,
+            name: ctx.user.name,
+            email: ctx.user.email,
+            role: ctx.user.role,
+            adminRole: ctx.user.adminRole,
+          },
+          entityId: input.proposalId,
+          details: [
+            `Proposal: ${proposal.title}`,
+            `Supervisor selected: ${supervisor.name} (${supervisor.email})`,
+            `Responsible selected: ${responsible.name} (${responsible.email})`,
+          ].join('\n'),
+          oldState,
+          newState,
+        })
+      }
 
       return { success: true }
     }),
@@ -2738,6 +3043,26 @@ updateProposalStatus: publicProcedure
       try {
         const proposal = await prisma.proposal.findUnique({
           where: { id: input.proposalId },
+          select: {
+            id: true,
+            title: true,
+            typeKey: true,
+            statusKey: true,
+            ownedByUserEmail: true,
+            supervisedBy: {
+              select: {
+                supervisorEmail: true,
+                responsibleId: true,
+                responsible: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
         })
 
         if (!proposal) {
@@ -2747,12 +3072,87 @@ updateProposalStatus: publicProcedure
           })
         }
 
-        await prisma.proposal.update({
+        if (proposal.statusKey === ProposalStatus.WITHDRAWN) {
+          return {
+            success: true,
+            message: 'Proposal is already withdrawn',
+          }
+        }
+
+        const previousSupervision = proposal.supervisedBy?.[0] ?? null
+        const oldState = {
+          proposalTitle: proposal.title,
+          typeKey: proposal.typeKey,
+          statusKey: proposal.statusKey,
+          ownedByUserEmail: proposal.ownedByUserEmail,
+          supervisedBy: {
+            supervisorEmail: previousSupervision?.supervisorEmail ?? null,
+            responsibleId: previousSupervision?.responsibleId ?? null,
+            responsible: previousSupervision?.responsible ?? null,
+          },
+        }
+
+        const updatedProposal = await prisma.proposal.update({
           where: { id: input.proposalId },
           data: {
             statusKey: ProposalStatus.WITHDRAWN,
           },
+          select: {
+            id: true,
+            title: true,
+            typeKey: true,
+            statusKey: true,
+            ownedByUserEmail: true,
+            supervisedBy: {
+              select: {
+                supervisorEmail: true,
+                responsibleId: true,
+                responsible: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
         })
+
+        const nextSupervision = updatedProposal.supervisedBy?.[0] ?? null
+        const newState = {
+          proposalTitle: updatedProposal.title,
+          typeKey: updatedProposal.typeKey,
+          statusKey: updatedProposal.statusKey,
+          ownedByUserEmail: updatedProposal.ownedByUserEmail,
+          supervisedBy: {
+            supervisorEmail: nextSupervision?.supervisorEmail ?? null,
+            responsibleId: nextSupervision?.responsibleId ?? null,
+            responsible: nextSupervision?.responsible ?? null,
+          },
+        }
+
+        if (hasNotificationStateChanged(oldState, newState)) {
+          await sendAdminChangeNotification({
+            tab: 'Proposals',
+            action: 'Withdraw proposal',
+            actor: {
+              userId: ctx.user.sub,
+              name: ctx.user.name,
+              email: ctx.user.email,
+              role: ctx.user.role,
+              adminRole: ctx.user.adminRole,
+            },
+            entityId: proposal.id,
+            details: [
+              `Proposal: ${proposal.title}`,
+              `Reason: ${input.reason?.trim() || 'No reason provided'}`,
+              `Status transition: ${proposal.statusKey} -> ${updatedProposal.statusKey}`,
+            ].join('\n'),
+            oldState,
+            newState,
+          })
+        }
 
         return {
           success: true,
@@ -2810,7 +3210,14 @@ updateProposalStatus: publicProcedure
 
       const existing = await prisma.user.findUnique({
         where: { id: input.userId },
-        select: { id: true },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          adminRole: true,
+          department: true,
+        },
       })
 
       if (!existing) {
@@ -2821,10 +3228,82 @@ updateProposalStatus: publicProcedure
       if (input.role !== undefined) data.role = input.role
       if (input.adminRole !== undefined) data.adminRole = input.adminRole
 
-      await prisma.user.update({
+      const oldState = {
+        role: existing.role,
+        adminRole: existing.adminRole,
+        department: existing.department,
+      }
+
+      const isRoleUnchanged =
+        input.role === undefined || input.role === existing.role
+      const isAdminRoleUnchanged =
+        input.adminRole === undefined || input.adminRole === existing.adminRole
+
+      if (isRoleUnchanged && isAdminRoleUnchanged) {
+        return { success: true }
+      }
+
+      const updatedUser = await prisma.user.update({
         where: { id: input.userId },
         data,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          adminRole: true,
+          department: true,
+        },
       })
+
+      const newState = {
+        role: updatedUser.role,
+        adminRole: updatedUser.adminRole,
+        department: updatedUser.department,
+      }
+
+      if (hasNotificationStateChanged(oldState, newState)) {
+        const changedFields = {
+          ...(oldState.role !== newState.role
+            ? {
+                role: {
+                  old: oldState.role,
+                  new: newState.role,
+                },
+              }
+            : {}),
+          ...(oldState.adminRole !== newState.adminRole
+            ? {
+                adminRole: {
+                  old: oldState.adminRole,
+                  new: newState.adminRole,
+                },
+              }
+            : {}),
+        }
+
+        await sendAdminChangeNotification({
+          tab: 'Users',
+          action: 'Update user roles',
+          actor: {
+            userId: ctx.user.sub,
+            name: ctx.user.name,
+            email: ctx.user.email,
+            role: ctx.user.role,
+            adminRole: ctx.user.adminRole,
+          },
+          entityId: updatedUser.id,
+          details: [
+            `Target user: ${updatedUser.name} (${updatedUser.email})`,
+            `Requested role: ${input.role ?? '(unchanged)'}`,
+            `Requested adminRole: ${input.adminRole ?? '(unchanged)'}`,
+            'Changed fields:',
+            formatNotificationState(changedFields),
+          ].join('\n'),
+          oldState,
+          newState,
+        })
+      }
 
       return { success: true }
     }),
