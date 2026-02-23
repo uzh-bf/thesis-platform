@@ -981,7 +981,7 @@ export default function AdminPanel() {
 
                           <div>
                             <div className="text-xs font-medium text-gray-500 uppercase">
-                              Assign Responsible Person
+                              Assign Professor (Person Responsible)
                             </div>
                             <div className="mt-1" ref={responsibleDropdownRef}>
                               <div className="relative">
@@ -1010,7 +1010,7 @@ export default function AdminPanel() {
                                       </>
                                     ) : (
                                       <div className="truncate text-sm text-gray-500">
-                                        Select responsible person...
+                                        Select professor...
                                       </div>
                                     )}
                                   </div>
