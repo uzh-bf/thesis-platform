@@ -26,6 +26,7 @@ import { v4 as uuidv4 } from 'uuid'
 
 const ADMIN_CHANGE_NOTIFICATION_RECIPIENTS = {
   DEV: 'ibf-srv-powplatf@d.uzh.ch',
+  STG: 'ibf-srv-powplatf@d.uzh.ch',
   PROD: 'theses@df.uzh.ch',
   PRD_IBW: 'theses@business.uzh.ch',
 } as const
@@ -76,6 +77,7 @@ const getNotificationEnvironment = (): NotificationEnvironment => {
 
   if (dopplerConfig === 'prd_ibw') return 'PRD_IBW'
   if (dopplerConfig === 'prd') return 'PROD'
+  if (dopplerConfig === 'stg') return 'STG'
   if (dopplerConfig === 'dev') return 'DEV'
 
   if (process.env.NODE_ENV === 'production') {
