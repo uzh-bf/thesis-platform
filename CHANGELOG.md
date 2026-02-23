@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.98](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.97...v1.1.0-beta.98) (2026-02-23)
+
+
+### Features
+
+* implement admin change notification system for proposal and user updates ([962e6bb](https://github.com/uzh-bf/thesis-platform/commit/962e6bb61d3a7cc195e3a0bbc0acaefb357fdc50))
+
 ## [1.1.0-beta.97](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.96...v1.1.0-beta.97) (2026-02-20)
 
 
