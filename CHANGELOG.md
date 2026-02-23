@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0-beta.100](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.99...v1.1.0-beta.100) (2026-02-23)
+
+
+### Bug Fixes
+
+* update labels for responsible person to professor in admin panel ([b130e9e](https://github.com/uzh-bf/thesis-platform/commit/b130e9eba05b4f233ce369b07364562d2ee7979c))
+
 ## [1.1.0-beta.99](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.98...v1.1.0-beta.99) (2026-02-23)
 
 
