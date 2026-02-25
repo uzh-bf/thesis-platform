@@ -4,17 +4,15 @@ on:
   push:
     branches:
       - 'main'
-  workflow_dispatch:
-    inputs:
-      target_tag:
-        description: Optional tag to add without rebuilding (defaults to v<package.json version>)
-        required: false
+  release:
+    types:
+      - published
 
 env:
   REGISTRY: ghcr.io
 
 jobs:
-  build:
+  build-stg:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
@@ -44,6 +42,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ github.repository }}
           tags: |
             type=raw,value=main
+            type=raw,value=sha-${{ github.sha }}
 
       - name: Replace .env.production with .env.stage
         shell: bash
@@ -61,10 +60,10 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            NEXT_PUBLIC_APP_VERSION=${{ github.ref_name }}
-          
-  build-ibw:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+            NEXT_PUBLIC_APP_VERSION=sha-${{ github.sha }}
+
+  build-prd:
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -72,6 +71,65 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Resolve stable commit hash
+        id: stable_sha
+        shell: bash
+        run: |
+          echo "value=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@885d1462b80bc1c1c7f0b00334ad271f09369c55
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ github.event.release.tag_name }}
+            type=raw,value=sha-${{ steps.stable_sha.outputs.value }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_APP_VERSION=sha-${{ steps.stable_sha.outputs.value }}
+
+  build-prd-ibw:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Resolve stable commit hash
+        id: stable_sha
+        shell: bash
+        run: |
+          echo "value=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -92,7 +150,8 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}-ibw
           tags: |
-            type=raw,value=main
+            type=raw,value=${{ github.event.release.tag_name }}
+            type=raw,value=sha-${{ steps.stable_sha.outputs.value }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
@@ -114,63 +173,4 @@ jobs:
             NEXT_PUBLIC_DEPARTMENT_LONG_NAME=Department of Business Administration
             NEXT_PUBLIC_FAQ_URL_STUDENT=https://www.business.uzh.ch/en/teaching/theses/faqs.html
             NEXT_PUBLIC_FAQ_URL_SUPERVISOR=https://www.business.uzh.ch/de/Intranet/Lehre/businessthesesmarket.html
-            NEXT_PUBLIC_APP_VERSION=${{ github.ref_name }}
-
-  retag-main-image:
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@885d1462b80bc1c1c7f0b00334ad271f09369c55
-
-      - name: Log into registry ${{ env.REGISTRY }}
-        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Resolve target tag
-        id: resolve_tag
-        shell: bash
-        run: |
-          INPUT_TARGET_TAG="${{ github.event.inputs.target_tag }}"
-          if [ -n "$INPUT_TARGET_TAG" ]; then
-            TARGET_TAG="$INPUT_TARGET_TAG"
-          else
-            PACKAGE_VERSION="$(jq -r '.version' package.json)"
-            if [ -z "$PACKAGE_VERSION" ] || [ "$PACKAGE_VERSION" = "null" ]; then
-              echo "Could not read package.json version"
-              exit 1
-            fi
-
-            if [[ "$PACKAGE_VERSION" == v* ]]; then
-              TARGET_TAG="$PACKAGE_VERSION"
-            else
-              TARGET_TAG="v$PACKAGE_VERSION"
-            fi
-          fi
-
-          if [ "$TARGET_TAG" = "main" ]; then
-            echo "target_tag must differ from source tag main"
-            exit 1
-          fi
-
-          echo "target_tag=$TARGET_TAG" >> "$GITHUB_OUTPUT"
-          echo "Resolved target tag: $TARGET_TAG"
-
-      - name: Add tag to latest main image (no rebuild)
-        shell: bash
-        run: |
-          SOURCE_IMAGE="${{ env.REGISTRY }}/${{ github.repository }}:main"
-          TARGET_IMAGE="${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.resolve_tag.outputs.target_tag }}"
-
-          docker buildx imagetools inspect "${SOURCE_IMAGE}" >/dev/null
-          docker buildx imagetools create --tag "${TARGET_IMAGE}" "${SOURCE_IMAGE}"
-          echo "Promoted ${SOURCE_IMAGE} -> ${TARGET_IMAGE} without rebuilding"
+            NEXT_PUBLIC_APP_VERSION=sha-${{ steps.stable_sha.outputs.value }}
