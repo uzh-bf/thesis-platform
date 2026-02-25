@@ -3164,14 +3164,13 @@ updateProposalStatus: publicProcedure
       }
     }),
 
-  adminGetAllUsers: adminOnlyProcedure.query(async () => {
+  adminGetAllUsers: adminProcedure.query(async () => {
     return prisma.user.findMany({
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
-        adminRole: true,
         department: true,
         createdAt: true,
         updatedAt: true,
@@ -3180,17 +3179,12 @@ updateProposalStatus: publicProcedure
     })
   }),
 
-  adminUpdateUserRoles: adminOnlyProcedure
+  adminUpdateUserRoles: adminProcedure
     .input(
-      z
-        .object({
-          userId: z.string(),
-          role: z.enum(['UNSET', 'STUDENT', 'SUPERVISOR', 'DEVELOPER']).optional(),
-          adminRole: z.enum(['UNSET', 'COORDINATOR', 'ADMIN']).optional(),
-        })
-        .refine((data) => data.role !== undefined || data.adminRole !== undefined, {
-          message: 'At least one of role or adminRole must be provided',
-        })
+      z.object({
+        userId: z.string(),
+        role: z.enum(['UNSET', 'STUDENT', 'SUPERVISOR', 'DEVELOPER']),
+      })
     )
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
@@ -3201,7 +3195,7 @@ updateProposalStatus: publicProcedure
       if (input.userId === ctx.user.sub) {
         throw new TRPCError({
           code: 'FORBIDDEN',
-          message: 'You cannot change your own role/admin role',
+          message: 'You cannot change your own role',
         })
       }
 
@@ -3212,7 +3206,6 @@ updateProposalStatus: publicProcedure
           name: true,
           email: true,
           role: true,
-          adminRole: true,
           department: true,
         },
       })
@@ -3221,62 +3214,40 @@ updateProposalStatus: publicProcedure
         throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' })
       }
 
-      const data: any = {}
-      if (input.role !== undefined) data.role = input.role
-      if (input.adminRole !== undefined) data.adminRole = input.adminRole
-
       const oldState = {
         role: existing.role,
-        adminRole: existing.adminRole,
         department: existing.department,
       }
 
-      const isRoleUnchanged =
-        input.role === undefined || input.role === existing.role
-      const isAdminRoleUnchanged =
-        input.adminRole === undefined || input.adminRole === existing.adminRole
-
-      if (isRoleUnchanged && isAdminRoleUnchanged) {
+      if (input.role === existing.role) {
         return { success: true }
       }
 
       const updatedUser = await prisma.user.update({
         where: { id: input.userId },
-        data,
+        data: {
+          role: input.role,
+        },
         select: {
           id: true,
           name: true,
           email: true,
           role: true,
-          adminRole: true,
           department: true,
         },
       })
 
       const newState = {
         role: updatedUser.role,
-        adminRole: updatedUser.adminRole,
         department: updatedUser.department,
       }
 
       if (hasNotificationStateChanged(oldState, newState)) {
         const changedFields = {
-          ...(oldState.role !== newState.role
-            ? {
-                role: {
-                  old: oldState.role,
-                  new: newState.role,
-                },
-              }
-            : {}),
-          ...(oldState.adminRole !== newState.adminRole
-            ? {
-                adminRole: {
-                  old: oldState.adminRole,
-                  new: newState.adminRole,
-                },
-              }
-            : {}),
+          role: {
+            old: oldState.role,
+            new: newState.role,
+          },
         }
 
         await sendAdminChangeNotification({
@@ -3292,8 +3263,7 @@ updateProposalStatus: publicProcedure
           entityId: updatedUser.id,
           details: [
             `Target user: ${updatedUser.name} (${updatedUser.email})`,
-            `Requested role: ${input.role ?? '(unchanged)'}`,
-            `Requested adminRole: ${input.adminRole ?? '(unchanged)'}`,
+            `Requested role: ${input.role}`,
             'Changed fields:',
             formatNotificationState(changedFields),
           ].join('\n'),
