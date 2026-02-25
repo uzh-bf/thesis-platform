@@ -12,18 +12,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { UserRole } from 'src/lib/constants'
 import { trpc } from 'src/lib/trpc'
 
-type DraftRoles = {
-  role: RoleOption
-  adminRole: AdminRoleOption
-}
-
 const ROLE_OPTIONS = ['UNSET', UserRole.STUDENT, UserRole.SUPERVISOR, UserRole.DEVELOPER] as const
-const ADMIN_ROLE_OPTIONS = ['UNSET', 'COORDINATOR', 'ADMIN'] as const
 
 type RoleOption = (typeof ROLE_OPTIONS)[number]
-type AdminRoleOption = (typeof ADMIN_ROLE_OPTIONS)[number]
 type PageSizeOption = 20 | 50 | 100 | 'all'
-type SortColumn = 'name' | 'email' | 'role' | 'adminRole' | 'department'
+type SortColumn = 'name' | 'email' | 'role' | 'department'
 type SortDirection = 'asc' | 'desc'
 
 const PAGE_SIZE_OPTIONS: PageSizeOption[] = [20, 50, 100, 'all']
@@ -33,19 +26,12 @@ const normalizeRole = (value: unknown): RoleOption => {
   return (ROLE_OPTIONS as readonly string[]).includes(value) ? (value as RoleOption) : 'UNSET'
 }
 
-const normalizeAdminRole = (value: unknown): AdminRoleOption => {
-  if (typeof value !== 'string') return 'UNSET'
-  return (ADMIN_ROLE_OPTIONS as readonly string[]).includes(value)
-    ? (value as AdminRoleOption)
-    : 'UNSET'
-}
-
 export default function AdminUserRoles() {
   const { data: session } = useSession()
   const selfUserId = session?.user?.sub
 
   const [search, setSearch] = useState('')
-  const [draftByUserId, setDraftByUserId] = useState<Record<string, DraftRoles>>({})
+  const [draftByUserId, setDraftByUserId] = useState<Record<string, RoleOption>>({})
   const [savingUserId, setSavingUserId] = useState<string | null>(null)
   const [rowsPerPage, setRowsPerPage] = useState<PageSizeOption>(20)
   const [currentPage, setCurrentPage] = useState(1)
@@ -57,7 +43,7 @@ export default function AdminUserRoles() {
     isLoading,
     refetch,
   } = trpc.adminGetAllUsers.useQuery(undefined, {
-    enabled: session?.user?.adminRole === 'ADMIN',
+    enabled: session?.user?.isAdmin === true,
   })
 
   const updateUserRoles = trpc.adminUpdateUserRoles.useMutation({
@@ -103,19 +89,9 @@ export default function AdminUserRoles() {
           })
           break
         case 'role': {
-          const aRole = draftByUserId[a.id]?.role ?? normalizeRole(a.role)
-          const bRole = draftByUserId[b.id]?.role ?? normalizeRole(b.role)
+          const aRole = draftByUserId[a.id] ?? normalizeRole(a.role)
+          const bRole = draftByUserId[b.id] ?? normalizeRole(b.role)
           compareValue = aRole.localeCompare(bRole, undefined, {
-            sensitivity: 'base',
-          })
-          break
-        }
-        case 'adminRole': {
-          const aAdminRole =
-            draftByUserId[a.id]?.adminRole ?? normalizeAdminRole(a.adminRole)
-          const bAdminRole =
-            draftByUserId[b.id]?.adminRole ?? normalizeAdminRole(b.adminRole)
-          compareValue = aAdminRole.localeCompare(bAdminRole, undefined, {
             sensitivity: 'base',
           })
           break
@@ -162,25 +138,14 @@ export default function AdminUserRoles() {
       ? sortedUsers.length
       : Math.min(effectiveCurrentPage * rowsPerPage, sortedUsers.length)
 
-  const getDraft = (user: (typeof filteredUsers)[number]) => {
-    const role = draftByUserId[user.id]?.role ?? normalizeRole(user.role)
-    const adminRole = draftByUserId[user.id]?.adminRole ?? normalizeAdminRole(user.adminRole)
-    return { role, adminRole }
-  }
+  const getDraftRole = (user: (typeof filteredUsers)[number]) =>
+    draftByUserId[user.id] ?? normalizeRole(user.role)
 
-  const setDraftField = <K extends keyof DraftRoles>(
-    userId: string,
-    field: K,
-    value: DraftRoles[K]
-  ) => {
+  const setDraftRole = (userId: string, value: RoleOption) => {
     setDraftByUserId((prev) => {
-      const existing = prev[userId] ?? { role: 'UNSET', adminRole: 'UNSET' }
       return {
         ...prev,
-        [userId]: {
-          ...existing,
-          [field]: value,
-        },
+        [userId]: value,
       }
     })
   }
@@ -194,17 +159,15 @@ export default function AdminUserRoles() {
 
   const handleSave = (user: (typeof filteredUsers)[number]) => {
     if (selfUserId && user.id === selfUserId) return
-    const { role, adminRole } = getDraft(user)
+    const role = getDraftRole(user)
     const originalRole = normalizeRole(user.role)
-    const originalAdminRole = normalizeAdminRole(user.adminRole)
 
-    if (role === originalRole && adminRole === originalAdminRole) return
+    if (role === originalRole) return
 
     setSavingUserId(user.id)
     updateUserRoles.mutate({
       userId: user.id,
       role,
-      adminRole,
     })
   }
 
@@ -230,8 +193,7 @@ export default function AdminUserRoles() {
         <div>
           <h2 className="text-lg font-semibold text-gray-900">User Roles</h2>
           <p className="mt-1 text-sm text-gray-600">
-            Modify <span className="font-medium">Role</span> and{' '}
-            <span className="font-medium">AdminRole</span> for users (your own row is
+            Modify <span className="font-medium">Role</span> for users (your own row is
             read-only).
           </p>
         </div>
@@ -267,7 +229,7 @@ export default function AdminUserRoles() {
                   <tr>
                     <th
                       onClick={() => handleSort('name')}
-                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[17%] cursor-pointer hover:bg-gray-100"
+                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%] cursor-pointer hover:bg-gray-100"
                     >
                       <div className="flex items-center gap-2">
                         Name
@@ -276,7 +238,7 @@ export default function AdminUserRoles() {
                     </th>
                     <th
                       onClick={() => handleSort('email')}
-                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[24%] cursor-pointer hover:bg-gray-100"
+                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[30%] cursor-pointer hover:bg-gray-100"
                     >
                       <div className="flex items-center gap-2">
                         Email
@@ -285,7 +247,7 @@ export default function AdminUserRoles() {
                     </th>
                     <th
                       onClick={() => handleSort('role')}
-                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[16%] cursor-pointer hover:bg-gray-100"
+                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[18%] cursor-pointer hover:bg-gray-100"
                     >
                       <div className="flex items-center gap-2">
                         Role
@@ -293,20 +255,8 @@ export default function AdminUserRoles() {
                       </div>
                     </th>
                     <th
-                      onClick={() => handleSort('adminRole')}
-                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[16%] cursor-pointer hover:bg-gray-100"
-                    >
-                      <div className="flex items-center gap-2">
-                        AdminRole
-                        <FontAwesomeIcon
-                          icon={getSortIcon('adminRole')}
-                          className="text-gray-400"
-                        />
-                      </div>
-                    </th>
-                    <th
                       onClick={() => handleSort('department')}
-                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%] cursor-pointer hover:bg-gray-100"
+                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%] cursor-pointer hover:bg-gray-100"
                     >
                       <div className="flex items-center gap-2">
                         Department
@@ -324,10 +274,8 @@ export default function AdminUserRoles() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {paginatedUsers.map((user) => {
                     const isSelf = !!selfUserId && user.id === selfUserId
-                    const { role, adminRole } = getDraft(user)
-                    const dirty =
-                      (user.role || 'UNSET') !== role ||
-                      (user.adminRole || 'UNSET') !== adminRole
+                    const role = getDraftRole(user)
+                    const dirty = (user.role || 'UNSET') !== role
 
                     return (
                       <tr key={user.id} className={isSelf ? 'bg-gray-50' : 'hover:bg-gray-50'}>
@@ -342,32 +290,10 @@ export default function AdminUserRoles() {
                           <select
                             value={role}
                             disabled={isSelf || updateUserRoles.isPending}
-                            onChange={(e) =>
-                              setDraftField(user.id, 'role', e.target.value as RoleOption)
-                            }
+                            onChange={(e) => setDraftRole(user.id, e.target.value as RoleOption)}
                             className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md disabled:bg-gray-100"
                           >
                             {ROLE_OPTIONS.map((opt) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-2 py-1">
-                          <select
-                            value={adminRole}
-                            disabled={isSelf || updateUserRoles.isPending}
-                            onChange={(e) =>
-                              setDraftField(
-                                user.id,
-                                'adminRole',
-                                e.target.value as AdminRoleOption
-                              )
-                            }
-                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md disabled:bg-gray-100"
-                          >
-                            {ADMIN_ROLE_OPTIONS.map((opt) => (
                               <option key={opt} value={opt}>
                                 {opt}
                               </option>

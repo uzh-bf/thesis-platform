@@ -35,6 +35,7 @@ export default function AdminPanel() {
   const { data: session, status } = useSession()
   const { isAdmin } = useUserRole()
   const isAdminOnly = session?.user?.adminRole === 'ADMIN'
+  const canAccessUsersTab = session?.user?.isAdmin === true
   const [activeTab, setActiveTab] = useState('proposals')
   const [search, setSearch] = useState('')
   const [sortColumn, setSortColumn] = useState<SortColumn>('created')
@@ -117,14 +118,14 @@ export default function AdminPanel() {
     if (router.query.tab === 'admininfo') {
       setActiveTab('admininfo')
     }
-    if (router.query.tab === 'users' && isAdminOnly) {
+    if (router.query.tab === 'users' && canAccessUsersTab) {
       setActiveTab('users')
     }
     if (router.query.tab === 'stats' && isAdminOnly) setActiveTab('stats')
-  }, [router.isReady, router.query.tab, isAdminOnly])
+  }, [router.isReady, router.query.tab, canAccessUsersTab, isAdminOnly])
 
   useEffect(() => {
-    if (!isAdminOnly && activeTab !== 'admininfo') {
+    if (!isAdminOnly && activeTab !== 'admininfo' && activeTab !== 'users') {
       setActiveTab('admininfo')
     }
   }, [isAdminOnly, activeTab])
@@ -208,6 +209,11 @@ export default function AdminPanel() {
           id: 'admin-tabs-admininfo',
           value: 'admininfo',
           label: 'Admin Info',
+        },
+        {
+          id: 'admin-tabs-users',
+          value: 'users',
+          label: 'Users',
         },
       ]
 
@@ -1189,7 +1195,7 @@ export default function AdminPanel() {
             <AdminInfoOverview />
           </TabContent>
 
-          {isAdminOnly && (
+          {canAccessUsersTab && (
             <TabContent value="users" className={{ root: 'pt-3' }}>
               <AdminUserRoles />
             </TabContent>
