@@ -12,7 +12,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { UserRole } from 'src/lib/constants'
 import { trpc } from 'src/lib/trpc'
 
-const ROLE_OPTIONS = ['UNSET', UserRole.STUDENT, UserRole.SUPERVISOR, UserRole.DEVELOPER] as const
+const ROLE_OPTIONS = ['UNSET', UserRole.SUPERVISOR] as const
 
 type RoleOption = (typeof ROLE_OPTIONS)[number]
 type PageSizeOption = 20 | 50 | 100 | 'all'
@@ -160,7 +160,7 @@ export default function AdminUserRoles() {
   const handleSave = (user: (typeof filteredUsers)[number]) => {
     if (selfUserId && user.id === selfUserId) return
     const role = getDraftRole(user)
-    const originalRole = normalizeRole(user.role)
+    const originalRole = typeof user.role === 'string' ? user.role : 'UNSET'
 
     if (role === originalRole) return
 
@@ -275,7 +275,7 @@ export default function AdminUserRoles() {
                   {paginatedUsers.map((user) => {
                     const isSelf = !!selfUserId && user.id === selfUserId
                     const role = getDraftRole(user)
-                    const dirty = (user.role || 'UNSET') !== role
+                    const dirty = (typeof user.role === 'string' ? user.role : 'UNSET') !== role
 
                     return (
                       <tr key={user.id} className={isSelf ? 'bg-gray-50' : 'hover:bg-gray-50'}>

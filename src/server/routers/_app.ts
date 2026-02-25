@@ -3183,7 +3183,7 @@ updateProposalStatus: publicProcedure
     .input(
       z.object({
         userId: z.string(),
-        role: z.enum(['UNSET', 'STUDENT', 'SUPERVISOR', 'DEVELOPER']),
+        role: z.enum(['UNSET', 'SUPERVISOR']),
       })
     )
     .output(z.object({ success: z.boolean() }))
