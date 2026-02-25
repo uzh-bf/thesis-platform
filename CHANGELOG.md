@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.3](https://github.com/uzh-bf/thesis-platform/compare/v1.1.2...v1.1.3) (2026-02-25)
+
+
+### Build and CI
+
+* harden docker release triggers for tags ([7735095](https://github.com/uzh-bf/thesis-platform/commit/77350956c9af421fcf0d6739089a030d9f89e447))
+
 ### [1.1.2](https://github.com/uzh-bf/thesis-platform/compare/v1.1.1...v1.1.2) (2026-02-23)
 
 ### [1.1.1](https://github.com/uzh-bf/thesis-platform/compare/v1.1.1-beta.0...v1.1.1) (2026-02-23)
