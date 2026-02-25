@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.2](https://github.com/uzh-bf/thesis-platform/compare/v1.1.1...v1.1.2) (2026-02-23)
+
+### [1.1.1](https://github.com/uzh-bf/thesis-platform/compare/v1.1.1-beta.0...v1.1.1) (2026-02-23)
+
+### [1.1.1-beta.0](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0...v1.1.1-beta.0) (2026-02-23)
+
+## [1.1.0](https://github.com/uzh-bf/thesis-platform/compare/v1.0.0...v1.1.0) (2026-02-23)
+
+
+### Bug Fixes
+
+* allow saving latest submission date before submission date ([8c20756](https://github.com/uzh-bf/thesis-platform/commit/8c207562759245faba5c43c924682ba3f0939781))
+
 ## [1.1.0-beta.100](https://github.com/uzh-bf/thesis-platform/compare/v1.1.0-beta.99...v1.1.0-beta.100) (2026-02-23)
 
 
