@@ -42,6 +42,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ github.repository }}
           tags: |
             type=raw,value=main
+            type=raw,value=latest
             type=raw,value=latest-${{ github.sha }}
 
       - name: Replace .env.production with .env.stage
@@ -100,6 +101,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ github.repository }}
           tags: |
             type=raw,value=${{ github.event.release.tag_name }}
+            type=raw,value=stable
             type=raw,value=stable-${{ steps.stable_sha.outputs.value }}
 
       - name: Build and push Docker image
@@ -151,6 +153,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ github.repository }}-ibw
           tags: |
             type=raw,value=${{ github.event.release.tag_name }}
+            type=raw,value=stable
             type=raw,value=stable-${{ steps.stable_sha.outputs.value }}
 
       - name: Build and push Docker image
