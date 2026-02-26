@@ -21,7 +21,4 @@ TAG="v$VERSION"
 echo "🚀 Pushing commit and tag ($TAG) to origin/main..."
 git push --follow-tags origin main
 
-echo "📢 Creating GitHub Release $TAG..."
-gh release create "$TAG" --target main --generate-notes --title "$TAG"
-
-echo "✅ Release $TAG published. build-prd and build-prd-ibw will start shortly."
+echo "✅ Release $TAG pushed. build-prd and build-prd-ibw will start and create the GitHub Release automatically."

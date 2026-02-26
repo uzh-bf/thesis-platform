@@ -1,30 +1,33 @@
 name: Build production Docker images
 
 on:
-  release:
-    types:
-      - published
+  push:
+    branches:
+      - 'main'
 
 env:
   REGISTRY: ghcr.io
 
 jobs:
   build-prd:
+    if: startsWith(github.event.head_commit.message, 'chore(release)')
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
         with:
-          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
 
-      - name: Resolve stable commit hash
-        id: stable_sha
+      - name: Resolve release tag and commit hash
+        id: release
         shell: bash
         run: |
-          echo "value=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          TAG=$(git tag --points-at HEAD | grep '^v' | head -1)
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7
@@ -45,9 +48,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}
           tags: |
-            type=raw,value=${{ github.event.release.tag_name }}
+            type=raw,value=${{ steps.release.outputs.tag }}
             type=raw,value=stable
-            type=raw,value=stable-${{ steps.stable_sha.outputs.value }}
+            type=raw,value=stable-${{ steps.release.outputs.sha }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6
@@ -58,9 +61,19 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            NEXT_PUBLIC_APP_VERSION=stable-${{ steps.stable_sha.outputs.value }}
+            NEXT_PUBLIC_APP_VERSION=stable-${{ steps.release.outputs.sha }}
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.release.outputs.tag }}" \
+            --target main \
+            --generate-notes \
+            --title "${{ steps.release.outputs.tag }}"
 
   build-prd-ibw:
+    if: startsWith(github.event.head_commit.message, 'chore(release)')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -69,13 +82,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
         with:
-          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
 
-      - name: Resolve stable commit hash
-        id: stable_sha
+      - name: Resolve release tag and commit hash
+        id: release
         shell: bash
         run: |
-          echo "value=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          TAG=$(git tag --points-at HEAD | grep '^v' | head -1)
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7
@@ -96,9 +111,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}-ibw
           tags: |
-            type=raw,value=${{ github.event.release.tag_name }}
+            type=raw,value=${{ steps.release.outputs.tag }}
             type=raw,value=stable
-            type=raw,value=stable-${{ steps.stable_sha.outputs.value }}
+            type=raw,value=stable-${{ steps.release.outputs.sha }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6
@@ -120,4 +135,4 @@ jobs:
             NEXT_PUBLIC_DEPARTMENT_LONG_NAME=Department of Business Administration
             NEXT_PUBLIC_FAQ_URL_STUDENT=https://www.business.uzh.ch/en/teaching/theses/faqs.html
             NEXT_PUBLIC_FAQ_URL_SUPERVISOR=https://www.business.uzh.ch/de/Intranet/Lehre/businessthesesmarket.html
-            NEXT_PUBLIC_APP_VERSION=stable-${{ steps.stable_sha.outputs.value }}
+            NEXT_PUBLIC_APP_VERSION=stable-${{ steps.release.outputs.sha }}

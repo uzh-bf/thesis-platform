@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.6](https://github.com/uzh-bf/thesis-platform/compare/v1.1.5...v1.1.6) (2026-02-26)
+
+
+### Build and CI
+
+* skip staging build on release commits ([c417ffc](https://github.com/uzh-bf/thesis-platform/commit/c417ffcad59fad5f2836ab58a598134451604372))
+* trigger prd builds on release commit push and auto-create GitHub Release ([32dffb4](https://github.com/uzh-bf/thesis-platform/commit/32dffb457f8ca9fc8df64461375014fab57b68a1))
+
+### [1.1.5](https://github.com/uzh-bf/thesis-platform/compare/v1.1.4...v1.1.5) (2026-02-26)
+
+
+### Build and CI
+
+* split Docker workflow into separate stg and prd files ([#78](https://github.com/uzh-bf/thesis-platform/issues/78)) ([0f208c7](https://github.com/uzh-bf/thesis-platform/commit/0f208c77814a86b5045241ab1c210a1538db15bc))
+
+### [1.1.4](https://github.com/uzh-bf/thesis-platform/compare/v1.1.3...v1.1.4) (2026-02-26)
+
+
+### Build and CI
+
+* update Docker actions to specific versions for consistency ([cf0cb6e](https://github.com/uzh-bf/thesis-platform/commit/cf0cb6e243597d948bd606fdde7b20efe818d26d))
+* update Docker workflow to streamline image builds and tagging ([ef5ea6a](https://github.com/uzh-bf/thesis-platform/commit/ef5ea6ace7c09da841f0f69ae8aea09be721010c))
+
+
+### Refactors
+
+* update role options to remove STUDENT and DEVELOPER from AdminUserRoles ([990c5dd](https://github.com/uzh-bf/thesis-platform/commit/990c5ddd4d253bf2a6c9363431aa4946e9b58d81))
+
 ### [1.1.3](https://github.com/uzh-bf/thesis-platform/compare/v1.1.2...v1.1.3) (2026-02-25)
 
 
