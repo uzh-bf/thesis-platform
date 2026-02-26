@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.5](https://github.com/uzh-bf/thesis-platform/compare/v1.1.4...v1.1.5) (2026-02-26)
+
+
+### Build and CI
+
+* split Docker workflow into separate stg and prd files ([#78](https://github.com/uzh-bf/thesis-platform/issues/78)) ([0f208c7](https://github.com/uzh-bf/thesis-platform/commit/0f208c77814a86b5045241ab1c210a1538db15bc))
+
 ### [1.1.4](https://github.com/uzh-bf/thesis-platform/compare/v1.1.3...v1.1.4) (2026-02-26)
 
 
