@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.4](https://github.com/uzh-bf/thesis-platform/compare/v1.1.3...v1.1.4) (2026-02-26)
+
+
+### Build and CI
+
+* update Docker actions to specific versions for consistency ([cf0cb6e](https://github.com/uzh-bf/thesis-platform/commit/cf0cb6e243597d948bd606fdde7b20efe818d26d))
+* update Docker workflow to streamline image builds and tagging ([ef5ea6a](https://github.com/uzh-bf/thesis-platform/commit/ef5ea6ace7c09da841f0f69ae8aea09be721010c))
+
+
+### Refactors
+
+* update role options to remove STUDENT and DEVELOPER from AdminUserRoles ([990c5dd](https://github.com/uzh-bf/thesis-platform/commit/990c5ddd4d253bf2a6c9363431aa4946e9b58d81))
+
 ### [1.1.3](https://github.com/uzh-bf/thesis-platform/compare/v1.1.2...v1.1.3) (2026-02-25)
 
 
