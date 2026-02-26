@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.8](https://github.com/uzh-bf/thesis-platform/compare/v1.1.7...v1.1.8) (2026-02-26)
+
+
+### Bug Fixes
+
+* Correct indentation for annotations in deployment template ([e7ba3f7](https://github.com/uzh-bf/thesis-platform/commit/e7ba3f73a090d5392b9c569b4ab1123f58b5ecbf))
+
 ### [1.1.7](https://github.com/uzh-bf/thesis-platform/compare/v1.1.6...v1.1.7) (2026-02-26)
 
 
