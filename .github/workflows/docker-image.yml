@@ -20,10 +20,10 @@ jobs:
       packages: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@885d1462b80bc1c1c7f0b00334ad271f09369c55
@@ -37,12 +37,13 @@ jobs:
 
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@818d4b7b91585d195f67373fd9cb0332e31a7175
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}
           tags: |
             type=raw,value=main
-            type=raw,value=sha-${{ github.sha }}
+            type=raw,value=latest
+            type=raw,value=latest-${{ github.sha }}
 
       - name: Replace .env.production with .env.stage
         shell: bash
@@ -52,7 +53,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6
         with:
           context: .
           file: Dockerfile
@@ -60,7 +61,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            NEXT_PUBLIC_APP_VERSION=sha-${{ github.sha }}
+            NEXT_PUBLIC_APP_VERSION=latest-${{ github.sha }}
 
   build-prd:
     if: github.event_name == 'release'
@@ -70,7 +71,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
         with:
           ref: ${{ github.event.release.tag_name }}
 
@@ -81,7 +82,7 @@ jobs:
           echo "value=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@885d1462b80bc1c1c7f0b00334ad271f09369c55
@@ -95,15 +96,16 @@ jobs:
 
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@818d4b7b91585d195f67373fd9cb0332e31a7175
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}
           tags: |
             type=raw,value=${{ github.event.release.tag_name }}
-            type=raw,value=sha-${{ steps.stable_sha.outputs.value }}
+            type=raw,value=stable
+            type=raw,value=stable-${{ steps.stable_sha.outputs.value }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6
         with:
           context: .
           file: Dockerfile
@@ -111,7 +113,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            NEXT_PUBLIC_APP_VERSION=sha-${{ steps.stable_sha.outputs.value }}
+            NEXT_PUBLIC_APP_VERSION=stable-${{ steps.stable_sha.outputs.value }}
 
   build-prd-ibw:
     if: github.event_name == 'release'
@@ -121,7 +123,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
         with:
           ref: ${{ github.event.release.tag_name }}
 
@@ -132,7 +134,7 @@ jobs:
           echo "value=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@885d1462b80bc1c1c7f0b00334ad271f09369c55
@@ -146,15 +148,16 @@ jobs:
 
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@818d4b7b91585d195f67373fd9cb0332e31a7175
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}-ibw
           tags: |
             type=raw,value=${{ github.event.release.tag_name }}
-            type=raw,value=sha-${{ steps.stable_sha.outputs.value }}
+            type=raw,value=stable
+            type=raw,value=stable-${{ steps.stable_sha.outputs.value }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6
         with:
           context: .
           file: Dockerfile
@@ -173,4 +176,4 @@ jobs:
             NEXT_PUBLIC_DEPARTMENT_LONG_NAME=Department of Business Administration
             NEXT_PUBLIC_FAQ_URL_STUDENT=https://www.business.uzh.ch/en/teaching/theses/faqs.html
             NEXT_PUBLIC_FAQ_URL_SUPERVISOR=https://www.business.uzh.ch/de/Intranet/Lehre/businessthesesmarket.html
-            NEXT_PUBLIC_APP_VERSION=sha-${{ steps.stable_sha.outputs.value }}
+            NEXT_PUBLIC_APP_VERSION=stable-${{ steps.stable_sha.outputs.value }}
