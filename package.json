@@ -47,7 +47,8 @@
     "release:rc": "standard-version --prerelease rc --no-verify",
     "release:rc:dry": "standard-version --dry-run --prerelease rc",
     "release": "standard-version",
-    "release:dry": "standard-version --dry-run"
+    "release:dry": "standard-version --dry-run",
+    "release:publish": "bash scripts/release-publish.sh"
   },
   "dependencies": {
     "@azure/identity": "3.3.0",
