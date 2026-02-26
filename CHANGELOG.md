@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.6](https://github.com/uzh-bf/thesis-platform/compare/v1.1.5...v1.1.6) (2026-02-26)
+
+
+### Build and CI
+
+* skip staging build on release commits ([c417ffc](https://github.com/uzh-bf/thesis-platform/commit/c417ffcad59fad5f2836ab58a598134451604372))
+* trigger prd builds on release commit push and auto-create GitHub Release ([32dffb4](https://github.com/uzh-bf/thesis-platform/commit/32dffb457f8ca9fc8df64461375014fab57b68a1))
+
 ### [1.1.5](https://github.com/uzh-bf/thesis-platform/compare/v1.1.4...v1.1.5) (2026-02-26)
 
 
