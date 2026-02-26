@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.7](https://github.com/uzh-bf/thesis-platform/compare/v1.1.6...v1.1.7) (2026-02-26)
+
+
+### Bug Fixes
+
+* Improved role validation and enhanced editing experience in the admin user management interface ([#79](https://github.com/uzh-bf/thesis-platform/issues/79)) ([2d8581e](https://github.com/uzh-bf/thesis-platform/commit/2d8581ea6e859114dc99803affe3c538e30d326a))
+
 ### [1.1.6](https://github.com/uzh-bf/thesis-platform/compare/v1.1.5...v1.1.6) (2026-02-26)
 
 
