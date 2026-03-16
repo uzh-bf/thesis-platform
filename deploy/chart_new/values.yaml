@@ -1,0 +1,34 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/uzh-bf/thesis-platform
+  tag: dev
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: k8s-crt-mgr-iss-stg-apps-default
+  hosts:
+    - host: theses.stg.df-app.ch
+      paths:
+        - /
+  tls:
+    - secretName: thesis-platform-tls
+      hosts:
+        - theses.stg.df-app.ch
+
+resources:
+  requests:
+    memory: 128Mi
+    cpu: 100m
+  limits:
+    memory: 256Mi
+    cpu: 200m
+
+annotations: {}
+podAnnotations: {}
