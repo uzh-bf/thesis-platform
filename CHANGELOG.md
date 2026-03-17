@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/uzh-bf/thesis-platform/compare/v1.1.8...v1.2.0) (2026-03-17)
+
+
+### Features
+
+* add new button for department navigation in Header component ([#82](https://github.com/uzh-bf/thesis-platform/issues/82)) ([ef6cddd](https://github.com/uzh-bf/thesis-platform/commit/ef6cddda6b37a1502c2dccb171626b52f90713e2))
+
 ### [1.1.8](https://github.com/uzh-bf/thesis-platform/compare/v1.1.7...v1.1.8) (2026-02-26)
 
 
