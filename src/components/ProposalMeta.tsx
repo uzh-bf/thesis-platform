@@ -1,9 +1,7 @@
 import { IconDefinition, faFilePdf } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { format, parseISO } from 'date-fns'
-import { useSession } from 'next-auth/react'
 import Link from 'next/link'
-import { useMemo } from 'react'
 import { ProposalDetails } from 'src/types/app'
 
 interface ProposalMetaProps {
@@ -15,17 +13,7 @@ const FileTypeIconMap: Record<string, IconDefinition> = {
 }
 
 export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
-  const { data: session } = useSession()
-
-  const supervisedBy = useMemo(() => {
-    if (session?.user?.email && proposalDetails?.supervisedBy?.length > 0) {
-      return proposalDetails.supervisedBy[0].supervisor.name
-    } else if (proposalDetails?.supervisedBy.name) {
-      return proposalDetails.supervisedBy.name
-    } else {
-      return 'Unassigned'
-    }
-  }, [session, proposalDetails])
+  const supervisedBy = proposalDetails.supervisedBy[0]?.supervisor?.name ?? 'Unassigned'
 
   if (!proposalDetails) return null
 

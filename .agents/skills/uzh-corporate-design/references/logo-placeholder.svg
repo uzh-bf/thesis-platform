@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 80" fill="none">
+  <!-- UZH Logo Placeholder for Prototyping -->
+  <!-- Replace with official logo from: https://www.cd.uzh.ch/de/elements.html -->
+  
+  <!-- Seal (circle placeholder) -->
+  <circle cx="40" cy="40" r="36" stroke="#000" stroke-width="2" fill="none"/>
+  <circle cx="40" cy="40" r="30" stroke="#000" stroke-width="1" fill="none"/>
+  <text x="40" y="36" text-anchor="middle" font-family="serif" font-size="8" fill="#000">UNIVERSITAS</text>
+  <text x="40" y="46" text-anchor="middle" font-family="serif" font-size="8" fill="#000">TURICENSIS</text>
+  
+  <!-- Separator line -->
+  <line x1="88" y1="12" x2="88" y2="68" stroke="#000" stroke-width="0.5"/>
+  
+  <!-- "Universität Zürich" text -->
+  <text x="100" y="38" font-family="'Source Sans 3', 'Source Sans Pro', sans-serif" font-size="18" font-weight="400" fill="#000">Universität Zürich</text>
+  
+  <!-- "UZH" acronym -->
+  <text x="100" y="62" font-family="'Source Sans 3', 'Source Sans Pro', sans-serif" font-size="22" font-weight="700" letter-spacing="2" fill="#000">UZH</text>
+</svg>

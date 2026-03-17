@@ -1,7 +1,5 @@
 import { H2 } from '@uzh-bf/design-system'
-import * as R from 'ramda'
 import { RefObject, useMemo } from 'react'
-import useUserRole from 'src/lib/hooks/useUserRole'
 import { ProposalDetails } from 'src/types/app'
 import ProposalCard from './ProposalCard'
 
@@ -9,7 +7,7 @@ interface SupervisorProposalsProps {
   data: ProposalDetails[]
   selectedProposal: string | null
   setSelectedProposal: (proposalId: string | null) => void
-  buttonRef: RefObject<HTMLButtonElement>
+  buttonRef: RefObject<HTMLDivElement>
 }
 
 export default function SupervisorProposals({
@@ -18,16 +16,18 @@ export default function SupervisorProposals({
   setSelectedProposal,
   buttonRef,
 }: SupervisorProposalsProps) {
-  const { isSupervisor, isDeveloper } = useUserRole()
-
   const sortedSupervisorProposals = useMemo(() => {
-    if (!data) return []
+    return [...data.filter((proposal) => proposal.typeKey === 'SUPERVISOR')].sort(
+      (a, b) => {
+        const createdAtCompare = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
 
-    return R.sortWith([
-      R.ascend(R.prop('createdAt')),  // Sort by creation date (oldest first)
-      R.ascend(R.prop('title'))       // Then sort by title alphabetically
-    ],
-    data.filter((proposal: ProposalDetails) => proposal.typeKey === 'SUPERVISOR'))
+        if (createdAtCompare !== 0) {
+          return createdAtCompare
+        }
+
+        return a.title.localeCompare(b.title)
+      }
+    )
   }, [data])
 
   return (

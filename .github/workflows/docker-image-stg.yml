@@ -10,7 +10,7 @@ env:
 
 jobs:
   build-stg:
-    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release)') }}
+    if: ${{ github.ref == 'refs/heads/main' && !startsWith(github.event.head_commit.message, 'chore(release)') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -58,3 +58,53 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             NEXT_PUBLIC_APP_VERSION=latest-${{ github.sha }}
+
+  build-stg-arm:
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@885d1462b80bc1c1c7f0b00334ad271f09369c55
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@818d4b7b91585d195f67373fd9cb0332e31a7175
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}
+          tags: |
+            type=raw,value=dev-arm
+            type=raw,value=latest-arm-${{ github.sha }}
+
+      - name: Replace .env.production with .env.stg
+        shell: bash
+        run: |
+          rm .env.production
+          mv .env.stg .env.production
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_APP_VERSION=latest-arm-${{ github.sha }}

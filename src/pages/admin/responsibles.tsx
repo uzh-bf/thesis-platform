@@ -305,7 +305,8 @@ export default function AdminResponsiblesPage() {
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
-                            {responsible.supervisions.map((supervision) => (
+                            {responsible.supervisions.map(
+                              (supervision: (typeof responsible.supervisions)[number]) => (
                               <tr key={supervision.id} className="hover:bg-gray-50">
                                 <td className="px-4 py-2">
                                   <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
@@ -420,7 +421,8 @@ export default function AdminResponsiblesPage() {
                                   </Button>
                                 </td>
                               </tr>
-                            ))}
+                              )
+                            )}
                           </tbody>
                         </table>
                       </div>

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "uzh-corporate-design": {
+      "source": "uzh-bf/agent-skills",
+      "sourceType": "github",
+      "computedHash": "5d0e1aac286b904b69d6816d6e6e8547af95f9dfc62ed032c63d88607929dd8c"
+    }
+  }
+}

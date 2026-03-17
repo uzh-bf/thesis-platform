@@ -1,0 +1,12 @@
+image:
+  tag: 'latest'
+
+ingress:
+  hosts:
+    - host: theses.stg.df-app.ch
+      paths:
+        - /
+  tls:
+    - secretName: thesis-platform-stage-tls
+      hosts:
+        - theses.stg.df-app.ch
