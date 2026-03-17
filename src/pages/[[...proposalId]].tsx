@@ -14,10 +14,11 @@ import { ProposalStatusFilter } from 'src/types/app'
 
 export default function Index() {
   const router = useRouter()
-  const buttonRef = useRef<null | HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLDivElement>(null)
 
   const setSelectedProposal = useCallback(
-    (proposalId: string) => {
+    (proposalId: string | null) => {
+      if (!proposalId) return
       router.push(`/${proposalId}`)
     },
     [router]
@@ -42,15 +43,19 @@ export default function Index() {
   }, [setSelectedProposal, data, router.query.proposalId])
 
   const { proposalId, proposalDetails } = useMemo(() => {
-    if (typeof router.query?.proposalId?.[0] !== 'undefined') {
+    const currentProposalId = router.query.proposalId?.[0]
+
+    if (typeof currentProposalId === 'string') {
       return {
-        proposalId: router.query.proposalId[0],
-        proposalDetails: data
-          ? data.find((p) => p.id === router.query.proposalId[0])
-          : null,
+        proposalId: currentProposalId,
+        proposalDetails: data ? data.find((proposal) => proposal.id === currentProposalId) ?? null : null,
       }
     }
-    return {}
+
+    return {
+      proposalId: null,
+      proposalDetails: null,
+    }
   }, [data, router.query.proposalId])
 
   useEffect(() => {
@@ -74,7 +79,7 @@ export default function Index() {
               <div className="bg-white rounded-lg shadow">
                 <div className="p-6">
                   <StudentProposals
-                    data={data}
+                    data={data ?? []}
                     selectedProposal={proposalId}
                     setSelectedProposal={setSelectedProposal}
                     buttonRef={buttonRef}
@@ -88,7 +93,7 @@ export default function Index() {
             <div className="bg-white rounded-lg shadow">
               <div className="p-6">
                 <SupervisorProposals
-                  data={data}
+                  data={data ?? []}
                   selectedProposal={proposalId}
                   setSelectedProposal={setSelectedProposal}
                   buttonRef={buttonRef}

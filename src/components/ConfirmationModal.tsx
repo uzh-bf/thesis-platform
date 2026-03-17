@@ -5,7 +5,7 @@ import {
 import { faSpinner } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button, Modal, Prose } from '@uzh-bf/design-system'
-import { useState } from 'react'
+import { Dispatch, SetStateAction, useState } from 'react'
 import { ProposalStatusFilter } from 'src/types/app'
 
 export default function ConfirmationModal({
@@ -21,7 +21,7 @@ export default function ConfirmationModal({
   declineIndividualApplication: any
   proposalDetails: any
   refetch: () => void
-  setFilters: (filters: { status: string }) => void
+  setFilters: Dispatch<SetStateAction<{ status: ProposalStatusFilter }>>
 }) {
   const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false)
   const [isDeclineModalOpen, setIsDeclineModalOpen] = useState(false)

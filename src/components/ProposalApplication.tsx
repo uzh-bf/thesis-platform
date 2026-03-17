@@ -1,10 +1,10 @@
 import { H2, Table } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
 import { useSession } from 'next-auth/react'
-import { useEffect, useRef, useState } from 'react'
+import { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from 'react'
 import useUserRole from 'src/lib/hooks/useUserRole'
 import { trpc } from 'src/lib/trpc'
-import { ApplicationDetails, ProposalDetails } from 'src/types/app'
+import { ProposalDetails, ProposalStatusFilter } from 'src/types/app'
 import ApplicationDetailsModal from './ApplicationDetailsModal'
 import ApplicationForm from './ApplicationForm'
 import ConfirmationModal from './ConfirmationModal'
@@ -12,7 +12,16 @@ import ConfirmationModal from './ConfirmationModal'
 interface ProposalApplicationProps {
   proposalDetails: ProposalDetails
   refetch: () => void
-  setFilters: (filters: { status: string }) => void
+  setFilters: Dispatch<SetStateAction<{ status: ProposalStatusFilter }>>
+}
+
+type ApplicationTableRow = {
+  id: string
+  createdAt: string
+  email: string
+  plannedStartAt: string
+  details: string
+  action: string
 }
 
 export default function ProposalApplication({
@@ -20,9 +29,6 @@ export default function ProposalApplication({
   refetch,
   setFilters,
 }: ProposalApplicationProps) {
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(true)
-  const [isConfirmationModalOpen, setIsConfirmationModalOpen] =
-    useState<boolean>(false)
   const [showIndicators, setShowIndicators] = useState(true)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   
@@ -44,6 +50,22 @@ export default function ProposalApplication({
   const { isStudent, isSupervisor, isDeveloper } = useUserRole()
   const acceptApplication = trpc.acceptProposalApplication.useMutation()
   const declineIndividualApplication = trpc.declineProposalApplication.useMutation()
+  const applicationRows = useMemo<ApplicationTableRow[]>(
+    () =>
+      (proposalDetails.applications ?? []).map((application) => ({
+        id: application.id,
+        createdAt: new Date(application.createdAt).toISOString(),
+        email: application.email,
+        plannedStartAt: new Date(application.plannedStartAt).toISOString(),
+        details: application.id,
+        action: application.id,
+      })),
+    [proposalDetails.applications]
+  )
+
+  const getApplication = (id: string) =>
+    proposalDetails.applications.find((application) => application.id === id)
+
   if (proposalDetails?.typeKey === 'SUPERVISOR') {
     return (
       <div className="p-4">
@@ -57,7 +79,7 @@ export default function ProposalApplication({
         {isDeveloper ||
         (isSupervisor &&
           (session?.user?.email === proposalDetails?.ownedByUserEmail ||
-            session?.user.email ===
+            session?.user?.email ===
               proposalDetails?.supervisedBy?.[0].supervisorEmail)) ? (
           <div className="pt-4">
             <H2>Applications</H2>
@@ -75,7 +97,7 @@ export default function ProposalApplication({
                     </div>
                   </>
                 )}
-                <Table<ApplicationDetails>
+                <Table<ApplicationTableRow>
                   className={{
                     root: 'text-xs',
                     tableHeader: 'text-sm',
@@ -109,32 +131,42 @@ export default function ProposalApplication({
                     {
                       label: 'Details',
                       accessor: 'details',
-                      transformer: ({ row }) => (
-                        <ApplicationDetailsModal
-                          row={row}
-                          isModalOpen={isModalOpen}
-                          setIsModalOpen={setIsModalOpen}
-                        />
-                      ),
+                      formatter: ({ row }) => {
+                        const application = getApplication(row.id)
+
+                        if (!application) {
+                          return ''
+                        }
+
+                        return <ApplicationDetailsModal row={application} />
+                      },
                     },
                     {
                       label: 'Action',
                       accessor: 'action',
-                      transformer: ({ row }) => (
-                        <ConfirmationModal
-                          row={row}
-                          isConfirmationModalOpen={isConfirmationModalOpen}
-                          setIsConfirmationModalOpen={setIsConfirmationModalOpen}
-                          acceptApplication={acceptApplication}
-                          declineIndividualApplication={declineIndividualApplication}
-                          proposalDetails={proposalDetails}
-                          refetch={refetch}
-                          setFilters={setFilters}
-                        />
+                      formatter: ({ row }) => (
+                        (() => {
+                          const application = getApplication(row.id)
+
+                          if (!application) {
+                            return ''
+                          }
+
+                          return (
+                            <ConfirmationModal
+                              row={application}
+                              acceptApplication={acceptApplication}
+                              declineIndividualApplication={declineIndividualApplication}
+                              proposalDetails={proposalDetails}
+                              refetch={refetch}
+                              setFilters={setFilters}
+                            />
+                          )
+                        })()
                       ),
                     },
                   ]}
-                  data={proposalDetails?.applications}
+                  data={applicationRows}
                   defaultSortField="createdAt"
                 />
               </div>

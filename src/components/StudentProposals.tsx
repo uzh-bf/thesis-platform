@@ -1,5 +1,4 @@
 import { H2, H3, Select } from '@uzh-bf/design-system'
-import * as R from 'ramda'
 import { RefObject, useMemo } from 'react'
 import { ProposalDetails, ProposalStatusFilter } from 'src/types/app'
 import ProposalCard from './ProposalCard'
@@ -9,7 +8,7 @@ interface StudentProposalsProps {
   data: ProposalDetails[]
   selectedProposal: string | null
   setSelectedProposal: (proposalId: string | null) => void
-  buttonRef: RefObject<HTMLButtonElement>
+  buttonRef: RefObject<HTMLDivElement>
   filters: {
     status: ProposalStatusFilter
   }
@@ -28,18 +27,31 @@ export default function StudentProposals({
   const { data: topicAreas, isLoading: isLoadingTopicAreas } = trpc.getTopicAreas.useQuery()
 
   const groupedStudentProposals = useMemo(() => {
-    if (!data) return {}
+    const grouped: Record<string, ProposalDetails[]> = {}
 
-    return R.groupBy<ProposalDetails>(
-      (p) => p.topicArea.name,
-      R.sortWith([
-        R.ascend(R.prop('createdAt')),  // Sort by creation date (oldest first)
-        R.ascend(R.prop('title'))       // Then sort by title alphabetically
-      ],
-      data.filter(
-        (proposal: ProposalDetails) => proposal.typeKey === 'STUDENT'
-      ))
-    )
+    for (const proposal of data.filter((item) => item.typeKey === 'STUDENT')) {
+      const topicAreaName = proposal.topicArea.name
+
+      if (!grouped[topicAreaName]) {
+        grouped[topicAreaName] = []
+      }
+
+      grouped[topicAreaName].push(proposal)
+    }
+
+    for (const proposals of Object.values(grouped)) {
+      proposals.sort((a, b) => {
+        const createdAtCompare = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+
+        if (createdAtCompare !== 0) {
+          return createdAtCompare
+        }
+
+        return a.title.localeCompare(b.title)
+      })
+    }
+
+    return grouped
   }, [data])
 
   return (
@@ -75,7 +87,7 @@ export default function StudentProposals({
           ]}
           onChange={(newStatus: string) => {
             setFilters({ status: newStatus as ProposalStatusFilter })
-            setSelectedProposal('')
+            setSelectedProposal(null)
           }}
         />
       </div>

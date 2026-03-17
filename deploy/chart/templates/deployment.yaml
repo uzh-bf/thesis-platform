@@ -15,11 +15,11 @@ spec:
       {{- include "thesis-platform.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-    {{- with merge .Values.podAnnotations .Values.annotations }}
       annotations:
+    {{- with merge .Values.podAnnotations .Values.annotations }}
         {{- toYaml . | nindent 8 }}
-        timestamp: {{ now | quote }}
     {{- end }}
+        timestamp: {{ now | quote }}
       labels:
         {{- include "thesis-platform.selectorLabels" . | nindent 8 }}
     spec:

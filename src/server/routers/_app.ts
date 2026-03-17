@@ -1,4 +1,5 @@
 // import { ClientSecretCredential } from '@azure/identity'
+import type { Prisma } from '@prisma/client'
 import { ProposalStatus, ApplicationStatus, ProposalType, UserRole, Department } from 'src/lib/constants'
 // import { Client } from '@microsoft/microsoft-graph-client'
 // import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials'
@@ -11,6 +12,7 @@ import { TRPCError } from '@trpc/server'
 import axios from 'axios'
 import 'cross-fetch/polyfill'
 import dayjs from 'dayjs'
+import type { Context } from 'src/server/context'
 import { prisma } from 'src/server/prisma'
 import {
   adminOnlyProcedure,
@@ -33,6 +35,42 @@ const ADMIN_CHANGE_NOTIFICATION_RECIPIENTS = {
 
 type NotificationEnvironment =
   keyof typeof ADMIN_CHANGE_NOTIFICATION_RECIPIENTS
+
+type ProcedureUser = NonNullable<NonNullable<Context['session']>['user']>
+type ProposalFiltersInput = {
+  status: ProposalStatusFilter
+}
+type ProposalQueryContext = Context & {
+  user?: ProcedureUser
+}
+type ProposalApplicationsInclude = Exclude<
+  Prisma.ProposalInclude['applications'],
+  boolean | undefined
+>
+type ProposalReceivedFeedbacksInclude = Exclude<
+  Prisma.ProposalInclude['receivedFeedbacks'],
+  boolean | undefined
+>
+type ProposalDetailsRecord = Prisma.ProposalGetPayload<{
+  include: {
+    attachments: true
+    topicArea: true
+    ownedByUser: true
+    supervisedBy: {
+      include: {
+        supervisor: true
+        responsible: true
+      }
+    }
+    applications: {
+      include: {
+        attachments: true
+        status: true
+      }
+    }
+    receivedFeedbacks: true
+  }
+}>
 
 type AdminChangeNotificationInput = {
   tab: 'Proposals' | 'Users'
@@ -321,7 +359,12 @@ async function applyAdminInfoStatusAutomation(department: Department) {
   })
 }
 
-async function getStudentProposals({ ctx, filters }) {
+async function getStudentProposals({
+  filters,
+}: {
+  ctx: ProposalQueryContext
+  filters: ProposalFiltersInput
+}): Promise<ProposalDetailsRecord[]> {
   const proposals = await prisma.proposal.findMany({
     where: {
       typeKey: ProposalType.SUPERVISOR,
@@ -331,24 +374,58 @@ async function getStudentProposals({ ctx, filters }) {
     include: {
       attachments: true,
       topicArea: true,
+      applications: {
+        take: 0,
+        include: {
+          attachments: true,
+          status: true,
+        },
+      },
+      receivedFeedbacks: {
+        take: 0,
+      },
       supervisedBy: {
         include: {
           supervisor: true,
+          responsible: true,
         },
       },
     },
   })
 
-  return proposals.map((p) => ({
-    ...p,
-    supervisedBy: p.supervisedBy?.[0]?.supervisor,
+  return proposals.map((proposal) => ({
+    ...proposal,
+    ownedByUser: null,
   }))
 }
 
-async function getSupervisorProposals({ ctx, filters }) {
-  let where = {}
-  let applications = undefined
-  let receivedFeedbacks = undefined
+async function getSupervisorProposals({
+  ctx,
+  filters,
+}: {
+  ctx: ProposalQueryContext
+  filters: ProposalFiltersInput
+}): Promise<ProposalDetailsRecord[]> {
+  const requiresEmail =
+    ctx.user?.role === UserRole.SUPERVISOR ||
+    ctx.user?.role === UserRole.DEVELOPER
+
+  if (requiresEmail && !ctx.user?.email) {
+    return []
+  }
+
+  const currentUserEmail = ctx.user?.email ?? ''
+  let where: Prisma.ProposalWhereInput = {}
+  let applications: ProposalApplicationsInclude = {
+    take: 0,
+    include: {
+      attachments: true,
+      status: true,
+    },
+  }
+  let receivedFeedbacks: ProposalReceivedFeedbacksInclude = {
+    take: 0,
+  }
 
   if (ctx.user?.role === UserRole.SUPERVISOR) {
     where = {
@@ -388,7 +465,7 @@ async function getSupervisorProposals({ ctx, filters }) {
     receivedFeedbacks = {
       where: {
         user: {
-          email: ctx.user.email,
+          email: currentUserEmail,
         },
       },
     }
@@ -429,18 +506,18 @@ async function getSupervisorProposals({ ctx, filters }) {
             in: ['STUDENT', 'SUPERVISOR'],
           },
         },
-        { ownedByUserEmail: ctx.user?.email },
+        { ownedByUserEmail: currentUserEmail },
         {
           supervisedBy: {
             some: {
-              supervisorEmail: ctx.user?.email,
+              supervisorEmail: currentUserEmail,
             },
           },
         },
         {
           receivedFeedbacks: {
             some: {
-              userEmail: ctx.user?.email,
+              userEmail: currentUserEmail,
             },
           },
         },
@@ -457,7 +534,7 @@ async function getSupervisorProposals({ ctx, filters }) {
       NOT: {
         receivedFeedbacks: {
           some: {
-            userEmail: ctx.user?.email,
+            userEmail: currentUserEmail,
           },
         },
       },
@@ -468,11 +545,11 @@ async function getSupervisorProposals({ ctx, filters }) {
     where = {
       ...where,
       OR: [
-        { ownedByUserEmail: ctx.user?.email },
+        { ownedByUserEmail: currentUserEmail },
         {
           supervisedBy: {
             some: {
-              supervisorEmail: ctx.user?.email,
+              supervisorEmail: currentUserEmail,
             },
           },
         },
@@ -493,14 +570,14 @@ async function getSupervisorProposals({ ctx, filters }) {
           },
           supervisedBy: {
             some: {
-              supervisorEmail: ctx.user?.email
+              supervisorEmail: currentUserEmail
             }
           }
         },
         {
           supervisedBy: {
             some: {
-              supervisorEmail: ctx.user?.email,
+              supervisorEmail: currentUserEmail,
               createdAt: {
                 gte: sixMonthsAgo
               }
@@ -518,7 +595,7 @@ async function getSupervisorProposals({ ctx, filters }) {
         {
           receivedFeedbacks: {
             some: {
-              userEmail: ctx.user?.email,
+              userEmail: currentUserEmail,
               typeKey: { startsWith: 'REJECTED' },
             },
           },
@@ -526,7 +603,7 @@ async function getSupervisorProposals({ ctx, filters }) {
         {
           receivedFeedbacks: {
             some: {
-              userEmail: ctx.user?.email,
+              userEmail: currentUserEmail,
               typeKey: { startsWith: 'DECLINED' },
             },
           },
@@ -552,7 +629,7 @@ async function getSupervisorProposals({ ctx, filters }) {
     },
   })
 
-  return proposals
+  return proposals as ProposalDetailsRecord[]
 }
 
 export const appRouter = router({
@@ -637,7 +714,7 @@ export const appRouter = router({
         }),
       })
     )
-    .query(({ input, ctx }) => {
+    .query(async ({ input, ctx }) => {
       if (
         ctx.user?.role &&
         [UserRole.SUPERVISOR, UserRole.DEVELOPER].includes(ctx.user.role)
@@ -1496,7 +1573,7 @@ updateProposalStatus: publicProcedure
   )
   .output(
     z.object({
-      proposal: z.object({ proposal_title: z.string(), supervisor_email: z.string() }),
+      proposal: z.object({ proposal_title: z.string(), supervisor_email: z.string().nullable() }),
       accepted_user: z.object({ accepted_email: z.string(), accepted_fullName: z.string() }),
       declined_users: z.array(z.object({ declined_email: z.string(), declined_fullName: z.string() })),
     })
@@ -1610,7 +1687,7 @@ updateProposalStatus: publicProcedure
     }
 
     // return all user information of proposals that have been declined as well as the one that has been accepted with the info from above (no new prisma call needed)
-    return { proposal: { proposal_title: proposal?.title, supervisor_email: supervisionInfo?.supervisorEmail }, accepted_user: {accepted_email: application?.email, accepted_fullName: application?.fullName }, declined_users: applicationsToDecline.map(app => ({declined_email: app.email, declined_fullName: app.fullName })) }
+    return { proposal: { proposal_title: proposal.title, supervisor_email: supervisionInfo.supervisorEmail }, accepted_user: {accepted_email: application.email, accepted_fullName: application.fullName }, declined_users: applicationsToDecline.map(app => ({declined_email: app.email, declined_fullName: app.fullName })) }
   }),
 
   createProposalApplication: publicProcedure
@@ -1641,8 +1718,8 @@ updateProposalStatus: publicProcedure
     )
     .output(
       z.object({
-        proposal: z.object({ title: z.string(), ownedByUserEmail: z.string() }),
-        supervisor: z.object({ email: z.string() }),
+        proposal: z.object({ title: z.string(), ownedByUserEmail: z.string().nullable() }),
+        supervisor: z.object({ email: z.string().nullable() }),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -1717,11 +1794,11 @@ updateProposalStatus: publicProcedure
 
       return {
         proposal: {
-          title: proposal?.title,
-          ownedByUserEmail: proposal?.ownedByUserEmail,
+          title: proposal.title,
+          ownedByUserEmail: proposal.ownedByUserEmail,
         },
         supervisor: {
-          email: proposal?.supervisedBy?.[0]?.supervisorEmail,
+          email: proposal.supervisedBy[0]?.supervisorEmail ?? null,
         },
       };
     }),
@@ -1832,8 +1909,8 @@ updateProposalStatus: publicProcedure
     .output(
       z.object({
         supervisor: z.object({
-          email: z.string(),
-        })
+          email: z.string().nullable(),
+        }).nullable()
       })
     )
     .mutation(async ({ input }) => {
@@ -1890,7 +1967,7 @@ updateProposalStatus: publicProcedure
     .output(
       z.object({
         userEmail: z.string().email()
-      })
+      }).nullable()
     )
     .mutation(async ({ input }) => {
       // Validate flow secret

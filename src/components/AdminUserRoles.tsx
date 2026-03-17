@@ -12,26 +12,27 @@ import { useEffect, useMemo, useState } from 'react'
 import { UserRole } from 'src/lib/constants'
 import { trpc } from 'src/lib/trpc'
 
-const ROLE_OPTIONS = ['UNSET', UserRole.SUPERVISOR] as const
+const EDITABLE_ROLES = ['UNSET', UserRole.SUPERVISOR] as const
 
-type RoleOption = (typeof ROLE_OPTIONS)[number]
+type EditableRole = (typeof EDITABLE_ROLES)[number]
 type PageSizeOption = 20 | 50 | 100 | 'all'
 type SortColumn = 'name' | 'email' | 'role' | 'department'
 type SortDirection = 'asc' | 'desc'
 
 const PAGE_SIZE_OPTIONS: PageSizeOption[] = [20, 50, 100, 'all']
 
-const normalizeRole = (value: unknown): RoleOption => {
-  if (typeof value !== 'string') return 'UNSET'
-  return (ROLE_OPTIONS as readonly string[]).includes(value) ? (value as RoleOption) : 'UNSET'
-}
+const isEditableRole = (value: string): value is EditableRole =>
+  (EDITABLE_ROLES as readonly string[]).includes(value)
+
+const getStoredRole = (value: unknown): string =>
+  typeof value === 'string' && value.length > 0 ? value : 'UNSET'
 
 export default function AdminUserRoles() {
   const { data: session } = useSession()
   const selfUserId = session?.user?.sub
 
   const [search, setSearch] = useState('')
-  const [draftByUserId, setDraftByUserId] = useState<Record<string, RoleOption>>({})
+  const [draftByUserId, setDraftByUserId] = useState<Record<string, EditableRole>>({})
   const [savingUserId, setSavingUserId] = useState<string | null>(null)
   const [rowsPerPage, setRowsPerPage] = useState<PageSizeOption>(20)
   const [currentPage, setCurrentPage] = useState(1)
@@ -89,8 +90,8 @@ export default function AdminUserRoles() {
           })
           break
         case 'role': {
-          const aRole = draftByUserId[a.id] ?? normalizeRole(a.role)
-          const bRole = draftByUserId[b.id] ?? normalizeRole(b.role)
+          const aRole = draftByUserId[a.id] ?? getStoredRole(a.role)
+          const bRole = draftByUserId[b.id] ?? getStoredRole(b.role)
           compareValue = aRole.localeCompare(bRole, undefined, {
             sensitivity: 'base',
           })
@@ -138,10 +139,10 @@ export default function AdminUserRoles() {
       ? sortedUsers.length
       : Math.min(effectiveCurrentPage * rowsPerPage, sortedUsers.length)
 
-  const getDraftRole = (user: (typeof filteredUsers)[number]) =>
-    draftByUserId[user.id] ?? normalizeRole(user.role)
+  const getDisplayRole = (user: (typeof filteredUsers)[number]) =>
+    draftByUserId[user.id] ?? getStoredRole(user.role)
 
-  const setDraftRole = (userId: string, value: RoleOption) => {
+  const setDraftRole = (userId: string, value: EditableRole) => {
     setDraftByUserId((prev) => {
       return {
         ...prev,
@@ -159,8 +160,8 @@ export default function AdminUserRoles() {
 
   const handleSave = (user: (typeof filteredUsers)[number]) => {
     if (selfUserId && user.id === selfUserId) return
-    const role = getDraftRole(user)
-    const originalRole = typeof user.role === 'string' ? user.role : 'UNSET'
+    const role = getDisplayRole(user)
+    const originalRole = getStoredRole(user.role)
 
     if (role === originalRole) return
 
@@ -274,8 +275,10 @@ export default function AdminUserRoles() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {paginatedUsers.map((user) => {
                     const isSelf = !!selfUserId && user.id === selfUserId
-                    const role = getDraftRole(user)
-                    const dirty = (typeof user.role === 'string' ? user.role : 'UNSET') !== role
+                    const displayRole = getDisplayRole(user)
+                    const storedRole = getStoredRole(user.role)
+                    const dirty = storedRole !== displayRole
+                    const canEdit = isSelf ? false : isEditableRole(storedRole) || storedRole === displayRole
 
                     return (
                       <tr key={user.id} className={isSelf ? 'bg-gray-50' : 'hover:bg-gray-50'}>
@@ -287,18 +290,24 @@ export default function AdminUserRoles() {
                           {user.email}
                         </td>
                         <td className="px-2 py-1">
-                          <select
-                            value={role}
-                            disabled={isSelf || updateUserRoles.isPending}
-                            onChange={(e) => setDraftRole(user.id, e.target.value as RoleOption)}
-                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md disabled:bg-gray-100"
-                          >
-                            {ROLE_OPTIONS.map((opt) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            ))}
-                          </select>
+                          {isEditableRole(storedRole) || draftByUserId[user.id] ? (
+                            <select
+                              value={displayRole}
+                              disabled={isSelf || updateUserRoles.isPending}
+                              onChange={(e) => setDraftRole(user.id, e.target.value as EditableRole)}
+                              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md disabled:bg-gray-100"
+                            >
+                              {EDITABLE_ROLES.map((opt) => (
+                                <option key={opt} value={opt}>
+                                  {opt}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span className="inline-block px-2 py-1.5 text-sm text-gray-700">
+                              {storedRole}
+                            </span>
+                          )}
                         </td>
                         <td className="px-2 py-1 text-sm text-gray-700 whitespace-nowrap">
                           {user.department ?? '-'}
@@ -309,6 +318,7 @@ export default function AdminUserRoles() {
                               onClick={() => handleSave(user)}
                               disabled={
                                 isSelf ||
+                                !canEdit ||
                                 !dirty ||
                                 updateUserRoles.isPending ||
                                 (savingUserId !== null && savingUserId !== user.id)
@@ -321,7 +331,7 @@ export default function AdminUserRoles() {
                             </Button>
                             <Button
                               onClick={() => resetDraft(user.id)}
-                              disabled={isSelf || !dirty || updateUserRoles.isPending}
+                              disabled={isSelf || !canEdit || !dirty || updateUserRoles.isPending}
                               className={{ root: 'text-xs' }}
                             >
                               Reset

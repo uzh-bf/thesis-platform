@@ -1,0 +1,138 @@
+name: Build production Docker images
+
+on:
+  push:
+    branches:
+      - 'main'
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-prd:
+    if: startsWith(github.event.head_commit.message, 'chore(release)')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release tag and commit hash
+        id: release
+        shell: bash
+        run: |
+          TAG=$(git tag --points-at HEAD | grep '^v' | head -1)
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@885d1462b80bc1c1c7f0b00334ad271f09369c55
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@818d4b7b91585d195f67373fd9cb0332e31a7175
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ steps.release.outputs.tag }}
+            type=raw,value=stable
+            type=raw,value=stable-${{ steps.release.outputs.sha }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_APP_VERSION=stable-${{ steps.release.outputs.sha }}
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.release.outputs.tag }}" \
+            --target main \
+            --generate-notes \
+            --title "${{ steps.release.outputs.tag }}"
+
+  build-prd-ibw:
+    if: startsWith(github.event.head_commit.message, 'chore(release)')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release tag and commit hash
+        id: release
+        shell: bash
+        run: |
+          TAG=$(git tag --points-at HEAD | grep '^v' | head -1)
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@885d1462b80bc1c1c7f0b00334ad271f09369c55
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@818d4b7b91585d195f67373fd9cb0332e31a7175
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}-ibw
+          tags: |
+            type=raw,value=${{ steps.release.outputs.tag }}
+            type=raw,value=stable
+            type=raw,value=stable-${{ steps.release.outputs.sha }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_APP_URL=theses.business.uzh.ch
+            NEXT_PUBLIC_FORMS_URL_PUBLISH=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAswMW9Ql8fXxAnGa_PK_OI41UQ1AyT1pNRFVRV1FGQ1NDVTJORERFMlZXNCQlQCN0PWcu
+            NEXT_PUBLIC_FORMS_URL_SUBMIT=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAswMW9Ql8fXxAnGa_PK_OI41UMlpJRDYxUjdBRk5WVk05N0JZNFNLRlNHNiQlQCN0PWcu
+            NEXT_PUBLIC_BLOBSERVICECLIENT_URL=https://thesisplatformbusiness.blob.core.windows.net/uploads?
+            NEXT_PUBLIC_CONTAINER_NAME=uploads
+            NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME=thesisplatformbusiness
+            NEXT_PUBLIC_FOOTER_COPYRIGHT=Department of Business Administration, University of Zurich. All rights reserved.
+            NEXT_PUBLIC_DEPARTMENT_NAME=IBW
+            NEXT_PUBLIC_DEPARTMENT_LONG_NAME=Department of Business Administration
+            NEXT_PUBLIC_FAQ_URL_STUDENT=https://www.business.uzh.ch/en/teaching/theses/faqs.html
+            NEXT_PUBLIC_FAQ_URL_SUPERVISOR=https://www.business.uzh.ch/de/Intranet/Lehre/businessthesesmarket.html
+            NEXT_PUBLIC_APP_VERSION=stable-${{ steps.release.outputs.sha }}
