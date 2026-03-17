@@ -1,4 +1,4 @@
-import { faArrowLeft, faQuestion, faUserShield } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faArrowRightArrowLeft, faQuestion, faUserShield } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button } from '@uzh-bf/design-system'
 import { signIn, signOut, useSession } from 'next-auth/react'
@@ -15,8 +15,18 @@ export default function Header() {
   const isSupervisor =
     session?.user?.role === UserRole.SUPERVISOR ||
     session?.user?.role === UserRole.DEVELOPER
-  
+
   const isOnAdminPage = router.pathname.startsWith('/admin')
+
+  const departmentName = process.env.NEXT_PUBLIC_DEPARTMENT_NAME
+  const departmentLongName = process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME
+
+  const OTHER_DEPARTMENT: Record<string, { shortName: string; url: string }> = {
+    DF: { shortName: 'IBW', url: 'https://theses.business.uzh.ch' },
+    IBW: { shortName: 'DF', url: 'https://theses.df.uzh.ch' },
+  }
+
+  const otherDepartment = departmentName ? OTHER_DEPARTMENT[departmentName] : null
 
   const handleLogout = async () => {
     const tenantId = process.env.NEXT_PUBLIC_AZURE_AD_TENANT_ID
@@ -54,6 +64,15 @@ export default function Header() {
           </Button>
         )}
         {!isOnAdminPage && <NewProposalButton isSupervisor={isSupervisor} />}
+        {departmentLongName && otherDepartment && (
+          <a href={otherDepartment.url}>
+            <Button className={{ root: 'flex items-center gap-1' }}>
+              {departmentLongName}
+              <FontAwesomeIcon icon={faArrowRightArrowLeft} className="text-blue-600" />
+              {otherDepartment.shortName}
+            </Button>
+          </a>
+        )}
       </div>
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
         {session?.user && (
