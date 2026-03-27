@@ -82,7 +82,7 @@
     "next-auth": "4.24.11",
     "nextjs-cors": "2.2.0",
     "node-fetch": "3.3.2",
-    "nodemailer": "6.9.4",
+    "nodemailer": "8.0.4",
     "ramda": "0.29.0",
     "react": "19.1.1",
     "react-dom": "19.1.1",
