@@ -198,7 +198,7 @@
           },
           "runAfter": {
             "Condition": [
-              "SUCCEEDED"
+              "Succeeded"
             ]
           },
           "metadata": {
@@ -626,29 +626,12 @@
                     },
                     "body": {
                       "template_name": "THESIS_POSTING_TEST",
-                      "replacements": [
-                        {
-                          "placeholder": "{{INTRO_TEXT}}",
-                          "replacement": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-                        },
-                        {
-                          "placeholder": "{{THESIS_TITLE}}",
-                          "replacement": ""
-                        },
-                        {
-                          "placeholder": "{{ADDITIONAL_INFORMATION}}",
-                          "replacement": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-                        },
-                        {
-                          "placeholder": "{{DEPARTMENT_NAME}}",
-                          "replacement": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')}"
-                        }
-                      ],
-                      "sender_email": "maximilian.weber@bluewin.ch",
-                      "sender_name": "Max",
-                      "subject": "ABC",
-                      "receiver_group_id": "571328",
-                      "mailing_name": "@concat('TEST_FROM_FLOW_', utcNow())",
+                      "replacements": "[\n{\n        \"placeholder\": \"{{PROPOSAL_TITLE}}\",\n        \"replacement\": @{triggerBody()?['proposalTitle']}\n    },\n    {\n        \"placeholder\": \"{{PROPOSAL_SUMMARY}}\",\n        \"replacement\": @{triggerBody()?['proposalSummary']}\n    },\n    {\n        \"placeholder\": \"{{PROPOSAL_SUPERVISOR}}\",\n        \"replacement\": @{triggerBody()?['supervisor']}\n    },\n    {\n        \"placeholder\": \"{{PROPOSAL_RESPONSIBLE}}\",\n        \"replacement\": @{triggerBody()?['personResponsibleEmail']}\n    },\n    {\n        \"placeholder\": \"{{PROPOSAL_TYPE}}\",\n        \"replacement\": @{triggerBody()?['bachelorOrMasterLevel']}\n    },\n    {\n        \"placeholder\": \"{{PROPOSAL_LANGUAGE}}\",\n        \"replacement\": @{join(json(triggerBody()?['proposalLanguage']), ', ')}\n    },\n    {\n        \"placeholder\": \"{{PROPOSAL_TIMEFRAME}}\",\n        \"replacement\": @{triggerBody()?['timeFrame']}\n    },\n    {\n        \"placeholder\": \"{{PROPOSAL_AREA}}\",\n        \"replacement\": @{triggerBody()?['fieldOfResearch']}\n    },\n    {\n        \"placeholder\": \"{{PROPOSAL_LINK}}\",\n        \"replacement\": \"@{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/@{variables('ProposalId')}\"\n    },\n    {\n        \"placeholder\": \"{{DEPARTMENT_NAME}}\",\n        \"replacement\": @{parameters('Department (uzhbf_thesisplatform_department_env_var)')}\n    },\n]",
+                      "sender_email": "df-community@mailing.uzh.ch",
+                      "sender_name": "DF Community",
+                      "subject": "New Thesis Available: @{triggerBody()?['proposalTitle']} ",
+                      "receiver_group_id": "560174",
+                      "mailing_name": "@concat('PROPOSAL_POSTING_', utcNow())",
                       "client_id": "@parameters('Cleverreach Client Id (uzhbf_thesisplatform_cleverreach_client_id_env_var)')",
                       "client_secret": "@parameters('Cleverreach Client Secret (uzhbf_thesisplatform_cleverreach_client_secret_env_var)')"
                     }
@@ -662,7 +645,7 @@
                   "inputs": {
                     "parameters": {
                       "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
-                      "emailMessage/To": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
+                      "emailMessage/To": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
                       "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - New Supervisor Proposal was posted",
                       "emailMessage/Body": "<p class=\"editor-paragraph\">New Cleverreach Mail ready to be sent!<br>Thesis Title: \"@{triggerBody()?['proposalTitle']}\"</p>",
                       "emailMessage/Importance": "High"
@@ -814,7 +797,7 @@
           "actions": {},
           "else": {
             "actions": {
-              "Terminate2": {
+              "Terminate3": {
                 "type": "Terminate",
                 "inputs": {
                   "runStatus": "Cancelled"
