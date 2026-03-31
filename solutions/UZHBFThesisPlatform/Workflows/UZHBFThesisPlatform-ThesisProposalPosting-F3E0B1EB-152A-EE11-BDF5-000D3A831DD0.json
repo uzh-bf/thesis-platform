@@ -626,7 +626,48 @@
                     },
                     "body": {
                       "template_name": "THESIS_POSTING_TEST",
-                      "replacements": "[\n{\n        \"placeholder\": \"{{PROPOSAL_TITLE}}\",\n        \"replacement\": @{triggerBody()?['proposalTitle']}\n    },\n    {\n        \"placeholder\": \"{{PROPOSAL_SUMMARY}}\",\n        \"replacement\": @{triggerBody()?['proposalSummary']}\n    },\n    {\n        \"placeholder\": \"{{PROPOSAL_SUPERVISOR}}\",\n        \"replacement\": @{triggerBody()?['supervisor']}\n    },\n    {\n        \"placeholder\": \"{{PROPOSAL_RESPONSIBLE}}\",\n        \"replacement\": @{triggerBody()?['personResponsibleEmail']}\n    },\n    {\n        \"placeholder\": \"{{PROPOSAL_TYPE}}\",\n        \"replacement\": @{triggerBody()?['bachelorOrMasterLevel']}\n    },\n    {\n        \"placeholder\": \"{{PROPOSAL_LANGUAGE}}\",\n        \"replacement\": @{join(json(triggerBody()?['proposalLanguage']), ', ')}\n    },\n    {\n        \"placeholder\": \"{{PROPOSAL_TIMEFRAME}}\",\n        \"replacement\": @{triggerBody()?['timeFrame']}\n    },\n    {\n        \"placeholder\": \"{{PROPOSAL_AREA}}\",\n        \"replacement\": @{triggerBody()?['fieldOfResearch']}\n    },\n    {\n        \"placeholder\": \"{{PROPOSAL_LINK}}\",\n        \"replacement\": \"@{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/@{variables('ProposalId')}\"\n    },\n    {\n        \"placeholder\": \"{{DEPARTMENT_NAME}}\",\n        \"replacement\": @{parameters('Department (uzhbf_thesisplatform_department_env_var)')}\n    },\n]",
+                      "replacements": [
+                        {
+                          "placeholder": "{{PROPOSAL_TITLE}}",
+                          "replacement": "@triggerBody()?['proposalTitle']"
+                        },
+                        {
+                          "placeholder": "{{PROPOSAL_SUMMARY}}",
+                          "replacement": "@triggerBody()?['proposalSummary']"
+                        },
+                        {
+                          "placeholder": "{{PROPOSAL_SUPERVISOR}}",
+                          "replacement": "@triggerBody()?['supervisor']"
+                        },
+                        {
+                          "placeholder": "{{PROPOSAL_RESPONSIBLE}}",
+                          "replacement": "@triggerBody()?['personResponsibleEmail']"
+                        },
+                        {
+                          "placeholder": "{{PROPOSAL_TYPE}}",
+                          "replacement": "@triggerBody()?['bachelorOrMasterLevel']"
+                        },
+                        {
+                          "placeholder": "{{PROPOSAL_LANGUAGE}}",
+                          "replacement": "@join(json(triggerBody()?['proposalLanguage']), ', ')"
+                        },
+                        {
+                          "placeholder": "{{PROPOSAL_TIMEFRAME}}",
+                          "replacement": "@triggerBody()?['timeFrame']"
+                        },
+                        {
+                          "placeholder": "{{PROPOSAL_AREA}}",
+                          "replacement": "@triggerBody()?['fieldOfResearch']"
+                        },
+                        {
+                          "placeholder": "{{PROPOSAL_LINK}}",
+                          "replacement": "@{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/@{variables('ProposalId')}"
+                        },
+                        {
+                          "placeholder": "{{DEPARTMENT_NAME}}",
+                          "replacement": "@parameters('Department (uzhbf_thesisplatform_department_env_var)')"
+                        }
+                      ],
                       "sender_email": "df-community@mailing.uzh.ch",
                       "sender_name": "DF Community",
                       "subject": "New Thesis Available: @{triggerBody()?['proposalTitle']} ",
