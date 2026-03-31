@@ -26,11 +26,9 @@ resources:
   requests:
     memory: 128Mi
     cpu: 100m
-    ephemeralStorage: 512Mi
   limits:
     memory: 256Mi
     cpu: 200m
-    ephemeralStorage: 1Gi
 
 annotations: {}
 podAnnotations: {}
