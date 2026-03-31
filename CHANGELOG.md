@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com/uzh-bf/thesis-platform/compare/v1.2.0...v1.3.0) (2026-03-31)
+
+
+### Features
+
+* update XML files and JSON workflow for thesis proposal posting functionality ([#86](https://github.com/uzh-bf/thesis-platform/issues/86)) ([0caff09](https://github.com/uzh-bf/thesis-platform/commit/0caff09b9ecd0583a5e19004e01b3af78c79cda7))
+
 ## [1.2.0](https://github.com/uzh-bf/thesis-platform/compare/v1.1.8...v1.2.0) (2026-03-17)
 
 
