@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.3.2](https://github.com/uzh-bf/thesis-platform/compare/v1.3.1...v1.3.2) (2026-04-07)
+
+
+### Bug Fixes
+
+* correct application retrieval in ProposalApplication component ([055f4ed](https://github.com/uzh-bf/thesis-platform/commit/055f4ed836516234c4948bcba8630b23ed1a81ff))
+
+
+### Build and CI
+
+* add workflow to auto-sync dev with main ([7456d4f](https://github.com/uzh-bf/thesis-platform/commit/7456d4f543bb1758f207c4f4468b532ecc2ae20f))
+* remove dev sync workflow ([cd3db62](https://github.com/uzh-bf/thesis-platform/commit/cd3db62c05137527db719c28331653fb1253e6ce))
+
+
+### Refactors
+
+* optimize application retrieval using memoization ([7c2d19f](https://github.com/uzh-bf/thesis-platform/commit/7c2d19f4b4bc03bc140c44297489213227038738))
+
 ### [1.3.1](https://github.com/uzh-bf/thesis-platform/compare/v1.3.0...v1.3.1) (2026-03-31)
 
 ## [1.3.0](https://github.com/uzh-bf/thesis-platform/compare/v1.2.0...v1.3.0) (2026-03-31)
