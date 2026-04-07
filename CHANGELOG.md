@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.0](https://github.com/uzh-bf/thesis-platform/compare/v1.3.2...v1.4.0) (2026-04-07)
+
+
+### Features
+
+* add user creation functionality via email in AdminUserRoles component ([c67013d](https://github.com/uzh-bf/thesis-platform/commit/c67013d4896a3da2c2681a0721e00b9a67ac7e81))
+
 ### [1.3.2](https://github.com/uzh-bf/thesis-platform/compare/v1.3.1...v1.3.2) (2026-04-07)
 
 
