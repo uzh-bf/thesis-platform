@@ -3241,6 +3241,47 @@ updateProposalStatus: publicProcedure
       }
     }),
 
+  adminAddUserByEmail: adminProcedure
+    .input(
+      z.object({
+        email: z.string().email(),
+        name: z.string().min(1),
+      })
+    )
+    .output(z.object({ success: z.boolean(), message: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      if (!ctx.user?.sub) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' })
+      }
+
+      const existing = await prisma.user.findUnique({
+        where: { email: input.email.toLowerCase() },
+        select: { id: true },
+      })
+
+      if (existing) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'A user with this email already exists',
+        })
+      }
+
+      const dept = (process.env.NEXT_PUBLIC_DEPARTMENT_NAME ?? '').toUpperCase()
+
+      await prisma.user.create({
+        data: {
+          email: input.email.toLowerCase(),
+          name: input.name.trim(),
+          role: 'UNSET',
+          ...(Object.values(Department).includes(dept as Department)
+            ? { department: dept as Department }
+            : {}),
+        },
+      })
+
+      return { success: true, message: 'User created successfully' }
+    }),
+
   adminGetAllUsers: adminProcedure.query(async () => {
     return prisma.user.findMany({
       select: {

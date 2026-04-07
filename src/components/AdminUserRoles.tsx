@@ -6,9 +6,10 @@ import {
   faSortUp,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import { Button } from '@uzh-bf/design-system'
 import { useSession } from 'next-auth/react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { UserRole } from 'src/lib/constants'
 import { trpc } from 'src/lib/trpc'
 
@@ -38,6 +39,11 @@ export default function AdminUserRoles() {
   const [currentPage, setCurrentPage] = useState(1)
   const [sortColumn, setSortColumn] = useState<SortColumn>('name')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
+  const [showAddUser, setShowAddUser] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newEmail, setNewEmail] = useState('')
+  const [addUserError, setAddUserError] = useState<string | null>(null)
+  const addUserNameRef = useRef<HTMLInputElement>(null)
 
   const {
     data: users,
@@ -62,6 +68,31 @@ export default function AdminUserRoles() {
       setSavingUserId(null)
     },
   })
+
+  const addUserByEmail = trpc.adminAddUserByEmail.useMutation({
+    onSuccess: async () => {
+      setNewName('')
+      setNewEmail('')
+      setShowAddUser(false)
+      setAddUserError(null)
+      await refetch()
+    },
+    onError: (error) => {
+      setAddUserError(error.message)
+    },
+  })
+
+  const handleAddUser = () => {
+    setAddUserError(null)
+    if (!newName.trim() || !newEmail.trim()) return
+    addUserByEmail.mutate({ name: newName.trim(), email: newEmail.trim() })
+  }
+
+  useEffect(() => {
+    if (showAddUser) {
+      addUserNameRef.current?.focus()
+    }
+  }, [showAddUser])
 
   const filteredUsers = useMemo(() => {
     const list = users ?? []
@@ -199,17 +230,88 @@ export default function AdminUserRoles() {
           </p>
         </div>
 
-        <div className="w-full md:w-80">
-          <label className="block text-xs font-medium text-gray-700 mb-0.5">Search</label>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or email..."
-            className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
+        <div className="flex items-end gap-2">
+          <div className="w-full md:w-80">
+            <label className="block text-xs font-medium text-gray-700 mb-0.5">Search</label>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name or email..."
+              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setShowAddUser((prev) => !prev)
+              setAddUserError(null)
+              setNewName('')
+              setNewEmail('')
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 whitespace-nowrap"
+          >
+            <FontAwesomeIcon icon={faPlus} />
+            Add User
+          </button>
         </div>
       </div>
+
+      {showAddUser && (
+        <div className="mt-3 flex flex-col gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <p className="text-sm font-medium text-gray-800">Add a new user by email</p>
+          <div className="flex items-center gap-2">
+            <input
+              ref={addUserNameRef}
+              type="text"
+              value={newName}
+              onChange={(e) => {
+                setNewName(e.target.value)
+                setAddUserError(null)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleAddUser()
+              }}
+              placeholder="Full name"
+              className="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <input
+              type="email"
+              value={newEmail}
+              onChange={(e) => {
+                setNewEmail(e.target.value)
+                setAddUserError(null)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleAddUser()
+              }}
+              placeholder="user@example.com"
+              className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <Button
+              onClick={handleAddUser}
+              disabled={!newName.trim() || !newEmail.trim() || addUserByEmail.isPending}
+              className={{ root: 'text-sm' }}
+            >
+              {addUserByEmail.isPending ? 'Adding...' : 'Add'}
+            </Button>
+            <Button
+              onClick={() => {
+                setShowAddUser(false)
+                setNewName('')
+                setNewEmail('')
+                setAddUserError(null)
+              }}
+              className={{ root: 'text-sm' }}
+            >
+              Cancel
+            </Button>
+          </div>
+          {addUserError && (
+            <p className="text-sm text-red-600">{addUserError}</p>
+          )}
+        </div>
+      )}
 
       <div className="mt-3">
         {isLoading ? (
