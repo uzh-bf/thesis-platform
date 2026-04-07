@@ -63,8 +63,13 @@ export default function ProposalApplication({
     [proposalDetails.applications]
   )
 
-  const getApplication = (id: string) =>
-    proposalDetails.applications.find((application) => application.id === id)
+  const applicationsById = useMemo(
+    () =>
+      new Map(
+        (proposalDetails.applications ?? []).map((app) => [app.id, app])
+      ),
+    [proposalDetails.applications]
+  )
 
   if (proposalDetails?.typeKey === 'SUPERVISOR') {
     return (
@@ -132,38 +137,28 @@ export default function ProposalApplication({
                       label: 'Details',
                       accessor: 'details',
                       formatter: ({ row }) => {
-                        const application = getApplication(row.id)
-
-                        if (!application) {
-                          return ''
-                        }
-
+                        const application = applicationsById.get(row.id)
+                        if (!application) return ''
                         return <ApplicationDetailsModal row={application} />
                       },
                     },
                     {
                       label: 'Action',
                       accessor: 'action',
-                      formatter: ({ row }) => (
-                        (() => {
-                          const application = getApplication(row.id)
-
-                          if (!application) {
-                            return ''
-                          }
-
-                          return (
-                            <ConfirmationModal
-                              row={application}
-                              acceptApplication={acceptApplication}
-                              declineIndividualApplication={declineIndividualApplication}
-                              proposalDetails={proposalDetails}
-                              refetch={refetch}
-                              setFilters={setFilters}
-                            />
-                          )
-                        })()
-                      ),
+                      formatter: ({ row }) => {
+                        const application = applicationsById.get(row.id)
+                        if (!application) return ''
+                        return (
+                          <ConfirmationModal
+                            row={application}
+                            acceptApplication={acceptApplication}
+                            declineIndividualApplication={declineIndividualApplication}
+                            proposalDetails={proposalDetails}
+                            refetch={refetch}
+                            setFilters={setFilters}
+                          />
+                        )
+                      },
                     },
                   ]}
                   data={applicationRows}
