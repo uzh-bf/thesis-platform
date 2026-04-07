@@ -137,7 +137,7 @@ export default function ProposalApplication({
                       label: 'Details',
                       accessor: 'details',
                       formatter: ({ row }) => {
-                        const application = applicationsById.get(row.id)
+                        const application = applicationsById.get(row.details)
                         if (!application) return ''
                         return <ApplicationDetailsModal row={application} />
                       },
@@ -146,7 +146,7 @@ export default function ProposalApplication({
                       label: 'Action',
                       accessor: 'action',
                       formatter: ({ row }) => {
-                        const application = applicationsById.get(row.id)
+                        const application = applicationsById.get(row.action)
                         if (!application) return ''
                         return (
                           <ConfirmationModal
