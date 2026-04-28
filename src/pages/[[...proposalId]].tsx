@@ -1,5 +1,6 @@
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Select } from '@uzh-bf/design-system'
 import { useRouter } from 'next/router'
 import {
   Dispatch,
@@ -20,6 +21,29 @@ import SupervisorProposals from 'src/components/SupervisorProposals'
 import useUserRole from 'src/lib/hooks/useUserRole'
 import { trpc } from 'src/lib/trpc'
 import { ProposalDetails, ProposalStatusFilter } from 'src/types/app'
+
+const PROPOSAL_STATUS_FILTER_ITEMS = [
+  {
+    value: ProposalStatusFilter.OPEN_PROPOSALS,
+    label: 'Open Proposals',
+  },
+  {
+    value: ProposalStatusFilter.MY_PROPOSALS,
+    label: 'My Proposals',
+  },
+  {
+    value: ProposalStatusFilter.ACTIVE_PROPOSALS,
+    label: 'My Active Proposals',
+  },
+  {
+    value: ProposalStatusFilter.REJECTED_AND_DECLINED_PROPOSALS,
+    label: 'Rejected / Declined Proposals',
+  },
+  {
+    value: ProposalStatusFilter.ALL_PROPOSALS,
+    label: 'All Proposals',
+  },
+]
 
 interface SelectedProposalDetailsProps {
   proposalDetails: ProposalDetails | null
@@ -136,7 +160,40 @@ export default function Index() {
           <LoadingSkeleton />
         ) : (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-            <div className="space-y-6">
+            <div className="space-y-4">
+              <div className="rounded-lg border border-[#E9E9E9] bg-white px-4 py-3 shadow-sm">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="m-0 text-sm font-semibold text-[#121212]">
+                      Proposals
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <label
+                      htmlFor="proposal-status-filter"
+                      className="text-sm font-semibold text-[#4C4C4C]"
+                    >
+                      Show
+                    </label>
+                    <Select
+                      id="proposal-status-filter"
+                      className={{
+                        root: 'w-full sm:w-60',
+                        trigger:
+                          'h-9 w-full rounded-[4px] border-[#E9E9E9] bg-white text-sm',
+                      }}
+                      value={filters.status}
+                      items={PROPOSAL_STATUS_FILTER_ITEMS}
+                      onChange={(newStatus: string) => {
+                        setFilters({ status: newStatus as ProposalStatusFilter })
+                        setIsMobileDetailsOpen(false)
+                        router.push('/', undefined, { scroll: false })
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
               {(isSupervisor || isDeveloper) && (
                 <div className="rounded-lg border border-[#E9E9E9] bg-white shadow-sm">
                   <div className="p-6">
@@ -144,8 +201,6 @@ export default function Index() {
                       data={proposals}
                       selectedProposal={proposalId}
                       setSelectedProposal={setSelectedProposal}
-                      filters={filters}
-                      setFilters={setFilters}
                     />
                   </div>
                 </div>

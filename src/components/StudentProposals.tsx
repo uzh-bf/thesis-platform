@@ -1,25 +1,19 @@
-import { H2, H3, Select } from '@uzh-bf/design-system'
+import { H2, H3 } from '@uzh-bf/design-system'
 import { useMemo } from 'react'
-import { ProposalDetails, ProposalStatusFilter } from 'src/types/app'
-import ProposalCard from './ProposalCard'
 import { trpc } from 'src/lib/trpc'
+import { ProposalDetails } from 'src/types/app'
+import ProposalCard from './ProposalCard'
 
 interface StudentProposalsProps {
   data: ProposalDetails[]
   selectedProposal: string | null
   setSelectedProposal: (proposalId: string | null) => void
-  filters: {
-    status: ProposalStatusFilter
-  }
-  setFilters: (filters: { status: ProposalStatusFilter }) => void
 }
 
 export default function StudentProposals({
   data,
   selectedProposal,
   setSelectedProposal,
-  filters,
-  setFilters,
 }: StudentProposalsProps) {
   // Fetch topic areas from the database
   const { data: topicAreas, isLoading: isLoadingTopicAreas } =
@@ -56,53 +50,17 @@ export default function StudentProposals({
 
   return (
     <div>
-      <div className="flex flex-col gap-4 border-b border-[#E9E9E9] pb-5 md:flex-row md:items-center md:justify-between">
-        <div>
-          <H2
-            className={{
-              root: 'mb-1 text-[26px] font-semibold leading-tight text-[#121212]',
-            }}
-          >
-            Student Proposals
-          </H2>
-          <p className="text-sm text-[#4C4C4C]">
-            Submissions from students grouped by field of research.
-          </p>
-        </div>
-        <Select
+      <div className="border-b border-[#E9E9E9] pb-5">
+        <H2
           className={{
-            root: 'w-full justify-end md:w-auto',
-            trigger:
-              'h-10 w-full rounded-[4px] border-[#E9E9E9] text-sm md:w-72',
+            root: 'mb-1 text-[26px] font-semibold leading-tight text-[#121212]',
           }}
-          value={filters.status}
-          items={[
-            {
-              value: ProposalStatusFilter.OPEN_PROPOSALS,
-              label: 'Open Proposals',
-            },
-            {
-              value: ProposalStatusFilter.MY_PROPOSALS,
-              label: 'My Proposals',
-            },
-            {
-              value: ProposalStatusFilter.ACTIVE_PROPOSALS,
-              label: 'My Active Proposals',
-            },
-            {
-              value: ProposalStatusFilter.REJECTED_AND_DECLINED_PROPOSALS,
-              label: 'Rejected / Declined Proposals',
-            },
-            {
-              value: ProposalStatusFilter.ALL_PROPOSALS,
-              label: 'All Proposals',
-            },
-          ]}
-          onChange={(newStatus: string) => {
-            setFilters({ status: newStatus as ProposalStatusFilter })
-            setSelectedProposal(null)
-          }}
-        />
+        >
+          Student Proposals
+        </H2>
+        <p className="text-sm text-[#4C4C4C]">
+          Submissions from students grouped by field of research.
+        </p>
       </div>
       <div className="pt-5 text-base">
         {data?.filter((proposal: any) => proposal.typeKey === 'STUDENT')
