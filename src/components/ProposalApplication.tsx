@@ -1,10 +1,13 @@
-import { H2, Table } from '@uzh-bf/design-system'
-import { add, format, parseISO } from 'date-fns'
+import { add, format } from 'date-fns'
 import { useSession } from 'next-auth/react'
-import { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from 'react'
+import { Dispatch, SetStateAction } from 'react'
 import useUserRole from 'src/lib/hooks/useUserRole'
 import { trpc } from 'src/lib/trpc'
-import { ProposalDetails, ProposalStatusFilter } from 'src/types/app'
+import {
+  ApplicationDetails,
+  ProposalDetails,
+  ProposalStatusFilter,
+} from 'src/types/app'
 import ApplicationDetailsModal from './ApplicationDetailsModal'
 import ApplicationForm from './ApplicationForm'
 import ConfirmationModal from './ConfirmationModal'
@@ -15,13 +18,21 @@ interface ProposalApplicationProps {
   setFilters: Dispatch<SetStateAction<{ status: ProposalStatusFilter }>>
 }
 
-type ApplicationTableRow = {
-  id: string
-  createdAt: string
-  email: string
-  plannedStartAt: string
-  details: string
-  action: string
+const statusClassNames: Record<string, string> = {
+  ACCEPTED: 'bg-[#ECF6D6] text-[#536B18]',
+  DECLINED: 'bg-[#FAFAFA] text-[#666666]',
+  OPEN: 'bg-[#F5F5FB] text-[#0028A5]',
+}
+
+function formatDate(date: Date | string) {
+  return format(new Date(date), 'dd.MM.yyyy')
+}
+
+function formatWorkingPeriod(plannedStartAt: Date | string) {
+  const startDate = new Date(plannedStartAt)
+  const endDate = add(startDate, { months: 6 })
+
+  return `${formatDate(startDate)} - ${formatDate(endDate)}`
 }
 
 export default function ProposalApplication({
@@ -29,47 +40,12 @@ export default function ProposalApplication({
   refetch,
   setFilters,
 }: ProposalApplicationProps) {
-  const [showIndicators, setShowIndicators] = useState(true)
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-  
-  // Handle scroll indicators - only hide on scroll
-  useEffect(() => {
-    const scrollContainer = scrollContainerRef.current
-    if (!scrollContainer) return
-    
-    // Hide indicators on scroll
-    const handleScroll = () => setShowIndicators(false)
-    scrollContainer.addEventListener('scroll', handleScroll)
-    
-    return () => {
-      scrollContainer.removeEventListener('scroll', handleScroll)
-    }
-  }, [])
-
   const { data: session } = useSession()
   const { isStudent, isSupervisor, isDeveloper } = useUserRole()
   const acceptApplication = trpc.acceptProposalApplication.useMutation()
-  const declineIndividualApplication = trpc.declineProposalApplication.useMutation()
-  const applicationRows = useMemo<ApplicationTableRow[]>(
-    () =>
-      (proposalDetails.applications ?? []).map((application) => ({
-        id: application.id,
-        createdAt: new Date(application.createdAt).toISOString(),
-        email: application.email,
-        plannedStartAt: new Date(application.plannedStartAt).toISOString(),
-        details: application.id,
-        action: application.id,
-      })),
-    [proposalDetails.applications]
-  )
-
-  const applicationsById = useMemo(
-    () =>
-      new Map(
-        (proposalDetails.applications ?? []).map((app) => [app.id, app])
-      ),
-    [proposalDetails.applications]
-  )
+  const declineIndividualApplication =
+    trpc.declineProposalApplication.useMutation()
+  const applications = proposalDetails.applications ?? []
 
   if (proposalDetails?.typeKey === 'SUPERVISOR') {
     return (
@@ -87,83 +63,77 @@ export default function ProposalApplication({
             session?.user?.email ===
               proposalDetails?.supervisedBy?.[0].supervisorEmail)) ? (
           <div className="pt-4">
-            <H2>Applications</H2>
-            {proposalDetails?.applications?.length === 0 &&
-              'No applications for this proposal...'}
-            {proposalDetails?.applications?.length > 0 && (
-              <div ref={scrollContainerRef} className="overflow-x-auto relative group">
-                {showIndicators && (
-                  <>
-                    <div className="absolute -right-1 top-1/2 -translate-y-1/2 bg-blue-600 text-white w-7 h-7 flex items-center justify-center rounded-full shadow-lg transition-opacity duration-500 opacity-90 z-10 animate-pulse">
-                      <span className="text-lg font-bold" aria-label="Scroll right">→</span>
+            <h2 className="text-[26px] font-semibold leading-tight text-[#121212]">
+              Applications
+            </h2>
+            {applications.length === 0 && (
+              <p className="mt-2 text-base text-[#4C4C4C]">
+                No applications for this proposal...
+              </p>
+            )}
+            {applications.length > 0 && (
+              <div className="mt-4 grid gap-3">
+                {applications.map((application: ApplicationDetails) => (
+                  <article
+                    key={application.id}
+                    className="rounded-[8px] border border-[#E9E9E9] bg-white p-4"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="mb-2 flex flex-wrap items-center gap-2">
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.04em] ${
+                              statusClassNames[application.statusKey] ??
+                              'bg-[#FAFAFA] text-[#4C4C4C]'
+                            }`}
+                          >
+                            {application.statusKey.toLowerCase()}
+                          </span>
+                          <span className="text-sm text-[#666666]">
+                            Submitted {formatDate(application.createdAt)}
+                          </span>
+                        </div>
+                        <h3 className="truncate text-base font-semibold text-[#121212]">
+                          {application.fullName}
+                        </h3>
+                        <p className="break-all text-sm text-[#4C4C4C]">
+                          {application.email}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 flex-wrap gap-2">
+                        <ApplicationDetailsModal row={application} />
+                        <ConfirmationModal
+                          row={application}
+                          acceptApplication={acceptApplication}
+                          declineIndividualApplication={
+                            declineIndividualApplication
+                          }
+                          proposalDetails={proposalDetails}
+                          refetch={refetch}
+                          setFilters={setFilters}
+                        />
+                      </div>
                     </div>
-                    <div className="absolute -left-1 top-1/2 -translate-y-1/2 bg-blue-600 text-white w-7 h-7 flex items-center justify-center rounded-full shadow-lg transition-opacity duration-500 opacity-90 z-10 animate-pulse">
-                      <span className="text-lg font-bold" aria-label="Scroll left">←</span>
-                    </div>
-                  </>
-                )}
-                <Table<ApplicationTableRow>
-                  className={{
-                    root: 'text-xs',
-                    tableHeader: 'text-sm',
-                  }}
-                  columns={[
-                    {
-                      label: 'Date',
-                      accessor: 'createdAt',
-                      sortable: true,
-                      transformer: ({ row }) =>
-                        format(parseISO(row.createdAt), 'dd.MM.yyyy'),
-                    },
-                    {
-                      label: 'Email',
-                      accessor: 'email',
-                      sortable: true,
-                    },
-                    {
-                      label: 'Working Period',
-                      accessor: 'plannedStartAt',
-                      sortable: true,
-                      transformer: ({ row }) =>
-                        `${format(
-                          parseISO(row.plannedStartAt),
-                          'd.M.Y'
-                        )} - ${format(
-                          add(parseISO(row.plannedStartAt), { months: 6 }),
-                          'd.M.Y'
-                        )}`,
-                    },
-                    {
-                      label: 'Details',
-                      accessor: 'details',
-                      formatter: ({ row }) => {
-                        const application = applicationsById.get(row.details)
-                        if (!application) return ''
-                        return <ApplicationDetailsModal row={application} />
-                      },
-                    },
-                    {
-                      label: 'Action',
-                      accessor: 'action',
-                      formatter: ({ row }) => {
-                        const application = applicationsById.get(row.action)
-                        if (!application) return ''
-                        return (
-                          <ConfirmationModal
-                            row={application}
-                            acceptApplication={acceptApplication}
-                            declineIndividualApplication={declineIndividualApplication}
-                            proposalDetails={proposalDetails}
-                            refetch={refetch}
-                            setFilters={setFilters}
-                          />
-                        )
-                      },
-                    },
-                  ]}
-                  data={applicationRows}
-                  defaultSortField="createdAt"
-                />
+                    <dl className="mt-4 grid gap-3 border-t border-[#E9E9E9] pt-4 sm:grid-cols-2">
+                      <div>
+                        <dt className="text-xs font-semibold uppercase tracking-[0.04em] text-[#666666]">
+                          Working Period
+                        </dt>
+                        <dd className="mt-1 text-sm text-[#121212]">
+                          {formatWorkingPeriod(application.plannedStartAt)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-semibold uppercase tracking-[0.04em] text-[#666666]">
+                          Matriculation
+                        </dt>
+                        <dd className="mt-1 text-sm text-[#121212]">
+                          {application.matriculationNumber || '-'}
+                        </dd>
+                      </div>
+                    </dl>
+                  </article>
+                ))}
               </div>
             )}
           </div>
