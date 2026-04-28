@@ -2,8 +2,13 @@ import Image from 'next/image'
 
 function Footer() {
   const departmentName =
-    process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME ?? 'Department of Finance'
-  const departmentShortName = process.env.NEXT_PUBLIC_DEPARTMENT_NAME ?? 'DF'
+    process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME?.trim() ?? ''
+  const departmentShortName = process.env.NEXT_PUBLIC_DEPARTMENT_NAME?.trim()
+  const footerDescription =
+    process.env.NEXT_PUBLIC_FOOTER_DESCRIPTION?.trim() ||
+    (departmentName
+      ? `Thesis proposals and applications for the ${departmentName}.`
+      : 'Thesis proposals and applications.')
   const copyright =
     process.env.NEXT_PUBLIC_FOOTER_COPYRIGHT ?? 'Universität Zürich'
   const contactEmail =
@@ -27,7 +32,7 @@ function Footer() {
             className="h-12 w-auto"
           />
           <p className="mt-6 max-w-sm text-base leading-7 text-[#4C4C4C]">
-            Thesis proposals and applications for the {departmentName}.
+            {footerDescription}
           </p>
         </div>
 
@@ -37,7 +42,7 @@ function Footer() {
           </h2>
           <address className="mt-5 space-y-2 text-base not-italic leading-7 text-[#4C4C4C]">
             <div>Universität Zürich</div>
-            <div>{departmentName}</div>
+            {departmentName && <div>{departmentName}</div>}
             <div>Plattenstrasse 14</div>
             <div>8032 Zürich</div>
             <div>Schweiz</div>
@@ -82,13 +87,15 @@ function Footer() {
             &copy; {new Date().getFullYear()} {copyright}
           </p>
           <nav className="flex flex-wrap gap-x-6 gap-y-2">
-            <a href="https://www.uzh.ch/de/about/imprint.html" target="_blank">
+            <a href="https://www.df.uzh.ch/de/impressum.html" target="_blank">
               Impressum
             </a>
-            <a href="https://www.uzh.ch/de/privacy.html" target="_blank">
+            <a
+              href="https://careers.df.uzh.ch/de/data-protection"
+              target="_blank"
+            >
               Datenschutz
             </a>
-            <a href={`mailto:${contactEmail}`}>Kontakt</a>
           </nav>
         </div>
       </div>

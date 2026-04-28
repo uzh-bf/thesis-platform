@@ -25,8 +25,12 @@ export default function Header() {
 
   const isOnAdminPage = router.pathname.startsWith('/admin')
 
-  const departmentName = process.env.NEXT_PUBLIC_DEPARTMENT_NAME
-  const departmentLongName = process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME
+  const departmentName = process.env.NEXT_PUBLIC_DEPARTMENT_NAME?.trim()
+  const departmentLongName =
+    process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME?.trim()
+  const platformName =
+    process.env.NEXT_PUBLIC_PLATFORM_NAME?.trim() ||
+    (departmentName ? `${departmentName} Thesis Platform` : 'Thesis Platform')
 
   const OTHER_DEPARTMENT: Record<string, { shortName: string; url: string }> = {
     DF: { shortName: 'IBW', url: 'https://theses.business.uzh.ch' },
@@ -36,10 +40,7 @@ export default function Header() {
   const otherDepartment = departmentName
     ? OTHER_DEPARTMENT[departmentName]
     : null
-  const organizationName = departmentLongName ?? 'Department of Finance'
-  const platformName = departmentName
-    ? `${departmentName} Thesis Platform`
-    : 'Thesis Platform'
+  const organizationName = departmentLongName ?? ''
   const isFaqVisible =
     process.env.NEXT_PUBLIC_FAQ_URL_STUDENT ||
     process.env.NEXT_PUBLIC_FAQ_URL_SUPERVISOR
@@ -84,7 +85,7 @@ export default function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-40 flex-none border-b border-[#E9E9E9] bg-white print:hidden">
+    <header className="flex-none border-b border-[#E9E9E9] bg-white print:hidden">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-[4px] focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-[#0028A5] focus:shadow"
@@ -195,34 +196,6 @@ export default function Header() {
             )}
           </div>
         </div>
-
-        <nav
-          aria-label="Main navigation"
-          className="flex gap-8 overflow-x-auto border-t border-[#E9E9E9] text-base font-semibold text-[#121212]"
-        >
-          <button
-            className={`border-b-4 py-3 ${
-              isOnAdminPage
-                ? 'border-transparent hover:text-[#0028A5]'
-                : 'border-[#0028A5] text-[#121212]'
-            }`}
-            onClick={() => router.push('/')}
-          >
-            Proposals
-          </button>
-          {isAdmin && (
-            <button
-              className={`border-b-4 py-3 ${
-                isOnAdminPage
-                  ? 'border-[#0028A5] text-[#121212]'
-                  : 'border-transparent hover:text-[#0028A5]'
-              }`}
-              onClick={() => router.push('/admin')}
-            >
-              Administration
-            </button>
-          )}
-        </nav>
       </div>
     </header>
   )

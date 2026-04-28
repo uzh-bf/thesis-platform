@@ -132,12 +132,6 @@ export default function Index() {
         id="proposals"
         className="mx-auto w-full max-w-[1240px] px-4 py-10 md:px-10 xl:px-[100px]"
       >
-        <div className="mb-6">
-          <h2 className="text-[30px] font-semibold leading-tight text-[#121212]">
-            Proposals
-          </h2>
-        </div>
-
         {isLoading ? (
           <LoadingSkeleton />
         ) : (
@@ -168,7 +162,7 @@ export default function Index() {
               </div>
             </div>
 
-            <div className="hidden rounded-lg border border-[#E9E9E9] bg-white shadow-sm lg:sticky lg:top-[10rem] lg:block lg:max-h-[calc(100vh-11.5rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain">
+            <div className="hidden rounded-lg border border-[#E9E9E9] bg-white shadow-sm lg:block lg:self-start">
               <SelectedProposalDetails
                 proposalDetails={proposalDetails}
                 refetch={refetch}
