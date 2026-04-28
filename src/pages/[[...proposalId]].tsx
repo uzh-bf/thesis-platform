@@ -110,7 +110,7 @@ export default function Index() {
               </div>
             </div>
 
-            <div className="rounded-lg border border-[#E9E9E9] bg-white shadow-sm">
+            <div className="rounded-lg border border-[#E9E9E9] bg-white shadow-sm lg:sticky lg:top-[10rem] lg:max-h-[calc(100vh-11.5rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain">
               {!proposalDetails ? (
                 <EmptyState
                   title="No Proposal Selected"
