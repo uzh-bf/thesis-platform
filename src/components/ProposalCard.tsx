@@ -4,17 +4,14 @@ import {
 } from '@fortawesome/free-regular-svg-icons'
 import { faCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { inferProcedureOutput } from '@trpc/server'
 import { Button } from '@uzh-bf/design-system'
-import { useSession } from 'next-auth/react'
-import { ProposalType, UserRole } from 'src/lib/constants'
-import { AppRouter } from 'src/server/routers/_app'
-import { twMerge } from 'tailwind-merge'
-import { format, differenceInWeeks, differenceInMonths } from 'date-fns'
+import { differenceInMonths, differenceInWeeks, format } from 'date-fns'
 import { de } from 'date-fns/locale'
+import { useSession } from 'next-auth/react'
 import { useMemo } from 'react'
+import { ProposalType, UserRole } from 'src/lib/constants'
+import { twMerge } from 'tailwind-merge'
 
-type Proposals = inferProcedureOutput<AppRouter['proposals']>
 type ProposalDetails = any // Using any temporarily to fix TypeScript errors
 export default function ProposalCard({
   proposal,
@@ -41,18 +38,21 @@ export default function ProposalCard({
   const isRecentlyActive = useMemo(() => {
     // Check if proposal was accepted within the last 6 months
     if (proposal.statusKey === 'MATCHED') {
-      const monthsOld = differenceInMonths(new Date(), new Date(proposal.updatedAt))
+      const monthsOld = differenceInMonths(
+        new Date(),
+        new Date(proposal.updatedAt)
+      )
       return monthsOld <= 6
     }
     // Check if supervision relationship was created within the last 6 months
     if (proposal.supervisedBy && proposal.supervisedBy.length > 0) {
       const supervisorRelation = proposal.supervisedBy.find(
-        (relation: { supervisorEmail: string; createdAt: string | Date }) => 
+        (relation: { supervisorEmail: string; createdAt: string | Date }) =>
           relation.supervisorEmail === session?.user?.email
       )
       if (supervisorRelation) {
         const monthsOld = differenceInMonths(
-          new Date(), 
+          new Date(),
           new Date(supervisorRelation.createdAt)
         )
         return monthsOld <= 6
@@ -61,19 +61,45 @@ export default function ProposalCard({
     return false
   }, [proposal, session?.user?.email])
 
+  const statusIcon =
+    proposal.statusKey === 'MATCHED_TENTATIVE' &&
+    proposal.supervisedBy?.[0]?.supervisorEmail === session?.user?.email ? (
+      <FontAwesomeIcon icon={faHourglassHalf} />
+    ) : proposal.statusKey === 'MATCHED' &&
+      proposal.supervisedBy?.[0]?.supervisorEmail === session?.user?.email ? (
+      <div className="flex items-center">
+        <FontAwesomeIcon icon={faCircleCheck} />
+        {isRecentlyActive && (
+          <FontAwesomeIcon
+            icon={faCircle}
+            className="ml-1 text-xs text-[#28960C]"
+            title="Active proposal (accepted within the last 6 months)"
+          />
+        )}
+      </div>
+    ) : isUrgent ? (
+      <FontAwesomeIcon icon={faHourglassHalf} />
+    ) : null
+
   return (
     <Button
       key={proposal.id}
       className={{
         root: twMerge(
-          'flex flex-row md:flex-col justify-between w-full md:w-64 p-2 text-right md:text-center text-sm',
+          'group flex h-full min-h-[13rem] w-full flex-col items-stretch justify-between rounded-lg border border-[#E9E9E9] bg-white p-4 text-left text-sm text-[#121212] shadow-none transition hover:-translate-y-0.5 hover:border-[#CCD4ED] hover:bg-white hover:text-[#121212] hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]',
           (proposal.isOwnProposal || proposal.isSupervisedProposal) &&
-            'border-orange-300',
-          hasFeedback && 'bg-slate-100 border-slate-200',
-          isUrgent && 'bg-red-50 border-red-200',
-          isRecentlyActive && proposal.statusKey === 'MATCHED' && 'border-green-400',
-          !isRecentlyActive && proposal.statusKey === 'MATCHED' && 'bg-gray-100 text-gray-600'
+            'border-[#F3AB00]',
+          hasFeedback && 'bg-[#F5F5FB]',
+          isUrgent && 'border-[#B50000] bg-[#FFF4F4]',
+          isRecentlyActive &&
+            proposal.statusKey === 'MATCHED' &&
+            'border-[#28960C]',
+          !isRecentlyActive &&
+            proposal.statusKey === 'MATCHED' &&
+            'bg-[#FAFAFA] text-[#666666]'
         ),
+        active:
+          'border-[#0028A5] bg-[#F5F5FB] text-[#121212] ring-2 ring-[#0028A5] hover:bg-[#F5F5FB]',
       }}
       active={isActive}
       onClick={onClick}
@@ -85,40 +111,49 @@ export default function ProposalCard({
           : undefined
       }
     >
-      {proposal.statusKey === 'MATCHED_TENTATIVE' &&
-      proposal.supervisedBy[0]?.supervisorEmail === session?.user?.email ? (
-        <FontAwesomeIcon icon={faHourglassHalf} />
-      ) : proposal.statusKey === 'MATCHED' &&
-        proposal.supervisedBy[0]?.supervisorEmail === session?.user?.email ? (
-        <div className="flex items-center">
-          <FontAwesomeIcon icon={faCircleCheck} />
-          {isRecentlyActive && (
-            <FontAwesomeIcon 
-              icon={faCircle} 
-              className="text-green-500 ml-1 text-xs" 
-              title="Active proposal (accepted within the last 6 months)" 
-            />
+      <div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="break-words text-[17px] font-semibold leading-6">
+            {proposal.title}
+          </div>
+          {statusIcon && (
+            <div
+              className={twMerge(
+                'mt-1 shrink-0 text-[#0028A5]',
+                isUrgent && 'text-[#B50000]'
+              )}
+            >
+              {statusIcon}
+            </div>
           )}
         </div>
-      ) : isUrgent ? (
-        <FontAwesomeIcon icon={faHourglassHalf} className="text-red-500" />
-      ) : null}
-      <div className="font-bold">{proposal.title}</div>
-      <div className="mt-1 space-y-1 text-xs">
-        <div>{proposal.studyLevel}</div>
-        <div>{proposal.topicArea.name}</div>
-        <div>
-          {proposal.typeKey === ProposalType.STUDENT
-            ? proposal.applications?.[0]?.fullName
-            : proposal.supervisedBy?.name}
-        </div>
-        <div className="text-gray-600">
-          Erstellt am {format(new Date(proposal.createdAt), 'dd.MM.yyyy', { locale: de })}
-        </div>
-        {hasFeedback && (
-          <div>
-            {proposal.receivedFeedbacks?.map((feedback: { typeKey: string }) => feedback.typeKey)}
+
+        <div className="mt-4 space-y-2 text-[13px] leading-5 text-[#4C4C4C]">
+          <div className="font-semibold text-[#121212]">
+            {proposal.studyLevel}
           </div>
+          <div>{proposal.topicArea.name}</div>
+          <div>
+            {proposal.typeKey === ProposalType.STUDENT
+              ? proposal.applications?.[0]?.fullName
+              : proposal.supervisedBy?.name}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 flex items-center justify-between gap-3 border-t border-[#E9E9E9] pt-3 text-xs text-[#666666]">
+        <span>
+          {proposal.typeKey === ProposalType.STUDENT ? 'Student' : 'Supervisor'}
+        </span>
+        <span>
+          {format(new Date(proposal.createdAt), 'dd.MM.yyyy', { locale: de })}
+        </span>
+        {hasFeedback && (
+          <span className="rounded-full bg-[#CCD4ED] px-2 py-0.5 text-[#1B214A]">
+            {proposal.receivedFeedbacks
+              ?.map((feedback: { typeKey: string }) => feedback.typeKey)
+              .join(', ')}
+          </span>
         )}
       </div>
     </Button>

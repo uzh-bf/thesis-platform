@@ -1,13 +1,15 @@
+import { faLayerGroup } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRouter } from 'next/router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import EmptyState from 'src/components/EmptyState'
+import LoadingSkeleton from 'src/components/LoadingSkeleton'
 import ProposalApplication from 'src/components/ProposalApplication'
 import ProposalFeedback from 'src/components/ProposalFeedback'
 import ProposalMeta from 'src/components/ProposalMeta'
 import ProposalStatusForm from 'src/components/ProposalStatusForm'
 import StudentProposals from 'src/components/StudentProposals'
 import SupervisorProposals from 'src/components/SupervisorProposals'
-import LoadingSkeleton from 'src/components/LoadingSkeleton'
-import EmptyState from 'src/components/EmptyState'
 import useUserRole from 'src/lib/hooks/useUserRole'
 import { trpc } from 'src/lib/trpc'
 import { ProposalStatusFilter } from 'src/types/app'
@@ -35,6 +37,16 @@ export default function Index() {
   const { data, isLoading, refetch } = trpc.proposals.useQuery({
     filters,
   })
+  const proposals = data ?? []
+  const studentProposalCount = proposals.filter(
+    (proposal) => proposal.typeKey === 'STUDENT'
+  ).length
+  const supervisorProposalCount = proposals.filter(
+    (proposal) => proposal.typeKey === 'SUPERVISOR'
+  ).length
+  const matchedProposalCount = proposals.filter(
+    (proposal) => proposal.statusKey === 'MATCHED'
+  ).length
 
   useEffect(() => {
     if (!router.query.proposalId && data?.[0]?.id) {
@@ -48,7 +60,9 @@ export default function Index() {
     if (typeof currentProposalId === 'string') {
       return {
         proposalId: currentProposalId,
-        proposalDetails: data ? data.find((proposal) => proposal.id === currentProposalId) ?? null : null,
+        proposalDetails: data
+          ? (data.find((proposal) => proposal.id === currentProposalId) ?? null)
+          : null,
       }
     }
 
@@ -66,71 +80,94 @@ export default function Index() {
     }
   }, [router.query.filter])
 
-  if (isLoading) {
-    return <LoadingSkeleton />
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="space-y-6">
-            {(isSupervisor || isDeveloper) && (
-              <div className="bg-white rounded-lg shadow">
+    <main id="main-content" className="flex-1 bg-[#FAFAFA]">
+      <section
+        id="proposals"
+        className="mx-auto w-full max-w-[1240px] px-4 py-10 md:px-10 xl:px-[100px]"
+      >
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h2 className="text-[30px] font-semibold leading-tight text-[#121212]">
+              Proposals
+            </h2>
+            <p className="mt-2 text-base text-[#4C4C4C]">
+              {isLoading
+                ? 'Loading current proposals...'
+                : `${proposals.length} total, ${studentProposalCount} student, ${supervisorProposalCount} supervisor, ${matchedProposalCount} matched.`}
+            </p>
+          </div>
+          <div className="inline-flex w-fit items-center gap-3 rounded-lg border border-[#E9E9E9] bg-white px-4 py-3 text-sm font-semibold text-[#4C4C4C]">
+            <FontAwesomeIcon icon={faLayerGroup} className="text-[#0028A5]" />
+            {filters.status.replaceAll('_', ' ').toLowerCase()}
+          </div>
+        </div>
+
+        {isLoading ? (
+          <LoadingSkeleton />
+        ) : (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+            <div className="space-y-6">
+              {(isSupervisor || isDeveloper) && (
+                <div className="rounded-lg border border-[#E9E9E9] bg-white shadow-sm">
+                  <div className="p-6">
+                    <StudentProposals
+                      data={proposals}
+                      selectedProposal={proposalId}
+                      setSelectedProposal={setSelectedProposal}
+                      buttonRef={buttonRef}
+                      filters={filters}
+                      setFilters={setFilters}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="rounded-lg border border-[#E9E9E9] bg-white shadow-sm">
                 <div className="p-6">
-                  <StudentProposals
-                    data={data ?? []}
+                  <SupervisorProposals
+                    data={proposals}
                     selectedProposal={proposalId}
                     setSelectedProposal={setSelectedProposal}
                     buttonRef={buttonRef}
-                    filters={filters}
-                    setFilters={setFilters}
                   />
                 </div>
-              </div>
-            )}
-
-            <div className="bg-white rounded-lg shadow">
-              <div className="p-6">
-                <SupervisorProposals
-                  data={data ?? []}
-                  selectedProposal={proposalId}
-                  setSelectedProposal={setSelectedProposal}
-                  buttonRef={buttonRef}
-                />
               </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-lg shadow" ref={buttonRef}>
-            {!proposalDetails ? (
-              <EmptyState
-                title="No Proposal Selected"
-                description="Select a proposal from the list to get started."
-              />
-            ) : (
-              <div>
+            <div
+              className="rounded-lg border border-[#E9E9E9] bg-white shadow-sm"
+              ref={buttonRef}
+            >
+              {!proposalDetails ? (
+                <EmptyState
+                  title="No Proposal Selected"
+                  description="Select a proposal from the list to get started."
+                />
+              ) : (
                 <div>
-                  <ProposalMeta proposalDetails={proposalDetails} />
+                  <div>
+                    <ProposalMeta proposalDetails={proposalDetails} />
+                  </div>
+                  <div>
+                    <ProposalApplication
+                      proposalDetails={proposalDetails}
+                      refetch={refetch}
+                      setFilters={setFilters}
+                    />
+                  </div>
+                  <div>
+                    <ProposalFeedback proposalDetails={proposalDetails} />
+                  </div>
+                  <div>
+                    <ProposalStatusForm proposalDetails={proposalDetails} />
+                  </div>
                 </div>
-                <div>
-                  <ProposalApplication
-                    proposalDetails={proposalDetails}
-                    refetch={refetch}
-                    setFilters={setFilters}
-                  />
-                </div>
-                <div>
-                  <ProposalFeedback proposalDetails={proposalDetails} />
-                </div>
-                <div>
-                  <ProposalStatusForm proposalDetails={proposalDetails} />
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
+        )}
+      </section>
+    </main>
   )
 }
