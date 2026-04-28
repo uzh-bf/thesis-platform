@@ -1,5 +1,14 @@
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRouter } from 'next/router'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import EmptyState from 'src/components/EmptyState'
 import LoadingSkeleton from 'src/components/LoadingSkeleton'
 import ProposalApplication from 'src/components/ProposalApplication'
@@ -10,14 +19,51 @@ import StudentProposals from 'src/components/StudentProposals'
 import SupervisorProposals from 'src/components/SupervisorProposals'
 import useUserRole from 'src/lib/hooks/useUserRole'
 import { trpc } from 'src/lib/trpc'
-import { ProposalStatusFilter } from 'src/types/app'
+import { ProposalDetails, ProposalStatusFilter } from 'src/types/app'
+
+interface SelectedProposalDetailsProps {
+  proposalDetails: ProposalDetails | null
+  refetch: () => void
+  setFilters: Dispatch<SetStateAction<{ status: ProposalStatusFilter }>>
+}
+
+function SelectedProposalDetails({
+  proposalDetails,
+  refetch,
+  setFilters,
+}: SelectedProposalDetailsProps) {
+  if (!proposalDetails) {
+    return (
+      <EmptyState
+        title="No Proposal Selected"
+        description="Select a proposal from the list to get started."
+      />
+    )
+  }
+
+  return (
+    <div>
+      <ProposalMeta proposalDetails={proposalDetails} />
+      <ProposalApplication
+        proposalDetails={proposalDetails}
+        refetch={refetch}
+        setFilters={setFilters}
+      />
+      <ProposalFeedback proposalDetails={proposalDetails} />
+      <ProposalStatusForm proposalDetails={proposalDetails} />
+    </div>
+  )
+}
 
 export default function Index() {
   const router = useRouter()
+  const [isDesktopViewport, setIsDesktopViewport] = useState(false)
+  const [isMobileDetailsOpen, setIsMobileDetailsOpen] = useState(true)
 
   const setSelectedProposal = useCallback(
     (proposalId: string | null) => {
       if (!proposalId) return
+      setIsMobileDetailsOpen(true)
       router.push(`/${proposalId}`, undefined, { scroll: false })
     },
     [router]
@@ -37,10 +83,22 @@ export default function Index() {
   const proposals = data ?? []
 
   useEffect(() => {
-    if (!router.query.proposalId && data?.[0]?.id) {
+    const mediaQuery = window.matchMedia('(min-width: 1024px)')
+    const updateViewport = () => setIsDesktopViewport(mediaQuery.matches)
+
+    updateViewport()
+    mediaQuery.addEventListener('change', updateViewport)
+
+    return () => {
+      mediaQuery.removeEventListener('change', updateViewport)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isDesktopViewport && !router.query.proposalId && data?.[0]?.id) {
       setSelectedProposal(data[0].id)
     }
-  }, [setSelectedProposal, data, router.query.proposalId])
+  }, [isDesktopViewport, setSelectedProposal, data, router.query.proposalId])
 
   const { proposalId, proposalDetails } = useMemo(() => {
     const currentProposalId = router.query.proposalId?.[0]
@@ -110,36 +168,40 @@ export default function Index() {
               </div>
             </div>
 
-            <div className="rounded-lg border border-[#E9E9E9] bg-white shadow-sm lg:sticky lg:top-[10rem] lg:max-h-[calc(100vh-11.5rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain">
-              {!proposalDetails ? (
-                <EmptyState
-                  title="No Proposal Selected"
-                  description="Select a proposal from the list to get started."
-                />
-              ) : (
-                <div>
-                  <div>
-                    <ProposalMeta proposalDetails={proposalDetails} />
-                  </div>
-                  <div>
-                    <ProposalApplication
-                      proposalDetails={proposalDetails}
-                      refetch={refetch}
-                      setFilters={setFilters}
-                    />
-                  </div>
-                  <div>
-                    <ProposalFeedback proposalDetails={proposalDetails} />
-                  </div>
-                  <div>
-                    <ProposalStatusForm proposalDetails={proposalDetails} />
-                  </div>
-                </div>
-              )}
+            <div className="hidden rounded-lg border border-[#E9E9E9] bg-white shadow-sm lg:sticky lg:top-[10rem] lg:block lg:max-h-[calc(100vh-11.5rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain">
+              <SelectedProposalDetails
+                proposalDetails={proposalDetails}
+                refetch={refetch}
+                setFilters={setFilters}
+              />
             </div>
           </div>
         )}
       </section>
+
+      {proposalDetails && isMobileDetailsOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#FAFAFA] lg:hidden">
+          <div className="sticky top-0 z-10 border-b border-[#E9E9E9] bg-white px-4 py-3">
+            <button
+              type="button"
+              onClick={() => setIsMobileDetailsOpen(false)}
+              className="inline-flex items-center gap-2 rounded-[4px] border border-[#0028A5] bg-white px-3 py-2 text-sm font-semibold text-[#0028A5]"
+            >
+              <FontAwesomeIcon icon={faArrowLeft} />
+              Back to proposals
+            </button>
+          </div>
+          <div className="p-4">
+            <div className="rounded-lg border border-[#E9E9E9] bg-white shadow-sm">
+              <SelectedProposalDetails
+                proposalDetails={proposalDetails}
+                refetch={refetch}
+                setFilters={setFilters}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
