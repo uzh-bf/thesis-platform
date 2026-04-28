@@ -240,25 +240,29 @@ export default function ApplicationForm({
               </section>
             )}
           </Dropzone>
-          <div className="flex pt-2 text-lg font-bold">
-            <div className="flex-1">
+          <div className="grid grid-cols-1 gap-3 pt-4 text-lg font-bold sm:grid-cols-2">
+            <div className="min-w-0 rounded-lg border border-[#E9E9E9] bg-white p-3">
               <FormikSwitchField
                 name="allowUsage"
                 label="Allow Usage"
                 tooltip={`I hereby consent and grant the University of Zurich, represented by the ${process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME}, the rights of use to my written work and all artifacts under copyright protection created in the context of my academic work.`}
                 required
                 size="sm"
-                className={{ tooltip: 'w-96' }}
+                className={{
+                  tooltip: 'w-80 max-w-[calc(100vw-3rem)] sm:w-96',
+                }}
               />
             </div>
-            <div className="flex-1">
+            <div className="min-w-0 rounded-lg border border-[#E9E9E9] bg-white p-3">
               <FormikSwitchField
                 name="allowPublication"
                 label="Allow Publication"
                 tooltip={`I agree to allow the University of Zurich, represented by the ${process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME}, to publish my work in its entirety or in part on the Internet and distribute printed versions to interested parties.`}
                 required
                 size="sm"
-                className={{ tooltip: 'w-96' }}
+                className={{
+                  tooltip: 'w-80 max-w-[calc(100vw-3rem)] sm:w-96',
+                }}
               />
             </div>
           </div>
