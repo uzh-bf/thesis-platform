@@ -49,6 +49,11 @@ export default function Header() {
       : process.env.NEXT_PUBLIC_FAQ_URL_STUDENT) ??
     process.env.NEXT_PUBLIC_FAQ_URL_STUDENT ??
     process.env.NEXT_PUBLIC_FAQ_URL_SUPERVISOR
+  const accountLabel = session?.user?.email
+    ? `Signed in as ${session.user.email}${
+        session.user.role ? ` (${session.user.role})` : ''
+      }`
+    : undefined
 
   const serviceButtonClass =
     'rounded-[4px] border-[#0028A5] bg-white px-3 py-1.5 text-sm font-semibold text-[#0028A5] shadow-none hover:bg-[#F5F5FB] hover:text-[#0028A5]'
@@ -167,20 +172,19 @@ export default function Header() {
             )}
 
             {session?.user ? (
-              <>
-                <div className="max-w-[280px] truncate text-sm text-[#4C4C4C]">
-                  {session.user.email} ({session.user.role})
-                </div>
-                <Button
-                  onClick={handleLogout}
-                  className={{
-                    root: `flex items-center gap-2 ${primaryButtonClass}`,
-                  }}
-                >
-                  <FontAwesomeIcon icon={faRightFromBracket} />
-                  Sign out
-                </Button>
-              </>
+              <Button
+                onClick={handleLogout}
+                title={accountLabel}
+                aria-label={
+                  accountLabel ? `${accountLabel}. Sign out` : 'Sign out'
+                }
+                className={{
+                  root: `flex items-center gap-2 ${primaryButtonClass}`,
+                }}
+              >
+                <FontAwesomeIcon icon={faRightFromBracket} />
+                Sign out
+              </Button>
             ) : (
               <Button
                 onClick={() => signIn()}
