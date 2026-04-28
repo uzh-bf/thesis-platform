@@ -1,5 +1,3 @@
-import { faLayerGroup } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRouter } from 'next/router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import EmptyState from 'src/components/EmptyState'
@@ -38,15 +36,6 @@ export default function Index() {
     filters,
   })
   const proposals = data ?? []
-  const studentProposalCount = proposals.filter(
-    (proposal) => proposal.typeKey === 'STUDENT'
-  ).length
-  const supervisorProposalCount = proposals.filter(
-    (proposal) => proposal.typeKey === 'SUPERVISOR'
-  ).length
-  const matchedProposalCount = proposals.filter(
-    (proposal) => proposal.statusKey === 'MATCHED'
-  ).length
 
   useEffect(() => {
     if (!router.query.proposalId && data?.[0]?.id) {
@@ -86,21 +75,10 @@ export default function Index() {
         id="proposals"
         className="mx-auto w-full max-w-[1240px] px-4 py-10 md:px-10 xl:px-[100px]"
       >
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h2 className="text-[30px] font-semibold leading-tight text-[#121212]">
-              Proposals
-            </h2>
-            <p className="mt-2 text-base text-[#4C4C4C]">
-              {isLoading
-                ? 'Loading current proposals...'
-                : `${proposals.length} total, ${studentProposalCount} student, ${supervisorProposalCount} supervisor, ${matchedProposalCount} matched.`}
-            </p>
-          </div>
-          <div className="inline-flex w-fit items-center gap-3 rounded-lg border border-[#E9E9E9] bg-white px-4 py-3 text-sm font-semibold text-[#4C4C4C]">
-            <FontAwesomeIcon icon={faLayerGroup} className="text-[#0028A5]" />
-            {filters.status.replaceAll('_', ' ').toLowerCase()}
-          </div>
+        <div className="mb-6">
+          <h2 className="text-[30px] font-semibold leading-tight text-[#121212]">
+            Proposals
+          </h2>
         </div>
 
         {isLoading ? (
