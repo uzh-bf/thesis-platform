@@ -86,7 +86,7 @@ export default function ProposalCard({
       key={proposal.id}
       className={{
         root: twMerge(
-          'group flex h-full min-h-[13rem] w-full flex-col items-stretch justify-between rounded-lg border border-[#E9E9E9] bg-white p-4 text-left text-sm text-[#121212] shadow-none transition hover:-translate-y-0.5 hover:border-[#CCD4ED] hover:bg-white hover:text-[#121212] hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]',
+          'group flex h-full min-h-[13rem] w-full min-w-0 flex-col items-stretch justify-between overflow-hidden whitespace-normal rounded-lg border border-[#E9E9E9] bg-white p-4 text-left text-sm text-[#121212] shadow-none transition hover:-translate-y-0.5 hover:border-[#CCD4ED] hover:bg-white hover:text-[#121212] hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]',
           (proposal.isOwnProposal || proposal.isSupervisedProposal) &&
             'border-[#F3AB00]',
           hasFeedback && 'bg-[#F5F5FB]',
@@ -111,9 +111,9 @@ export default function ProposalCard({
           : undefined
       }
     >
-      <div>
+      <div className="min-w-0">
         <div className="flex items-start justify-between gap-3">
-          <div className="break-words text-[17px] font-semibold leading-6">
+          <div className="min-w-0 max-w-full break-words text-[17px] font-semibold leading-6 [overflow-wrap:anywhere]">
             {proposal.title}
           </div>
           {statusIcon && (
@@ -128,12 +128,14 @@ export default function ProposalCard({
           )}
         </div>
 
-        <div className="mt-4 space-y-2 text-[13px] leading-5 text-[#4C4C4C]">
-          <div className="font-semibold text-[#121212]">
+        <div className="mt-4 min-w-0 space-y-2 text-[13px] leading-5 text-[#4C4C4C]">
+          <div className="break-words font-semibold text-[#121212] [overflow-wrap:anywhere]">
             {proposal.studyLevel}
           </div>
-          <div>{proposal.topicArea.name}</div>
-          <div>
+          <div className="break-words [overflow-wrap:anywhere]">
+            {proposal.topicArea.name}
+          </div>
+          <div className="break-words [overflow-wrap:anywhere]">
             {proposal.typeKey === ProposalType.STUDENT
               ? proposal.applications?.[0]?.fullName
               : proposal.supervisedBy?.name}
@@ -141,15 +143,15 @@ export default function ProposalCard({
         </div>
       </div>
 
-      <div className="mt-5 flex items-center justify-between gap-3 border-t border-[#E9E9E9] pt-3 text-xs text-[#666666]">
-        <span>
+      <div className="mt-5 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-t border-[#E9E9E9] pt-3 text-xs text-[#666666]">
+        <span className="min-w-0 truncate">
           {proposal.typeKey === ProposalType.STUDENT ? 'Student' : 'Supervisor'}
         </span>
-        <span>
+        <span className="shrink-0 tabular-nums">
           {format(new Date(proposal.createdAt), 'dd.MM.yyyy', { locale: de })}
         </span>
         {hasFeedback && (
-          <span className="rounded-full bg-[#CCD4ED] px-2 py-0.5 text-[#1B214A]">
+          <span className="col-span-2 max-w-full rounded-full bg-[#CCD4ED] px-2 py-0.5 text-[#1B214A]">
             {proposal.receivedFeedbacks
               ?.map((feedback: { typeKey: string }) => feedback.typeKey)
               .join(', ')}

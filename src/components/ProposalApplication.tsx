@@ -78,7 +78,7 @@ export default function ProposalApplication({
                     key={application.id}
                     className="rounded-[8px] border border-[#E9E9E9] bg-white p-4"
                   >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex flex-col gap-4">
                       <div className="min-w-0">
                         <div className="mb-2 flex flex-wrap items-center gap-2">
                           <span
@@ -93,14 +93,14 @@ export default function ProposalApplication({
                             Submitted {formatDate(application.createdAt)}
                           </span>
                         </div>
-                        <h3 className="truncate text-base font-semibold text-[#121212]">
+                        <h3 className="break-words text-base font-semibold text-[#121212] [overflow-wrap:anywhere]">
                           {application.fullName}
                         </h3>
                         <p className="break-all text-sm text-[#4C4C4C]">
                           {application.email}
                         </p>
                       </div>
-                      <div className="flex shrink-0 flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <ApplicationDetailsModal row={application} />
                         <ConfirmationModal
                           row={application}

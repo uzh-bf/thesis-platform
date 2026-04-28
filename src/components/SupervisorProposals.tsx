@@ -45,9 +45,9 @@ export default function SupervisorProposals({
           Topics published by supervisors for student applications.
         </p>
       </div>
-      <div className="grid grid-cols-1 gap-3 pt-5 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 pt-5 sm:grid-cols-2">
         {sortedSupervisorProposals.length === 0 && (
-          <div className="rounded-lg border border-dashed border-[#C2C2C2] bg-[#FAFAFA] p-6 text-center text-[#4C4C4C] sm:col-span-2 xl:col-span-3">
+          <div className="rounded-lg border border-dashed border-[#C2C2C2] bg-[#FAFAFA] p-6 text-center text-[#4C4C4C] sm:col-span-2">
             No supervisor proposals available.
           </div>
         )}
