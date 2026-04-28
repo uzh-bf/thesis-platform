@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import EmptyState from 'src/components/EmptyState'
 import LoadingSkeleton from 'src/components/LoadingSkeleton'
 import ProposalApplication from 'src/components/ProposalApplication'
@@ -14,12 +14,11 @@ import { ProposalStatusFilter } from 'src/types/app'
 
 export default function Index() {
   const router = useRouter()
-  const buttonRef = useRef<HTMLDivElement>(null)
 
   const setSelectedProposal = useCallback(
     (proposalId: string | null) => {
       if (!proposalId) return
-      router.push(`/${proposalId}`)
+      router.push(`/${proposalId}`, undefined, { scroll: false })
     },
     [router]
   )
@@ -93,7 +92,6 @@ export default function Index() {
                       data={proposals}
                       selectedProposal={proposalId}
                       setSelectedProposal={setSelectedProposal}
-                      buttonRef={buttonRef}
                       filters={filters}
                       setFilters={setFilters}
                     />
@@ -107,16 +105,12 @@ export default function Index() {
                     data={proposals}
                     selectedProposal={proposalId}
                     setSelectedProposal={setSelectedProposal}
-                    buttonRef={buttonRef}
                   />
                 </div>
               </div>
             </div>
 
-            <div
-              className="rounded-lg border border-[#E9E9E9] bg-white shadow-sm"
-              ref={buttonRef}
-            >
+            <div className="rounded-lg border border-[#E9E9E9] bg-white shadow-sm">
               {!proposalDetails ? (
                 <EmptyState
                   title="No Proposal Selected"

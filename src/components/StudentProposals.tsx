@@ -1,5 +1,5 @@
 import { H2, H3, Select } from '@uzh-bf/design-system'
-import { RefObject, useMemo } from 'react'
+import { useMemo } from 'react'
 import { ProposalDetails, ProposalStatusFilter } from 'src/types/app'
 import ProposalCard from './ProposalCard'
 import { trpc } from 'src/lib/trpc'
@@ -8,7 +8,6 @@ interface StudentProposalsProps {
   data: ProposalDetails[]
   selectedProposal: string | null
   setSelectedProposal: (proposalId: string | null) => void
-  buttonRef: RefObject<HTMLDivElement>
   filters: {
     status: ProposalStatusFilter
   }
@@ -19,7 +18,6 @@ export default function StudentProposals({
   data,
   selectedProposal,
   setSelectedProposal,
-  buttonRef,
   filters,
   setFilters,
 }: StudentProposalsProps) {
@@ -138,12 +136,7 @@ export default function StudentProposals({
                         key={proposal.id}
                         proposal={proposal}
                         isActive={selectedProposal === proposal.id}
-                        onClick={() => {
-                          setSelectedProposal(proposal.id)
-                          buttonRef?.current?.scrollIntoView({
-                            behavior: 'smooth',
-                          })
-                        }}
+                        onClick={() => setSelectedProposal(proposal.id)}
                       />
                     )
                   )}
