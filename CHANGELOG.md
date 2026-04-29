@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.0](https://github.com/uzh-bf/thesis-platform/compare/v1.4.0...v1.5.0) (2026-04-29)
+
+
+### Features
+
+* **ui:** add smooth scrolling to proposal details on desktop ([5de8e1a](https://github.com/uzh-bf/thesis-platform/commit/5de8e1a617a8010fcddc4dfd912839a0a368b090))
+* **ui:** apply UZH design patterns ([716d1d8](https://github.com/uzh-bf/thesis-platform/commit/716d1d8bd4bd87ad7e4fa360069f045155d11cd4))
+* **ui:** apply UZH design patterns ([#93](https://github.com/uzh-bf/thesis-platform/issues/93)) ([058b3f9](https://github.com/uzh-bf/thesis-platform/commit/058b3f9d48c80c6902765fc67ecf74589d063c2e))
+
+
+### Bug Fixes
+
+* **ui:** keep proposal details sticky ([616815f](https://github.com/uzh-bf/thesis-platform/commit/616815f6517ee8624508ea07781ce42fe672a411))
+* **ui:** keep proposal details visible ([b7a739c](https://github.com/uzh-bf/thesis-platform/commit/b7a739c3db707c26b6769195caaff157e13ef028))
+* **ui:** preserve scroll on proposal selection ([83b1f90](https://github.com/uzh-bf/thesis-platform/commit/83b1f9013d0911fa6f4b945fa0ae6af304c4eaaa))
+* **ui:** prevent proposal card overflow ([60d886d](https://github.com/uzh-bf/thesis-platform/commit/60d886d7495b6bc9b58ce5b7e84d06521528312f))
+* **ui:** remove proposal summary row ([37fcaea](https://github.com/uzh-bf/thesis-platform/commit/37fcaea06e8c86f5a5551e85934f09c46cfd7b01))
+* **ui:** replace applications scroll table ([d4e6093](https://github.com/uzh-bf/thesis-platform/commit/d4e60937689130b8c3fda222b77980bdf8ba8923))
+* **ui:** simplify logged-in header ([d79b519](https://github.com/uzh-bf/thesis-platform/commit/d79b519e09e4c55345b5bf7b6afc004a991f65b4))
+* **ui:** stack application consent switches on mobile ([673c1f6](https://github.com/uzh-bf/thesis-platform/commit/673c1f64152d5ebfcac425a8c22a97b7a2279b05))
+* **ui:** use mobile proposal details overlay ([f6b1269](https://github.com/uzh-bf/thesis-platform/commit/f6b1269b7aec53ec1be5462ff6811d38ff9c49f7))
+
+
+### Refactors
+
+* **ui:** deduplicate proposal metadata ([6e3f054](https://github.com/uzh-bf/thesis-platform/commit/6e3f054f68bddf45cf91362adf1552720618a268))
+
+
+### Build and CI
+
+* **docker:** use corepack for pnpm ([d7d1432](https://github.com/uzh-bf/thesis-platform/commit/d7d1432de5564a459de7b7d804a6efc209b30ef4))
+
 ## [1.4.0](https://github.com/uzh-bf/thesis-platform/compare/v1.3.2...v1.4.0) (2026-04-07)
 
 
