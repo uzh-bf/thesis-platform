@@ -7,7 +7,7 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat
 RUN apk update
 
-RUN npm i -g --ignore-scripts pnpm@10.15.0
+RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
 
 # Install dependencies based on the preferred package manager
 COPY package.json pnpm-lock.yaml ./
@@ -20,18 +20,18 @@ FROM node:22.18.0-alpine AS builder
 RUN apk add --no-cache libc6-compat
 RUN apk update
 
-RUN npm i -g --ignore-scripts pnpm@10.15.0
+RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
 
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-ARG NODE_ENV production
+ARG NODE_ENV=production
 ARG NEXT_PUBLIC_APP_URL
 ARG NEXT_PUBLIC_FORMS_URL_PUBLISH
 ARG NEXT_PUBLIC_FORMS_URL_SUBMIT
 ARG NEXT_PUBLIC_BLOBSERVICECLIENT_URL
-ARG NEXT_PUBLIC_CONTAINER_NAME "uploads"
+ARG NEXT_PUBLIC_CONTAINER_NAME=uploads
 ARG NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME
 ARG NEXT_PUBLIC_FOOTER_COPYRIGHT
 ARG NEXT_PUBLIC_FOOTER_DESCRIPTION
@@ -42,7 +42,7 @@ ARG NEXT_PUBLIC_FAQ_URL_STUDENT
 ARG NEXT_PUBLIC_FAQ_URL_SUPERVISOR
 ARG NEXT_PUBLIC_APP_VERSION
 
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN pnpm run build
 
@@ -57,10 +57,8 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat
 RUN apk update
 
-RUN npm i -g --ignore-scripts pnpm@10.15.0
-
-ARG NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+ARG NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -76,6 +74,6 @@ USER nextjs
 
 EXPOSE 3000
 
-ENV PORT 3000
+ENV PORT=3000
 
 CMD ["node", "server.js"]
