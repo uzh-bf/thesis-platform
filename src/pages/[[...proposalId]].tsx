@@ -217,7 +217,7 @@ export default function Index() {
               </div>
             </div>
 
-            <div className="hidden rounded-lg border border-[#E9E9E9] bg-white shadow-sm lg:block lg:self-start">
+            <div className="hidden rounded-lg border border-[#E9E9E9] bg-white shadow-sm lg:sticky lg:top-6 lg:block lg:self-start">
               <SelectedProposalDetails
                 proposalDetails={proposalDetails}
                 refetch={refetch}
