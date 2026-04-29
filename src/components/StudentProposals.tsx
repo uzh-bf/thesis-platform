@@ -85,13 +85,7 @@ export default function StudentProposals({
               const proposals = groupedStudentProposals?.[topicArea.name] ?? []
 
               return (
-                <div
-                  key={topicArea.id}
-                  className={twMerge(
-                    'mt-6 border-l-4 py-2 pl-3 first:mt-0',
-                    visual.sectionBorder
-                  )}
-                >
+                <div key={topicArea.id} className="mt-6 py-2 first:mt-0">
                   <div className="mb-3 flex flex-wrap items-center gap-2">
                     <span
                       aria-hidden="true"
