@@ -1,7 +1,9 @@
 import { H2, H3 } from '@uzh-bf/design-system'
 import { useMemo } from 'react'
+import { getTopicAreaVisual } from 'src/lib/topicAreaVisuals'
 import { trpc } from 'src/lib/trpc'
 import { ProposalDetails } from 'src/types/app'
+import { twMerge } from 'tailwind-merge'
 import ProposalCard from './ProposalCard'
 
 interface StudentProposalsProps {
@@ -78,29 +80,53 @@ export default function StudentProposals({
               (topicArea) =>
                 groupedStudentProposals?.[topicArea.name]?.length > 0
             )
-            .map((topicArea) => (
-              <div key={topicArea.id} className="mt-6 first:mt-0">
-                <H3
-                  className={{
-                    root: 'mb-3 text-lg font-semibold leading-7 text-[#121212]',
-                  }}
+            .map((topicArea) => {
+              const visual = getTopicAreaVisual(topicArea.name)
+              const proposals = groupedStudentProposals?.[topicArea.name] ?? []
+
+              return (
+                <div
+                  key={topicArea.id}
+                  className={twMerge(
+                    'mt-6 border-l-4 py-2 pl-3 first:mt-0',
+                    visual.section
+                  )}
                 >
-                  {topicArea.name}
-                </H3>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {groupedStudentProposals?.[topicArea.name]?.map(
-                    (proposal: any) => (
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    <span
+                      aria-hidden="true"
+                      className={twMerge(
+                        'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ring-1',
+                        visual.badge
+                      )}
+                    >
+                      {visual.label}
+                    </span>
+                    <H3
+                      className={{
+                        root: 'm-0 min-w-0 flex-1 text-lg font-semibold leading-7 text-[#121212]',
+                      }}
+                    >
+                      {topicArea.name}
+                    </H3>
+                    <span className="ml-auto shrink-0 text-xs font-semibold text-[#4C4C4C]">
+                      {proposals.length}{' '}
+                      {proposals.length === 1 ? 'proposal' : 'proposals'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {proposals.map((proposal: any) => (
                       <ProposalCard
                         key={proposal.id}
                         proposal={proposal}
                         isActive={selectedProposal === proposal.id}
                         onClick={() => setSelectedProposal(proposal.id)}
                       />
-                    )
-                  )}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))
+              )
+            })
         )}
       </div>
     </div>

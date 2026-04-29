@@ -10,6 +10,7 @@ import { de } from 'date-fns/locale'
 import { useSession } from 'next-auth/react'
 import { useMemo } from 'react'
 import { ProposalType, UserRole } from 'src/lib/constants'
+import { getTopicAreaVisual } from 'src/lib/topicAreaVisuals'
 import { twMerge } from 'tailwind-merge'
 
 type ProposalDetails = any // Using any temporarily to fix TypeScript errors
@@ -23,6 +24,7 @@ export default function ProposalCard({
   onClick: () => void
 }) {
   const { data: session } = useSession()
+  const topicAreaVisual = getTopicAreaVisual(proposal.topicArea.name)
 
   const hasFeedback =
     (session?.user?.role === UserRole.SUPERVISOR ||
@@ -86,7 +88,7 @@ export default function ProposalCard({
       key={proposal.id}
       className={{
         root: twMerge(
-          'group flex h-full min-h-[13rem] w-full min-w-0 flex-col items-stretch justify-between overflow-hidden whitespace-normal rounded-lg border border-[#E9E9E9] bg-white p-4 text-left text-sm text-[#121212] shadow-none transition hover:-translate-y-0.5 hover:border-[#CCD4ED] hover:bg-white hover:text-[#121212] hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]',
+          'group relative flex h-full min-h-[13rem] w-full min-w-0 flex-col items-stretch justify-between overflow-hidden whitespace-normal rounded-lg border border-[#E9E9E9] bg-white p-4 text-left text-sm text-[#121212] shadow-none transition hover:-translate-y-0.5 hover:border-[#CCD4ED] hover:bg-white hover:text-[#121212] hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]',
           (proposal.isOwnProposal || proposal.isSupervisedProposal) &&
             'border-[#F3AB00]',
           hasFeedback && 'bg-[#F5F5FB]',
@@ -111,6 +113,13 @@ export default function ProposalCard({
           : undefined
       }
     >
+      <span
+        aria-hidden="true"
+        className={twMerge(
+          'pointer-events-none absolute inset-y-0 left-0 w-1',
+          topicAreaVisual.cardStripe
+        )}
+      />
       <div className="min-w-0">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 max-w-full break-words text-[17px] font-semibold leading-6 [overflow-wrap:anywhere]">
@@ -132,8 +141,17 @@ export default function ProposalCard({
           <div className="break-words font-semibold text-[#121212] [overflow-wrap:anywhere]">
             {proposal.studyLevel}
           </div>
-          <div className="break-words [overflow-wrap:anywhere]">
-            {proposal.topicArea.name}
+          <div className="flex min-w-0 items-start gap-2 break-words [overflow-wrap:anywhere]">
+            <span
+              aria-hidden="true"
+              className={twMerge(
+                'mt-2 h-2 w-2 shrink-0 rounded-full',
+                topicAreaVisual.dot
+              )}
+            />
+            <span className="min-w-0 break-words [overflow-wrap:anywhere]">
+              {proposal.topicArea.name}
+            </span>
           </div>
           <div className="break-words [overflow-wrap:anywhere]">
             {proposal.typeKey === ProposalType.STUDENT
