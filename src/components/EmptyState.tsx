@@ -10,10 +10,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   description,
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center p-8 text-center">
-      <div className="w-16 h-16 mb-4 text-gray-400">
+    <div className="flex min-h-[28rem] flex-col items-center justify-center p-8 text-center">
+      <div className="mb-5 h-16 w-16 text-[#99A9DB]">
         <svg
-          className="w-full h-full"
+          className="h-full w-full"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -27,8 +27,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           />
         </svg>
       </div>
-      <h3 className="mb-2 text-lg font-medium text-gray-900">{title}</h3>
-      <p className="mb-6 text-sm text-gray-500">{description}</p>
+      <h3 className="mb-2 text-lg font-semibold text-[#121212]">{title}</h3>
+      <p className="max-w-sm text-sm leading-6 text-[#4C4C4C]">{description}</p>
     </div>
   )
 }

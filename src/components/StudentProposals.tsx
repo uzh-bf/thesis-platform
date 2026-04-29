@@ -1,30 +1,23 @@
-import { H2, H3, Select } from '@uzh-bf/design-system'
-import { RefObject, useMemo } from 'react'
-import { ProposalDetails, ProposalStatusFilter } from 'src/types/app'
-import ProposalCard from './ProposalCard'
+import { H2, H3 } from '@uzh-bf/design-system'
+import { useMemo } from 'react'
 import { trpc } from 'src/lib/trpc'
+import { ProposalDetails } from 'src/types/app'
+import ProposalCard from './ProposalCard'
 
 interface StudentProposalsProps {
   data: ProposalDetails[]
   selectedProposal: string | null
   setSelectedProposal: (proposalId: string | null) => void
-  buttonRef: RefObject<HTMLDivElement>
-  filters: {
-    status: ProposalStatusFilter
-  }
-  setFilters: (filters: { status: ProposalStatusFilter }) => void
 }
 
 export default function StudentProposals({
   data,
   selectedProposal,
   setSelectedProposal,
-  buttonRef,
-  filters,
-  setFilters,
 }: StudentProposalsProps) {
   // Fetch topic areas from the database
-  const { data: topicAreas, isLoading: isLoadingTopicAreas } = trpc.getTopicAreas.useQuery()
+  const { data: topicAreas, isLoading: isLoadingTopicAreas } =
+    trpc.getTopicAreas.useQuery()
 
   const groupedStudentProposals = useMemo(() => {
     const grouped: Record<string, ProposalDetails[]> = {}
@@ -41,7 +34,8 @@ export default function StudentProposals({
 
     for (const proposals of Object.values(grouped)) {
       proposals.sort((a, b) => {
-        const createdAtCompare = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        const createdAtCompare =
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
 
         if (createdAtCompare !== 0) {
           return createdAtCompare
@@ -56,69 +50,54 @@ export default function StudentProposals({
 
   return (
     <div>
-      <div className="flex">
-        <H2 className={{ root: 'w-1/3' }}>Student Proposals</H2>
-        <Select
+      <div className="border-b border-[#E9E9E9] pb-5">
+        <H2
           className={{
-            root: 'w-2/3 justify-end',
+            root: 'mb-1 text-[26px] font-semibold leading-tight text-[#121212]',
           }}
-          value={filters.status}
-          items={[
-            {
-              value: ProposalStatusFilter.OPEN_PROPOSALS,
-              label: 'Open Proposals',
-            },
-            {
-              value: ProposalStatusFilter.MY_PROPOSALS,
-              label: 'My Proposals',
-            },
-            {
-              value: ProposalStatusFilter.ACTIVE_PROPOSALS,
-              label: 'My Active Proposals',
-            },
-            {
-              value: ProposalStatusFilter.REJECTED_AND_DECLINED_PROPOSALS,
-              label: 'Rejected / Declined Proposals',
-            },
-            {
-              value: ProposalStatusFilter.ALL_PROPOSALS,
-              label: 'All Proposals',
-            },
-          ]}
-          onChange={(newStatus: string) => {
-            setFilters({ status: newStatus as ProposalStatusFilter })
-            setSelectedProposal(null)
-          }}
-        />
+        >
+          Student Proposals
+        </H2>
+        <p className="text-sm text-[#4C4C4C]">
+          Submissions from students grouped by field of research.
+        </p>
       </div>
-      <div className="text-base">
+      <div className="pt-5 text-base">
         {data?.filter((proposal: any) => proposal.typeKey === 'STUDENT')
-          .length === 0 && <div>No student proposals available...</div>}
+          .length === 0 && (
+          <div className="rounded-lg border border-dashed border-[#C2C2C2] bg-[#FAFAFA] p-6 text-center text-[#4C4C4C]">
+            No student proposals available.
+          </div>
+        )}
 
         {isLoadingTopicAreas ? (
-          <div>Loading topic areas...</div>
+          <div className="text-[#4C4C4C]">Loading topic areas...</div>
         ) : (
           (topicAreas || [])
             .filter(
-              (topicArea) => groupedStudentProposals?.[topicArea.name]?.length > 0
+              (topicArea) =>
+                groupedStudentProposals?.[topicArea.name]?.length > 0
             )
             .map((topicArea) => (
-              <div key={topicArea.id}>
-                <H3 className={{ root: 'mt-2' }}>{topicArea.name}</H3>
-                <div className="flex flex-row flex-wrap grid-cols-3 gap-2">
-                  {groupedStudentProposals?.[topicArea.name]?.map((proposal: any) => (
-                    <ProposalCard
-                      key={proposal.id}
-                      proposal={proposal}
-                      isActive={selectedProposal === proposal.id}
-                      onClick={() => {
-                        setSelectedProposal(proposal.id)
-                        buttonRef?.current?.scrollIntoView({
-                          behavior: 'smooth',
-                        })
-                      }}
-                    />
-                  ))}
+              <div key={topicArea.id} className="mt-6 first:mt-0">
+                <H3
+                  className={{
+                    root: 'mb-3 text-lg font-semibold leading-7 text-[#121212]',
+                  }}
+                >
+                  {topicArea.name}
+                </H3>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {groupedStudentProposals?.[topicArea.name]?.map(
+                    (proposal: any) => (
+                      <ProposalCard
+                        key={proposal.id}
+                        proposal={proposal}
+                        isActive={selectedProposal === proposal.id}
+                        onClick={() => setSelectedProposal(proposal.id)}
+                      />
+                    )
+                  )}
                 </div>
               </div>
             ))

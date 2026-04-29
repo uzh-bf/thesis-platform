@@ -13,6 +13,8 @@ export default function NewProposalButton({
   isSupervisor,
 }: NewProposalButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const buttonClass =
+    'flex items-center rounded-[4px] border-[#0028A5] bg-[#0028A5] px-3 py-1.5 text-sm font-semibold text-white shadow-none hover:bg-[#001E7C] hover:text-white'
 
   if (isSupervisor) {
     return (
@@ -20,9 +22,9 @@ export default function NewProposalButton({
         title="Publish New Supervisor Proposal"
         open={isModalOpen}
         trigger={
-          <Button 
+          <Button
             onClick={() => setIsModalOpen(true)}
-            className={{root: "flex items-center"}}
+            className={{ root: buttonClass }}
           >
             <FontAwesomeIcon icon={faAdd} className="mr-2" />
             New Proposal
@@ -41,8 +43,8 @@ export default function NewProposalButton({
         target="_blank"
         href={process.env.NEXT_PUBLIC_FORMS_URL_SUBMIT as string}
       >
-        <Button className={{root: "flex items-center"}}>
-          <FontAwesomeIcon icon={faAdd} className='mr-2'/>
+        <Button className={{ root: buttonClass }}>
+          <FontAwesomeIcon icon={faAdd} className="mr-2" />
           New Proposal
         </Button>
       </Link>

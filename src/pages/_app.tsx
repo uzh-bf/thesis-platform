@@ -17,7 +17,7 @@ config.autoAddCss = false
 const sourceSansPro = Source_Sans_3({
   subsets: ['latin'],
   variable: '--source-sans-pro',
-  weight: ['300', '400', '700'],
+  weight: ['400', '600'],
 })
 
 function App({
@@ -27,7 +27,7 @@ function App({
   return (
     <SessionProvider session={session}>
       <div
-        id="#__app"
+        id="__app"
         className={`${sourceSansPro.variable} font-sans antialiased`}
       >
         <Header />
