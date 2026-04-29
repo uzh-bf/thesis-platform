@@ -18,6 +18,12 @@ export default function SupervisorProposals({
     return [
       ...data.filter((proposal) => proposal.typeKey === 'SUPERVISOR'),
     ].sort((a, b) => {
+      const topicAreaCompare = a.topicArea.name.localeCompare(b.topicArea.name)
+
+      if (topicAreaCompare !== 0) {
+        return topicAreaCompare
+      }
+
       const createdAtCompare =
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
 
