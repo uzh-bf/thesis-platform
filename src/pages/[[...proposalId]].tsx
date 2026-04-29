@@ -162,14 +162,14 @@ export default function Index() {
         ) : (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
             <div className="space-y-4">
-              <div className="rounded-lg border border-[#E9E9E9] bg-white px-4 py-3 shadow-sm">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="m-0 text-sm font-semibold text-[#121212]">
-                      Proposals
-                    </p>
-                  </div>
-                  {isSupervisorView && (
+              {isSupervisorView && (
+                <div className="rounded-lg border border-[#E9E9E9] bg-white px-4 py-3 shadow-sm">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="m-0 text-sm font-semibold text-[#121212]">
+                        Proposals
+                      </p>
+                    </div>
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                       <label
                         htmlFor="proposal-status-filter"
@@ -195,9 +195,9 @@ export default function Index() {
                         }}
                       />
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {isSupervisorView && (
                 <div className="rounded-lg border border-[#E9E9E9] bg-white shadow-sm">
