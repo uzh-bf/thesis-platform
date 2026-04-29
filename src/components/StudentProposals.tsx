@@ -89,7 +89,7 @@ export default function StudentProposals({
                   key={topicArea.id}
                   className={twMerge(
                     'mt-6 border-l-4 py-2 pl-3 first:mt-0',
-                    visual.section
+                    visual.sectionBorder
                   )}
                 >
                   <div className="mb-3 flex flex-wrap items-center gap-2">
