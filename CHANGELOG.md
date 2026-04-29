@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.0](https://github.com/uzh-bf/thesis-platform/compare/v1.5.1...v1.6.0) (2026-04-29)
+
+
+### Features
+
+* add topic area visuals and integrate into ProposalCard and StudentProposals components ([e13d781](https://github.com/uzh-bf/thesis-platform/commit/e13d781b69e11d3817cec33fc0d8e0c6393d19d4))
+
 ### [1.5.1](https://github.com/uzh-bf/thesis-platform/compare/v1.5.0...v1.5.1) (2026-04-29)
 
 
