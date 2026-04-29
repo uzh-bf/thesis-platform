@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.5.1](https://github.com/uzh-bf/thesis-platform/compare/v1.5.0...v1.5.1) (2026-04-29)
+
+
+### Bug Fixes
+
+* completely remove proposals dropdown part if not logged in as supervisor ([f7d24c0](https://github.com/uzh-bf/thesis-platform/commit/f7d24c05811168b7296fdcdb9ae1eeb2cc1b48e9))
+* dropdown filter and datenschutz ([c654829](https://github.com/uzh-bf/thesis-platform/commit/c65482917ab966304fa39d24f828111c981d9a3c))
+
 ## [1.5.0](https://github.com/uzh-bf/thesis-platform/compare/v1.4.0...v1.5.0) (2026-04-29)
 
 
