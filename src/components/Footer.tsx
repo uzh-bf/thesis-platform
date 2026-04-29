@@ -90,12 +90,6 @@ function Footer() {
             <a href="https://www.df.uzh.ch/de/impressum.html" target="_blank">
               Impressum
             </a>
-            <a
-              href="https://careers.df.uzh.ch/de/data-protection"
-              target="_blank"
-            >
-              Datenschutz
-            </a>
           </nav>
         </div>
       </div>

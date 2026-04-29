@@ -100,6 +100,7 @@ export default function Index() {
   })
 
   const { isSupervisor, isDeveloper } = useUserRole()
+  const isSupervisorView = isSupervisor || isDeveloper
 
   const { data, isLoading, refetch } = trpc.proposals.useQuery({
     filters,
@@ -168,33 +169,37 @@ export default function Index() {
                       Proposals
                     </p>
                   </div>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <label
-                      htmlFor="proposal-status-filter"
-                      className="text-sm font-semibold text-[#4C4C4C]"
-                    >
-                      Show
-                    </label>
-                    <Select
-                      id="proposal-status-filter"
-                      className={{
-                        root: 'w-full sm:w-60',
-                        trigger:
-                          'h-9 w-full rounded-[4px] border-[#E9E9E9] bg-white text-sm',
-                      }}
-                      value={filters.status}
-                      items={PROPOSAL_STATUS_FILTER_ITEMS}
-                      onChange={(newStatus: string) => {
-                        setFilters({ status: newStatus as ProposalStatusFilter })
-                        setIsMobileDetailsOpen(false)
-                        router.push('/', undefined, { scroll: false })
-                      }}
-                    />
-                  </div>
+                  {isSupervisorView && (
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <label
+                        htmlFor="proposal-status-filter"
+                        className="text-sm font-semibold text-[#4C4C4C]"
+                      >
+                        Show
+                      </label>
+                      <Select
+                        id="proposal-status-filter"
+                        className={{
+                          root: 'w-full sm:w-60',
+                          trigger:
+                            'h-9 w-full rounded-[4px] border-[#E9E9E9] bg-white text-sm',
+                        }}
+                        value={filters.status}
+                        items={PROPOSAL_STATUS_FILTER_ITEMS}
+                        onChange={(newStatus: string) => {
+                          setFilters({
+                            status: newStatus as ProposalStatusFilter,
+                          })
+                          setIsMobileDetailsOpen(false)
+                          router.push('/', undefined, { scroll: false })
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {(isSupervisor || isDeveloper) && (
+              {isSupervisorView && (
                 <div className="rounded-lg border border-[#E9E9E9] bg-white shadow-sm">
                   <div className="p-6">
                     <StudentProposals
