@@ -910,6 +910,7 @@ export const appRouter = router({
         proposalId: z.string(),
         proposalApplicationId: z.string(),
         applicantEmail: z.email(),
+        comment: z.string().trim().max(2000).default(''),
       })
     )
     .output(z.object({ success: z.boolean() }))
@@ -962,12 +963,17 @@ export const appRouter = router({
       
       // Send the email notification
       try {
+        const escapedComment = escapeHtml(input.comment).replace(/\n/g, '<br>')
+        const feedbackContent = escapedComment
+          ? `<p><strong>Feedback:</strong><br>${escapedComment}</p>`
+          : ''
+
         await axios.post(
           process.env.EMAIL_NOTIFICATION_URL as string,
           {
             recipients: [input.applicantEmail],
             subject: `${process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME} - Application Declined`,
-          content: `Your application for the proposal "${proposal.title}" has been declined.`,
+            content: `<p>Your application for the proposal "${escapeHtml(proposal.title)}" has been declined.</p>${feedbackContent}`,
         },
         {
           headers: {
