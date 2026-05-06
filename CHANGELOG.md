@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.8.0](https://github.com/uzh-bf/thesis-platform/compare/v1.7.0...v1.8.0) (2026-05-06)
+
+
+### Features
+
+* add decline feedback comment to application process ([c5d2827](https://github.com/uzh-bf/thesis-platform/commit/c5d282791fef1b388140cb1136264c381fa65511))
+
 ## [1.7.0](https://github.com/uzh-bf/thesis-platform/compare/v1.6.2...v1.7.0) (2026-04-29)
 
 
