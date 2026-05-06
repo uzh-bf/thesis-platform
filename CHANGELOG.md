@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.8.1](https://github.com/uzh-bf/thesis-platform/compare/v1.8.0...v1.8.1) (2026-05-06)
+
+
+### Bug Fixes
+
+* update max-width for responsive layout in Footer, Header, and Proposal pages ([90b9173](https://github.com/uzh-bf/thesis-platform/commit/90b9173d6429f5bf8fc9b73a7187e026ec7281e7))
+
 ## [1.8.0](https://github.com/uzh-bf/thesis-platform/compare/v1.7.0...v1.8.0) (2026-05-06)
 
 
