@@ -155,7 +155,7 @@ export default function Index() {
     <main id="main-content" className="flex-1 bg-[#FAFAFA]">
       <section
         id="proposals"
-        className="mx-auto w-full max-w-[1240px] px-4 py-10 md:px-10 xl:px-[100px]"
+        className="mx-auto w-full max-w-[1440px] px-4 py-10 md:px-10 xl:px-10"
       >
         {isLoading ? (
           <LoadingSkeleton />

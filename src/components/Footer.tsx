@@ -22,7 +22,7 @@ function Footer() {
 
   return (
     <footer className="flex-none border-t border-[#E9E9E9] bg-white print:hidden">
-      <div className="mx-auto grid w-full max-w-[1240px] gap-10 px-4 py-12 md:grid-cols-[1.5fr_1fr_1fr] md:px-10 xl:px-[100px]">
+      <div className="mx-auto grid w-full max-w-[1440px] gap-10 px-4 py-12 md:grid-cols-[1.5fr_1fr_1fr] md:px-10 xl:px-10">
         <div>
           <Image
             src="/uzh-logo.svg"
@@ -82,7 +82,7 @@ function Footer() {
       </div>
 
       <div className="border-t border-[#E9E9E9]">
-        <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-4 px-4 py-5 text-sm text-[#4C4C4C] md:flex-row md:items-center md:justify-between md:px-10 xl:px-[100px]">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 py-5 text-sm text-[#4C4C4C] md:flex-row md:items-center md:justify-between md:px-10 xl:px-10">
           <p className="m-0">
             &copy; {new Date().getFullYear()} {copyright}
           </p>

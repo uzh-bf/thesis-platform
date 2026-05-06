@@ -93,7 +93,7 @@ export default function Header() {
         Skip to content
       </a>
 
-      <div className="mx-auto w-full max-w-[1240px] px-4 md:px-10 xl:px-[100px]">
+      <div className="mx-auto w-full max-w-[1440px] px-4 md:px-10 xl:px-10">
         <div className="flex flex-col gap-4 py-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-center gap-5">
             <a href="/" aria-label="Universität Zürich" className="shrink-0">
