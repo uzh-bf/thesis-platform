@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.8.3](https://github.com/uzh-bf/thesis-platform/compare/v1.8.2...v1.8.3) (2026-05-11)
+
+
+### Bug Fixes
+
+* add refs for scrolling to top on proposal change ([cdb3e0e](https://github.com/uzh-bf/thesis-platform/commit/cdb3e0e5a5fd083290bde6244532c5fd47c6b241))
+
 ### [1.8.2](https://github.com/uzh-bf/thesis-platform/compare/v1.8.1...v1.8.2) (2026-05-11)
 
 
