@@ -8,6 +8,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 import EmptyState from 'src/components/EmptyState'
@@ -81,6 +82,8 @@ function SelectedProposalDetails({
 
 export default function Index() {
   const router = useRouter()
+  const desktopDetailsRef = useRef<HTMLDivElement>(null)
+  const mobileDetailsRef = useRef<HTMLDivElement>(null)
   const [isDesktopViewport, setIsDesktopViewport] = useState(false)
   const [isMobileDetailsOpen, setIsMobileDetailsOpen] = useState(true)
 
@@ -150,6 +153,11 @@ export default function Index() {
       })
     }
   }, [router.query.filter])
+
+  useEffect(() => {
+    desktopDetailsRef.current?.scrollTo({ top: 0 })
+    mobileDetailsRef.current?.scrollTo({ top: 0 })
+  }, [proposalId])
 
   return (
     <main id="main-content" className="flex-1 bg-[#FAFAFA]">
@@ -222,7 +230,10 @@ export default function Index() {
               </div>
             </div>
 
-            <div className="hidden rounded-lg border border-[#E9E9E9] bg-white shadow-sm lg:sticky lg:top-6 lg:block lg:self-start">
+            <div
+              ref={desktopDetailsRef}
+              className="hidden max-h-[calc(100vh-3rem)] overflow-y-auto rounded-lg border border-[#E9E9E9] bg-white shadow-sm [scrollbar-gutter:stable] lg:sticky lg:top-6 lg:block lg:self-start"
+            >
               <SelectedProposalDetails
                 proposalDetails={proposalDetails}
                 refetch={refetch}
@@ -234,7 +245,10 @@ export default function Index() {
       </section>
 
       {proposalDetails && isMobileDetailsOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#FAFAFA] lg:hidden">
+        <div
+          ref={mobileDetailsRef}
+          className="fixed inset-0 z-50 overflow-y-auto bg-[#FAFAFA] lg:hidden"
+        >
           <div className="sticky top-0 z-10 border-b border-[#E9E9E9] bg-white px-4 py-3">
             <button
               type="button"
