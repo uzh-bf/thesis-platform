@@ -491,8 +491,8 @@ export default function AdminPanel() {
     ].includes(selectedProposalStatus as ProposalStatus)
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+    <main id="main-content" className="flex-1 bg-gray-50">
+      <div className="mx-auto w-full max-w-[1440px] px-4 py-5 md:px-10 xl:px-10">
 
         {visibleTabs.length > 1 ? (
           <Tabs
@@ -505,6 +505,10 @@ export default function AdminPanel() {
               }
             }}
             tabs={visibleTabs}
+            className={{
+              list: `grid h-10 ${visibleTabs.length === 4 ? 'grid-cols-4' : 'grid-cols-2'}`,
+              trigger: 'whitespace-nowrap text-sm',
+            }}
           >
           {isAdminOnly && (
             <TabContent value="proposals" className={{ root: 'pt-3' }}>
@@ -540,12 +544,8 @@ export default function AdminPanel() {
                 </div>
               ) : (
                 <div className="bg-white rounded-lg shadow p-4">
-                  <div
-                    className={`border border-gray-400 overflow-x-auto ${
-                      rowsPerPage === 20 ? '' : 'max-h-[65vh] overflow-y-auto'
-                    }`}
-                  >
-                    <table className="w-full table-fixed divide-y divide-gray-200">
+                  <div className="max-h-[calc(100vh-23rem)] min-h-0 overflow-auto border border-gray-400">
+                    <table className="min-w-[760px] w-full table-fixed divide-y divide-gray-200">
                       <thead className="bg-gray-50 sticky top-0 z-10">
                         <tr>
                           <th
@@ -1213,6 +1213,6 @@ export default function AdminPanel() {
           </div>
         )}
       </div>
-    </div>
+    </main>
   )
 }

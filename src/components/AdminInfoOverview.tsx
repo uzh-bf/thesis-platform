@@ -1175,12 +1175,8 @@ export default function AdminInfoOverview() {
               <p className="text-gray-600">No results for the current filters</p>
             ) : (
               <>
-                <div
-                  className={`border border-gray-400 overflow-x-auto ${
-                    rowsPerPage === 20 ? '' : 'max-h-[65vh] overflow-y-auto'
-                  }`}
-                >
-                  <table className="w-full table-fixed divide-y divide-gray-200">
+                <div className="max-h-[calc(100vh-27rem)] min-h-0 overflow-auto border border-gray-400">
+                  <table className="min-w-[1050px] w-full table-fixed divide-y divide-gray-200">
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
                     <th
