@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.8.2](https://github.com/uzh-bf/thesis-platform/compare/v1.8.1...v1.8.2) (2026-05-11)
+
+
+### Refactors
+
+* improve layout and responsiveness in admin panel ([dc69e94](https://github.com/uzh-bf/thesis-platform/commit/dc69e94515fa9f802e1fb9d654d4708b2da56984))
+
 ### [1.8.1](https://github.com/uzh-bf/thesis-platform/compare/v1.8.0...v1.8.1) (2026-05-06)
 
 
