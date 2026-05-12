@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.8.4](https://github.com/uzh-bf/thesis-platform/compare/v1.8.3...v1.8.4) (2026-05-12)
+
+
+### Bug Fixes
+
+* adjust minimum height for overflow containers in admin components ([6218589](https://github.com/uzh-bf/thesis-platform/commit/6218589ea577e7ef7e832f286a285dd0ca3b9d41))
+
 ### [1.8.3](https://github.com/uzh-bf/thesis-platform/compare/v1.8.2...v1.8.3) (2026-05-11)
 
 
