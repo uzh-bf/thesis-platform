@@ -272,7 +272,7 @@ export default function AdminStatsDashboard() {
             }}
           >
             <TabContent value="supervisors" className={{ root: 'pt-3' }}>
-              <div className="max-h-[calc(100vh-29rem)] min-h-0 overflow-auto border border-gray-400">
+              <div className="max-h-[calc(100vh-29rem)] min-h-[18rem] overflow-auto border border-gray-400">
                 <table className="min-w-[520px] w-full table-fixed divide-y divide-gray-200">
                   <thead className="bg-gray-50 sticky top-0 z-10">
                     <tr>
@@ -389,7 +389,7 @@ export default function AdminStatsDashboard() {
             </TabContent>
 
             <TabContent value="responsibles" className={{ root: 'pt-3' }}>
-              <div className="max-h-[calc(100vh-29rem)] min-h-0 overflow-auto border border-gray-400">
+              <div className="max-h-[calc(100vh-29rem)] min-h-[18rem] overflow-auto border border-gray-400">
                 <table className="min-w-[520px] w-full table-fixed divide-y divide-gray-200">
                   <thead className="bg-gray-50 sticky top-0 z-10">
                     <tr>

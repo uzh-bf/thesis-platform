@@ -544,7 +544,7 @@ export default function AdminPanel() {
                 </div>
               ) : (
                 <div className="bg-white rounded-lg shadow p-4">
-                  <div className="max-h-[calc(100vh-23rem)] min-h-0 overflow-auto border border-gray-400">
+                  <div className="max-h-[calc(100vh-23rem)] min-h-[18rem] overflow-auto border border-gray-400">
                     <table className="min-w-[760px] w-full table-fixed divide-y divide-gray-200">
                       <thead className="bg-gray-50 sticky top-0 z-10">
                         <tr>

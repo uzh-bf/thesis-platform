@@ -322,7 +322,7 @@ export default function AdminUserRoles() {
           <p className="text-gray-600">No results for the current search.</p>
         ) : (
           <>
-            <div className="max-h-[calc(100vh-25rem)] min-h-0 overflow-auto border border-gray-400">
+            <div className="max-h-[calc(100vh-25rem)] min-h-[18rem] overflow-auto border border-gray-400">
               <table className="min-w-[780px] w-full table-fixed divide-y divide-gray-200">
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
