@@ -1654,6 +1654,7 @@ updateProposalStatus: publicProcedure
       where: { id: application.id },
       data: {
         statusKey: ApplicationStatus.ACCEPTED,
+        supervisionId: supervisionInfo.id,
         updatedAt: new Date(),
       },
     });
