@@ -338,6 +338,7 @@ export default function AdminPanel() {
 
     return (
       applications.find((app: any) => app.supervisionId === supervisionId) ??
+      applications.find((app: any) => app.statusKey === 'ACCEPTED') ??
       applications[0]
     )
   }
