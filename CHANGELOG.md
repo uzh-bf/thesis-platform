@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.8.5](https://github.com/uzh-bf/thesis-platform/compare/v1.8.4...v1.8.5) (2026-05-14)
+
+
+### Bug Fixes
+
+* Count only active supervised theses in admin statistics ([#97](https://github.com/uzh-bf/thesis-platform/issues/97)) ([65746da](https://github.com/uzh-bf/thesis-platform/commit/65746dafda6d2f755f07aaff7f23f5e228137bc8))
+
 ### [1.8.4](https://github.com/uzh-bf/thesis-platform/compare/v1.8.3...v1.8.4) (2026-05-12)
 
 
