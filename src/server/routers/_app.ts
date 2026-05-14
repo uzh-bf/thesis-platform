@@ -3037,11 +3037,18 @@ updateProposalStatus: publicProcedure
     .input(z.object({ year: z.number().int().optional() }).optional())
     .query(async ({ input }) => {
       const envDepartment = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+      const activeSupervisionStatuses = [
+        ProposalStatus.MATCHED,
+        ProposalStatus.MATCHED_TENTATIVE,
+      ]
 
       const supervisionDates = await prisma.userProposalSupervision.findMany({
         where: {
           proposal: {
             department: envDepartment,
+            statusKey: {
+              in: activeSupervisionStatuses,
+            },
           },
         },
         select: {
@@ -3069,6 +3076,9 @@ updateProposalStatus: publicProcedure
             },
             proposal: {
               department: envDepartment,
+              statusKey: {
+                in: activeSupervisionStatuses,
+              },
             },
           },
           select: {
