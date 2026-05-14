@@ -206,11 +206,13 @@ export default function AdminStatsDashboard() {
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Statistics</h2>
             <p className="mt-1 text-sm text-gray-600">
-              Supervised proposals per year (grouped by supervisor or responsible)
+              Active supervised theses per year (grouped by supervisor or responsible)
             </p>
           </div>
           <div className="text-xs text-gray-600">
-            {isLoading ? 'Loading…' : `${viewTotal} supervised in ${selectedYear}`}
+            {isLoading
+              ? 'Loading…'
+              : `${viewTotal} active supervised theses in ${selectedYear}`}
           </div>
         </div>
 
