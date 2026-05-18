@@ -3038,27 +3038,40 @@ updateProposalStatus: publicProcedure
     .input(z.object({ year: z.number().int().optional() }).optional())
     .query(async ({ input }) => {
       const envDepartment = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
-      const activeSupervisionStatuses = [
-        ProposalStatus.MATCHED,
-        ProposalStatus.MATCHED_TENTATIVE,
-      ]
 
       const supervisionDates = await prisma.userProposalSupervision.findMany({
         where: {
           proposal: {
             department: envDepartment,
-            statusKey: {
-              in: activeSupervisionStatuses,
+            AdminInfo: {
+              is: {
+                olatCapturedDate: {
+                  not: null,
+                },
+              },
             },
           },
         },
         select: {
-          createdAt: true,
+          proposal: {
+            select: {
+              AdminInfo: {
+                select: {
+                  olatCapturedDate: true,
+                },
+              },
+            },
+          },
         },
       })
 
       const years = Array.from(
-        new Set(supervisionDates.map((d) => d.createdAt.getFullYear()))
+        new Set(
+          supervisionDates.flatMap((supervision) => {
+            const capturedDate = supervision.proposal.AdminInfo?.olatCapturedDate
+            return capturedDate ? [capturedDate.getFullYear()] : []
+          })
+        )
       ).sort((a, b) => b - a)
 
       const defaultYear = years[0] ?? new Date().getFullYear()
@@ -3071,14 +3084,15 @@ updateProposalStatus: publicProcedure
       const [supervisions, supervisors, responsibles] = await Promise.all([
         prisma.userProposalSupervision.findMany({
           where: {
-            createdAt: {
-              gte: start,
-              lt: end,
-            },
             proposal: {
               department: envDepartment,
-              statusKey: {
-                in: activeSupervisionStatuses,
+              AdminInfo: {
+                is: {
+                  olatCapturedDate: {
+                    gte: start,
+                    lt: end,
+                  },
+                },
               },
             },
           },

@@ -1,6 +1,7 @@
 import {
   faChevronLeft,
   faChevronRight,
+  faCircleInfo,
   faSort,
   faSortDown,
   faSortUp,
@@ -50,6 +51,7 @@ export default function AdminStatsDashboard() {
   const [currentPage, setCurrentPage] = useState(1)
   const [sortColumn, setSortColumn] = useState<SortColumn>('count')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
+  const [isStatsHintVisible, setIsStatsHintVisible] = useState(false)
 
   const { data, isLoading, error } = trpc.adminGetSupervisionStats.useQuery(
     year ? { year } : undefined
@@ -204,15 +206,46 @@ export default function AdminStatsDashboard() {
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Statistics</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900">Statistics</h2>
+              <span
+                className="relative inline-flex"
+                onMouseEnter={() => setIsStatsHintVisible(true)}
+                onMouseLeave={() => setIsStatsHintVisible(false)}
+                onPointerEnter={() => setIsStatsHintVisible(true)}
+                onPointerLeave={() => setIsStatsHintVisible(false)}
+              >
+                <button
+                  type="button"
+                  aria-label="How statistics are calculated"
+                  aria-describedby="admin-stats-calculation-hint"
+                  onFocus={() => setIsStatsHintVisible(true)}
+                  onBlur={() => setIsStatsHintVisible(false)}
+                  onClick={() => setIsStatsHintVisible(true)}
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full text-gray-500 outline-none hover:text-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                >
+                  <FontAwesomeIcon icon={faCircleInfo} className="h-4 w-4" />
+                </button>
+                <span
+                  id="admin-stats-calculation-hint"
+                  role="tooltip"
+                  className={`pointer-events-none absolute left-0 top-full z-20 mt-2 w-72 max-w-[calc(100vw-4rem)] rounded-md bg-gray-900 px-3 py-2 text-xs font-normal leading-5 text-white shadow-lg transition-opacity ${
+                    isStatsHintVisible ? 'opacity-100' : 'opacity-0'
+                  }`}
+                >
+                  Counts include only proposals with an OLAT Captured Date in
+                  AdminInfo; the selected year is based on that date.
+                </span>
+              </span>
+            </div>
             <p className="mt-1 text-sm text-gray-600">
-              Active supervised theses per year (grouped by supervisor or responsible)
+              Captured supervised theses per year (grouped by supervisor or responsible)
             </p>
           </div>
           <div className="text-xs text-gray-600">
             {isLoading
               ? 'Loading…'
-              : `${viewTotal} active supervised theses in ${selectedYear}`}
+              : `${viewTotal} captured supervised theses in ${selectedYear}`}
           </div>
         </div>
 
