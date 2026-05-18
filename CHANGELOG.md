@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.9.0](https://github.com/uzh-bf/thesis-platform/compare/v1.8.6...v1.9.0) (2026-05-18)
+
+
+### Features
+
+* Add tooltip for statistics calculation in AdminStatsDashboard ([02bf1c7](https://github.com/uzh-bf/thesis-platform/commit/02bf1c7bc7ff81722ca93f7dce1aec693646d91b))
+
 ### [1.8.6](https://github.com/uzh-bf/thesis-platform/compare/v1.8.5...v1.8.6) (2026-05-14)
 
 
