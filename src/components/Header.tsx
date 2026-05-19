@@ -28,9 +28,6 @@ export default function Header() {
   const departmentName = process.env.NEXT_PUBLIC_DEPARTMENT_NAME?.trim()
   const departmentLongName =
     process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME?.trim()
-  const platformName =
-    process.env.NEXT_PUBLIC_PLATFORM_NAME?.trim() ||
-    (departmentName ? `${departmentName} Thesis Platform` : 'Thesis Platform')
 
   const OTHER_DEPARTMENT: Record<string, { shortName: string; url: string }> = {
     DF: { shortName: 'IBW', url: 'https://theses.business.uzh.ch' },
@@ -114,7 +111,7 @@ export default function Header() {
                 {organizationName}
               </div>
               <div className="truncate text-lg font-semibold leading-6 text-[#121212]">
-                {platformName}
+                Thesis Market
               </div>
             </div>
           </div>
