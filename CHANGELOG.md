@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.9.2](https://github.com/uzh-bf/thesis-platform/compare/v1.9.1...v1.9.2) (2026-05-19)
+
+
+### Bug Fixes
+
+* Rename platform header to Thesis Market ([#99](https://github.com/uzh-bf/thesis-platform/issues/99)) ([c33d5ea](https://github.com/uzh-bf/thesis-platform/commit/c33d5eae03ce4ec4b66362a7dd040b17435c4811))
+
 ### [1.9.1](https://github.com/uzh-bf/thesis-platform/compare/v1.9.0...v1.9.1) (2026-05-19)
 
 ## [1.9.0](https://github.com/uzh-bf/thesis-platform/compare/v1.8.6...v1.9.0) (2026-05-18)
