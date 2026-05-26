@@ -34,8 +34,9 @@ podman-compose up postgres
 Use this connection string for local development unless Doppler provides another `DATABASE_URL`:
 
 ```bash
-DATABASE_URL="postgresql://thesis:thesis@localhost:5432/thesis"
-SHADOW_DATABASE_URL="postgresql://thesis:thesis@localhost:5432/thesis_shadow"
+POSTGRES_PASSWORD="<local-password>"
+DATABASE_URL="<local-postgresql-url>"
+SHADOW_DATABASE_URL="<local-shadow-postgresql-url>"
 ```
 
 ## Usage
