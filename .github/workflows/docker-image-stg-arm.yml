@@ -1,16 +1,16 @@
-name: Build staging Docker image
+name: Build staging ARM Docker image
 
 on:
   push:
     branches:
       - 'main'
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
 
 jobs:
-  build-stg:
-    if: ${{ github.ref == 'refs/heads/main' && !startsWith(github.event.head_commit.message, 'chore(release)') }}
+  build-stg-arm:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -38,23 +38,24 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}
           tags: |
-            type=raw,value=main
-            type=raw,value=latest
-            type=raw,value=latest-${{ github.sha }}
+            type=raw,value=main-arm
+            type=raw,value=latest-arm
+            type=raw,value=latest-arm-${{ github.sha }}
 
-      - name: Replace .env.production with .env.stage
+      - name: Replace .env.production with .env.stg
         shell: bash
         run: |
           rm .env.production
-          mv .env.stage .env.production
+          mv .env.stg .env.production
 
       - name: Build and push Docker image
         uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6
         with:
           context: .
           file: Dockerfile
+          platforms: linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            NEXT_PUBLIC_APP_VERSION=latest-${{ github.sha }}
+            NEXT_PUBLIC_APP_VERSION=latest-arm-${{ github.sha }}
