@@ -60,7 +60,7 @@ jobs:
             NEXT_PUBLIC_APP_VERSION=latest-${{ github.sha }}
 
   build-stg-arm:
-    if: github.ref == 'refs/heads/dev'
+    if: ${{ github.ref == 'refs/heads/main' && !startsWith(github.event.head_commit.message, 'chore(release)') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -88,7 +88,8 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}
           tags: |
-            type=raw,value=dev-arm
+            type=raw,value=main-arm
+            type=raw,value=latest-arm
             type=raw,value=latest-arm-${{ github.sha }}
 
       - name: Replace .env.production with .env.stg
