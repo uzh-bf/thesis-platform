@@ -1,5 +1,5 @@
 image:
-  tag: 'latest-arm'
+  tag: 'latest-arm-86cbadd4175c059439f2272679dc55bef1d5826a'
 
 ingress:
   hosts:
