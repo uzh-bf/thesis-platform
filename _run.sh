@@ -1,2 +1,2 @@
 #!/bin/bash
-podman-compose up mysql
+podman-compose up postgres

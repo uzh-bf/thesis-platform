@@ -6,6 +6,8 @@ The motivation behind this project is to offer academic institutions an efficien
 
 ## Requirements
 
+- PostgreSQL-compatible database
+
 ## Installation
 
 How to install the project:
@@ -21,7 +23,20 @@ cd thesis-platform
 pnpm install
 ```
 
-❗️Make sure your IP address has access to the database (include IP for Azure DB on [Azure](https://portal.azure.com)).❗️
+❗️Make sure your IP address has access to the PostgreSQL database (include IP for Azure DB on [Azure](https://portal.azure.com)).❗️
+
+For local database development, start the PostgreSQL container:
+
+```bash
+podman-compose up postgres
+```
+
+Use this connection string for local development unless Doppler provides another `DATABASE_URL`:
+
+```bash
+DATABASE_URL="postgresql://thesis:thesis@localhost:5432/thesis"
+SHADOW_DATABASE_URL="postgresql://thesis:thesis@localhost:5432/thesis_shadow"
+```
 
 ## Usage
 
