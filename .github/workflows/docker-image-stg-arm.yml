@@ -15,6 +15,7 @@ jobs:
     permissions:
       contents: write
       packages: write
+      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -61,6 +62,7 @@ jobs:
             NEXT_PUBLIC_APP_VERSION=latest-arm-${{ github.sha }}
 
       - name: Update ArgoCD staging image tag
+        id: argocd-tag
         if: ${{ github.ref == 'refs/heads/main' }}
         shell: bash
         env:
@@ -72,7 +74,27 @@ jobs:
           git add deploy/stg_new/values.yaml
           if git diff --cached --quiet; then
             echo "No ArgoCD image tag change."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git commit -m "chore(deploy): update staging ARM image to ${STAGING_IMAGE_TAG} [skip ci]"
-          git push
+          git push --force-with-lease origin HEAD:"chore/update-staging-arm-image-${GITHUB_SHA}"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Open ArgoCD staging image tag PR
+        if: ${{ github.ref == 'refs/heads/main' && steps.argocd-tag.outputs.changed == 'true' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STAGING_IMAGE_TAG: latest-arm-${{ github.sha }}
+        run: |
+          if gh pr view "chore/update-staging-arm-image-${GITHUB_SHA}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "PR already exists."
+            exit 0
+          fi
+          gh pr create \
+            --repo "${GITHUB_REPOSITORY}" \
+            --head "chore/update-staging-arm-image-${GITHUB_SHA}" \
+            --base main \
+            --title "chore(deploy): update staging ARM image to ${STAGING_IMAGE_TAG}" \
+            --body "Updates deploy/stg_new/values.yaml to use ${STAGING_IMAGE_TAG} after the ARM image build completed."
