@@ -8,6 +8,8 @@ azureAd:
   clientSecret: ''
   tenantId: ''
 
+secretName: stg-thesisplatform-secrets
+
 ingress:
   hosts:
     - host: theses.stg.df-app.ch
