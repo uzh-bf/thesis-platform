@@ -90,6 +90,9 @@ jobs:
         run: |
           if gh pr view "chore/update-staging-arm-image-${GITHUB_SHA}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
             echo "PR already exists."
+            gh pr edit "chore/update-staging-arm-image-${GITHUB_SHA}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --add-reviewer mxmlnwbr
             exit 0
           fi
           gh pr create \
@@ -97,4 +100,5 @@ jobs:
             --head "chore/update-staging-arm-image-${GITHUB_SHA}" \
             --base main \
             --title "chore(deploy): update staging ARM image to ${STAGING_IMAGE_TAG}" \
-            --body "Updates deploy/stg_new/values.yaml to use ${STAGING_IMAGE_TAG} after the ARM image build completed."
+            --body "Updates deploy/stg_new/values.yaml to use ${STAGING_IMAGE_TAG} after the ARM image build completed." \
+            --reviewer mxmlnwbr
