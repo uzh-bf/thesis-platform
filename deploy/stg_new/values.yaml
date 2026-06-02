@@ -1,5 +1,5 @@
 image:
-  tag: 'latest-arm-39a79957ecff50a3b0f90a0c62edfb3d2a569e37'
+  tag: 'latest-arm-0ab7b96a610b6fea7377b48ede71a2cbe1e5b0bd'
 
 secretName: stg-thesisplatform-secrets
 
