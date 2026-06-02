@@ -33,6 +33,6 @@ spec:
               protocol: TCP
           envFrom:
             - secretRef:
-                name: {{ include "thesis-platform.fullname" . }}
+                name: {{ include "thesis-platform.secretName" . }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
