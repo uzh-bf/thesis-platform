@@ -31,6 +31,23 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
+          {{- if or .Values.appUrl .Values.azureAd.clientId .Values.azureAd.tenantId }}
+          env:
+            {{- if .Values.appUrl }}
+            - name: NEXTAUTH_URL
+              value: {{ .Values.appUrl | quote }}
+            {{- end }}
+            {{- if .Values.azureAd.clientId }}
+            - name: AZURE_AD_CLIENT_ID
+              value: {{ .Values.azureAd.clientId | quote }}
+            {{- end }}
+            {{- if .Values.azureAd.tenantId }}
+            - name: AZURE_AD_TENANT_ID
+              value: {{ .Values.azureAd.tenantId | quote }}
+            - name: NEXT_PUBLIC_AZURE_AD_TENANT_ID
+              value: {{ .Values.azureAd.tenantId | quote }}
+            {{- end }}
+          {{- end }}
           envFrom:
             - secretRef:
                 name: {{ include "thesis-platform.fullname" . }}

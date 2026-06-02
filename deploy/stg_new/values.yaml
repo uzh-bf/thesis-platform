@@ -1,6 +1,13 @@
 image:
   tag: 'latest-arm-39a79957ecff50a3b0f90a0c62edfb3d2a569e37'
 
+appUrl: 'https://theses.stg.df-app.ch'
+
+azureAd:
+  clientId: ''
+  clientSecret: ''
+  tenantId: ''
+
 ingress:
   hosts:
     - host: theses.stg.df-app.ch

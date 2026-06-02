@@ -1,5 +1,12 @@
 replicaCount: 1
 
+appUrl: ""
+
+azureAd:
+  clientId: ""
+  clientSecret: ""
+  tenantId: ""
+
 image:
   repository: ghcr.io/uzh-bf/thesis-platform
   tag: dev
