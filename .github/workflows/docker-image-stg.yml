@@ -4,13 +4,15 @@ on:
   push:
     branches:
       - 'main'
+    paths-ignore:
+      - 'deploy/stg_new/values.yaml'
 
 env:
   REGISTRY: ghcr.io
 
 jobs:
   build-stg:
-    if: ${{ github.ref == 'refs/heads/main' && !startsWith(github.event.head_commit.message, 'chore(release)') }}
+    if: ${{ github.ref == 'refs/heads/main' && !startsWith(github.event.head_commit.message, 'chore(release)') && !startsWith(github.event.head_commit.message, 'chore(deploy)') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
