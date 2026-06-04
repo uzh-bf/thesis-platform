@@ -9,4 +9,8 @@ data:
   AUTH0_ISSUER: {{ .Values.auth0.issuer | quote }}
   AZURE_AD_CLIENT_ID: {{ .Values.azureAd.clientId | quote }}
   AZURE_AD_TENANT_ID: {{ .Values.azureAd.tenantId | quote }}
+  DOPPLER_CONFIG: {{ .Values.env | quote }}
   NEXTAUTH_URL: {{ .Values.appUrl | quote }}
+  STAGING_EMAIL_REDIRECT_TO: {{ .Values.stagingSafety.emailRedirectTo | quote }}
+  STAGING_ENABLE_EXTERNAL_FLOWS: {{ .Values.stagingSafety.enableExternalFlows | quote }}
+  STAGING_GRANT_ALL_ADMINS: {{ .Values.stagingSafety.grantAllAdmins | quote }}

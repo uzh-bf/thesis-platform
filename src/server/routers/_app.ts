@@ -127,6 +127,56 @@ const getNotificationEnvironment = (): NotificationEnvironment => {
   return 'DEV'
 }
 
+const isEnabled = (value: string | undefined) =>
+  ['1', 'true', 'yes'].includes((value ?? '').trim().toLowerCase())
+
+const splitEmailList = (value: string | undefined) =>
+  (value ?? '')
+    .split(',')
+    .map((email) => email.trim())
+    .filter(Boolean)
+
+const isStagingEnvironment = () => getNotificationEnvironment() === 'STG'
+
+const areExternalFlowsEnabled = () =>
+  !isStagingEnvironment() || isEnabled(process.env.STAGING_ENABLE_EXTERNAL_FLOWS)
+
+const getStagingEmailRecipients = () =>
+  isStagingEnvironment()
+    ? splitEmailList(process.env.STAGING_EMAIL_REDIRECT_TO)
+    : []
+
+const getAdminChangeNotificationRecipients = (
+  environment: NotificationEnvironment
+) => {
+  const stagingRecipients = getStagingEmailRecipients()
+
+  if (environment === 'STG') {
+    if (stagingRecipients.length > 0) {
+      return stagingRecipients
+    }
+
+    if (!areExternalFlowsEnabled()) {
+      return []
+    }
+  }
+
+  return [ADMIN_CHANGE_NOTIFICATION_RECIPIENTS[environment]]
+}
+
+const getBlockedStagingFlowResponse = (flowName: string, data?: unknown) => {
+  console.warn(
+    `${flowName} blocked in staging. Set STAGING_ENABLE_EXTERNAL_FLOWS=true to allow external flow calls.`
+  )
+
+  return {
+    success: true,
+    skipped: true,
+    message: `${flowName} blocked in staging`,
+    data,
+  }
+}
+
 const escapeHtml = (value: unknown): string =>
   String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -241,7 +291,15 @@ async function sendAdminChangeNotification({
   }
 
   const environment = getNotificationEnvironment()
-  const recipients = [ADMIN_CHANGE_NOTIFICATION_RECIPIENTS[environment]]
+  const recipients = getAdminChangeNotificationRecipients(environment)
+
+  if (recipients.length === 0) {
+    console.warn(
+      'Admin change notification skipped because staging external flows are disabled.'
+    )
+    return
+  }
+
   const timestamp = new Date().toISOString()
   const departmentName =
     process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME ?? 'Thesis Platform'
@@ -738,6 +796,10 @@ export const appRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      if (!areExternalFlowsEnabled()) {
+        return getBlockedStagingFlowResponse('PROPOSAL_FEEDBACK_URL', input)
+      }
+
       const res = await axios.post(
         process.env.PROPOSAL_FEEDBACK_URL as string,
         input,
@@ -771,6 +833,14 @@ export const appRouter = router({
         console.log('Submitting application to Power Automate...')
         console.log('APPLICATION_URL:', process.env.APPLICATION_URL)
         console.log('Payload:', JSON.stringify({ ...input, cvFile: '[file]', transcriptFile: '[file]' }, null, 2))
+
+        if (!areExternalFlowsEnabled()) {
+          return getBlockedStagingFlowResponse('APPLICATION_URL', {
+            ...input,
+            cvFile: '[file]',
+            transcriptFile: '[file]',
+          })
+        }
         
         const res = await axios.post(
           process.env.APPLICATION_URL as string,
@@ -846,6 +916,10 @@ export const appRouter = router({
         console.log('Submitting proposal to Power Automate flow...')
         console.log('URL:', process.env.PROPOSAL_PUBLISH_URL)
         console.log('Payload:', JSON.stringify(payload, null, 2))
+
+        if (!areExternalFlowsEnabled()) {
+          return getBlockedStagingFlowResponse('PROPOSAL_PUBLISH_URL', payload)
+        }
         
         const res = await axios.post(
           process.env.PROPOSAL_PUBLISH_URL,
@@ -891,6 +965,10 @@ export const appRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      if (!areExternalFlowsEnabled()) {
+        return getBlockedStagingFlowResponse('APPLICATION_ACCEPTANCE_URL', input)
+      }
+
       const res = await axios.post(
         process.env.APPLICATION_ACCEPTANCE_URL as string,
         input,
@@ -963,6 +1041,13 @@ export const appRouter = router({
       
       // Send the email notification
       try {
+        if (!areExternalFlowsEnabled()) {
+          return { success: true }
+        }
+
+        const stagingRecipients = getStagingEmailRecipients()
+        const recipients =
+          stagingRecipients.length > 0 ? stagingRecipients : [input.applicantEmail]
         const escapedComment = escapeHtml(input.comment).replace(/\n/g, '<br>')
         const feedbackContent = escapedComment
           ? `<p><strong>Feedback:</strong><br>${escapedComment}</p>`
@@ -971,7 +1056,7 @@ export const appRouter = router({
         await axios.post(
           process.env.EMAIL_NOTIFICATION_URL as string,
           {
-            recipients: [input.applicantEmail],
+            recipients,
             subject: `${process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME} - Application Declined`,
             content: `<p>Your application for the proposal "${escapeHtml(proposal.title)}" has been declined.</p>${feedbackContent}`,
         },

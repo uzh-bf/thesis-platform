@@ -8,6 +8,50 @@ import AzureADProvider from 'next-auth/providers/azure-ad'
 import prisma from '../server/prisma'
 import { UserRole } from './constants'
 
+const isEnabled = (value: string | undefined) =>
+  ['1', 'true', 'yes'].includes((value ?? '').trim().toLowerCase())
+
+const getStagingAuthDefaults = () => {
+  const dopplerConfig = (process.env.DOPPLER_CONFIG ?? '').toLowerCase()
+
+  if (
+    dopplerConfig !== 'stg' ||
+    !isEnabled(process.env.STAGING_GRANT_ALL_ADMINS)
+  ) {
+    return null
+  }
+
+  return {
+    role: UserRole.DEVELOPER,
+    adminRole: 'ADMIN' as const,
+    department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as any,
+  }
+}
+
+const getSessionUser = async (userId: string) => {
+  const dbUser = await prisma.user.findUnique({
+    where: { id: userId },
+  })
+  const stagingDefaults = getStagingAuthDefaults()
+
+  if (!dbUser || !stagingDefaults) {
+    return dbUser
+  }
+
+  if (
+    dbUser.role === stagingDefaults.role &&
+    dbUser.adminRole === stagingDefaults.adminRole &&
+    dbUser.department === stagingDefaults.department
+  ) {
+    return dbUser
+  }
+
+  return prisma.user.update({
+    where: { id: userId },
+    data: stagingDefaults,
+  })
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -58,11 +102,14 @@ export const authOptions: NextAuthOptions = {
   events: {
     async createUser({ user }) {
       // Update the newly created user with department from environment variable
+      const stagingDefaults = getStagingAuthDefaults()
+
       await prisma.user.update({
         where: { id: user.id },
-        data: { 
-          department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as any // Cast as any since department is an enum
-        }
+        data:
+          stagingDefaults ?? {
+            department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as any, // Cast as any since department is an enum
+          },
       });
     },
     async signOut({ token }) {
@@ -75,9 +122,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account, profile, trigger }) {
       if (account && user) {
         // Fetch the full user with role from database
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-        })
+        const dbUser = await getSessionUser(user.id)
         
         token.sub = user.id
         token.role = dbUser?.role || 'UNSET'
@@ -87,9 +132,7 @@ export const authOptions: NextAuthOptions = {
         // Refresh user data from database on session update or if user is not admin
         // This allows immediate reflection when admin access is granted (just refresh the page)
         // Once user becomes admin, we stop checking the database on every request
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.sub as string },
-        })
+        const dbUser = await getSessionUser(token.sub as string)
         
         if (dbUser) {
           token.role = dbUser.role

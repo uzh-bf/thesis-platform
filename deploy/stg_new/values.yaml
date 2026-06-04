@@ -1,7 +1,11 @@
 image:
   tag: 'latest-arm-8200306c9cd6cf3efa9225b81bf98c546073f4a4'
 
+env: stg
 appUrl: 'https://theses.stg.df-app.ch'
+
+stagingSafety:
+  grantAllAdmins: 'true'
 
 azureAd:
   clientId: ''

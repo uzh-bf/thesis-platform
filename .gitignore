@@ -43,3 +43,6 @@ prisma/.env
 dist/
 
 *-SECRET.yaml
+
+# database backups
+backups/

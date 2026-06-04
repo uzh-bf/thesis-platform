@@ -1,5 +1,11 @@
 appSecret: '$NEXTAUTH_SECRET'
 appUrl: '$APP_URL'
+env: stg
+
+stagingSafety:
+  enableExternalFlows: '$STAGING_ENABLE_EXTERNAL_FLOWS'
+  emailRedirectTo: '$STAGING_EMAIL_REDIRECT_TO'
+  grantAllAdmins: 'true'
 
 image:
   tag: '$APP_VERSION'

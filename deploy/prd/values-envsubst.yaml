@@ -1,5 +1,9 @@
 appSecret: '$NEXTAUTH_SECRET'
 appUrl: '$APP_URL'
+env: prd
+
+stagingSafety:
+  grantAllAdmins: ''
 
 image:
   tag: '$APP_VERSION'
