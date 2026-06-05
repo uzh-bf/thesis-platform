@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - 'main'
+    paths-ignore:
+      - 'deploy/stg_new/values.yaml'
 
 env:
   REGISTRY: ghcr.io

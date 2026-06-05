@@ -67,6 +67,9 @@ const dummyEmails = {
   studentTwo: 'staging.student.two@example.com',
   studentThree: 'staging.student.three@example.com',
   studentFour: 'staging.student.four@example.com',
+  studentFive: 'staging.student.five@example.com',
+  studentSix: 'staging.student.six@example.com',
+  studentSeven: 'staging.student.seven@example.com',
   reviewer: 'staging.reviewer@example.com',
 }
 
@@ -355,7 +358,7 @@ const seedDummyData = async (
   await tx.proposal.create({
     data: {
       id: '10000000-0000-4000-8000-000000000002',
-      title: 'Staging: Student Proposal Waiting For Supervisor',
+      title: 'Staging: Open Student Proposal - Corporate Finance',
       description:
         'Dummy student proposal with feedback so the proposal review screens have realistic content.',
       language: '["English", "German"]',
@@ -364,7 +367,7 @@ const seedDummyData = async (
       department,
       topicAreaSlug: 'corporate_finance',
       typeKey: ProposalType.STUDENT,
-      statusKey: ProposalStatus.WAITING_FOR_SUPERVISOR,
+      statusKey: ProposalStatus.OPEN,
       ownedByStudent: dummyEmails.studentOne,
       applications: {
         create: {
@@ -386,6 +389,96 @@ const seedDummyData = async (
           reason: ProposalFeedbackType.REJECTED_NOT_CLEAR,
           comment:
             'Dummy feedback entry for staging. No real email should be sent for this record.',
+        },
+      },
+    },
+  })
+
+  await tx.proposal.create({
+    data: {
+      id: '10000000-0000-4000-8000-000000000006',
+      title: 'Staging: Open Student Proposal - Sustainable Finance',
+      description:
+        'Dummy open student proposal for testing student-submitted proposal review.',
+      language: '["English"]',
+      studyLevel: 'Master Thesis (30 ECTS)',
+      timeFrame: 'Spring semester',
+      department,
+      topicAreaSlug,
+      typeKey: ProposalType.STUDENT,
+      statusKey: ProposalStatus.OPEN,
+      ownedByStudent: dummyEmails.studentFive,
+      applications: {
+        create: {
+          email: dummyEmails.studentFive,
+          matriculationNumber: '99-999-007',
+          fullName: 'Staging Student Five',
+          plannedStartAt: inThirtyDays,
+          motivation:
+            'Dummy motivation for an open student proposal in sustainable finance.',
+          statusKey: ApplicationStatus.OPEN,
+          allowPublication: true,
+          allowUsage: true,
+        },
+      },
+    },
+  })
+
+  await tx.proposal.create({
+    data: {
+      id: '10000000-0000-4000-8000-000000000007',
+      title: 'Staging: Open Student Proposal - Quantitative Finance',
+      description:
+        'Dummy open student proposal for checking proposal cards and admin filters.',
+      language: '["German"]',
+      studyLevel: 'Bachelor Thesis (18 ECTS)',
+      timeFrame: 'Autumn semester',
+      department,
+      topicAreaSlug: 'quantitative_finance',
+      typeKey: ProposalType.STUDENT,
+      statusKey: ProposalStatus.OPEN,
+      ownedByStudent: dummyEmails.studentSix,
+      applications: {
+        create: {
+          email: dummyEmails.studentSix,
+          matriculationNumber: '99-999-008',
+          fullName: 'Staging Student Six',
+          plannedStartAt: inThirtyDays,
+          motivation:
+            'Dummy motivation for an open student proposal in quantitative finance.',
+          statusKey: ApplicationStatus.OPEN,
+          allowPublication: false,
+          allowUsage: true,
+        },
+      },
+    },
+  })
+
+  await tx.proposal.create({
+    data: {
+      id: '10000000-0000-4000-8000-000000000008',
+      title: 'Staging: Open Student Proposal - Banking',
+      description:
+        'Dummy open student proposal for workflow testing with another topic area.',
+      language: '["English", "German"]',
+      studyLevel: 'Master Thesis (30 ECTS)',
+      timeFrame: 'Flexible',
+      department,
+      topicAreaSlug: 'banking_and_insurance',
+      typeKey: ProposalType.STUDENT,
+      statusKey: ProposalStatus.OPEN,
+      ownedByStudent: dummyEmails.studentSeven,
+      applications: {
+        create: {
+          email: dummyEmails.studentSeven,
+          matriculationNumber: '99-999-009',
+          fullName: 'Staging Student Seven',
+          plannedStartAt: inThirtyDays,
+          motivation:
+            'Dummy motivation for an open student proposal in banking.',
+          statusKey: ApplicationStatus.OPEN,
+          allowPublication: true,
+          allowUsage: false,
         },
       },
     },
@@ -635,7 +728,7 @@ const main = async () => {
     console.log('Dry run only. Planned actions:')
     console.log('  1. Preserve lookup tables and _prisma_migrations.')
     console.log(`  2. Truncate mutable tables: ${mutableTables.join(', ')}.`)
-    console.log('  3. Seed 5 proposals, 6 applications, 2 admin rows, fake supervisors, fake responsibles.')
+    console.log('  3. Seed 8 proposals, 9 applications, 2 admin rows, fake supervisors, fake responsibles.')
     console.log('  4. Pre-create real staging login users only from STAGING_REAL_LOGIN_EMAILS or USER_EMAIL.')
     console.log('  5. Fail if workflow recipient fields contain non-test emails.')
     console.log('')
