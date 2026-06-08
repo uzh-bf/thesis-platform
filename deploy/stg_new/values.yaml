@@ -1,5 +1,5 @@
 image:
-  tag: 'latest-arm-8200306c9cd6cf3efa9225b81bf98c546073f4a4'
+  tag: 'latest-arm-09ae4d1bbbe550d1245162df279671f7ffa30afb'
 
 env: stg
 appUrl: 'https://theses.stg.df-app.ch'
