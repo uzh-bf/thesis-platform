@@ -1,0 +1,25 @@
+image:
+  tag: 'latest-arm-8200306c9cd6cf3efa9225b81bf98c546073f4a4'
+
+env: prd
+appUrl: 'https://theses.prd.df-app.ch'
+
+stagingSafety:
+  grantAllAdmins: 'true'
+
+azureAd:
+  clientId: ''
+  clientSecret: ''
+  tenantId: ''
+
+secretName: prd-thesisplatform-secrets
+
+ingress:
+  hosts:
+    - host: theses.prd.df-app.ch
+      paths:
+        - /
+  tls:
+    - secretName: thesis-platform-prod-tls
+      hosts:
+        - theses.prd.df-app.ch
