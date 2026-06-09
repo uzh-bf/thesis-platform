@@ -2,6 +2,7 @@ import { ZipArchive } from 'archiver'
 import { addMonths } from 'date-fns'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
+import { Readable } from 'node:stream'
 import { authOptions } from 'src/lib/authOptions'
 import { Department, ProposalType, UserRole } from 'src/lib/constants'
 import prisma from 'src/server/prisma'
@@ -21,7 +22,15 @@ type ApplicationAttachment = {
 
 type ApplicationExportFile = {
   zipPath: string
-  buffer: Buffer
+  attachment: ApplicationAttachment
+  applicationId: string
+  applicant: string
+  label: 'CV' | 'Transcript'
+}
+
+type ApplicationExportStream = {
+  zipPath: string
+  stream: Readable
 }
 
 type ExportFailure = {
@@ -229,7 +238,28 @@ function toDownloadUrl(href: string) {
   return url.toString()
 }
 
-async function fetchPdfAttachment(
+async function readPdfSignature(response: Response) {
+  if (!response.body) return ''
+
+  const reader = response.body.getReader()
+
+  try {
+    const result = await reader.read()
+
+    return result.value
+      ? Buffer.from(result.value.subarray(0, 5)).toString('utf8')
+      : ''
+  } finally {
+    await reader.cancel().catch(() => undefined)
+    reader.releaseLock()
+  }
+}
+
+function toReadableStream(stream: ReadableStream<Uint8Array>) {
+  return Readable.fromWeb(stream as Parameters<typeof Readable.fromWeb>[0])
+}
+
+async function validatePdfAttachment(
   attachment: ApplicationAttachment,
   timeoutMs = 20000
 ) {
@@ -240,6 +270,7 @@ async function fetchPdfAttachment(
     const response = await fetch(toDownloadUrl(attachment.href), {
       headers: {
         accept: 'application/pdf',
+        range: 'bytes=0-4',
       },
       signal: controller.signal,
     })
@@ -249,8 +280,7 @@ async function fetchPdfAttachment(
     }
 
     const contentType = response.headers.get('content-type')?.toLowerCase() ?? ''
-    const buffer = Buffer.from(await response.arrayBuffer())
-    const looksLikePdf = buffer.subarray(0, 5).toString('utf8') === '%PDF-'
+    const looksLikePdf = (await readPdfSignature(response)) === '%PDF-'
     const hasPdfContentType = contentType.includes('application/pdf')
 
     if (!looksLikePdf && !hasPdfContentType) {
@@ -260,11 +290,27 @@ async function fetchPdfAttachment(
           : 'Downloaded file is not a PDF'
       )
     }
-
-    return buffer
   } finally {
     clearTimeout(timeout)
   }
+}
+
+async function fetchPdfAttachmentStream(attachment: ApplicationAttachment) {
+  const response = await fetch(toDownloadUrl(attachment.href), {
+    headers: {
+      accept: 'application/pdf',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`)
+  }
+
+  if (!response.body) {
+    throw new Error('Downloaded file has no response body')
+  }
+
+  return toReadableStream(response.body)
 }
 
 function isSupervisorAuthorized({
@@ -422,9 +468,13 @@ export default async function handler(
       }
 
       try {
+        await validatePdfAttachment(attachment)
         files.push({
           zipPath,
-          buffer: await fetchPdfAttachment(attachment),
+          attachment,
+          applicationId: application.id,
+          applicant: application.fullName,
+          label,
         })
       } catch (error) {
         failures.push({
@@ -448,6 +498,38 @@ export default async function handler(
     return
   }
 
+  const exportStreams: ApplicationExportStream[] = []
+
+  for (const file of files) {
+    try {
+      exportStreams.push({
+        zipPath: file.zipPath,
+        stream: await fetchPdfAttachmentStream(file.attachment),
+      })
+    } catch (error) {
+      for (const exportStream of exportStreams) {
+        exportStream.stream.destroy()
+      }
+
+      sendJsonError(
+        res,
+        502,
+        'Application export could not be created because one or more PDFs could not be downloaded.',
+        [
+          {
+            applicationId: file.applicationId,
+            applicant: file.applicant,
+            attachment: file.label,
+            message:
+              error instanceof Error ? error.message : 'Download failed',
+            href: file.attachment.href,
+          },
+        ]
+      )
+      return
+    }
+  }
+
   const dateStamp = toIsoDate(new Date())
   const filename = `applications-${toFilenameSlug(
     proposal.title,
@@ -455,9 +537,47 @@ export default async function handler(
   )}-${dateStamp}.zip`
   const archive = new ZipArchive({ zlib: { level: 9 } })
   const archiveFinished = new Promise<void>((resolve, reject) => {
-    res.on('finish', resolve)
-    res.on('error', reject)
-    archive.on('error', reject)
+    let settled = false
+
+    const cleanup = () => {
+      res.off('finish', handleFinish)
+      res.off('close', handleClose)
+      res.off('error', handleError)
+      archive.off('error', handleError)
+    }
+
+    const settle = (callback: () => void) => {
+      if (settled) return
+
+      settled = true
+      cleanup()
+      callback()
+    }
+
+    const handleFinish = () => {
+      settle(resolve)
+    }
+    const handleError = (error: unknown) => {
+      settle(() =>
+        reject(error instanceof Error ? error : new Error('ZIP stream failed'))
+      )
+    }
+    const handleClose = () => {
+      if (res.writableFinished) {
+        handleFinish()
+        return
+      }
+
+      archive.abort()
+      settle(() =>
+        reject(new Error('Response closed before ZIP finished streaming'))
+      )
+    }
+
+    res.once('finish', handleFinish)
+    res.once('close', handleClose)
+    res.once('error', handleError)
+    archive.once('error', handleError)
   })
 
   res.setHeader('Content-Type', 'application/zip')
@@ -465,10 +585,9 @@ export default async function handler(
   archive.pipe(res)
   archive.append(buildCsv(rows), { name: 'overview.csv' })
 
-  for (const file of files) {
-    archive.append(file.buffer, { name: file.zipPath })
+  for (const exportStream of exportStreams) {
+    archive.append(exportStream.stream, { name: exportStream.zipPath })
   }
 
-  await archive.finalize()
-  await archiveFinished
+  await Promise.all([archive.finalize(), archiveFinished])
 }

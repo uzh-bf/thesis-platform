@@ -95,6 +95,12 @@ function getFilenameFromContentDisposition(header: string | null) {
   return header.slice(valueStart, valueEnd) || null
 }
 
+function isSameEmail(firstEmail?: string | null, secondEmail?: string | null) {
+  if (!firstEmail || !secondEmail) return false
+
+  return firstEmail.toLowerCase() === secondEmail.toLowerCase()
+}
+
 export default function ProposalApplication({
   proposalDetails,
   refetch,
@@ -107,6 +113,14 @@ export default function ProposalApplication({
     trpc.declineProposalApplication.useMutation()
   const applications = proposalDetails.applications ?? []
   const [isDownloadingZip, setIsDownloadingZip] = useState(false)
+  const currentUserEmail = session?.user?.email
+  const canManageApplications =
+    isDeveloper ||
+    (isSupervisor &&
+      (isSameEmail(currentUserEmail, proposalDetails?.ownedByUserEmail) ||
+        proposalDetails?.supervisedBy?.some((supervision) =>
+          isSameEmail(currentUserEmail, supervision.supervisorEmail)
+        )))
 
   const handleDownloadApplicationsZip = async () => {
     if (isDownloadingZip) return
@@ -150,7 +164,9 @@ export default function ProposalApplication({
       document.body.appendChild(link)
       link.click()
       link.remove()
-      URL.revokeObjectURL(objectUrl)
+      window.setTimeout(() => {
+        URL.revokeObjectURL(objectUrl)
+      }, 1000)
     } catch (error) {
       alert(
         error instanceof Error
@@ -172,11 +188,7 @@ export default function ProposalApplication({
             proposalId={proposalDetails.id}
           />
         )}
-        {isDeveloper ||
-        (isSupervisor &&
-          (session?.user?.email === proposalDetails?.ownedByUserEmail ||
-            session?.user?.email ===
-              proposalDetails?.supervisedBy?.[0].supervisorEmail)) ? (
+        {canManageApplications ? (
           <div className="pt-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-[26px] font-semibold leading-tight text-[#121212]">
