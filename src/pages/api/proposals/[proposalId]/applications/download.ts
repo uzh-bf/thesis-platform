@@ -638,5 +638,11 @@ export default async function handler(
     archive.append(exportStream.stream, { name: exportStream.zipPath })
   }
 
-  await Promise.all([archive.finalize(), archiveFinished])
+  try {
+    await Promise.all([archive.finalize(), archiveFinished])
+  } finally {
+    for (const exportStream of exportStreams) {
+      exportStream.stream.destroy()
+    }
+  }
 }
