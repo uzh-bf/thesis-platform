@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.10.0](https://github.com/uzh-bf/thesis-platform/compare/v1.9.2...v1.10.0) (2026-06-09)
+
+
+### Features
+
+* add Azure AD configuration options and environment variables to deployment templates ([093b9a5](https://github.com/uzh-bf/thesis-platform/commit/093b9a5d62907cbf7b71dded10eb1a0aef876f06))
+* add cert-manager annotations for ingress configuration ([267294d](https://github.com/uzh-bf/thesis-platform/commit/267294db2dce20a2713c7895b74df467ce6df729))
+* add production values configuration for deployment ([09ae4d1](https://github.com/uzh-bf/thesis-platform/commit/09ae4d1bbbe550d1245162df279671f7ffa30afb))
+* add secret name definition for application environment variables ([998a146](https://github.com/uzh-bf/thesis-platform/commit/998a1462b14bc51e60f52b92e80bd311bf1c5ae1))
+* add secret name definition for application environment variables ([#102](https://github.com/uzh-bf/thesis-platform/issues/102)) ([0ab7b96](https://github.com/uzh-bf/thesis-platform/commit/0ab7b96a610b6fea7377b48ede71a2cbe1e5b0bd))
+* Add ZIP export for supervisor applications ([#111](https://github.com/uzh-bf/thesis-platform/issues/111)) ([d8718d5](https://github.com/uzh-bf/thesis-platform/commit/d8718d5f0405e35c23c1329b35dabd5a55c03e71))
+
+
+### Bug Fixes
+
+* add reviewer to PR creation for staging ARM image updates ([2598523](https://github.com/uzh-bf/thesis-platform/commit/2598523a620caebb3898886a3bb512a8f40d105e))
+* restore mysql database support ([39366a8](https://github.com/uzh-bf/thesis-platform/commit/39366a8eafa50a90a8d34c0fabe5180db6ebf1db))
+* update checkout action to use stable version v3 ([764892d](https://github.com/uzh-bf/thesis-platform/commit/764892d224a3bbfcbbb808745eee10f7d01b7e17))
+* update conditions and tags for ARM Docker image build ([#100](https://github.com/uzh-bf/thesis-platform/issues/100)) ([13d5628](https://github.com/uzh-bf/thesis-platform/commit/13d56285d951ec19f6e06400a5b95cdf205139d5))
+* update conditions for staging Docker image workflows to ignore specific paths ([c8c8245](https://github.com/uzh-bf/thesis-platform/commit/c8c82453ecbcbbaecddb49a1f7896327525a2869))
+* update Docker action versions in workflow files for consistency ([69dbdf5](https://github.com/uzh-bf/thesis-platform/commit/69dbdf520e6a25b5885fd3b9c549b29aedebe27d))
+
 ### [1.9.2](https://github.com/uzh-bf/thesis-platform/compare/v1.9.1...v1.9.2) (2026-05-19)
 
 
