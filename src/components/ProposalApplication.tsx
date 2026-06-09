@@ -1,6 +1,8 @@
+import { faDownload, faSpinner } from '@fortawesome/free-solid-svg-icons'
+import { Button } from '@uzh-bf/design-system'
 import { add, format } from 'date-fns'
 import { useSession } from 'next-auth/react'
-import { Dispatch, SetStateAction } from 'react'
+import { Dispatch, SetStateAction, useState } from 'react'
 import useUserRole from 'src/lib/hooks/useUserRole'
 import { trpc } from 'src/lib/trpc'
 import {
@@ -35,6 +37,70 @@ function formatWorkingPeriod(plannedStartAt: Date | string) {
   return `${formatDate(startDate)} - ${formatDate(endDate)}`
 }
 
+function isCombiningMark(char: string) {
+  const codePoint = char.codePointAt(0) ?? 0
+
+  return codePoint >= 0x0300 && codePoint <= 0x036f
+}
+
+function isAsciiLowercaseLetterOrDigit(char: string) {
+  const codePoint = char.codePointAt(0) ?? 0
+
+  return (
+    (codePoint >= 0x61 && codePoint <= 0x7a) ||
+    (codePoint >= 0x30 && codePoint <= 0x39)
+  )
+}
+
+function toFilenameSlug(value: string) {
+  let slug = ''
+  let separatorPending = false
+
+  for (const char of value.normalize('NFKD').toLowerCase()) {
+    if (isCombiningMark(char)) continue
+
+    if (isAsciiLowercaseLetterOrDigit(char)) {
+      if (separatorPending && slug.length > 0 && slug.length < 80) {
+        slug += '-'
+      }
+
+      if (slug.length < 80) {
+        slug += char
+      }
+
+      separatorPending = false
+    } else {
+      separatorPending = slug.length > 0
+    }
+
+    if (slug.length >= 80) break
+  }
+
+  return slug || 'proposal'
+}
+
+function getFilenameFromContentDisposition(header: string | null) {
+  if (!header) return null
+
+  const filenameMarker = 'filename="'
+  const filenameStart = header.indexOf(filenameMarker)
+
+  if (filenameStart === -1) return null
+
+  const valueStart = filenameStart + filenameMarker.length
+  const valueEnd = header.indexOf('"', valueStart)
+
+  if (valueEnd === -1) return null
+
+  return header.slice(valueStart, valueEnd) || null
+}
+
+function isSameEmail(firstEmail?: string | null, secondEmail?: string | null) {
+  if (!firstEmail || !secondEmail) return false
+
+  return firstEmail.toLowerCase() === secondEmail.toLowerCase()
+}
+
 export default function ProposalApplication({
   proposalDetails,
   refetch,
@@ -46,6 +112,71 @@ export default function ProposalApplication({
   const declineIndividualApplication =
     trpc.declineProposalApplication.useMutation()
   const applications = proposalDetails.applications ?? []
+  const [isDownloadingZip, setIsDownloadingZip] = useState(false)
+  const currentUserEmail = session?.user?.email
+  const canManageApplications =
+    isDeveloper ||
+    (isSupervisor &&
+      (isSameEmail(currentUserEmail, proposalDetails?.ownedByUserEmail) ||
+        proposalDetails?.supervisedBy?.some((supervision) =>
+          isSameEmail(currentUserEmail, supervision.supervisorEmail)
+        )))
+
+  const handleDownloadApplicationsZip = async () => {
+    if (isDownloadingZip) return
+
+    try {
+      setIsDownloadingZip(true)
+
+      const response = await fetch(
+        `/api/proposals/${encodeURIComponent(
+          proposalDetails.id
+        )}/applications/download`
+      )
+
+      if (!response.ok) {
+        let message = 'Application ZIP export failed. Please try again.'
+
+        try {
+          const errorBody = await response.json()
+          if (typeof errorBody?.message === 'string') {
+            message = errorBody.message
+          }
+        } catch (_error) {
+          // Keep the generic error if the server did not return JSON.
+        }
+
+        throw new Error(message)
+      }
+
+      const blob = await response.blob()
+      const objectUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      const fallbackFilename = `applications-${toFilenameSlug(
+        proposalDetails.title
+      )}-${format(new Date(), 'yyyy-MM-dd')}.zip`
+
+      link.href = objectUrl
+      link.download =
+        getFilenameFromContentDisposition(
+          response.headers.get('Content-Disposition')
+        ) ?? fallbackFilename
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.setTimeout(() => {
+        URL.revokeObjectURL(objectUrl)
+      }, 1000)
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'Application ZIP export failed. Please try again.'
+      )
+    } finally {
+      setIsDownloadingZip(false)
+    }
+  }
 
   if (proposalDetails?.typeKey === 'SUPERVISOR') {
     return (
@@ -57,15 +188,28 @@ export default function ProposalApplication({
             proposalId={proposalDetails.id}
           />
         )}
-        {isDeveloper ||
-        (isSupervisor &&
-          (session?.user?.email === proposalDetails?.ownedByUserEmail ||
-            session?.user?.email ===
-              proposalDetails?.supervisedBy?.[0].supervisorEmail)) ? (
+        {canManageApplications ? (
           <div className="pt-4">
-            <h2 className="text-[26px] font-semibold leading-tight text-[#121212]">
-              Applications
-            </h2>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-[26px] font-semibold leading-tight text-[#121212]">
+                Applications
+              </h2>
+              {applications.length > 0 && (
+                <Button
+                  disabled={isDownloadingZip}
+                  onClick={handleDownloadApplicationsZip}
+                  size="sm"
+                  title="Download all application files as ZIP"
+                >
+                  <Button.Icon
+                    icon={isDownloadingZip ? faSpinner : faDownload}
+                  />
+                  <Button.Label>
+                    {isDownloadingZip ? 'Downloading...' : 'Download ZIP'}
+                  </Button.Label>
+                </Button>
+              )}
+            </div>
             {applications.length === 0 && (
               <p className="mt-2 text-base text-[#4C4C4C]">
                 No applications for this proposal...
