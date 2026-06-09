@@ -95,386 +95,6 @@ function getFilenameFromContentDisposition(header: string | null) {
   return header.slice(valueStart, valueEnd) || null
 }
 
-function toSafePathSegment(value: string, fallback: string) {
-  let segment = ''
-  let separatorPending = false
-
-  for (const char of value.normalize('NFKD')) {
-    if (isCombiningMark(char)) continue
-
-    const codePoint = char.codePointAt(0) ?? 0
-    const isAllowed =
-      (codePoint >= 0x41 && codePoint <= 0x5a) ||
-      (codePoint >= 0x61 && codePoint <= 0x7a) ||
-      (codePoint >= 0x30 && codePoint <= 0x39) ||
-      char === '.' ||
-      char === '-'
-
-    if (isAllowed) {
-      if (separatorPending && segment.length > 0 && segment.length < 80) {
-        segment += '_'
-      }
-
-      if (segment.length < 80) {
-        segment += char
-      }
-
-      separatorPending = false
-    } else {
-      separatorPending = segment.length > 0
-    }
-
-    if (segment.length >= 80) break
-  }
-
-  return segment || fallback
-}
-
-function getAttachment(
-  attachments: ApplicationDetails['attachments'],
-  label: 'CV' | 'Transcript'
-) {
-  const target = label === 'CV' ? 'cv' : 'transcript'
-
-  return (
-    attachments?.find(
-      (attachment) => attachment.name.trim().toLowerCase() === target
-    ) ??
-    attachments?.find((attachment) =>
-      attachment.name.trim().toLowerCase().includes(target)
-    )
-  )
-}
-
-function toDownloadUrl(href: string) {
-  const url = new URL(href)
-  url.searchParams.set('download', '1')
-
-  return url.toString()
-}
-
-async function fetchPdfFromBrowser(
-  attachment: NonNullable<ApplicationDetails['attachments']>[number]
-) {
-  const response = await fetch(toDownloadUrl(attachment.href), {
-    credentials: 'include',
-    headers: {
-      accept: 'application/pdf',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`)
-  }
-
-  const contentType = response.headers.get('content-type')?.toLowerCase() ?? ''
-  const data = new Uint8Array(await response.arrayBuffer())
-  const looksLikePdf =
-    data.length >= 5 && new TextDecoder().decode(data.subarray(0, 5)) === '%PDF-'
-
-  if (!looksLikePdf && !contentType.includes('application/pdf')) {
-    throw new Error(
-      contentType
-        ? `Unexpected content type: ${contentType}`
-        : 'Downloaded file is not a PDF'
-    )
-  }
-
-  return data
-}
-
-function escapeCsvValue(value: unknown) {
-  const raw = String(value ?? '')
-  const source = /^\s*[=+\-@]/.test(raw) ? `'${raw}` : raw
-
-  return `"${source.replace(/\r\n?/g, '\n').replace(/"/g, '""')}"`
-}
-
-function getCsvDelimiter() {
-  const locale = navigator.languages?.[0] ?? navigator.language ?? ''
-  const normalizedLocale = locale.toLowerCase()
-
-  return normalizedLocale === 'de' || normalizedLocale.startsWith('de-')
-    ? ';'
-    : ','
-}
-
-function buildApplicationsCsv({
-  proposalDetails,
-  rows,
-}: {
-  proposalDetails: ProposalDetails
-  rows: {
-    application: ApplicationDetails
-    applicantFolder: string
-    cvZipPath: string
-    transcriptZipPath: string
-    cvHref: string
-    transcriptHref: string
-  }[]
-}) {
-  const delimiter = getCsvDelimiter()
-  const headers = [
-    'Proposal ID',
-    'Proposal Title',
-    'Proposal Topic Area',
-    'Proposal Language',
-    'Proposal Study Level',
-    'Proposal Status',
-    'Proposal Created At',
-    'Application ID',
-    'Application Status',
-    'Full Name',
-    'Email',
-    'Matriculation Number',
-    'Planned Start At',
-    'Planned End At',
-    'Motivation',
-    'Allow Usage',
-    'Allow Publication',
-    'Application Created At',
-    'Application Updated At',
-    'Applicant Folder',
-    'CV Link',
-    'Transcript Link',
-    'CV ZIP Path',
-    'Transcript ZIP Path',
-  ] as const
-
-  const csvRows = rows.map(
-    ({
-      application,
-      applicantFolder,
-      cvZipPath,
-      transcriptZipPath,
-      cvHref,
-      transcriptHref,
-    }) => ({
-      'Proposal ID': proposalDetails.id,
-      'Proposal Title': proposalDetails.title,
-      'Proposal Topic Area': proposalDetails.topicArea.name,
-      'Proposal Language': proposalDetails.language,
-      'Proposal Study Level': proposalDetails.studyLevel,
-      'Proposal Status': proposalDetails.statusKey,
-      'Proposal Created At': new Date(proposalDetails.createdAt).toISOString(),
-      'Application ID': application.id,
-      'Application Status': application.statusKey,
-      'Full Name': application.fullName,
-      Email: application.email,
-      'Matriculation Number': application.matriculationNumber,
-      'Planned Start At': new Date(application.plannedStartAt)
-        .toISOString()
-        .slice(0, 10),
-      'Planned End At': add(new Date(application.plannedStartAt), {
-        months: 6,
-      })
-        .toISOString()
-        .slice(0, 10),
-      Motivation: application.motivation,
-      'Allow Usage': application.allowUsage,
-      'Allow Publication': application.allowPublication,
-      'Application Created At': new Date(application.createdAt).toISOString(),
-      'Application Updated At': new Date(application.updatedAt).toISOString(),
-      'Applicant Folder': applicantFolder,
-      'CV Link': cvHref,
-      'Transcript Link': transcriptHref,
-      'CV ZIP Path': cvZipPath,
-      'Transcript ZIP Path': transcriptZipPath,
-    })
-  )
-
-  return `\uFEFF${[
-    headers.map(escapeCsvValue).join(delimiter),
-    ...csvRows.map((row) =>
-      headers.map((header) => escapeCsvValue(row[header])).join(delimiter)
-    ),
-  ].join('\n')}\n`
-}
-
-const crcTable = (() => {
-  const table = new Uint32Array(256)
-
-  for (let index = 0; index < table.length; index += 1) {
-    let value = index
-
-    for (let bit = 0; bit < 8; bit += 1) {
-      value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1
-    }
-
-    table[index] = value >>> 0
-  }
-
-  return table
-})()
-
-function crc32(data: Uint8Array) {
-  let value = 0xffffffff
-
-  for (let index = 0; index < data.length; index += 1) {
-    value = crcTable[(value ^ data[index]) & 0xff] ^ (value >>> 8)
-  }
-
-  return (value ^ 0xffffffff) >>> 0
-}
-
-function toBlobPart(data: Uint8Array) {
-  return data.buffer.slice(
-    data.byteOffset,
-    data.byteOffset + data.byteLength
-  ) as ArrayBuffer
-}
-
-function getDosDateTime(date = new Date()) {
-  const year = Math.max(1980, date.getFullYear())
-  const dosTime =
-    (date.getHours() << 11) | (date.getMinutes() << 5) | (date.getSeconds() >> 1)
-  const dosDate =
-    ((year - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate()
-
-  return { dosDate, dosTime }
-}
-
-function createZipBlob(entries: { name: string; data: Uint8Array }[]) {
-  const encoder = new TextEncoder()
-  const localParts: Uint8Array[] = []
-  const centralParts: Uint8Array[] = []
-  const { dosDate, dosTime } = getDosDateTime()
-  let offset = 0
-
-  const writeHeader = (size: number, write: (view: DataView) => void) => {
-    const bytes = new Uint8Array(size)
-    write(new DataView(bytes.buffer))
-
-    return bytes
-  }
-
-  for (const entry of entries) {
-    const name = encoder.encode(entry.name)
-    const checksum = crc32(entry.data)
-    const localOffset = offset
-    const localHeader = writeHeader(30, (view) => {
-      view.setUint32(0, 0x04034b50, true)
-      view.setUint16(4, 20, true)
-      view.setUint16(6, 0x0800, true)
-      view.setUint16(8, 0, true)
-      view.setUint16(10, dosTime, true)
-      view.setUint16(12, dosDate, true)
-      view.setUint32(14, checksum, true)
-      view.setUint32(18, entry.data.length, true)
-      view.setUint32(22, entry.data.length, true)
-      view.setUint16(26, name.length, true)
-      view.setUint16(28, 0, true)
-    })
-
-    localParts.push(localHeader, name, entry.data)
-    offset += localHeader.length + name.length + entry.data.length
-
-    const centralHeader = writeHeader(46, (view) => {
-      view.setUint32(0, 0x02014b50, true)
-      view.setUint16(4, 20, true)
-      view.setUint16(6, 20, true)
-      view.setUint16(8, 0x0800, true)
-      view.setUint16(10, 0, true)
-      view.setUint16(12, dosTime, true)
-      view.setUint16(14, dosDate, true)
-      view.setUint32(16, checksum, true)
-      view.setUint32(20, entry.data.length, true)
-      view.setUint32(24, entry.data.length, true)
-      view.setUint16(28, name.length, true)
-      view.setUint16(30, 0, true)
-      view.setUint16(32, 0, true)
-      view.setUint16(34, 0, true)
-      view.setUint16(36, 0, true)
-      view.setUint32(38, 0, true)
-      view.setUint32(42, localOffset, true)
-    })
-
-    centralParts.push(centralHeader, name)
-  }
-
-  const centralDirectoryOffset = offset
-  const centralDirectorySize = centralParts.reduce(
-    (sum, part) => sum + part.length,
-    0
-  )
-  const endRecord = writeHeader(22, (view) => {
-    view.setUint32(0, 0x06054b50, true)
-    view.setUint16(4, 0, true)
-    view.setUint16(6, 0, true)
-    view.setUint16(8, entries.length, true)
-    view.setUint16(10, entries.length, true)
-    view.setUint32(12, centralDirectorySize, true)
-    view.setUint32(16, centralDirectoryOffset, true)
-    view.setUint16(20, 0, true)
-  })
-
-  return new Blob([...localParts, ...centralParts, endRecord].map(toBlobPart), {
-    type: 'application/zip',
-  })
-}
-
-async function buildApplicationsZipInBrowser(proposalDetails: ProposalDetails) {
-  const encoder = new TextEncoder()
-  const files: { name: string; data: Uint8Array }[] = []
-  const csvRows: Parameters<typeof buildApplicationsCsv>[0]['rows'] = []
-
-  for (let index = 0; index < proposalDetails.applications.length; index += 1) {
-    const application = proposalDetails.applications[index]
-    const applicantFolder = [
-      String(index + 1).padStart(2, '0'),
-      toSafePathSegment(application.fullName, 'applicant'),
-      toSafePathSegment(application.matriculationNumber, application.id),
-    ].join('_')
-    const cvAttachment = getAttachment(application.attachments, 'CV')
-    const transcriptAttachment = getAttachment(
-      application.attachments,
-      'Transcript'
-    )
-
-    if (!cvAttachment || !transcriptAttachment) {
-      throw new Error(
-        `${application.fullName} is missing a CV or Transcript attachment.`
-      )
-    }
-
-    const cvZipPath = `${applicantFolder}/cv.pdf`
-    const transcriptZipPath = `${applicantFolder}/transcript.pdf`
-
-    try {
-      const [cv, transcript] = await Promise.all([
-        fetchPdfFromBrowser(cvAttachment),
-        fetchPdfFromBrowser(transcriptAttachment),
-      ])
-
-      files.push(
-        { name: cvZipPath, data: cv },
-        { name: transcriptZipPath, data: transcript }
-      )
-      csvRows.push({
-        application,
-        applicantFolder,
-        cvZipPath,
-        transcriptZipPath,
-        cvHref: cvAttachment.href,
-        transcriptHref: transcriptAttachment.href,
-      })
-    } catch (error) {
-      throw new Error(
-        `${application.fullName}: ${
-          error instanceof Error ? error.message : 'PDF download failed'
-        }`
-      )
-    }
-  }
-
-  files.unshift({
-    name: 'overview.csv',
-    data: encoder.encode(buildApplicationsCsv({ proposalDetails, rows: csvRows })),
-  })
-
-  return createZipBlob(files)
-}
-
 function isSameEmail(firstEmail?: string | null, secondEmail?: string | null) {
   if (!firstEmail || !secondEmail) return false
 
@@ -492,7 +112,7 @@ export default function ProposalApplication({
   const declineIndividualApplication =
     trpc.declineProposalApplication.useMutation()
   const applications = proposalDetails.applications ?? []
-  const [isDownloadingZip, setIsDownloadingZip] = useState(false)
+  const [isDownloadingCsv, setIsDownloadingCsv] = useState(false)
   const currentUserEmail = session?.user?.email
   const canManageApplications =
     isDeveloper ||
@@ -502,51 +122,41 @@ export default function ProposalApplication({
           isSameEmail(currentUserEmail, supervision.supervisorEmail)
         )))
 
-  const handleDownloadApplicationsZip = async () => {
-    if (isDownloadingZip) return
+  const handleDownloadApplicationsCsv = async () => {
+    if (isDownloadingCsv) return
 
     try {
-      setIsDownloadingZip(true)
+      setIsDownloadingCsv(true)
 
       const fallbackFilename = `applications-${toFilenameSlug(
         proposalDetails.title
-      )}-${format(new Date(), 'yyyy-MM-dd')}.zip`
-      let blob: Blob
-      let filename = fallbackFilename
+      )}-${format(new Date(), 'yyyy-MM-dd')}.csv`
+      const response = await fetch(
+        `/api/proposals/${encodeURIComponent(
+          proposalDetails.id
+        )}/applications/download`
+      )
 
-      try {
-        blob = await buildApplicationsZipInBrowser(proposalDetails)
-      } catch (browserError) {
-        const response = await fetch(
-          `/api/proposals/${encodeURIComponent(
-            proposalDetails.id
-          )}/applications/download`
-        )
+      if (!response.ok) {
+        let message = 'Application CSV export failed. Please try again.'
 
-        if (!response.ok) {
-          let message = 'Application ZIP export failed. Please try again.'
-
-          try {
-            const errorBody = await response.json()
-            if (typeof errorBody?.message === 'string') {
-              message = errorBody.message
-            }
-          } catch (_error) {
-            // Keep the generic error if the server did not return JSON.
+        try {
+          const errorBody = await response.json()
+          if (typeof errorBody?.message === 'string') {
+            message = errorBody.message
           }
-
-          throw new Error(
-            `Browser download failed (${browserError instanceof Error ? browserError.message : 'PDF download failed'}). Server fallback failed: ${message}`
-          )
+        } catch (_error) {
+          // Keep the generic error if the server did not return JSON.
         }
 
-        blob = await response.blob()
-        filename =
-          getFilenameFromContentDisposition(
-            response.headers.get('Content-Disposition')
-          ) ?? fallbackFilename
+        throw new Error(message)
       }
 
+      const blob = await response.blob()
+      const filename =
+        getFilenameFromContentDisposition(
+          response.headers.get('Content-Disposition')
+        ) ?? fallbackFilename
       const objectUrl = URL.createObjectURL(blob)
       const link = document.createElement('a')
 
@@ -562,10 +172,10 @@ export default function ProposalApplication({
       alert(
         error instanceof Error
           ? error.message
-          : 'Application ZIP export failed. Please try again.'
+          : 'Application CSV export failed. Please try again.'
       )
     } finally {
-      setIsDownloadingZip(false)
+      setIsDownloadingCsv(false)
     }
   }
 
@@ -587,16 +197,16 @@ export default function ProposalApplication({
               </h2>
               {applications.length > 0 && (
                 <Button
-                  disabled={isDownloadingZip}
-                  onClick={handleDownloadApplicationsZip}
+                  disabled={isDownloadingCsv}
+                  onClick={handleDownloadApplicationsCsv}
                   size="sm"
-                  title="Download all application files as ZIP"
+                  title="Download application data as CSV"
                 >
                   <Button.Icon
-                    icon={isDownloadingZip ? faSpinner : faDownload}
+                    icon={isDownloadingCsv ? faSpinner : faDownload}
                   />
                   <Button.Label>
-                    {isDownloadingZip ? 'Downloading...' : 'Download ZIP'}
+                    {isDownloadingCsv ? 'Downloading...' : 'Download CSV'}
                   </Button.Label>
                 </Button>
               )}

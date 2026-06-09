@@ -1,44 +1,15 @@
-import { ZipArchive } from 'archiver'
 import { addMonths } from 'date-fns'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
-import { Readable } from 'node:stream'
 import { authOptions } from 'src/lib/authOptions'
 import { Department, ProposalType, UserRole } from 'src/lib/constants'
 import prisma from 'src/server/prisma'
-
-export const config = {
-  api: {
-    responseLimit: false,
-  },
-}
 
 type ApplicationAttachment = {
   id: string
   name: string
   href: string
   type: string
-}
-
-type ApplicationExportFile = {
-  zipPath: string
-  attachment: ApplicationAttachment
-  applicationId: string
-  applicant: string
-  label: 'CV' | 'Transcript'
-}
-
-type ApplicationExportStream = {
-  zipPath: string
-  stream: Readable
-}
-
-type ExportFailure = {
-  applicationId: string
-  applicant: string
-  attachment: 'CV' | 'Transcript'
-  message: string
-  href?: string
 }
 
 type CsvDelimiter = ',' | ';'
@@ -63,11 +34,9 @@ const CSV_HEADERS = [
   'Allow Publication',
   'Application Created At',
   'Application Updated At',
-  'Applicant Folder',
   'CV Link',
   'Transcript Link',
-  'CV ZIP Path',
-  'Transcript ZIP Path',
+  'Attachment Links',
 ] as const
 
 function sendJsonError(
@@ -89,16 +58,6 @@ function isCombiningMark(char: string) {
   return codePoint >= 0x0300 && codePoint <= 0x036f
 }
 
-function isAsciiLetterOrDigit(char: string) {
-  const codePoint = char.codePointAt(0) ?? 0
-
-  return (
-    (codePoint >= 0x41 && codePoint <= 0x5a) ||
-    (codePoint >= 0x61 && codePoint <= 0x7a) ||
-    (codePoint >= 0x30 && codePoint <= 0x39)
-  )
-}
-
 function isAsciiLowercaseLetterOrDigit(char: string) {
   const codePoint = char.codePointAt(0) ?? 0
 
@@ -108,71 +67,31 @@ function isAsciiLowercaseLetterOrDigit(char: string) {
   )
 }
 
-function sanitizeSegment({
-  value,
-  fallback,
-  separator,
-  preserveDotAndDash,
-  lowercase,
-}: {
-  value: string
-  fallback: string
-  separator: '-' | '_'
-  preserveDotAndDash: boolean
-  lowercase: boolean
-}) {
-  let segment = ''
+function toFilenameSlug(value: string, fallback: string) {
+  let slug = ''
   let separatorPending = false
-  const normalizedValue = value.normalize('NFKD')
-  const source = lowercase ? normalizedValue.toLowerCase() : normalizedValue
 
-  for (const char of source) {
+  for (const char of value.normalize('NFKD').toLowerCase()) {
     if (isCombiningMark(char)) continue
 
-    const isAllowed =
-      (lowercase
-        ? isAsciiLowercaseLetterOrDigit(char)
-        : isAsciiLetterOrDigit(char)) ||
-      (preserveDotAndDash && (char === '.' || char === '-'))
-
-    if (isAllowed) {
-      if (separatorPending && segment.length > 0 && segment.length < 80) {
-        segment += separator
+    if (isAsciiLowercaseLetterOrDigit(char)) {
+      if (separatorPending && slug.length > 0 && slug.length < 80) {
+        slug += '-'
       }
 
-      if (segment.length < 80) {
-        segment += char
+      if (slug.length < 80) {
+        slug += char
       }
 
       separatorPending = false
     } else {
-      separatorPending = segment.length > 0
+      separatorPending = slug.length > 0
     }
 
-    if (segment.length >= 80) break
+    if (slug.length >= 80) break
   }
 
-  return segment || fallback
-}
-
-function toSafePathSegment(value: string, fallback: string) {
-  return sanitizeSegment({
-    value,
-    fallback,
-    separator: '_',
-    preserveDotAndDash: true,
-    lowercase: false,
-  })
-}
-
-function toFilenameSlug(value: string, fallback: string) {
-  return sanitizeSegment({
-    value,
-    fallback,
-    separator: '-',
-    preserveDotAndDash: false,
-    lowercase: true,
-  })
+  return slug || fallback
 }
 
 function toIsoDate(value: Date | string | null | undefined) {
@@ -191,25 +110,8 @@ function escapeCsvValue(value: unknown) {
   const raw = String(value ?? '')
   // Prevent CSV/Excel formula injection (e.g. values starting with =, +, -, @)
   const source = /^\s*[=+\-@]/.test(raw) ? `'${raw}` : raw
-  let escaped = ''
 
-  for (let index = 0; index < source.length; index += 1) {
-    const char = source[index]
-
-    if (char === '"') {
-      escaped += '""'
-    } else if (char === '\r') {
-      escaped += '\n'
-
-      if (source[index + 1] === '\n') {
-        index += 1
-      }
-    } else {
-      escaped += char
-    }
-  }
-
-  return `"${escaped}"`
+  return `"${source.replace(/\r\n?/g, '\n').replace(/"/g, '""')}"`
 }
 
 function getPreferredLanguage(acceptLanguage: string | string[] | undefined) {
@@ -219,24 +121,28 @@ function getPreferredLanguage(acceptLanguage: string | string[] | undefined) {
 
   if (!header) return ''
 
-  return header
-    .split(',')
-    .map((entry, index) => {
-      const [language = '', ...params] = entry.trim().split(';')
-      const qParam = params.find((param) => param.trim().startsWith('q='))
-      const qValue = qParam ? Number(qParam.split('=')[1]) : 1
+  return (
+    header
+      .split(',')
+      .map((entry, index) => {
+        const [language = '', ...params] = entry.trim().split(';')
+        const qParam = params.find((param) => param.trim().startsWith('q='))
+        const qValue = qParam ? Number(qParam.split('=')[1]) : 1
 
-      return {
-        index,
-        language: language.toLowerCase(),
-        q: Number.isFinite(qValue) ? qValue : 0,
-      }
-    })
-    .filter((entry) => entry.language)
-    .sort((a, b) => b.q - a.q || a.index - b.index)[0]?.language ?? ''
+        return {
+          index,
+          language: language.toLowerCase(),
+          q: Number.isFinite(qValue) ? qValue : 0,
+        }
+      })
+      .filter((entry) => entry.language)
+      .sort((a, b) => b.q - a.q || a.index - b.index)[0]?.language ?? ''
+  )
 }
 
-function getCsvDelimiter(acceptLanguage: string | string[] | undefined): CsvDelimiter {
+function getCsvDelimiter(
+  acceptLanguage: string | string[] | undefined
+): CsvDelimiter {
   const preferredLanguage = getPreferredLanguage(acceptLanguage)
 
   return preferredLanguage === 'de' || preferredLanguage.startsWith('de-')
@@ -270,134 +176,10 @@ function getAttachment(
   )
 }
 
-function toDownloadUrl(href: string) {
-  let url: URL
-
-  try {
-    url = new URL(href)
-  } catch {
-    throw new Error('Invalid attachment URL')
-  }
-
-  const protocol = url.protocol.toLowerCase()
-  if (protocol !== 'https:') {
-    throw new Error(`Unsupported attachment URL protocol: ${url.protocol}`)
-  }
-
-  const hostname = url.hostname.toLowerCase()
-  if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
-    throw new Error('Attachment URL points to a local address')
-  }
-
-  if (hostname === '127.0.0.1' || hostname === '::1') {
-    throw new Error('Attachment URL points to a local address')
-  }
-
-  const ipv4Match = hostname.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/)
-  if (ipv4Match) {
-    const a = Number(ipv4Match[1])
-    const b = Number(ipv4Match[2])
-
-    if (
-      a === 0 ||
-      a === 10 ||
-      a === 127 ||
-      (a === 169 && b === 254) ||
-      (a === 172 && b >= 16 && b <= 31) ||
-      (a === 192 && b === 168)
-    ) {
-      throw new Error('Attachment URL points to a private address')
-    }
-  }
-
-  url.searchParams.set('download', '1')
-  return url.toString()
-}
-
-async function readPdfSignature(response: Response) {
-  if (!response.body) return ''
-
-  const reader = response.body.getReader()
-
-  try {
-    const result = await reader.read()
-
-    return result.value
-      ? Buffer.from(result.value.subarray(0, 5)).toString('utf8')
-      : ''
-  } finally {
-    await reader.cancel().catch(() => undefined)
-    reader.releaseLock()
-  }
-}
-
-function toReadableStream(stream: ReadableStream<Uint8Array>) {
-  return Readable.fromWeb(stream as Parameters<typeof Readable.fromWeb>[0])
-}
-
-async function validatePdfAttachment(
-  attachment: ApplicationAttachment,
-  timeoutMs = 20000
-) {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
-
-  try {
-    const response = await fetch(toDownloadUrl(attachment.href), {
-      headers: {
-        accept: 'application/pdf',
-        range: 'bytes=0-4',
-      },
-      signal: controller.signal,
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
-    }
-
-    const contentType = response.headers.get('content-type')?.toLowerCase() ?? ''
-    const looksLikePdf = (await readPdfSignature(response)) === '%PDF-'
-    const hasPdfContentType = contentType.includes('application/pdf')
-
-    if (!looksLikePdf && !hasPdfContentType) {
-      throw new Error(
-        contentType
-          ? `Unexpected content type: ${contentType}`
-          : 'Downloaded file is not a PDF'
-      )
-    }
-  } finally {
-    clearTimeout(timeout)
-  }
-}
-
-async function fetchPdfAttachmentStream(
-  attachment: ApplicationAttachment,
-  timeoutMs = 60000
-) {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
-
-  try {
-    const response = await fetch(toDownloadUrl(attachment.href), {
-      headers: {
-        accept: 'application/pdf',
-      },
-      signal: controller.signal,
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
-    }
-
-    if (!response.body) {
-      throw new Error('Downloaded file has no response body')
-    }
-
-    return toReadableStream(response.body)
-  } finally {
-    clearTimeout(timeout)
-  }
+function formatAttachmentLinks(attachments: ApplicationAttachment[]) {
+  return attachments
+    .map((attachment) => `${attachment.name}: ${attachment.href}`)
+    .join('\n')
 }
 
 function isSupervisorAuthorized({
@@ -494,26 +276,14 @@ export default async function handler(
     return
   }
 
-  const failures: ExportFailure[] = []
-  const files: ApplicationExportFile[] = []
-  const rows: Record<(typeof CSV_HEADERS)[number], unknown>[] = []
-
-  for (let index = 0; index < proposal.applications.length; index += 1) {
-    const application = proposal.applications[index]
-    const applicantFolder = [
-      String(index + 1).padStart(2, '0'),
-      toSafePathSegment(application.fullName, 'applicant'),
-      toSafePathSegment(application.matriculationNumber, application.id),
-    ].join('_')
+  const rows = proposal.applications.map((application) => {
     const cvAttachment = getAttachment(application.attachments, 'CV')
     const transcriptAttachment = getAttachment(
       application.attachments,
       'Transcript'
     )
-    const cvZipPath = `${applicantFolder}/cv.pdf`
-    const transcriptZipPath = `${applicantFolder}/transcript.pdf`
 
-    rows.push({
+    return {
       'Proposal ID': proposal.id,
       'Proposal Title': proposal.title,
       'Proposal Topic Area': proposal.topicArea.name,
@@ -533,156 +303,22 @@ export default async function handler(
       'Allow Publication': application.allowPublication,
       'Application Created At': toIsoDateTime(application.createdAt),
       'Application Updated At': toIsoDateTime(application.updatedAt),
-      'Applicant Folder': applicantFolder,
       'CV Link': cvAttachment?.href ?? '',
       'Transcript Link': transcriptAttachment?.href ?? '',
-      'CV ZIP Path': cvAttachment ? cvZipPath : '',
-      'Transcript ZIP Path': transcriptAttachment ? transcriptZipPath : '',
-    })
-
-    for (const [label, attachment, zipPath] of [
-      ['CV', cvAttachment, cvZipPath],
-      ['Transcript', transcriptAttachment, transcriptZipPath],
-    ] as const) {
-      if (!attachment) {
-        failures.push({
-          applicationId: application.id,
-          applicant: application.fullName,
-          attachment: label,
-          message: `${label} attachment is missing`,
-        })
-        continue
-      }
-
-      try {
-        await validatePdfAttachment(attachment)
-        files.push({
-          zipPath,
-          attachment,
-          applicationId: application.id,
-          applicant: application.fullName,
-          label,
-        })
-      } catch (error) {
-        failures.push({
-          applicationId: application.id,
-          applicant: application.fullName,
-          attachment: label,
-          message: error instanceof Error ? error.message : 'Download failed',
-          href: attachment.href,
-        })
-      }
+      'Attachment Links': formatAttachmentLinks(application.attachments),
     }
-  }
-
-  if (failures.length > 0) {
-    sendJsonError(
-      res,
-      502,
-      'Application export could not be created because one or more PDFs could not be downloaded.',
-      failures
-    )
-    return
-  }
-
-  const exportStreams: ApplicationExportStream[] = []
-
-  for (const file of files) {
-    try {
-      exportStreams.push({
-        zipPath: file.zipPath,
-        stream: await fetchPdfAttachmentStream(file.attachment),
-      })
-    } catch (error) {
-      for (const exportStream of exportStreams) {
-        exportStream.stream.destroy()
-      }
-
-      sendJsonError(
-        res,
-        502,
-        'Application export could not be created because one or more PDFs could not be downloaded.',
-        [
-          {
-            applicationId: file.applicationId,
-            applicant: file.applicant,
-            attachment: file.label,
-            message:
-              error instanceof Error ? error.message : 'Download failed',
-            href: file.attachment.href,
-          },
-        ]
-      )
-      return
-    }
-  }
+  })
 
   const dateStamp = toIsoDate(new Date())
   const filename = `applications-${toFilenameSlug(
     proposal.title,
     'proposal'
-  )}-${dateStamp}.zip`
-  const archive = new ZipArchive({ zlib: { level: 9 } })
-  const archiveFinished = new Promise<void>((resolve, reject) => {
-    let settled = false
+  )}-${dateStamp}.csv`
 
-    const cleanup = () => {
-      res.off('finish', handleFinish)
-      res.off('close', handleClose)
-      res.off('error', handleError)
-      archive.off('error', handleError)
-    }
-
-    const settle = (callback: () => void) => {
-      if (settled) return
-
-      settled = true
-      cleanup()
-      callback()
-    }
-
-    const handleFinish = () => {
-      settle(resolve)
-    }
-    const handleError = (error: unknown) => {
-      settle(() =>
-        reject(error instanceof Error ? error : new Error('ZIP stream failed'))
-      )
-    }
-    const handleClose = () => {
-      if (res.writableFinished) {
-        handleFinish()
-        return
-      }
-
-      archive.abort()
-      settle(() =>
-        reject(new Error('Response closed before ZIP finished streaming'))
-      )
-    }
-
-    res.once('finish', handleFinish)
-    res.once('close', handleClose)
-    res.once('error', handleError)
-    archive.once('error', handleError)
-  })
-
-  res.setHeader('Content-Type', 'application/zip')
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8')
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-  archive.pipe(res)
-  archive.append(buildCsv(rows, getCsvDelimiter(req.headers['accept-language'])), {
-    name: 'overview.csv',
-  })
-
-  for (const exportStream of exportStreams) {
-    archive.append(exportStream.stream, { name: exportStream.zipPath })
-  }
-
-  try {
-    await Promise.all([archive.finalize(), archiveFinished])
-  } finally {
-    for (const exportStream of exportStreams) {
-      exportStream.stream.destroy()
-    }
-  }
+  res.setHeader('Cache-Control', 'no-store')
+  res
+    .status(200)
+    .send(buildCsv(rows, getCsvDelimiter(req.headers['accept-language'])))
 }
