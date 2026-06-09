@@ -333,22 +333,33 @@ async function validatePdfAttachment(
   }
 }
 
-async function fetchPdfAttachmentStream(attachment: ApplicationAttachment) {
-  const response = await fetch(toDownloadUrl(attachment.href), {
-    headers: {
-      accept: 'application/pdf',
-    },
-  })
+async function fetchPdfAttachmentStream(
+  attachment: ApplicationAttachment,
+  timeoutMs = 60000
+) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`)
+  try {
+    const response = await fetch(toDownloadUrl(attachment.href), {
+      headers: {
+        accept: 'application/pdf',
+      },
+      signal: controller.signal,
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+
+    if (!response.body) {
+      throw new Error('Downloaded file has no response body')
+    }
+
+    return toReadableStream(response.body)
+  } finally {
+    clearTimeout(timeout)
   }
-
-  if (!response.body) {
-    throw new Error('Downloaded file has no response body')
-  }
-
-  return toReadableStream(response.body)
 }
 
 function isSupervisorAuthorized({
