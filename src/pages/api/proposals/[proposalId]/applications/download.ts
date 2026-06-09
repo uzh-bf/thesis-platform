@@ -186,7 +186,9 @@ function toIsoDateTime(value: Date | string | null | undefined) {
 }
 
 function escapeCsvValue(value: unknown) {
-  const source = String(value ?? '')
+  const raw = String(value ?? '')
+  // Prevent CSV/Excel formula injection (e.g. values starting with =, +, -, @)
+  const source = /^\s*[=+\-@]/.test(raw) ? `'${raw}` : raw
   let escaped = ''
 
   for (let index = 0; index < source.length; index += 1) {
