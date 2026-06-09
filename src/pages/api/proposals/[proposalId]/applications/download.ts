@@ -41,6 +41,8 @@ type ExportFailure = {
   href?: string
 }
 
+type CsvDelimiter = ',' | ';'
+
 const CSV_HEADERS = [
   'Proposal ID',
   'Proposal Title',
@@ -210,11 +212,46 @@ function escapeCsvValue(value: unknown) {
   return `"${escaped}"`
 }
 
-function buildCsv(rows: Record<(typeof CSV_HEADERS)[number], unknown>[]) {
+function getPreferredLanguage(acceptLanguage: string | string[] | undefined) {
+  const header = Array.isArray(acceptLanguage)
+    ? acceptLanguage.join(',')
+    : acceptLanguage
+
+  if (!header) return ''
+
+  return header
+    .split(',')
+    .map((entry, index) => {
+      const [language = '', ...params] = entry.trim().split(';')
+      const qParam = params.find((param) => param.trim().startsWith('q='))
+      const qValue = qParam ? Number(qParam.split('=')[1]) : 1
+
+      return {
+        index,
+        language: language.toLowerCase(),
+        q: Number.isFinite(qValue) ? qValue : 0,
+      }
+    })
+    .filter((entry) => entry.language)
+    .sort((a, b) => b.q - a.q || a.index - b.index)[0]?.language ?? ''
+}
+
+function getCsvDelimiter(acceptLanguage: string | string[] | undefined): CsvDelimiter {
+  const preferredLanguage = getPreferredLanguage(acceptLanguage)
+
+  return preferredLanguage === 'de' || preferredLanguage.startsWith('de-')
+    ? ';'
+    : ','
+}
+
+function buildCsv(
+  rows: Record<(typeof CSV_HEADERS)[number], unknown>[],
+  delimiter: CsvDelimiter
+) {
   return `\uFEFF${[
-    CSV_HEADERS.map(escapeCsvValue).join(';'),
+    CSV_HEADERS.map(escapeCsvValue).join(delimiter),
     ...rows.map((row) =>
-      CSV_HEADERS.map((header) => escapeCsvValue(row[header])).join(';')
+      CSV_HEADERS.map((header) => escapeCsvValue(row[header])).join(delimiter)
     ),
   ].join('\n')}\n`
 }
@@ -633,7 +670,9 @@ export default async function handler(
   res.setHeader('Content-Type', 'application/zip')
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
   archive.pipe(res)
-  archive.append(buildCsv(rows), { name: 'overview.csv' })
+  archive.append(buildCsv(rows, getCsvDelimiter(req.headers['accept-language'])), {
+    name: 'overview.csv',
+  })
 
   for (const exportStream of exportStreams) {
     archive.append(exportStream.stream, { name: exportStream.zipPath })
