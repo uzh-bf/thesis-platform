@@ -455,9 +455,13 @@ export default async function handler(
   )}-${dateStamp}.zip`
   const archive = new ZipArchive({ zlib: { level: 9 } })
   const archiveFinished = new Promise<void>((resolve, reject) => {
+    const onError = (error: unknown) =>
+      reject(error instanceof Error ? error : new Error(String(error)))
+
     res.on('finish', resolve)
-    res.on('error', reject)
-    archive.on('error', reject)
+    res.on('close', () => reject(new Error('Client disconnected')))
+    res.on('error', onError)
+    archive.on('error', onError)
   })
 
   res.setHeader('Content-Type', 'application/zip')
