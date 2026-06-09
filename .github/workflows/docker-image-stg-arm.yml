@@ -71,6 +71,7 @@ jobs:
         env:
           STAGING_IMAGE_TAG: latest-arm-${{ github.sha }}
         run: |
+          UPDATE_BRANCH="chore/update-staging-arm-image"
           perl -0pi -e 's/tag: '\''latest-arm(?:-[0-9a-f]+)?'\''/tag: '\''$ENV{STAGING_IMAGE_TAG}'\''/' deploy/stg_new/values.yaml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -81,7 +82,8 @@ jobs:
             exit 0
           fi
           git commit -m "chore(deploy): update staging ARM image to ${STAGING_IMAGE_TAG} [skip ci]"
-          git push --force-with-lease origin HEAD:"chore/update-staging-arm-image-${GITHUB_SHA}"
+          git fetch origin "${UPDATE_BRANCH}:refs/remotes/origin/${UPDATE_BRANCH}" || true
+          git push --force-with-lease origin HEAD:"${UPDATE_BRANCH}"
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Open ArgoCD staging image tag PR
@@ -91,16 +93,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           STAGING_IMAGE_TAG: latest-arm-${{ github.sha }}
         run: |
-          if gh pr view "chore/update-staging-arm-image-${GITHUB_SHA}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+          UPDATE_BRANCH="chore/update-staging-arm-image"
+          OPEN_PR=$(gh pr list --repo "${GITHUB_REPOSITORY}" --head "${UPDATE_BRANCH}" --base main --state open --json number --jq '.[0].number')
+          if [[ -n "$OPEN_PR" ]]; then
             echo "PR already exists."
-            gh pr edit "chore/update-staging-arm-image-${GITHUB_SHA}" \
+            gh pr edit "$OPEN_PR" \
               --repo "${GITHUB_REPOSITORY}" \
+              --title "chore(deploy): update staging ARM image to ${STAGING_IMAGE_TAG}" \
+              --body "Updates deploy/stg_new/values.yaml to use ${STAGING_IMAGE_TAG} after the ARM image build completed." \
               --add-reviewer mxmlnwbr
             exit 0
           fi
           gh pr create \
             --repo "${GITHUB_REPOSITORY}" \
-            --head "chore/update-staging-arm-image-${GITHUB_SHA}" \
+            --head "${UPDATE_BRANCH}" \
             --base main \
             --title "chore(deploy): update staging ARM image to ${STAGING_IMAGE_TAG}" \
             --body "Updates deploy/stg_new/values.yaml to use ${STAGING_IMAGE_TAG} after the ARM image build completed." \
