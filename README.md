@@ -6,7 +6,7 @@ The motivation behind this project is to offer academic institutions an efficien
 
 ## Requirements
 
-- PostgreSQL-compatible database
+- MySQL-compatible database
 
 ## Installation
 
@@ -23,20 +23,18 @@ cd thesis-platform
 pnpm install
 ```
 
-❗️Make sure your IP address has access to the PostgreSQL database (include IP for Azure DB on [Azure](https://portal.azure.com)).❗️
+❗️Make sure your IP address has access to the MySQL database (include IP for Azure DB on [Azure](https://portal.azure.com)).❗️
 
-For local database development, start the PostgreSQL container:
+For local database development, start the MySQL container:
 
 ```bash
-podman-compose up postgres
+podman-compose up mysql
 ```
 
 Use this connection string for local development unless Doppler provides another `DATABASE_URL`:
 
 ```bash
-POSTGRES_PASSWORD="<local-password>"
-DATABASE_URL="<local-postgresql-url>"
-SHADOW_DATABASE_URL="<local-shadow-postgresql-url>"
+DATABASE_URL="mysql://thesis:thesis@localhost:3306/thesis"
 ```
 
 ## Usage

@@ -21,12 +21,12 @@ type DbInfo = {
   database_name: string
   user_name: string
   server_addr: string | null
-  server_port: number | null
+  server_port: number | bigint | null
 }
 
 type CountRow = {
   table: string
-  count: bigint
+  count: bigint | number | string
 }
 
 type EmailRecord = {
@@ -85,6 +85,30 @@ const parseEmailList = (value: string | undefined) =>
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean)
 
+const hasProductionMarker = (value: string) =>
+  value.includes('prod') || value.includes('prd')
+
+const hasStagingMarker = (value: string) =>
+  value.includes('stg') ||
+  value.includes('stage') ||
+  value.includes('qa') ||
+  value.includes('dev')
+
+const getDatabaseUrlTarget = () => {
+  const value = normalizeEnv(process.env.DATABASE_URL)
+
+  if (!value) {
+    return { host: 'unknown-host', database: 'unknown-database' }
+  }
+
+  const url = new URL(value)
+
+  return {
+    host: url.hostname || 'localhost',
+    database: decodeURIComponent(url.pathname.replace(/^\//, '')),
+  }
+}
+
 const getDepartment = (): Department => {
   const value = normalizeEnv(process.env.NEXT_PUBLIC_DEPARTMENT_NAME) || 'DF'
 
@@ -108,10 +132,10 @@ const getAllowedRealLoginEmails = () => {
 const getCurrentDbInfo = async (client: PrismaClient) => {
   const rows = await client.$queryRaw<DbInfo[]>`
     select
-      current_database() as database_name,
-      current_user as user_name,
-      inet_server_addr()::text as server_addr,
-      inet_server_port()::int as server_port
+      database() as database_name,
+      current_user() as user_name,
+      @@hostname as server_addr,
+      @@port as server_port
   `
 
   return rows[0]
@@ -128,31 +152,37 @@ const assertStagingTarget = async (client: PrismaClient) => {
 
   const dbInfo = await getCurrentDbInfo(client)
   const databaseName = dbInfo.database_name.toLowerCase()
+  const urlTarget = getDatabaseUrlTarget()
+  const targetIdentity = `${urlTarget.host}/${databaseName || urlTarget.database}`
+  const normalizedTargetIdentity = targetIdentity.toLowerCase()
 
-  if (
-    !databaseName.includes('stg') ||
-    databaseName.includes('prod') ||
-    databaseName.includes('prd')
-  ) {
+  if (hasProductionMarker(normalizedTargetIdentity)) {
     throw new Error(
-      `Refusing to continue: unexpected database '${dbInfo.database_name}'.`
+      `Refusing to continue: production-like staging target '${targetIdentity}'.`
+    )
+  }
+
+  if (!hasStagingMarker(normalizedTargetIdentity)) {
+    throw new Error(
+      `Refusing to continue: unexpected staging target '${targetIdentity}'.`
     )
   }
 
   console.log(
-    `Connected to ${dbInfo.database_name} as ${dbInfo.user_name} at ${dbInfo.server_addr}:${dbInfo.server_port}.`
+    `Connected to ${targetIdentity} as ${dbInfo.user_name} at ${dbInfo.server_addr}:${dbInfo.server_port}.`
   )
 }
 
-const quotedTableName = (table: string) =>
-  table === '_prisma_migrations' ? 'public._prisma_migrations' : `public."${table}"`
+const quotedTableName = (table: string) => `\`${table.replace(/`/g, '``')}\``
 
 const getCounts = async (client: PrismaClient | Prisma.TransactionClient) => {
   const rows: CountRow[] = []
 
   for (const table of countedTables) {
-    const [row] = await client.$queryRawUnsafe<{ count: bigint }[]>(
-      `select count(*)::bigint as count from ${quotedTableName(table)}`
+    const [row] = await client.$queryRawUnsafe<
+      { count: bigint | number | string }[]
+    >(
+      `select count(*) as count from ${quotedTableName(table)}`
     )
     rows.push({ table, count: row.count })
   }
@@ -168,11 +198,15 @@ const printCounts = (label: string, rows: CountRow[]) => {
 }
 
 const wipeMutableData = async (tx: Prisma.TransactionClient) => {
-  const tableList = mutableTables
-    .map((table) => `public."${table}"`)
-    .join(', ')
+  await tx.$executeRawUnsafe('set foreign_key_checks = 0')
 
-  await tx.$executeRawUnsafe(`truncate table ${tableList} restart identity cascade`)
+  try {
+    for (const table of mutableTables) {
+      await tx.$executeRawUnsafe(`delete from ${quotedTableName(table)}`)
+    }
+  } finally {
+    await tx.$executeRawUnsafe('set foreign_key_checks = 1')
+  }
 }
 
 const seedLookups = async (
@@ -660,14 +694,14 @@ const seedDummyData = async (
 
 const getEmailRecords = async (client: PrismaClient) =>
   client.$queryRaw<EmailRecord[]>`
-    select 'User.email' as source, email from public."User" where email is not null
-    union all select 'Responsible.email', email from public."Responsible" where email is not null
-    union all select 'Proposal.ownedByUserEmail', "ownedByUserEmail" from public."Proposal" where "ownedByUserEmail" is not null
-    union all select 'Proposal.ownedByStudent', "ownedByStudent" from public."Proposal" where "ownedByStudent" is not null
-    union all select 'ProposalApplication.email', email from public."ProposalApplication" where email is not null
-    union all select 'UserProposalSupervision.supervisorEmail', "supervisorEmail" from public."UserProposalSupervision" where "supervisorEmail" is not null
-    union all select 'UserProposalSupervision.studentEmail', "studentEmail" from public."UserProposalSupervision" where "studentEmail" is not null
-    union all select 'UserProposalFeedback.userEmail', "userEmail" from public."UserProposalFeedback" where "userEmail" is not null
+    select 'User.email' as source, email from \`User\` where email is not null
+    union all select 'Responsible.email', email from \`Responsible\` where email is not null
+    union all select 'Proposal.ownedByUserEmail', \`ownedByUserEmail\` from \`Proposal\` where \`ownedByUserEmail\` is not null
+    union all select 'Proposal.ownedByStudent', \`ownedByStudent\` from \`Proposal\` where \`ownedByStudent\` is not null
+    union all select 'ProposalApplication.email', email from \`ProposalApplication\` where email is not null
+    union all select 'UserProposalSupervision.supervisorEmail', \`supervisorEmail\` from \`UserProposalSupervision\` where \`supervisorEmail\` is not null
+    union all select 'UserProposalSupervision.studentEmail', \`studentEmail\` from \`UserProposalSupervision\` where \`studentEmail\` is not null
+    union all select 'UserProposalFeedback.userEmail', \`userEmail\` from \`UserProposalFeedback\` where \`userEmail\` is not null
   `
 
 const isReservedTestEmail = (email: string) =>
@@ -727,7 +761,7 @@ const main = async () => {
     console.log('')
     console.log('Dry run only. Planned actions:')
     console.log('  1. Preserve lookup tables and _prisma_migrations.')
-    console.log(`  2. Truncate mutable tables: ${mutableTables.join(', ')}.`)
+    console.log(`  2. Delete mutable table rows: ${mutableTables.join(', ')}.`)
     console.log('  3. Seed 8 proposals, 9 applications, 2 admin rows, fake supervisors, fake responsibles.')
     console.log('  4. Pre-create real staging login users only from STAGING_REAL_LOGIN_EMAILS or USER_EMAIL.')
     console.log('  5. Fail if workflow recipient fields contain non-test emails.')

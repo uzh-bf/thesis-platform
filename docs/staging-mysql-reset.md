@@ -1,6 +1,6 @@
-# Staging PostgreSQL Reset
+# Staging MySQL Reset
 
-Purpose: reset the staging PostgreSQL database to safe dummy data for workflow testing without sending mail to real recipients.
+Purpose: reset the staging MySQL database to safe dummy data for workflow testing without sending mail to real recipients.
 
 ## Email Safety
 
@@ -13,11 +13,11 @@ Set these only when deliberately testing flows:
 - `STAGING_GRANT_ALL_ADMINS=true`: with `DOPPLER_CONFIG=stg`, upgrades every staging login to `DEVELOPER` with `ADMIN` rights.
 - `STAGING_REAL_LOGIN_EMAILS=user@uzh.ch`: optional comma-separated real login users to pre-create as staging admins during a reset.
 
-Only staging values set `STAGING_GRANT_ALL_ADMINS=true`; production values leave it empty. Dummy workflow data uses reserved `example.com` recipients. Real login emails are only allowed in `User.email`, not in workflow recipient fields.
+Only staging values set `STAGING_GRANT_ALL_ADMINS=true`; production values leave it empty. Dummy workflow data uses reserved `example.com` recipients. Real login emails are only allowed in `User.email`, not in workflow recipient fields. Reset tooling also refuses targets whose database URL host or database name looks production-like (`prod` or `prd`).
 
 ## Commands
 
-Backup staging first:
+Backup staging first with `mysqldump`:
 
 ```bash
 pnpm staging:db:backup

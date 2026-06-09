@@ -1,4 +1,4 @@
-import archiver from 'archiver'
+import { ZipArchive } from 'archiver'
 import { addMonths } from 'date-fns'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
@@ -585,7 +585,7 @@ export default async function handler(
     proposal.title,
     'proposal'
   )}-${dateStamp}.zip`
-  const archive = archiver('zip', { zlib: { level: 9 } })
+  const archive = new ZipArchive({ zlib: { level: 9 } })
   const archiveFinished = new Promise<void>((resolve, reject) => {
     let settled = false
 

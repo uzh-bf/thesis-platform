@@ -4,9 +4,8 @@ generator client {
 }
 
 datasource db {
-  provider          = "postgresql"
-  url               = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model ProposalStatus {
@@ -78,8 +77,8 @@ model User {
   emailVerified DateTime?
   image         String?   @db.Text
 
-  role       String      @default("UNSET")
-  adminRole  AdminRole   @default(UNSET) @map("AdminRole")
+  role       String     @default("UNSET")
+  adminRole  AdminRole  @default(UNSET) @map("AdminRole")
   department Department?
 
   accounts Account[]
