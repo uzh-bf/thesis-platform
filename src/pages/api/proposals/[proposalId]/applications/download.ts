@@ -262,12 +262,15 @@ function toDownloadUrl(href: string) {
     const b = Number(ipv4Match[2])
 
     if (
+      a === 0 ||
       a === 10 ||
       a === 127 ||
       (a === 169 && b === 254) ||
       (a === 172 && b >= 16 && b <= 31) ||
       (a === 192 && b === 168)
     ) {
+      throw new Error('Attachment URL points to a private address')
+    }
       throw new Error('Attachment URL points to a private address')
     }
   }
