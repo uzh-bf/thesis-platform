@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.11.0](https://github.com/uzh-bf/thesis-platform/compare/v1.10.2...v1.11.0) (2026-06-09)
+
+
+### Features
+
+* add ARM architecture support for Docker image builds ([ccc434a](https://github.com/uzh-bf/thesis-platform/commit/ccc434a5326863b78d4ebbc610880de5a2f67fc8))
+* add scheduled maintenance banner component ([b8c113a](https://github.com/uzh-bf/thesis-platform/commit/b8c113ae09351a4508e5f097e46bad6c1048940c))
+
 ### [1.10.2](https://github.com/uzh-bf/thesis-platform/compare/v1.10.1...v1.10.2) (2026-06-09)
 
 ### [1.10.1](https://github.com/uzh-bf/thesis-platform/compare/v1.10.0...v1.10.1) (2026-06-09)
