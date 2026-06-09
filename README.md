@@ -28,13 +28,21 @@ pnpm install
 For local database development, start the MySQL container:
 
 ```bash
+export MYSQL_ROOT_PASSWORD="<local-root-password>"
+export MYSQL_PASSWORD="<local-user-password>"
 podman-compose up mysql
 ```
 
 Use this connection string for local development unless Doppler provides another `DATABASE_URL`:
 
 ```bash
-DATABASE_URL="mysql://thesis:thesis@localhost:3306/thesis"
+DATABASE_URL="mysql://thesis:${MYSQL_PASSWORD}@localhost:3306/thesis"
+```
+
+For the optional Compose app profile, use the Compose service host:
+
+```bash
+DATABASE_URL="mysql://thesis:${MYSQL_PASSWORD}@mysql:3306/thesis"
 ```
 
 ## Usage
