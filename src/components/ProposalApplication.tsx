@@ -37,20 +37,62 @@ function formatWorkingPeriod(plannedStartAt: Date | string) {
   return `${formatDate(startDate)} - ${formatDate(endDate)}`
 }
 
-function toFilenameSlug(value: string) {
+function isCombiningMark(char: string) {
+  const codePoint = char.codePointAt(0) ?? 0
+
+  return codePoint >= 0x0300 && codePoint <= 0x036f
+}
+
+function isAsciiLowercaseLetterOrDigit(char: string) {
+  const codePoint = char.codePointAt(0) ?? 0
+
   return (
-    value
-      .normalize('NFKD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 80) || 'proposal'
+    (codePoint >= 0x61 && codePoint <= 0x7a) ||
+    (codePoint >= 0x30 && codePoint <= 0x39)
   )
 }
 
+function toFilenameSlug(value: string) {
+  let slug = ''
+  let separatorPending = false
+
+  for (const char of value.normalize('NFKD').toLowerCase()) {
+    if (isCombiningMark(char)) continue
+
+    if (isAsciiLowercaseLetterOrDigit(char)) {
+      if (separatorPending && slug.length > 0 && slug.length < 80) {
+        slug += '-'
+      }
+
+      if (slug.length < 80) {
+        slug += char
+      }
+
+      separatorPending = false
+    } else {
+      separatorPending = slug.length > 0
+    }
+
+    if (slug.length >= 80) break
+  }
+
+  return slug || 'proposal'
+}
+
 function getFilenameFromContentDisposition(header: string | null) {
-  return header?.match(/filename="([^"]+)"/)?.[1] ?? null
+  if (!header) return null
+
+  const filenameMarker = 'filename="'
+  const filenameStart = header.indexOf(filenameMarker)
+
+  if (filenameStart === -1) return null
+
+  const valueStart = filenameStart + filenameMarker.length
+  const valueEnd = header.indexOf('"', valueStart)
+
+  if (valueEnd === -1) return null
+
+  return header.slice(valueStart, valueEnd) || null
 }
 
 export default function ProposalApplication({

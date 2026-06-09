@@ -72,27 +72,96 @@ function normalizeName(value: string) {
   return value.trim().toLowerCase()
 }
 
-function toSafePathSegment(value: string, fallback: string) {
-  const segment = value
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9.-]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .slice(0, 80)
+function isCombiningMark(char: string) {
+  const codePoint = char.codePointAt(0) ?? 0
+
+  return codePoint >= 0x0300 && codePoint <= 0x036f
+}
+
+function isAsciiLetterOrDigit(char: string) {
+  const codePoint = char.codePointAt(0) ?? 0
+
+  return (
+    (codePoint >= 0x41 && codePoint <= 0x5a) ||
+    (codePoint >= 0x61 && codePoint <= 0x7a) ||
+    (codePoint >= 0x30 && codePoint <= 0x39)
+  )
+}
+
+function isAsciiLowercaseLetterOrDigit(char: string) {
+  const codePoint = char.codePointAt(0) ?? 0
+
+  return (
+    (codePoint >= 0x61 && codePoint <= 0x7a) ||
+    (codePoint >= 0x30 && codePoint <= 0x39)
+  )
+}
+
+function sanitizeSegment({
+  value,
+  fallback,
+  separator,
+  preserveDotAndDash,
+  lowercase,
+}: {
+  value: string
+  fallback: string
+  separator: '-' | '_'
+  preserveDotAndDash: boolean
+  lowercase: boolean
+}) {
+  let segment = ''
+  let separatorPending = false
+  const normalizedValue = value.normalize('NFKD')
+  const source = lowercase ? normalizedValue.toLowerCase() : normalizedValue
+
+  for (const char of source) {
+    if (isCombiningMark(char)) continue
+
+    const isAllowed =
+      (lowercase
+        ? isAsciiLowercaseLetterOrDigit(char)
+        : isAsciiLetterOrDigit(char)) ||
+      (preserveDotAndDash && (char === '.' || char === '-'))
+
+    if (isAllowed) {
+      if (separatorPending && segment.length > 0 && segment.length < 80) {
+        segment += separator
+      }
+
+      if (segment.length < 80) {
+        segment += char
+      }
+
+      separatorPending = false
+    } else {
+      separatorPending = segment.length > 0
+    }
+
+    if (segment.length >= 80) break
+  }
 
   return segment || fallback
 }
 
-function toFilenameSlug(value: string, fallback: string) {
-  const slug = value
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80)
+function toSafePathSegment(value: string, fallback: string) {
+  return sanitizeSegment({
+    value,
+    fallback,
+    separator: '_',
+    preserveDotAndDash: true,
+    lowercase: false,
+  })
+}
 
-  return slug || fallback
+function toFilenameSlug(value: string, fallback: string) {
+  return sanitizeSegment({
+    value,
+    fallback,
+    separator: '-',
+    preserveDotAndDash: false,
+    lowercase: true,
+  })
 }
 
 function toIsoDate(value: Date | string | null | undefined) {
@@ -108,7 +177,26 @@ function toIsoDateTime(value: Date | string | null | undefined) {
 }
 
 function escapeCsvValue(value: unknown) {
-  return `"${String(value ?? '').replace(/"/g, '""').replace(/\r\n?/g, '\n')}"`
+  const source = String(value ?? '')
+  let escaped = ''
+
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index]
+
+    if (char === '"') {
+      escaped += '""'
+    } else if (char === '\r') {
+      escaped += '\n'
+
+      if (source[index + 1] === '\n') {
+        index += 1
+      }
+    } else {
+      escaped += char
+    }
+  }
+
+  return `"${escaped}"`
 }
 
 function buildCsv(rows: Record<(typeof CSV_HEADERS)[number], unknown>[]) {
