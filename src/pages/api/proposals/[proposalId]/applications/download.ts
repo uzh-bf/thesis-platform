@@ -232,9 +232,45 @@ function getAttachment(
 }
 
 function toDownloadUrl(href: string) {
-  const url = new URL(href)
-  url.searchParams.set('download', '1')
+  let url: URL
 
+  try {
+    url = new URL(href)
+  } catch {
+    throw new Error('Invalid attachment URL')
+  }
+
+  const protocol = url.protocol.toLowerCase()
+  if (protocol !== 'https:' && protocol !== 'http:') {
+    throw new Error(`Unsupported attachment URL protocol: ${url.protocol}`)
+  }
+
+  const hostname = url.hostname.toLowerCase()
+  if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
+    throw new Error('Attachment URL points to a local address')
+  }
+
+  if (hostname === '127.0.0.1' || hostname === '::1') {
+    throw new Error('Attachment URL points to a local address')
+  }
+
+  const ipv4Match = hostname.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/)
+  if (ipv4Match) {
+    const a = Number(ipv4Match[1])
+    const b = Number(ipv4Match[2])
+
+    if (
+      a === 10 ||
+      a === 127 ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168)
+    ) {
+      throw new Error('Attachment URL points to a private address')
+    }
+  }
+
+  url.searchParams.set('download', '1')
   return url.toString()
 }
 
