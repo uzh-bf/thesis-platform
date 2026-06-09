@@ -1,6 +1,8 @@
+import { faDownload, faSpinner } from '@fortawesome/free-solid-svg-icons'
+import { Button } from '@uzh-bf/design-system'
 import { add, format } from 'date-fns'
 import { useSession } from 'next-auth/react'
-import { Dispatch, SetStateAction } from 'react'
+import { Dispatch, SetStateAction, useState } from 'react'
 import useUserRole from 'src/lib/hooks/useUserRole'
 import { trpc } from 'src/lib/trpc'
 import {
@@ -35,6 +37,22 @@ function formatWorkingPeriod(plannedStartAt: Date | string) {
   return `${formatDate(startDate)} - ${formatDate(endDate)}`
 }
 
+function toFilenameSlug(value: string) {
+  return (
+    value
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80) || 'proposal'
+  )
+}
+
+function getFilenameFromContentDisposition(header: string | null) {
+  return header?.match(/filename="([^"]+)"/)?.[1] ?? null
+}
+
 export default function ProposalApplication({
   proposalDetails,
   refetch,
@@ -46,6 +64,61 @@ export default function ProposalApplication({
   const declineIndividualApplication =
     trpc.declineProposalApplication.useMutation()
   const applications = proposalDetails.applications ?? []
+  const [isDownloadingZip, setIsDownloadingZip] = useState(false)
+
+  const handleDownloadApplicationsZip = async () => {
+    if (isDownloadingZip) return
+
+    try {
+      setIsDownloadingZip(true)
+
+      const response = await fetch(
+        `/api/proposals/${encodeURIComponent(
+          proposalDetails.id
+        )}/applications/download`
+      )
+
+      if (!response.ok) {
+        let message = 'Application ZIP export failed. Please try again.'
+
+        try {
+          const errorBody = await response.json()
+          if (typeof errorBody?.message === 'string') {
+            message = errorBody.message
+          }
+        } catch (_error) {
+          // Keep the generic error if the server did not return JSON.
+        }
+
+        throw new Error(message)
+      }
+
+      const blob = await response.blob()
+      const objectUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      const fallbackFilename = `applications-${toFilenameSlug(
+        proposalDetails.title
+      )}-${format(new Date(), 'yyyy-MM-dd')}.zip`
+
+      link.href = objectUrl
+      link.download =
+        getFilenameFromContentDisposition(
+          response.headers.get('Content-Disposition')
+        ) ?? fallbackFilename
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(objectUrl)
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'Application ZIP export failed. Please try again.'
+      )
+    } finally {
+      setIsDownloadingZip(false)
+    }
+  }
 
   if (proposalDetails?.typeKey === 'SUPERVISOR') {
     return (
@@ -63,9 +136,26 @@ export default function ProposalApplication({
             session?.user?.email ===
               proposalDetails?.supervisedBy?.[0].supervisorEmail)) ? (
           <div className="pt-4">
-            <h2 className="text-[26px] font-semibold leading-tight text-[#121212]">
-              Applications
-            </h2>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-[26px] font-semibold leading-tight text-[#121212]">
+                Applications
+              </h2>
+              {applications.length > 0 && (
+                <Button
+                  disabled={isDownloadingZip}
+                  onClick={handleDownloadApplicationsZip}
+                  size="sm"
+                  title="Download all application files as ZIP"
+                >
+                  <Button.Icon
+                    icon={isDownloadingZip ? faSpinner : faDownload}
+                  />
+                  <Button.Label>
+                    {isDownloadingZip ? 'Downloading...' : 'Download ZIP'}
+                  </Button.Label>
+                </Button>
+              )}
+            </div>
             {applications.length === 0 && (
               <p className="mt-2 text-base text-[#4C4C4C]">
                 No applications for this proposal...
