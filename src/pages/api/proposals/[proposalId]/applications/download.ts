@@ -243,7 +243,7 @@ function toDownloadUrl(href: string) {
   }
 
   const protocol = url.protocol.toLowerCase()
-  if (protocol !== 'https:' && protocol !== 'http:') {
+  if (protocol !== 'https:') {
     throw new Error(`Unsupported attachment URL protocol: ${url.protocol}`)
   }
 
