@@ -1,4 +1,4 @@
-import { ZipArchive } from 'archiver'
+import archiver from 'archiver'
 import { addMonths } from 'date-fns'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
@@ -269,8 +269,6 @@ function toDownloadUrl(href: string) {
       (a === 172 && b >= 16 && b <= 31) ||
       (a === 192 && b === 168)
     ) {
-      throw new Error('Attachment URL points to a private address')
-    }
       throw new Error('Attachment URL points to a private address')
     }
   }
@@ -587,7 +585,7 @@ export default async function handler(
     proposal.title,
     'proposal'
   )}-${dateStamp}.zip`
-  const archive = new ZipArchive({ zlib: { level: 9 } })
+  const archive = archiver('zip', { zlib: { level: 9 } })
   const archiveFinished = new Promise<void>((resolve, reject) => {
     let settled = false
 
