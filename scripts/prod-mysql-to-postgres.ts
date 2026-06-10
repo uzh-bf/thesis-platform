@@ -33,6 +33,7 @@ const expectedSourceHost = process.env.EXPECTED_MYSQL_HOST
 const expectedSourceDatabase = process.env.EXPECTED_MYSQL_DATABASE
 const expectedTargetHost = process.env.EXPECTED_POSTGRES_HOST
 const expectedTargetDatabase = process.env.EXPECTED_POSTGRES_DATABASE
+const allowedTargetPorts = new Set(['5432', '6432', '7432'])
 const confirmValue =
   args
     .find((arg) => arg.startsWith('--confirm-prod-migration='))
@@ -94,6 +95,8 @@ const migrationPlan: MigrationModel[] = [
     orderBy: [{ identifier: 'asc' }, { token: 'asc' }],
   },
 ]
+
+let validSupervisionIds: Set<string> | null = null
 
 function requireEnv(value: string | undefined, name: string) {
   if (!value) {
@@ -182,7 +185,7 @@ function assertExpectedEndpoints(source: DbUrlSummary, target: DbUrlSummary) {
       throw new Error(`Unexpected target host: ${target.host}.`)
     }
 
-    if (target.port !== '5432' && target.port !== '6432') {
+    if (!allowedTargetPorts.has(target.port)) {
       throw new Error(`Unexpected target port: ${target.port || '(default)'}.`)
     }
 
@@ -249,23 +252,68 @@ async function wipeTarget(tx: any) {
   }
 }
 
+async function getValidSupervisionIds(source: any) {
+  if (validSupervisionIds) {
+    return validSupervisionIds
+  }
+
+  const rows = await getDelegate(source, 'userProposalSupervision').findMany({
+    select: { id: true },
+  })
+
+  validSupervisionIds = new Set(rows.map((row: { id: string }) => row.id))
+
+  return validSupervisionIds
+}
+
+async function normalizeRows(source: any, model: MigrationModel, rows: any[]) {
+  if (model.delegate !== 'proposalApplication') {
+    return { normalizedCount: 0, rows }
+  }
+
+  const supervisionIds = await getValidSupervisionIds(source)
+  let normalizedCount = 0
+
+  const normalizedRows = rows.map((row) => {
+    if (row.supervisionId && !supervisionIds.has(row.supervisionId)) {
+      normalizedCount += 1
+      return { ...row, supervisionId: null }
+    }
+
+    return row
+  })
+
+  return { normalizedCount, rows: normalizedRows }
+}
+
 async function copyModel(source: any, target: any, model: MigrationModel) {
   let copied = 0
+  let normalized = 0
 
   while (true) {
-    const rows = await getDelegate(source, model.delegate).findMany({
+    const sourceRows = await getDelegate(source, model.delegate).findMany({
       orderBy: model.orderBy,
       skip: copied,
       take: batchSize,
     })
 
-    if (rows.length === 0) {
+    if (sourceRows.length === 0) {
       break
     }
 
+    const normalizedResult = await normalizeRows(source, model, sourceRows)
+    const rows = normalizedResult.rows
+
     await getDelegate(target, model.delegate).createMany({ data: rows })
+    normalized += normalizedResult.normalizedCount
     copied += rows.length
     console.log(`  ${model.label}: copied ${copied}`)
+  }
+
+  if (normalized > 0) {
+    console.log(
+      `  ${model.label}: set ${normalized} orphan supervisionId values to null`
+    )
   }
 }
 
