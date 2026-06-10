@@ -78,8 +78,9 @@ jobs:
     if: startsWith(github.event.head_commit.message, 'chore(release)')
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
+      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
@@ -128,6 +129,53 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             NEXT_PUBLIC_APP_VERSION=stable-arm-${{ steps.release.outputs.sha }}
+
+      - name: Update ArgoCD production image tag
+        id: argocd-tag
+        shell: bash
+        env:
+          PRODUCTION_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
+        run: |
+          UPDATE_BRANCH="chore/update-production-arm-image"
+          perl -0pi -e 's/tag: '\''(?:latest|stable)-arm(?:-[0-9a-f]+)?'\''/tag: '\''$ENV{PRODUCTION_IMAGE_TAG}'\''/' deploy/prd_new/values.yaml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add deploy/prd_new/values.yaml
+          if git diff --cached --quiet; then
+            echo "No ArgoCD image tag change."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git commit -m "chore(deploy): update production ARM image to ${PRODUCTION_IMAGE_TAG} [skip ci]"
+          git fetch origin "${UPDATE_BRANCH}:refs/remotes/origin/${UPDATE_BRANCH}" || true
+          git push --force-with-lease origin HEAD:"${UPDATE_BRANCH}"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Open ArgoCD production image tag PR
+        if: ${{ steps.argocd-tag.outputs.changed == 'true' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRODUCTION_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
+        run: |
+          UPDATE_BRANCH="chore/update-production-arm-image"
+          OPEN_PR=$(gh pr list --repo "${GITHUB_REPOSITORY}" --head "${UPDATE_BRANCH}" --base main --state open --json number --jq '.[0].number')
+          if [[ -n "$OPEN_PR" ]]; then
+            echo "PR already exists."
+            gh pr edit "$OPEN_PR" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --title "chore(deploy): update production ARM image to ${PRODUCTION_IMAGE_TAG}" \
+              --body "Updates deploy/prd_new/values.yaml to use ${PRODUCTION_IMAGE_TAG} after the ARM image build completed." \
+              --add-reviewer mxmlnwbr
+            exit 0
+          fi
+          gh pr create \
+            --repo "${GITHUB_REPOSITORY}" \
+            --head "${UPDATE_BRANCH}" \
+            --base main \
+            --title "chore(deploy): update production ARM image to ${PRODUCTION_IMAGE_TAG}" \
+            --body "Updates deploy/prd_new/values.yaml to use ${PRODUCTION_IMAGE_TAG} after the ARM image build completed." \
+            --reviewer mxmlnwbr
 
   build-prd-ibw:
     if: startsWith(github.event.head_commit.message, 'chore(release)')
