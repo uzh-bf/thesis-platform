@@ -223,8 +223,19 @@ export default function AdminUserRoles() {
   const handleExportTable = async () => {
     if (isExporting) return
 
-    if (sortedUsers.length === 0) {
-      alert('No users to export for the current search.')
+    // Only export users belonging to this webapp instance's department.
+    const instanceDepartment = (process.env.NEXT_PUBLIC_DEPARTMENT_NAME ?? '')
+      .trim()
+      .toUpperCase()
+
+    const exportableUsers = instanceDepartment
+      ? sortedUsers.filter(
+          (user) => (user.department ?? '').toUpperCase() === instanceDepartment
+        )
+      : sortedUsers
+
+    if (exportableUsers.length === 0) {
+      alert('No users to export for the current department and search.')
       return
     }
 
@@ -234,7 +245,7 @@ export default function AdminUserRoles() {
       const xlsxModule = await import('xlsx')
       const XLSX: any = (xlsxModule as any).default ?? xlsxModule
 
-      const exportRows = sortedUsers.map((user) => ({
+      const exportRows = exportableUsers.map((user) => ({
         Name: user.name || '-',
         Email: user.email || '-',
         Role: getStoredRole(user.role),
@@ -247,7 +258,10 @@ export default function AdminUserRoles() {
 
       const now = new Date()
       const dateStamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-      XLSX.writeFile(workbook, `users-overview-${dateStamp}.xlsx`)
+      const departmentSlug = instanceDepartment
+        ? `${instanceDepartment.toLowerCase()}-`
+        : ''
+      XLSX.writeFile(workbook, `users-overview-${departmentSlug}${dateStamp}.xlsx`)
     } catch (error) {
       console.error('Failed to export users overview:', error)
       alert('Export failed. Please try again.')
@@ -291,7 +305,7 @@ export default function AdminUserRoles() {
             <FontAwesomeIcon icon={faPlus} />
             Add User
           </button>
-          <div title="Exports the currently filtered and sorted table to an XLSX file.">
+          <div title="Exports the currently filtered and sorted table (current department only) to an XLSX file.">
             <Button
               onClick={handleExportTable}
               className={{
