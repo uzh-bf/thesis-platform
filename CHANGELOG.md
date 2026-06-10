@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.12.0](https://github.com/uzh-bf/thesis-platform/compare/v1.11.1...v1.12.0) (2026-06-10)
+
+
+### Features
+
+* **admin:** add XLSX export button to Users tab ([#123](https://github.com/uzh-bf/thesis-platform/issues/123)) ([219c026](https://github.com/uzh-bf/thesis-platform/commit/219c0261607335744923acac9dc95d7e5d633882))
+* **deploy:** auto-run DB migrations on every deploy (stg + prd) ([#122](https://github.com/uzh-bf/thesis-platform/issues/122)) ([fc973d2](https://github.com/uzh-bf/thesis-platform/commit/fc973d2c06aff3fd5e1fa8b0b9c052b625299a51))
+
+
+### Bug Fixes
+
+* **admin:** scope Users tab XLSX export to instance department ([f084a8d](https://github.com/uzh-bf/thesis-platform/commit/f084a8dbfc66e8d9ab8d717d4b8ec90c29a9ff3b))
+
 ### [1.11.1](https://github.com/uzh-bf/thesis-platform/compare/v1.11.0...v1.11.1) (2026-06-09)
 
 ## [1.11.0](https://github.com/uzh-bf/thesis-platform/compare/v1.10.2...v1.11.0) (2026-06-09)
