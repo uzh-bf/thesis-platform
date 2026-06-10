@@ -43,6 +43,7 @@ export default function AdminUserRoles() {
   const [newName, setNewName] = useState('')
   const [newEmail, setNewEmail] = useState('')
   const [addUserError, setAddUserError] = useState<string | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
   const addUserNameRef = useRef<HTMLInputElement>(null)
 
   const {
@@ -219,6 +220,42 @@ export default function AdminUserRoles() {
     return sortDirection === 'asc' ? faSortUp : faSortDown
   }
 
+  const handleExportTable = async () => {
+    if (isExporting) return
+
+    if (sortedUsers.length === 0) {
+      alert('No users to export for the current search.')
+      return
+    }
+
+    try {
+      setIsExporting(true)
+
+      const xlsxModule = await import('xlsx')
+      const XLSX: any = (xlsxModule as any).default ?? xlsxModule
+
+      const exportRows = sortedUsers.map((user) => ({
+        Name: user.name || '-',
+        Email: user.email || '-',
+        Role: getStoredRole(user.role),
+        Department: user.department ?? '-',
+      }))
+
+      const worksheet = XLSX.utils.json_to_sheet(exportRows)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Users')
+
+      const now = new Date()
+      const dateStamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+      XLSX.writeFile(workbook, `users-overview-${dateStamp}.xlsx`)
+    } catch (error) {
+      console.error('Failed to export users overview:', error)
+      alert('Export failed. Please try again.')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   return (
     <div className="bg-white rounded-lg shadow p-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -254,6 +291,16 @@ export default function AdminUserRoles() {
             <FontAwesomeIcon icon={faPlus} />
             Add User
           </button>
+          <div title="Exports the currently filtered and sorted table to an XLSX file.">
+            <Button
+              onClick={handleExportTable}
+              className={{
+                root: 'text-sm bg-slate-600 hover:bg-slate-700 text-white whitespace-nowrap',
+              }}
+            >
+              {isExporting ? 'Exporting…' : 'Export XLSX'}
+            </Button>
+          </div>
         </div>
       </div>
 
