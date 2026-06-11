@@ -783,6 +783,67 @@ export const appRouter = router({
       return getStudentProposals({ ctx, filters: input.filters })
     }),
 
+  proposalApplications: authedProcedure
+    .input(
+      z.object({
+        proposalId: z.string().min(1),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const proposal = await prisma.proposal.findFirst({
+        where: {
+          id: input.proposalId,
+          typeKey: ProposalType.SUPERVISOR,
+          department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+        },
+        include: {
+          topicArea: true,
+          supervisedBy: {
+            include: {
+              supervisor: true,
+              responsible: true,
+            },
+          },
+          applications: {
+            include: {
+              attachments: true,
+              status: true,
+            },
+            orderBy: {
+              createdAt: 'asc',
+            },
+          },
+        },
+      })
+
+      if (!proposal) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Supervisor proposal not found',
+        })
+      }
+
+      const userEmail = ctx.user.email?.toLowerCase()
+      const isAuthorized =
+        ctx.user.role === UserRole.DEVELOPER ||
+        (ctx.user.role === UserRole.SUPERVISOR &&
+          !!userEmail &&
+          (proposal.ownedByUserEmail?.toLowerCase() === userEmail ||
+            proposal.supervisedBy.some(
+              (supervision) =>
+                supervision.supervisorEmail?.toLowerCase() === userEmail
+            )))
+
+      if (!isAuthorized) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Not allowed to view applications for this proposal',
+        })
+      }
+
+      return proposal
+    }),
+
   submitProposalFeedback: authedProcedure
     .input(
       z.object({
