@@ -1,6 +1,11 @@
-import { faDownload, faSpinner } from '@fortawesome/free-solid-svg-icons'
+import {
+  faDownload,
+  faSpinner,
+  faTableList,
+} from '@fortawesome/free-solid-svg-icons'
 import { Button } from '@uzh-bf/design-system'
 import { add, format } from 'date-fns'
+import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { Dispatch, SetStateAction, useState } from 'react'
 import useUserRole from 'src/lib/hooks/useUserRole'
@@ -196,19 +201,30 @@ export default function ProposalApplication({
                 Applications
               </h2>
               {applications.length > 0 && (
-                <Button
-                  disabled={isDownloadingCsv}
-                  onClick={handleDownloadApplicationsCsv}
-                  size="sm"
-                  title="Download application data as CSV"
-                >
-                  <Button.Icon
-                    icon={isDownloadingCsv ? faSpinner : faDownload}
-                  />
-                  <Button.Label>
-                    {isDownloadingCsv ? 'Downloading...' : 'Download CSV'}
-                  </Button.Label>
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Link href={`/proposals/${proposalDetails.id}/applications`}>
+                    <Button
+                      size="sm"
+                      title="Compare all applicants side by side in a table"
+                    >
+                      <Button.Icon icon={faTableList} />
+                      <Button.Label>Applicant Overview</Button.Label>
+                    </Button>
+                  </Link>
+                  <Button
+                    disabled={isDownloadingCsv}
+                    onClick={handleDownloadApplicationsCsv}
+                    size="sm"
+                    title="Download application data as CSV"
+                  >
+                    <Button.Icon
+                      icon={isDownloadingCsv ? faSpinner : faDownload}
+                    />
+                    <Button.Label>
+                      {isDownloadingCsv ? 'Downloading...' : 'Download CSV'}
+                    </Button.Label>
+                  </Button>
+                </div>
               )}
             </div>
             {applications.length === 0 && (

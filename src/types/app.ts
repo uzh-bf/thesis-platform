@@ -30,6 +30,10 @@ export type ProposalDetails = IterableElement<ProposalsOutput>
 export type ApplicationDetails = IterableElement<
   ProposalDetails['applications']
 >
+export type ProposalApplicationsOverview = RouterOutput['proposalApplications']
+export type ProposalApplicationsOverviewEntry = IterableElement<
+  ProposalApplicationsOverview['applications']
+>
 
 export enum ProposalStatusFilter {
   OPEN_PROPOSALS = 'OPEN_PROPOSALS',
