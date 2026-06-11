@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.13.0](https://github.com/uzh-bf/thesis-platform/compare/v1.12.0...v1.13.0) (2026-06-11)
+
+
+### Features
+
+* **proposals:** add applicant overview table for supervisor proposals ([#126](https://github.com/uzh-bf/thesis-platform/issues/126)) ([cc39025](https://github.com/uzh-bf/thesis-platform/commit/cc39025d404153d2ffcfb1a6c3f05df04c0415c8))
+
 ## [1.12.0](https://github.com/uzh-bf/thesis-platform/compare/v1.11.1...v1.12.0) (2026-06-10)
 
 
