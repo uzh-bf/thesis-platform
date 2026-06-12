@@ -1,0 +1,3 @@
+# Archived MySQL migration history from before the PostgreSQL cutover.
+# Active migrations now live in ../migrations and use provider = "postgresql".
+provider = "mysql"
