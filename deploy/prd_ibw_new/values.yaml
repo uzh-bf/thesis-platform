@@ -1,0 +1,31 @@
+image:
+  tag: 'latest-arm-8200306c9cd6cf3efa9225b81bf98c546073f4a4'
+
+env: prd-ibw
+appUrl: 'https://theses.business.prd.df-app.ch' # 'https://theses.business.uzh.ch'
+
+stagingSafety:
+  grantAllAdmins: 'true'
+
+azureAd:
+  clientId: ''
+  clientSecret: ''
+  tenantId: ''
+
+secretName: prd-thesisplatform-ibw-secrets
+
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: k8s-crt-mgr-iss-prd-apps-default
+  hosts:
+    - host: theses.business.prd.df-app.ch
+      paths:
+        - /
+    # - host: theses.business.uzh.ch
+    #   paths:
+    #     - /
+  tls:
+    - secretName: thesis-platform-ibw-prod-tls
+      hosts:
+        - theses.business.prd.df-app.ch
+        # - theses.business.uzh.ch
