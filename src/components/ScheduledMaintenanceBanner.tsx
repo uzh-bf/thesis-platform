@@ -2,7 +2,7 @@ import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useEffect, useState } from 'react'
 
-const MAINTENANCE_END_AT = new Date('2026-06-17T11:00:00+02:00').getTime()
+const MAINTENANCE_END_AT = new Date('2026-06-23T15:30:00+02:00').getTime()
 
 function isMaintenanceNoticeVisible() {
   return Date.now() < MAINTENANCE_END_AT
@@ -49,10 +49,10 @@ export default function ScheduledMaintenanceBanner() {
           <p className="text-sm leading-5 text-[#121212] md:text-base md:leading-6">
             Thesis Market will be unavailable on{' '}
             <strong className="font-semibold">
-              Wednesday, 17 June 2026, 09:00-11:00 (Zurich time)
+              Tuesday, 23 June 2026, 13:30-15:30 (Zurich time)
             </strong>{' '}
             while we migrate the database from MySQL to PostgreSQL. Please save
-            any work before 09:00.
+            any work before 13:30.
           </p>
         </div>
       </div>
