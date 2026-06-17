@@ -158,19 +158,15 @@ const assertStagingTarget = async (client: PrismaClient) => {
 
   if (hasProductionMarker(normalizedTargetIdentity)) {
     throw new Error(
-      `Refusing to continue: production-like staging target '${targetIdentity}'.`
+      'Refusing to continue: production-like staging target.'
     )
   }
 
   if (!hasStagingMarker(normalizedTargetIdentity)) {
-    throw new Error(
-      `Refusing to continue: unexpected staging target '${targetIdentity}'.`
-    )
+    throw new Error('Refusing to continue: unexpected staging target.')
   }
 
-  console.log(
-    `Connected to ${targetIdentity} as ${dbInfo.user_name} at ${dbInfo.server_addr}:${dbInfo.server_port}.`
-  )
+  console.log('Validated staging database target.')
 }
 
 const quotedTableName = (table: string) => `\`${table.replace(/`/g, '``')}\``
