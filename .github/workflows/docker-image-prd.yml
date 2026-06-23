@@ -129,6 +129,17 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
+            NEXT_PUBLIC_APP_URL=theses.df.uzh.ch
+            NEXT_PUBLIC_FORMS_URL_PUBLISH=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAs9iU1p12TNBNlqpakIPkkQVUOVpKSFRLRksxVUlSWUNXMjNJVlYzNFoxTyQlQCN0PWcu
+            NEXT_PUBLIC_FORMS_URL_SUBMIT=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAs_TeTD3rkXtGpbExdNgeYCZUNkpHOVo4MlREUTJPNE9LV0lVUEVSOElJVC4u&embed=true
+            NEXT_PUBLIC_BLOBSERVICECLIENT_URL=https://prdthesisplatformff7fo.blob.core.windows.net/uploads?
+            NEXT_PUBLIC_CONTAINER_NAME=uploads
+            NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME=prdthesisplatformff7fo
+            NEXT_PUBLIC_FOOTER_COPYRIGHT=Department of Finance, University of Zurich. All rights reserved.
+            NEXT_PUBLIC_DEPARTMENT_NAME=DF
+            NEXT_PUBLIC_DEPARTMENT_LONG_NAME=Department of Finance
+            NEXT_PUBLIC_FAQ_URL_STUDENT=https://www.df.uzh.ch/en/studies/bachelor-master/thesis/faq.html
+            NEXT_PUBLIC_FAQ_URL_SUPERVISOR=https://www.df.uzh.ch/de/intranet/phd/thesis-supervision.html
             NEXT_PUBLIC_APP_VERSION=stable-arm-${{ steps.release.outputs.sha }}
 
       - name: Update ArgoCD production image tag
@@ -311,12 +322,12 @@ jobs:
           push: true
           tags: ${{ steps.image.outputs.tags }}
           build-args: |
-            NEXT_PUBLIC_APP_URL=theses.business.prd.df-app.ch
+            NEXT_PUBLIC_APP_URL=theses.business.uzh.ch
             NEXT_PUBLIC_FORMS_URL_PUBLISH=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAswMW9Ql8fXxAnGa_PK_OI41UQ1AyT1pNRFVRV1FGQ1NDVTJORERFMlZXNCQlQCN0PWcu
             NEXT_PUBLIC_FORMS_URL_SUBMIT=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAswMW9Ql8fXxAnGa_PK_OI41UMlpJRDYxUjdBRk5WVk05N0JZNFNLRlNHNiQlQCN0PWcu
-            NEXT_PUBLIC_BLOBSERVICECLIENT_URL=https://thesisplatformbusiness.blob.core.windows.net/uploads?
+            NEXT_PUBLIC_BLOBSERVICECLIENT_URL=https://prdthesisplatformbz89yx5.blob.core.windows.net/uploads?
             NEXT_PUBLIC_CONTAINER_NAME=uploads
-            NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME=thesisplatformbusiness
+            NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME=prdthesisplatformbz89yx5
             NEXT_PUBLIC_FOOTER_COPYRIGHT=Department of Business Administration, University of Zurich. All rights reserved.
             NEXT_PUBLIC_DEPARTMENT_NAME=IBW
             NEXT_PUBLIC_DEPARTMENT_LONG_NAME=Department of Business Administration
