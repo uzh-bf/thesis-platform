@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.13.5](https://github.com/uzh-bf/thesis-platform/compare/v1.13.4...v1.13.5) (2026-06-23)
+
+### [1.13.4](https://github.com/uzh-bf/thesis-platform/compare/v1.13.3...v1.13.4) (2026-06-23)
+
+
+### Bug Fixes
+
+* consolidate deploy image update PRs ([#135](https://github.com/uzh-bf/thesis-platform/issues/135)) ([3251c68](https://github.com/uzh-bf/thesis-platform/commit/3251c68fa6cbee7de12f4b545d97ca9279c8d620))
+
 ### [1.13.3](https://github.com/uzh-bf/thesis-platform/compare/v1.13.2...v1.13.3) (2026-06-23)
 
 
