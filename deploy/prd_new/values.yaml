@@ -1,8 +1,8 @@
 image:
-  tag: 'stable-arm-283b30180621079c7394d61d458b748b0d6fc29a'
+  tag: 'stable-arm-aa0f4aaa6a07ab5e415361a6e3303f7d003d5924'
 
 env: prd
-appUrl: 'https://theses.prd.df-app.ch' # 'https://theses.df.uzh.ch'
+appUrl: 'https://theses.df.uzh.ch'
 
 stagingSafety:
   grantAllAdmins: 'true'
@@ -21,15 +21,15 @@ ingress:
     - host: theses.prd.df-app.ch
       paths:
         - /
-    # - host: theses.bf.uzh.ch
-    #   paths:
-    #     - /
-    # - host: theses.df.uzh.ch
-    #   paths:
-    #     - /
+    - host: theses.bf.uzh.ch
+      paths:
+        - /
+    - host: theses.df.uzh.ch
+      paths:
+        - /
   tls:
     - secretName: thesis-platform-prod-tls
       hosts:
         - theses.prd.df-app.ch
-        # - theses.bf.uzh.ch
-        # - theses.df.uzh.ch
+        - theses.bf.uzh.ch
+        - theses.df.uzh.ch
