@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.13.2](https://github.com/uzh-bf/thesis-platform/compare/v1.13.1...v1.13.2) (2026-06-23)
+
+
+### Bug Fixes
+
+* comment out migration job configuration in migration-job.yaml ([5140e4f](https://github.com/uzh-bf/thesis-platform/commit/5140e4f0921b1c027b6cb885865369cef1ce69ea))
+* restore migration job configuration in migration-job.yaml ([155eaa5](https://github.com/uzh-bf/thesis-platform/commit/155eaa5d2c661f213e668e21e389da0c6ecd05b4))
+* update appUrl comments and clean up ingress hosts in values.yaml ([1481c40](https://github.com/uzh-bf/thesis-platform/commit/1481c402392bc65d51a2ba2862f451f15a12637d))
+* update environment variable name in values.yaml and refine workflow conditions in docker-image-prd.yml ([0096e71](https://github.com/uzh-bf/thesis-platform/commit/0096e7160bfd8743aec53c72e8a5f5b197be3b45))
+
 ### [1.13.1](https://github.com/uzh-bf/thesis-platform/compare/v1.13.0...v1.13.1) (2026-06-17)
 
 
