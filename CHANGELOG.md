@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.13.3](https://github.com/uzh-bf/thesis-platform/compare/v1.13.2...v1.13.3) (2026-06-23)
+
+
+### Bug Fixes
+
+* update environment variables for production and staging Docker images ([8115d6b](https://github.com/uzh-bf/thesis-platform/commit/8115d6bf7d3326e90797058e1986faba7453c2c7))
+
 ### [1.13.2](https://github.com/uzh-bf/thesis-platform/compare/v1.13.1...v1.13.2) (2026-06-23)
 
 
