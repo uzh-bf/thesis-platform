@@ -79,9 +79,8 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore(release)')
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       packages: write
-      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
@@ -141,53 +140,6 @@ jobs:
             NEXT_PUBLIC_FAQ_URL_STUDENT=https://www.df.uzh.ch/en/studies/bachelor-master/thesis/faq.html
             NEXT_PUBLIC_FAQ_URL_SUPERVISOR=https://www.df.uzh.ch/de/intranet/phd/thesis-supervision.html
             NEXT_PUBLIC_APP_VERSION=stable-arm-${{ steps.release.outputs.sha }}
-
-      - name: Update ArgoCD production image tag
-        id: argocd-tag
-        shell: bash
-        env:
-          PRODUCTION_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
-        run: |
-          UPDATE_BRANCH="chore/update-production-arm-image"
-          perl -0pi -e 's/tag: '\''(?:latest|stable)-arm(?:-[0-9a-f]+)?'\''/tag: '\''$ENV{PRODUCTION_IMAGE_TAG}'\''/' deploy/prd_new/values.yaml
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add deploy/prd_new/values.yaml
-          if git diff --cached --quiet; then
-            echo "No ArgoCD image tag change."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          git commit -m "chore(deploy): update production ARM image to ${PRODUCTION_IMAGE_TAG} [skip ci]"
-          git fetch origin "${UPDATE_BRANCH}:refs/remotes/origin/${UPDATE_BRANCH}" || true
-          git push --force-with-lease origin HEAD:"${UPDATE_BRANCH}"
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-
-      - name: Open ArgoCD production image tag PR
-        if: ${{ steps.argocd-tag.outputs.changed == 'true' }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PRODUCTION_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
-        run: |
-          UPDATE_BRANCH="chore/update-production-arm-image"
-          OPEN_PR=$(gh pr list --repo "${GITHUB_REPOSITORY}" --head "${UPDATE_BRANCH}" --base main --state open --json number --jq '.[0].number')
-          if [[ -n "$OPEN_PR" ]]; then
-            echo "PR already exists."
-            gh pr edit "$OPEN_PR" \
-              --repo "${GITHUB_REPOSITORY}" \
-              --title "chore(deploy): update production ARM image to ${PRODUCTION_IMAGE_TAG}" \
-              --body "Updates deploy/prd_new/values.yaml to use ${PRODUCTION_IMAGE_TAG} after the ARM image build completed." \
-              --add-reviewer mxmlnwbr
-            exit 0
-          fi
-          gh pr create \
-            --repo "${GITHUB_REPOSITORY}" \
-            --head "${UPDATE_BRANCH}" \
-            --base main \
-            --title "chore(deploy): update production ARM image to ${PRODUCTION_IMAGE_TAG}" \
-            --body "Updates deploy/prd_new/values.yaml to use ${PRODUCTION_IMAGE_TAG} after the ARM image build completed." \
-            --reviewer mxmlnwbr
 
   build-prd-ibw:
     if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore(release)')
@@ -258,9 +210,8 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore(release)'))
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       packages: write
-      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
@@ -335,43 +286,85 @@ jobs:
             NEXT_PUBLIC_FAQ_URL_SUPERVISOR=https://www.business.uzh.ch/de/Intranet/Lehre/businessthesesmarket.html
             NEXT_PUBLIC_APP_VERSION=${{ steps.image.outputs.deploy_tag }}
 
-      - name: Update ArgoCD production IBW ARM image tag
+  update-production-deploy-images:
+    if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore(release)')
+    needs:
+      - build-prd-arm
+      - build-prd-ibw-arm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release tag and commit hash
+        id: release
+        shell: bash
+        run: |
+          TAG=$(git tag --points-at HEAD | grep '^v' | head -1)
+          if [[ -z "$TAG" ]]; then
+            echo "Release push did not have a v* tag on HEAD." >&2
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Update ArgoCD production image tags
         id: argocd-tag
         shell: bash
         env:
-          PRODUCTION_IBW_IMAGE_TAG: ${{ steps.image.outputs.deploy_tag }}
+          PRODUCTION_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
+          PRODUCTION_IBW_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
         run: |
-          UPDATE_BRANCH="chore/update-production-ibw-arm-image"
-          perl -0pi -e 's/image:\n(?:  repository: [^\n]+\n)?  tag: '\''[^'\'']+'\''/image:\n  repository: ghcr.io\/uzh-bf\/thesis-platform-ibw\n  tag: '\''$ENV{PRODUCTION_IBW_IMAGE_TAG}'\''/' deploy/prd_ibw_new/values.yaml
-          perl -0pi -e 's/env: prd-ibw/env: prd_ibw/' deploy/prd_ibw_new/values.yaml
+          UPDATE_BRANCH="chore/update-deploy-images"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add deploy/prd_ibw_new/values.yaml
+          git fetch origin main
+          if git ls-remote --exit-code --heads origin "${UPDATE_BRANCH}" >/dev/null 2>&1; then
+            git fetch origin "${UPDATE_BRANCH}"
+            git checkout -B "${UPDATE_BRANCH}" "origin/${UPDATE_BRANCH}"
+            git rebase origin/main
+          else
+            git checkout -B "${UPDATE_BRANCH}"
+          fi
+          perl -0pi -e 's/tag: '\''(?:latest|stable)-arm(?:-[0-9a-f]+)?'\''/tag: '\''$ENV{PRODUCTION_IMAGE_TAG}'\''/' deploy/prd_new/values.yaml
+          perl -0pi -e 's/image:\n(?:  repository: [^\n]+\n)?  tag: '\''[^'\'']+'\''/image:\n  repository: ghcr.io\/uzh-bf\/thesis-platform-ibw\n  tag: '\''$ENV{PRODUCTION_IBW_IMAGE_TAG}'\''/' deploy/prd_ibw_new/values.yaml
+          perl -0pi -e 's/env: prd-ibw/env: prd_ibw/' deploy/prd_ibw_new/values.yaml
+          git add deploy/prd_new/values.yaml deploy/prd_ibw_new/values.yaml
           if git diff --cached --quiet; then
-            echo "No ArgoCD IBW image tag change."
+            echo "No ArgoCD production image tag change."
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git commit -m "chore(deploy): update production IBW ARM image to ${PRODUCTION_IBW_IMAGE_TAG} [skip ci]"
-          git fetch origin "${UPDATE_BRANCH}:refs/remotes/origin/${UPDATE_BRANCH}" || true
+          git commit -m "chore(deploy): update deployment image tags [skip ci]"
           git push --force-with-lease origin HEAD:"${UPDATE_BRANCH}"
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Open ArgoCD production IBW ARM image tag PR
+      - name: Open ArgoCD deployment image tag PR
         if: ${{ steps.argocd-tag.outputs.changed == 'true' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          PRODUCTION_IBW_IMAGE_TAG: ${{ steps.image.outputs.deploy_tag }}
+          PRODUCTION_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
+          PRODUCTION_IBW_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
         run: |
-          UPDATE_BRANCH="chore/update-production-ibw-arm-image"
+          UPDATE_BRANCH="chore/update-deploy-images"
+          BODY="Updates deployment values files after Docker image builds complete.
+
+          - deploy/prd_new/values.yaml -> ${PRODUCTION_IMAGE_TAG}
+          - deploy/prd_ibw_new/values.yaml -> ghcr.io/uzh-bf/thesis-platform-ibw:${PRODUCTION_IBW_IMAGE_TAG}
+          - deploy/stg_new/values.yaml updates are added to this same PR by the staging ARM workflow when present."
           OPEN_PR=$(gh pr list --repo "${GITHUB_REPOSITORY}" --head "${UPDATE_BRANCH}" --base main --state open --json number --jq '.[0].number')
           if [[ -n "$OPEN_PR" ]]; then
             echo "PR already exists."
             gh pr edit "$OPEN_PR" \
               --repo "${GITHUB_REPOSITORY}" \
-              --title "chore(deploy): update production IBW ARM image to ${PRODUCTION_IBW_IMAGE_TAG}" \
-              --body "Updates deploy/prd_ibw_new/values.yaml to use ${PRODUCTION_IBW_IMAGE_TAG} after the ARM IBW image build completed." \
+              --title "chore(deploy): update deployment image tags" \
+              --body "$BODY" \
               --add-reviewer mxmlnwbr
             exit 0
           fi
@@ -379,6 +372,6 @@ jobs:
             --repo "${GITHUB_REPOSITORY}" \
             --head "${UPDATE_BRANCH}" \
             --base main \
-            --title "chore(deploy): update production IBW ARM image to ${PRODUCTION_IBW_IMAGE_TAG}" \
-            --body "Updates deploy/prd_ibw_new/values.yaml to use ${PRODUCTION_IBW_IMAGE_TAG} after the ARM IBW image build completed." \
+            --title "chore(deploy): update deployment image tags" \
+            --body "$BODY" \
             --reviewer mxmlnwbr
