@@ -59,7 +59,9 @@ prisma/migrations_mysql_archive/
 
 ## Dry Run
 
-With direct env vars:
+The shell wrapper and package aliases were removed after the migration window.
+Set both database URLs explicitly before running the historical TypeScript
+script.
 
 ```bash
 MYSQL_DATABASE_URL="$MYSQL_DATABASE_URL" \
@@ -68,27 +70,7 @@ EXPECTED_MYSQL_HOST="$EXPECTED_MYSQL_HOST" \
 EXPECTED_MYSQL_DATABASE="$EXPECTED_MYSQL_DATABASE" \
 EXPECTED_POSTGRES_HOST="$EXPECTED_POSTGRES_HOST" \
 EXPECTED_POSTGRES_DATABASE="$EXPECTED_POSTGRES_DATABASE" \
-pnpm prod:db:migrate:dry
-```
-
-With Doppler source and Infisical target:
-
-```bash
-EXPECTED_MYSQL_HOST="$EXPECTED_MYSQL_HOST" \
-EXPECTED_MYSQL_DATABASE="$EXPECTED_MYSQL_DATABASE" \
-EXPECTED_POSTGRES_HOST="$EXPECTED_POSTGRES_HOST" \
-EXPECTED_POSTGRES_DATABASE="$EXPECTED_POSTGRES_DATABASE" \
-pnpm prod:db:migrate:df
-```
-
-For IBW:
-
-```bash
-EXPECTED_MYSQL_HOST="$EXPECTED_MYSQL_HOST" \
-EXPECTED_MYSQL_DATABASE="$EXPECTED_MYSQL_DATABASE" \
-EXPECTED_POSTGRES_HOST="$EXPECTED_POSTGRES_HOST" \
-EXPECTED_POSTGRES_DATABASE="$EXPECTED_POSTGRES_DATABASE" \
-pnpm prod:db:migrate:ibw
+pnpm exec ts-node --project tsconfig.tsnode.json scripts/prod-mysql-to-postgres.ts
 ```
 
 The dry run connects to both databases, verifies guarded hosts, verifies target schema, and prints row counts. It writes nothing.
@@ -100,44 +82,28 @@ Freeze production writes first. Scale the app down, enable maintenance, or other
 For an empty PostgreSQL target:
 
 ```bash
+MYSQL_DATABASE_URL="$MYSQL_DATABASE_URL" \
+POSTGRES_DATABASE_URL="$POSTGRES_DATABASE_URL" \
 EXPECTED_MYSQL_HOST="$EXPECTED_MYSQL_HOST" \
 EXPECTED_MYSQL_DATABASE="$EXPECTED_MYSQL_DATABASE" \
 EXPECTED_POSTGRES_HOST="$EXPECTED_POSTGRES_HOST" \
 EXPECTED_POSTGRES_DATABASE="$EXPECTED_POSTGRES_DATABASE" \
-pnpm prod:db:migrate:df:execute
-```
-
-For IBW:
-
-```bash
-EXPECTED_MYSQL_HOST="$EXPECTED_MYSQL_HOST" \
-EXPECTED_MYSQL_DATABASE="$EXPECTED_MYSQL_DATABASE" \
-EXPECTED_POSTGRES_HOST="$EXPECTED_POSTGRES_HOST" \
-EXPECTED_POSTGRES_DATABASE="$EXPECTED_POSTGRES_DATABASE" \
-pnpm prod:db:migrate:ibw:execute
+pnpm exec ts-node --project tsconfig.tsnode.json scripts/prod-mysql-to-postgres.ts --execute --confirm-prod-migration=MYSQL_TO_POSTGRES_PRD
 ```
 
 If the target already contains app rows and a backup exists, wipe it in the same transaction:
 
 ```bash
+MYSQL_DATABASE_URL="$MYSQL_DATABASE_URL" \
+POSTGRES_DATABASE_URL="$POSTGRES_DATABASE_URL" \
 EXPECTED_MYSQL_HOST="$EXPECTED_MYSQL_HOST" \
 EXPECTED_MYSQL_DATABASE="$EXPECTED_MYSQL_DATABASE" \
 EXPECTED_POSTGRES_HOST="$EXPECTED_POSTGRES_HOST" \
 EXPECTED_POSTGRES_DATABASE="$EXPECTED_POSTGRES_DATABASE" \
-pnpm prod:db:migrate:df:execute -- --wipe-target
+pnpm exec ts-node --project tsconfig.tsnode.json scripts/prod-mysql-to-postgres.ts --execute --confirm-prod-migration=MYSQL_TO_POSTGRES_PRD --wipe-target
 ```
 
-For IBW:
-
-```bash
-EXPECTED_MYSQL_HOST="$EXPECTED_MYSQL_HOST" \
-EXPECTED_MYSQL_DATABASE="$EXPECTED_MYSQL_DATABASE" \
-EXPECTED_POSTGRES_HOST="$EXPECTED_POSTGRES_HOST" \
-EXPECTED_POSTGRES_DATABASE="$EXPECTED_POSTGRES_DATABASE" \
-pnpm prod:db:migrate:ibw:execute -- --wipe-target
-```
-
-The execute mode requires `--confirm-prod-migration=MYSQL_TO_POSTGRES_PRD`; the package script includes it.
+The execute mode requires `--confirm-prod-migration=MYSQL_TO_POSTGRES_PRD`.
 
 ## Deploy App
 

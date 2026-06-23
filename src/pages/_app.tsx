@@ -10,7 +10,6 @@ import { trpc } from '../lib/trpc'
 
 import Footer from 'src/components/Footer'
 import Header from 'src/components/Header'
-import ScheduledMaintenanceBanner from 'src/components/ScheduledMaintenanceBanner'
 import '../globals.css'
 
 config.autoAddCss = false
@@ -32,8 +31,6 @@ function App({
         className={`${sourceSansPro.variable} font-sans antialiased`}
       >
         <Header />
-
-        <ScheduledMaintenanceBanner />
 
         <Component {...pageProps} />
 
