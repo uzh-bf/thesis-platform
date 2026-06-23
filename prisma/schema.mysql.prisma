@@ -1,10 +1,11 @@
-generator client {
+generator mysqlClient {
   provider      = "prisma-client-js"
+  output        = "../node_modules/.prisma/mysql-client"
   binaryTargets = ["native", "debian-openssl-1.1.x", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
