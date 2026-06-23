@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.14.0](https://github.com/uzh-bf/thesis-platform/compare/v1.13.5...v1.14.0) (2026-06-23)
+
+
+### Features
+
+* **db:** migrate Prisma schema to PostgreSQL ([#138](https://github.com/uzh-bf/thesis-platform/issues/138)) ([abe07e4](https://github.com/uzh-bf/thesis-platform/commit/abe07e42062f8f183d3f21680349ffb20d0b764e))
+
 ### [1.13.5](https://github.com/uzh-bf/thesis-platform/compare/v1.13.4...v1.13.5) (2026-06-23)
 
 ### [1.13.4](https://github.com/uzh-bf/thesis-platform/compare/v1.13.3...v1.13.4) (2026-06-23)
