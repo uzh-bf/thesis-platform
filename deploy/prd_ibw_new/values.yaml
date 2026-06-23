@@ -3,7 +3,7 @@ image:
   tag: 'stable-arm-aa0f4aaa6a07ab5e415361a6e3303f7d003d5924'
 
 env: prd_ibw
-appUrl: 'https://theses.business.prd.df-app.ch' # 'https://theses.business.uzh.ch'
+appUrl: 'https://theses.business.uzh.ch'
 
 stagingSafety:
   grantAllAdmins: 'true'
@@ -22,11 +22,11 @@ ingress:
     - host: theses.business.prd.df-app.ch
       paths:
         - /
-    # - host: theses.business.uzh.ch
-    #   paths:
-    #     - /
+    - host: theses.business.uzh.ch
+      paths:
+        - /
   tls:
     - secretName: thesis-platform-ibw-prod-tls
       hosts:
         - theses.business.prd.df-app.ch
-        # - theses.business.uzh.ch
+        - theses.business.uzh.ch
