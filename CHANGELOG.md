@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.15.0](https://github.com/uzh-bf/thesis-platform/compare/v1.14.2...v1.15.0) (2026-06-25)
+
+
+### Features
+
+* add student proposal reminder functionality and format date for messages ([b7225d4](https://github.com/uzh-bf/thesis-platform/commit/b7225d42725c6c0ec3293e2102b14a2599d1371b))
+
 ### [1.14.2](https://github.com/uzh-bf/thesis-platform/compare/v1.14.1...v1.14.2) (2026-06-23)
 
 ### [1.14.1](https://github.com/uzh-bf/thesis-platform/compare/v1.14.0...v1.14.1) (2026-06-23)
