@@ -72,6 +72,20 @@ type ProposalDetailsRecord = Prisma.ProposalGetPayload<{
   }
 }>
 
+const STUDENT_PROPOSAL_REMINDER_INTERVAL_DAYS = 8 * 7
+
+function getNextStudentProposalReminderAt(updatedAt: Date) {
+  const nextReminderAt = new Date(updatedAt)
+  nextReminderAt.setDate(
+    nextReminderAt.getDate() + STUDENT_PROPOSAL_REMINDER_INTERVAL_DAYS
+  )
+  return nextReminderAt
+}
+
+function formatDateForStudentMessage(date: Date) {
+  return date.toISOString().slice(0, 10)
+}
+
 type AdminChangeNotificationInput = {
   tab: 'Proposals' | 'Users'
   action: string
@@ -1537,7 +1551,9 @@ export const appRouter = router({
       }
       // Calculate the date 8 weeks ago
       const eightWeeksAgo = new Date();
-      eightWeeksAgo.setDate(eightWeeksAgo.getDate() - 8 * 7); // 8 x 7 Days = 56 days
+      eightWeeksAgo.setDate(
+        eightWeeksAgo.getDate() - STUDENT_PROPOSAL_REMINDER_INTERVAL_DAYS
+      ); // 8 x 7 Days = 56 days
   
       try {
         // Fetch data from Prisma
@@ -1589,9 +1605,31 @@ export const appRouter = router({
   }))
   .output(z.object({
     response: z.string(),
+    proposalTitle: z.string().nullable(),
+    nextReminderAt: z.string().nullable(),
   }))
   .query(async ({ input }) => {
     try {
+      const confirmedAt = new Date()
+      const existingProposal = await prisma.proposal.findUnique({
+        where: {
+          id: input.id,
+        },
+        select: {
+          title: true,
+          statusKey: true,
+          updatedAt: true,
+        },
+      })
+
+      if (!existingProposal) {
+        return {
+          response: 'No proposal was found for this confirmation link.',
+          proposalTitle: null,
+          nextReminderAt: null,
+        }
+      }
+
       // Update the `updatedAt` field for the proposal with the provided `id`
       const proposal = await prisma.proposal.updateMany({
         where: {
@@ -1600,18 +1638,43 @@ export const appRouter = router({
         },
         data: {
           statusKey: "OPEN",
-          updatedAt: new Date(), // Set `updatedAt` to the current date/time
+          updatedAt: confirmedAt, // Set `updatedAt` to the current date/time
         },
       });
 
       if (proposal.count === 0) {
+        if (existingProposal.statusKey === 'OPEN') {
+          const nextReminderAt = getNextStudentProposalReminderAt(
+            existingProposal.updatedAt
+          )
+
+          return {
+            response: `Your proposal "${existingProposal.title}" is already active and confirmed. The next reminder will be sent on or after ${formatDateForStudentMessage(
+              nextReminderAt
+            )} if the proposal is still open.`,
+            proposalTitle: existingProposal.title,
+            nextReminderAt: nextReminderAt.toISOString(),
+          };
+        }
+
         return {
-          response: "No Proposal was updated.",
+          response: `Your proposal "${existingProposal.title}" could not be confirmed because it is currently ${existingProposal.statusKey.replace(
+            /_/g,
+            ' '
+          )}.`,
+          proposalTitle: existingProposal.title,
+          nextReminderAt: null,
         };
       }
 
+      const nextReminderAt = getNextStudentProposalReminderAt(confirmedAt)
+
       return {
-        response: `Your Proposal was updated successfully! ✌️😊`,
+        response: `Your proposal "${existingProposal.title}" was confirmed successfully. The next reminder will be sent on or after ${formatDateForStudentMessage(
+          nextReminderAt
+        )} if the proposal is still open.`,
+        proposalTitle: existingProposal.title,
+        nextReminderAt: nextReminderAt.toISOString(),
       };
     } catch (error) {
       console.error("Error updating proposal:", error);
