@@ -10,6 +10,7 @@ import { trpc } from '../lib/trpc'
 
 import Footer from 'src/components/Footer'
 import Header from 'src/components/Header'
+import MatomoTracking from 'src/components/MatomoTracking'
 import '../globals.css'
 
 config.autoAddCss = false
@@ -37,6 +38,8 @@ function App({
         <Footer />
 
         <Toaster />
+
+        <MatomoTracking />
 
         <style jsx global>{`
           :root {
