@@ -291,10 +291,35 @@ Manual/live smoke:
 - [x] Slice 3 done: router now generates proposal ID, passes it to flow, enriches labels, and triggers non-blocking CleverReach draft creation after flow success. Verified with full `tsc`, `next lint`, and fake-client script.
 - [x] Slice 4 done: Power Automate accepts app `proposalId`, uses it with `guid()` fallback, and old CleverReach child branch is disabled to prevent duplicate drafts. Verified solution JSON with `jq`.
 - [x] Slice 5 done: current Helm chart gets CleverReach env wiring; prod IBW release overrides required CleverReach values to empty. Verified stg/prd Helm renders and IBW empty override render.
-- [ ] Slice 6 in progress: final checks, smoke documentation, and branch review.
+- [x] Slice 6 done: final local verification, build, Helm render checks, JSON parse, whitespace check, and local security review. No high-confidence security findings.
 - [ ] Confirm template placeholders and thesis filter ID.
 - [x] Implement app CleverReach client/config.
 - [x] Integrate with `submitProposalPublish`.
 - [x] Disable old flow CleverReach branch.
 - [x] Wire staging/production env.
-- [ ] Run local tests and staging smoke.
+- [x] Run local tests.
+- [ ] Run staging smoke after `CLEVERREACH_FILTER_THESES` exists in stg and `THESIS_PROPOSAL_V0` placeholders are confirmed.
+
+## Final Verification
+
+- `./node_modules/.bin/prisma generate`
+- `./node_modules/.bin/tsc --noEmit --incremental false --pretty false`
+- `./node_modules/.bin/next lint`
+- `env NEXT_TELEMETRY_DISABLED=1 ./node_modules/.bin/next build`
+- `./node_modules/.bin/tsx scripts/verify-cleverreach-thesis.ts`
+- `helm template thesis-platform deploy/chart -f deploy/stg/values-envsubst.yaml`
+- `helm template thesis-platform deploy/chart -f deploy/prd/values-envsubst.yaml`
+- `helm template thesis-platform deploy/chart -f deploy/prd/values-envsubst.yaml --set-string cleverreach.clientId= --set-string cleverreach.clientSecret= --set-string cleverreach.filterTheses=`
+- `jq empty solutions/UZHBFThesisPlatform/Workflows/UZHBFThesisPlatform-ThesisProposalPosting-F3E0B1EB-152A-EE11-BDF5-000D3A831DD0.json`
+- `git diff --check origin/main...HEAD`
+
+## Next Steps
+
+- Add stg/prd Doppler values for CleverReach:
+  - `CLEVERREACH_CLIENT_ID`
+  - `CLEVERREACH_CLIENT_SECRET`
+  - `CLEVERREACH_FILTER_THESES`
+  - optional sender/template/subject/admin URL overrides
+- Import updated Power Automate solution so old CleverReach child branch is disabled and flow accepts app `proposalId`.
+- Run one stg proposal publish smoke with `STAGING_ENABLE_EXTERNAL_FLOWS=true`.
+- Confirm one draft in CleverReach, template `THESIS_PROPOSAL_V0`, preheader metadata, and thesis-segment recipient count.
