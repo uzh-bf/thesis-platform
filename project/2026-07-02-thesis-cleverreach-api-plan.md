@@ -10,6 +10,7 @@ Move thesis proposal CleverReach draft creation from Power Automate child flow i
 Scope stays narrow:
 
 - Keep Power Automate as proposal workflow owner for now: PDF persistence, `addProposal`, supervision assignment, supervisor confirmation email.
+- Do not edit Power Automate solution or flow JSON.
 - Move only CleverReach draft creation into app code.
 - Use prepared template `THESIS_PROPOSAL_V0`.
 - Send to the CleverReach filter for users who signed up for `theses` updates.
@@ -53,24 +54,26 @@ Careers pattern to copy:
 
 ## Key Design
 
-Keep proposal publish flow, but app generates proposal ID.
+Keep proposal publish flow unchanged, then resolve the proposal ID from the app DB.
 
 Reason:
 
 - CleverReach template needs proposal link.
-- Flow currently generates `ProposalId` internally, and `submitProposalPublish` cannot reliably know it.
-- Smallest stable fix: app creates `proposalId`, includes it in Power Automate payload, flow uses `triggerBody()?['proposalId']` when present, fallback to `guid()` for compatibility.
+- Flow currently generates `ProposalId` internally.
+- We do not edit Power Automate.
+- App cannot know the ID before the flow calls `/api/addProposal`.
+- Smallest app-only fix: after successful flow submission, start a background lookup for the newly persisted proposal and use that real DB ID for the CleverReach draft.
 
-Flow change:
+Lookup key:
 
 ```text
-SetProposalId = coalesce(triggerBody()?['proposalId'], guid())
+title + summary + study level + language + topic area slug + time frame + responder + recent createdAt
 ```
 
-App then knows link before CleverReach draft creation:
+App then creates the CleverReach draft with:
 
 ```text
-{ROOT_URL}/{proposalId}
+{APP_URL}/{persistedProposal.id}
 ```
 
 ## Template Contract
@@ -210,26 +213,23 @@ Resolve better display values before rendering:
 
 Update `submitProposalPublish`:
 
-- Generate `proposalId` in app.
-- Add `proposalId` to Power Automate payload.
-- After successful Power Automate response, trigger CleverReach draft creation.
+- Keep Power Automate payload contract unchanged.
+- After successful Power Automate response, start a non-blocking proposal lookup in the app DB.
+- Once the proposal created by the flow is found, trigger CleverReach draft creation with the persisted proposal ID.
 - If CleverReach env is incomplete, skip with clear log.
 - If CleverReach call fails, log and keep proposal publish success.
 - Reuse staging guard: no external CleverReach draft in staging unless `STAGING_ENABLE_EXTERNAL_FLOWS=true`.
 
-### Slice 4 - Power Automate De-Dupe
+### Slice 4 - Duplicate Prevention Without Flow Edits
 
 Prevent duplicate drafts.
 
-Options:
-
-1. Disable old CleverReach branch by setting flow CleverReach env params to `EMPTY`.
-2. Remove or no-op `IsCleverreachConfigured` in solution JSON.
-
 Preferred rollout path:
 
-- Staging: disable old child flow path first, then enable app CleverReach env.
-- Production: same order. Never have both old child flow and app API enabled.
+- Keep existing Power Automate CleverReach env params `EMPTY`.
+- Enable app CleverReach env only after old flow-side CleverReach config is confirmed inactive.
+- Never have both old child flow and app API enabled.
+- Do not edit solution JSON.
 
 ### Slice 5 - Deployment Env
 
@@ -262,7 +262,7 @@ Automated checks:
 Manual/live smoke:
 
 1. Staging env configured with thesis CleverReach filter.
-2. Old CleverReach child flow disabled.
+2. Old CleverReach child flow remains inactive through its existing env config.
 3. Submit one proposal publish request.
 4. Confirm one draft exists in CleverReach.
 5. Confirm template is `THESIS_PROPOSAL_V0`.
@@ -288,14 +288,14 @@ Manual/live smoke:
 - [x] Identified proposal ID/link seam.
 - [x] Slice 1 done: app config and CleverReach REST client. Verified with targeted `tsc` and Prettier check.
 - [x] Slice 2 done: thesis draft builder and fake-client verification script. Verified with `tsx`, targeted `tsc`, and Prettier check.
-- [x] Slice 3 done: router now generates proposal ID, passes it to flow, enriches labels, and triggers non-blocking CleverReach draft creation after flow success. Verified with full `tsc`, `next lint`, and fake-client script.
-- [x] Slice 4 done: Power Automate accepts app `proposalId`, uses it with `guid()` fallback, and old CleverReach child branch is disabled to prevent duplicate drafts. Verified solution JSON with `jq`.
+- [x] Slice 3 done: router keeps flow payload unchanged, looks up the persisted proposal created by flow, enriches labels, and triggers non-blocking CleverReach draft creation after flow success. Verified with full `tsc`, `next lint`, and fake-client script.
+- [x] Slice 4 done: Power Automate solution edits removed. Duplicate prevention is an env/ops gate: old flow-side CleverReach config must remain inactive before app API env is enabled.
 - [x] Slice 5 done: current Helm chart gets CleverReach env wiring; prod IBW release overrides required CleverReach values to empty. Verified stg/prd Helm renders and IBW empty override render.
 - [x] Slice 6 done: final local verification, build, Helm render checks, JSON parse, whitespace check, and local security review. No high-confidence security findings.
 - [ ] Confirm template placeholders and thesis filter ID.
 - [x] Implement app CleverReach client/config.
 - [x] Integrate with `submitProposalPublish`.
-- [x] Disable old flow CleverReach branch.
+- [x] Avoid Power Automate edits.
 - [x] Wire staging/production env.
 - [x] Run local tests.
 - [ ] Run staging smoke after `CLEVERREACH_FILTER_THESES` exists in stg and `THESIS_PROPOSAL_V0` placeholders are confirmed.
@@ -310,7 +310,7 @@ Manual/live smoke:
 - `helm template thesis-platform deploy/chart -f deploy/stg/values-envsubst.yaml`
 - `helm template thesis-platform deploy/chart -f deploy/prd/values-envsubst.yaml`
 - `helm template thesis-platform deploy/chart -f deploy/prd/values-envsubst.yaml --set-string cleverreach.clientId= --set-string cleverreach.clientSecret= --set-string cleverreach.filterTheses=`
-- `jq empty solutions/UZHBFThesisPlatform/Workflows/UZHBFThesisPlatform-ThesisProposalPosting-F3E0B1EB-152A-EE11-BDF5-000D3A831DD0.json`
+- `git diff --name-status origin/main...HEAD` to confirm no `solutions/` files are changed.
 - `git diff --check origin/main...HEAD`
 
 ## Next Steps
@@ -320,6 +320,6 @@ Manual/live smoke:
   - `CLEVERREACH_CLIENT_SECRET`
   - `CLEVERREACH_FILTER_THESES`
   - optional sender/template/subject/admin URL overrides
-- Import updated Power Automate solution so old CleverReach child branch is disabled and flow accepts app `proposalId`.
+- Confirm old Power Automate CleverReach env params remain `EMPTY` before enabling app CleverReach env, so there is no duplicate draft.
 - Run one stg proposal publish smoke with `STAGING_ENABLE_EXTERNAL_FLOWS=true`.
 - Confirm one draft in CleverReach, template `THESIS_PROPOSAL_V0`, preheader metadata, and thesis-segment recipient count.
