@@ -276,7 +276,7 @@ Manual/live smoke:
 - Actual CleverReach filter ID for `theses` segment.
 - Exact placeholder syntax already present in `THESIS_PROPOSAL_V0`.
 - Desired sender name/email. Old flow used `DF Community <df-community@mailing.uzh.ch>`.
-- Active deployment path: old `deploy/chart` only, or also `deploy/chart_new`.
+- Active deployment path resolved for this change: current stg/prd Helmfiles use `deploy/chart`; `chart_new` left untouched.
 - Whether app should send the existing management-inbox "draft ready" email after API draft creation, or rely on logs/CleverReach UI.
 
 ## Progress
@@ -290,10 +290,11 @@ Manual/live smoke:
 - [x] Slice 2 done: thesis draft builder and fake-client verification script. Verified with `tsx`, targeted `tsc`, and Prettier check.
 - [x] Slice 3 done: router now generates proposal ID, passes it to flow, enriches labels, and triggers non-blocking CleverReach draft creation after flow success. Verified with full `tsc`, `next lint`, and fake-client script.
 - [x] Slice 4 done: Power Automate accepts app `proposalId`, uses it with `guid()` fallback, and old CleverReach child branch is disabled to prevent duplicate drafts. Verified solution JSON with `jq`.
-- [ ] Slice 5 in progress: deployment env wiring.
+- [x] Slice 5 done: current Helm chart gets CleverReach env wiring; prod IBW release overrides required CleverReach values to empty. Verified stg/prd Helm renders and IBW empty override render.
+- [ ] Slice 6 in progress: final checks, smoke documentation, and branch review.
 - [ ] Confirm template placeholders and thesis filter ID.
 - [x] Implement app CleverReach client/config.
 - [x] Integrate with `submitProposalPublish`.
 - [x] Disable old flow CleverReach branch.
-- [ ] Wire staging/production env.
+- [x] Wire staging/production env.
 - [ ] Run local tests and staging smoke.

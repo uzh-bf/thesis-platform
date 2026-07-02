@@ -30,6 +30,17 @@ flows:
   applicationAcceptance: ""
   emailNotification: ""
 
+cleverreach:
+  clientId: ""
+  clientSecret: ""
+  senderName: ""
+  senderEmail: ""
+  mailingNamePrefix: ""
+  templateThesisProposal: ""
+  subjectThesisProposal: ""
+  filterTheses: ""
+  adminUrl: ""
+
 replicaCount: 1
 
 image:
