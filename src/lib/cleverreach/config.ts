@@ -49,7 +49,7 @@ export function resolveThesisProposalCleverReachConfig(
     filterId ? null : 'filterId',
   ].filter((value): value is string => value !== null)
 
-  if (missing.length > 0) {
+  if (!clientId || !clientSecret || !filterId) {
     return { ok: false, missing }
   }
 

@@ -25,6 +25,12 @@ import {
 import { ProposalStatusFilter } from 'src/types/app'
 import { z } from 'zod'
 import { v4 as uuidv4 } from 'uuid'
+import {
+  CleverReachConfigError,
+  createThesisProposalCleverReachDraft,
+  parseProposalLanguages,
+  type ThesisProposalDraftPayload,
+} from 'src/lib/cleverreach/thesisProposal'
 
 const ADMIN_CHANGE_NOTIFICATION_RECIPIENTS = {
   DEV: 'ibf-srv-powplatf@d.uzh.ch',
@@ -73,6 +79,22 @@ type ProposalDetailsRecord = Prisma.ProposalGetPayload<{
 }>
 
 const STUDENT_PROPOSAL_REMINDER_INTERVAL_DAYS = 8 * 7
+
+const proposalPublishInputSchema = z.object({
+  responder: z.string().email(),
+  proposalTitle: z.string(),
+  proposalSummary: z.string(),
+  fieldOfResearch: z.string(),
+  supervisor: z.string().email(),
+  personResponsibleEmail: z.string().email(),
+  bachelorOrMasterLevel: z.string(),
+  proposalLanguage: z.string(),
+  timeFrame: z.string(),
+  researchProposalPDF: z.string().nullable(),
+  furtherAttachments: z.string().nullable(),
+})
+
+type ProposalPublishInput = z.infer<typeof proposalPublishInputSchema>
 
 function getNextStudentProposalReminderAt(updatedAt: Date) {
   const nextReminderAt = new Date(updatedAt)
@@ -189,6 +211,96 @@ const getBlockedStagingFlowResponse = (flowName: string, data?: unknown) => {
     message: `${flowName} blocked in staging`,
     data,
   }
+}
+
+const getAppBaseUrl = () => {
+  const nextAuthUrl = process.env.NEXTAUTH_URL?.trim()
+
+  if (nextAuthUrl) {
+    return nextAuthUrl.replace(/\/+$/g, '')
+  }
+
+  const publicAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim()
+
+  if (publicAppUrl) {
+    const url = publicAppUrl.startsWith('http')
+      ? publicAppUrl
+      : `https://${publicAppUrl}`
+    return url.replace(/\/+$/g, '')
+  }
+
+  return 'http://localhost:3000'
+}
+
+async function buildThesisProposalDraftPayload(
+  input: ProposalPublishInput,
+  proposalId: string
+): Promise<ThesisProposalDraftPayload> {
+  const [topicArea, supervisor, responsible] = await Promise.all([
+    prisma.topicArea.findUnique({
+      where: { slug: input.fieldOfResearch },
+      select: { name: true },
+    }),
+    prisma.user.findUnique({
+      where: { email: input.supervisor },
+      select: { name: true },
+    }),
+    prisma.responsible.findUnique({
+      where: { email: input.personResponsibleEmail },
+      select: { name: true },
+    }),
+  ])
+
+  return {
+    proposalId,
+    title: input.proposalTitle,
+    summary: input.proposalSummary,
+    studyLevel: input.bachelorOrMasterLevel,
+    languages: parseProposalLanguages(input.proposalLanguage),
+    timeFrame: input.timeFrame,
+    topicAreaName: topicArea?.name ?? input.fieldOfResearch,
+    supervisorEmail: input.supervisor,
+    supervisorName: supervisor?.name,
+    responsibleEmail: input.personResponsibleEmail,
+    responsibleName: responsible?.name,
+    departmentName:
+      process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME ??
+      process.env.NEXT_PUBLIC_DEPARTMENT_NAME ??
+      'Department of Finance',
+    proposalUrl: `${getAppBaseUrl()}/${proposalId}`,
+  }
+}
+
+function triggerThesisProposalCleverReachDraft(
+  input: ProposalPublishInput,
+  proposalId: string
+) {
+  if (!areExternalFlowsEnabled()) {
+    console.warn(
+      'CleverReach thesis proposal draft skipped because staging external flows are disabled.'
+    )
+    return
+  }
+
+  void (async () => {
+    try {
+      const draftPayload = await buildThesisProposalDraftPayload(input, proposalId)
+      await createThesisProposalCleverReachDraft(draftPayload)
+    } catch (error) {
+      if (error instanceof CleverReachConfigError) {
+        console.warn('CleverReach thesis proposal settings incomplete. Skipping draft.', {
+          missing: error.missing,
+          proposalId,
+        })
+        return
+      }
+
+      console.error('CleverReach thesis proposal draft failed:', {
+        proposalId,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    }
+  })()
 }
 
 const escapeHtml = (value: unknown): string =>
@@ -946,25 +1058,13 @@ export const appRouter = router({
     }),
 
   submitProposalPublish: publicProcedure
-    .input(
-      z.object({
-        responder: z.string().email(),
-        proposalTitle: z.string(),
-        proposalSummary: z.string(),
-        fieldOfResearch: z.string(),
-        supervisor: z.string().email(),
-        personResponsibleEmail: z.string().email(),
-        bachelorOrMasterLevel: z.string(),
-        proposalLanguage: z.string(),
-        timeFrame: z.string(),
-        researchProposalPDF: z.string().nullable(),
-        furtherAttachments: z.string().nullable(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
+    .input(proposalPublishInputSchema)
+    .mutation(async ({ input }) => {
       const submitDate = new Date().toISOString()
+      const proposalId = uuidv4()
 
       const payload = {
+        proposalId,
         responder: input.responder,
         submitDate: submitDate,
         proposalSummary: input.proposalSummary,
@@ -1008,6 +1108,7 @@ export const appRouter = router({
         )
         
         console.log('Successfully submitted proposal')
+        triggerThesisProposalCleverReachDraft(input, proposalId)
         return res.data
       } catch (error: any) {
         console.error('Error submitting proposal:', error)

@@ -72,11 +72,11 @@ assert.ok(
 )
 
 async function main() {
-  let createDraftPayload: {
+  const createDraftPayloads: {
     html: string
     filterId: string
     text: string
-  } | null = null
+  }[] = []
 
   const result = await createThesisProposalCleverReachDraft(payload, {
     env,
@@ -86,13 +86,14 @@ async function main() {
       fetchTemplateHtml: async () =>
         '[[PREHEADER]] [[PROPOSAL_TITLE]] [[PROPOSAL_SUMMARY]] [[PROPOSAL_LINK]]',
       createDraftMailing: async ({ html, filterId, text }) => {
-        createDraftPayload = { html, filterId, text }
+        createDraftPayloads.push({ html, filterId, text })
         return 'mailing-id'
       },
     },
   })
 
   assert.equal(result.mailingId, 'mailing-id')
+  const createDraftPayload = createDraftPayloads[0]
   assert.ok(createDraftPayload)
   assert.equal(createDraftPayload.filterId, 'filter-theses')
   assert.match(createDraftPayload.html, /Asset Pricing With Machine Learning/)
