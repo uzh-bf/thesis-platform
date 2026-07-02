@@ -287,7 +287,8 @@ Manual/live smoke:
 - [x] Compared against careers CleverReach API pattern.
 - [x] Identified proposal ID/link seam.
 - [x] Slice 1 done: app config and CleverReach REST client. Verified with targeted `tsc` and Prettier check.
-- [ ] Slice 2 in progress: thesis draft builder.
+- [x] Slice 2 done: thesis draft builder and fake-client verification script. Verified with `tsx`, targeted `tsc`, and Prettier check.
+- [ ] Slice 3 in progress: router integration after successful proposal publish.
 - [ ] Confirm template placeholders and thesis filter ID.
 - [x] Implement app CleverReach client/config.
 - [ ] Integrate with `submitProposalPublish`.
