@@ -286,8 +286,10 @@ Manual/live smoke:
 - [x] Mapped Power Automate proposal and CleverReach child flows.
 - [x] Compared against careers CleverReach API pattern.
 - [x] Identified proposal ID/link seam.
+- [x] Slice 1 done: app config and CleverReach REST client. Verified with targeted `tsc` and Prettier check.
+- [ ] Slice 2 in progress: thesis draft builder.
 - [ ] Confirm template placeholders and thesis filter ID.
-- [ ] Implement app CleverReach client/config.
+- [x] Implement app CleverReach client/config.
 - [ ] Integrate with `submitProposalPublish`.
 - [ ] Disable old flow CleverReach branch.
 - [ ] Wire staging/production env.
