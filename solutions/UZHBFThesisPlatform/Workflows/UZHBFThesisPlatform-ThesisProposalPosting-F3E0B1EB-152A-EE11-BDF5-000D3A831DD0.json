@@ -144,6 +144,9 @@
             "schema": {
               "type": "object",
               "properties": {
+                "proposalId": {
+                  "type": "string"
+                },
                 "responder": {
                   "type": "string"
                 },
@@ -212,7 +215,7 @@
               "type": "SetVariable",
               "inputs": {
                 "name": "ProposalId",
-                "value": "@{guid()}"
+                "value": "@{coalesce(triggerBody()?['proposalId'], guid())}"
               },
               "metadata": {
                 "operationMetadataId": "529ff450-b0d9-46cb-8014-8b375da2ca7e"
@@ -598,23 +601,9 @@
             "IsCleverreachConfigured": {
               "type": "If",
               "expression": {
-                "and": [
-                  {
-                    "not": {
-                      "equals": [
-                        "@parameters('Cleverreach Client Id (uzhbf_thesisplatform_cleverreach_client_id_env_var)')",
-                        "EMPTY"
-                      ]
-                    }
-                  },
-                  {
-                    "not": {
-                      "equals": [
-                        "@parameters('Cleverreach Client Secret (uzhbf_thesisplatform_cleverreach_client_secret_env_var)')",
-                        "EMPTY"
-                      ]
-                    }
-                  }
+                "equals": [
+                  true,
+                  false
                 ]
               },
               "actions": {

@@ -289,10 +289,11 @@ Manual/live smoke:
 - [x] Slice 1 done: app config and CleverReach REST client. Verified with targeted `tsc` and Prettier check.
 - [x] Slice 2 done: thesis draft builder and fake-client verification script. Verified with `tsx`, targeted `tsc`, and Prettier check.
 - [x] Slice 3 done: router now generates proposal ID, passes it to flow, enriches labels, and triggers non-blocking CleverReach draft creation after flow success. Verified with full `tsc`, `next lint`, and fake-client script.
-- [ ] Slice 4 in progress: Power Automate de-dupe and proposal ID compatibility.
+- [x] Slice 4 done: Power Automate accepts app `proposalId`, uses it with `guid()` fallback, and old CleverReach child branch is disabled to prevent duplicate drafts. Verified solution JSON with `jq`.
+- [ ] Slice 5 in progress: deployment env wiring.
 - [ ] Confirm template placeholders and thesis filter ID.
 - [x] Implement app CleverReach client/config.
 - [x] Integrate with `submitProposalPublish`.
-- [ ] Disable old flow CleverReach branch.
+- [x] Disable old flow CleverReach branch.
 - [ ] Wire staging/production env.
 - [ ] Run local tests and staging smoke.
