@@ -90,7 +90,7 @@ async function seed(prisma: PrismaClient) {
     ],
   })
   
-  console.log(`\x1b[1m\x1b[93m⚠️  RESPONSIBLE with Name: ${process.env.USER_NAME} and Email: ${process.env.USER_EMAIL} created from (Doppler) .env file\x1b[0m`)
+  console.log(`\x1b[1m\x1b[93m⚠️  RESPONSIBLE with Name: ${process.env.USER_NAME} and Email: ${process.env.USER_EMAIL} created from environment variables\x1b[0m`)
 
   // Pre-create supervisor accounts that will be linked on first OAuth login
   console.log('Seeding pre-defined supervisor accounts...')
@@ -121,7 +121,7 @@ async function seed(prisma: PrismaClient) {
     })
   }
   
-  console.log(`\x1b[1m\x1b[93m⚠️  SUPERVISOR with Name: ${process.env.USER_NAME} and Email: ${process.env.USER_EMAIL} created from (Doppler) .env file\x1b[0m`)
+  console.log(`\x1b[1m\x1b[93m⚠️  SUPERVISOR with Name: ${process.env.USER_NAME} and Email: ${process.env.USER_EMAIL} created from environment variables\x1b[0m`)
 
   // Create sample proposals
   console.log('Creating sample proposals...')

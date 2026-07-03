@@ -1,6 +1,6 @@
 # Production MySQL to PostgreSQL Migration
 
-Purpose: copy all production data from Doppler-managed MySQL to the new Infisical-managed PostgreSQL database, then deploy the app with the PostgreSQL Prisma client.
+Purpose: copy all production data from the legacy production MySQL database to the Infisical-managed PostgreSQL database, then deploy the app with the PostgreSQL Prisma client.
 
 The script never prints connection strings. It prints only protocol, host, port, database, SSL mode, PgBouncer flag, and row counts.
 
@@ -8,8 +8,8 @@ Use these environment pairings:
 
 | Instance | MySQL source | PostgreSQL target |
 | --- | --- | --- |
-| DF | Doppler `prd` | Infisical `prd` |
-| IBW | Doppler `prd_ibw` | Infisical `prd-ibw` |
+| DF | legacy DF production MySQL URL | Infisical `prd` |
+| IBW | legacy IBW production MySQL URL | Infisical `prd-ibw` |
 
 ## Before Maintenance
 

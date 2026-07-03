@@ -512,6 +512,24 @@ Commit:
     - `git diff --check HEAD`
   - Slice 3 correctness review: initial Important root `doppler.yaml` finding resolved; final delta `DONE`, no findings.
   - Slice 3 simplification review: removed orphan README heading and redundant progress item; final delta `DONE`, no findings.
+- [x] Slice 4 done:
+  - removed remaining package Doppler wrappers and root `doppler.yaml`.
+  - kept package scripts as plain environment-variable based commands that can be wrapped with `infisical run --env=<env> -- ...`.
+  - ignored local `.infisical.json` and documented local `infisical login` / `infisical init`.
+  - replaced active seed-script Doppler wording with neutral environment-variable wording.
+  - verification:
+    - `rg -n "doppler|Doppler|DOPPLER" package.json README.md docs scripts deploy src prisma` returned no matches.
+    - `infisical run --help` confirmed `--env` and `-- ...` command syntax.
+    - `./node_modules/.bin/prisma generate`
+    - `./node_modules/.bin/tsc --noEmit --incremental false --pretty false`
+    - `./node_modules/.bin/next lint`
+    - `./node_modules/.bin/tsx scripts/verify-cleverreach-thesis.ts`
+    - `env THESIS_PLATFORM_ENV=stg bash scripts/staging-db-backup.sh` passed the env guard and stopped at expected missing `DATABASE_URL` guard.
+    - `git diff --check HEAD`
+    - no `pnpm test` script exists.
+  - `pnpm run prisma:generate` and `pnpm run staging:db:backup` still fail before script execution because local pnpm runs a dependency-status install blocked by `ERR_PNPM_IGNORED_BUILDS`; direct binaries verified the underlying commands.
+  - Slice 4 correctness review: `DONE`, no findings.
+  - Slice 4 simplification review: removed unnecessary `dev:tunnel`; final delta only requested this progress update.
 - [ ] Add df-cloud companion branch.
 - [ ] Populate Infisical values.
 - [ ] Disable old Power Automate CleverReach gate.
@@ -520,4 +538,4 @@ Commit:
 
 ## Next Step
 
-Start Slice 4: remove remaining Doppler package scripts/docs and root `doppler.yaml`, keeping only useful non-secret or Infisical-backed commands.
+Start Slice 5: create the df-cloud companion worktree and align desired ArgoCD/ExternalSecret state.

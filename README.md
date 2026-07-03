@@ -25,10 +25,17 @@ pnpm install
 
 ❗️Make sure your IP address has access to the PostgreSQL database (include IP for Azure DB on [Azure](https://portal.azure.com)).❗️
 
-For local database development, run PostgreSQL locally or use the configured development database. Use this connection string shape unless Doppler provides another `DATABASE_URL`:
+For local database development, run PostgreSQL locally or use the configured development database. Commands read standard environment variables such as `DATABASE_URL`:
 
 ```bash
 DATABASE_URL="postgresql://thesis:<local-password>@localhost:5432/thesis?sslmode=disable"
+```
+
+For shared secrets, run `infisical login` and `infisical init` locally for the thesis platform project, then use Infisical to wrap the command:
+
+```bash
+infisical run --env=dev -- pnpm dev
+infisical run --env=stg -- pnpm staging:db:audit
 ```
 
 ## Usage
