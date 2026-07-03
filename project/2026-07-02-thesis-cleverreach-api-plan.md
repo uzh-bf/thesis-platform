@@ -1,325 +1,478 @@
-# Thesis CleverReach API Migration Plan
+# Thesis CleverReach API + Infisical Deploy Cleanup Plan
 
-Date: 2026-07-02
+Date: 2026-07-03
 Branch: `codex/thesis-cleverreach-api`
+Primary repo: `thesis-platform`
+Companion repo: `df-cloud`
+Target flow: thesis-platform repo first, df-cloud stg, then df-cloud prd.
 
 ## Goal
 
-Move thesis proposal CleverReach draft creation from Power Automate child flow into the Next.js app, using the same API-based pattern that worked in `careers`.
+Move thesis CleverReach draft creation into app code and align deploy config with current Infisical-based runtime.
+
+Do:
+
+- Keep app-side CleverReach API draft creation.
+- Use prepared CleverReach template `THESIS_PROPOSAL_V0`.
+- Use thesis segment filter `521671` (`Thesen`) in group `560174`.
+- Use Infisical/ExternalSecrets for runtime secrets.
+- Remove old Doppler-era artifacts: envsubst, old Helm chart, old helmfile folders, Doppler helper scripts, Doppler wrapper scripts, and stale docs.
+- Keep current ArgoCD path: `deploy/chart_new`.
+- Keep current value files:
+  - `deploy/stg_new/values.yaml`
+  - `deploy/prd_new/values.yaml`
+  - `deploy/prd_ibw_new/values.yaml`
+- Reconcile df-cloud desired state with live ArgoCD state.
+
+Do not:
+
+- Edit Power Automate flow JSON.
+- Rename `chart_new` to `chart` in this change.
+- Enable IBW CleverReach unless explicitly requested.
+- Commit secrets.
+- Print Power Platform, CleverReach, or Infisical secret values.
+
+## Current Evidence
+
+Thesis repo:
+
+- Local branch is ahead 8, behind `origin/main` by 1.
+- Current branch still edits old deploy files. Stale. Must rework.
+- `origin/main` commit: `b65cd32 enhance(analytics): add DF webstats tracking (#146)`.
+- Old deploy files still exist in repo:
+  - `deploy/chart/`
+  - `deploy/stg/`
+  - `deploy/prd/`
+  - `deploy/_doppler_deploy_common.sh`
+  - `deploy/doppler.yaml`
+  - `doppler.yaml`
+- New deploy files exist and are live:
+  - `deploy/chart_new/`
+  - `deploy/stg_new/values.yaml`
+  - `deploy/prd_new/values.yaml`
+  - `deploy/prd_ibw_new/values.yaml`
+
+Live ArgoCD:
+
+- `app-thesispf` stg source:
+  - repo `https://github.com/uzh-bf/thesis-platform.git`
+  - path `deploy/chart_new`
+  - value file `../stg_new/values.yaml`
+  - revision `b65cd32644a7690808b194ed1a61d10c9f9ca943`
+- `app-thesispf` prd source:
+  - path `deploy/chart_new`
+  - value file `../prd_new/values.yaml`
+  - revision `b65cd32644a7690808b194ed1a61d10c9f9ca943`
+- `app-thesispf-ibw` prd source:
+  - path `deploy/chart_new`
+  - value file `../prd_ibw_new/values.yaml`
+  - revision `b65cd32644a7690808b194ed1a61d10c9f9ca943`
+
+df-cloud:
+
+- `origin/stg` and `origin/prd` still say `path: deploy/${env}` for thesispf.
+- Live ArgoCD says `path: deploy/chart_new`.
+- Therefore df-cloud repo is stale relative to live state.
+- Live objects still show Pulumi as manager. Need desired-state fix in df-cloud, not live patch.
+- Current df-cloud checkout is dirty/unrelated. Use fresh worktree before edits.
+
+Infisical/ExternalSecrets:
+
+- Live thesispf ExternalSecrets are Ready in stg and prd.
+- Current ExternalSecret key list has no CleverReach keys.
+- Infisical CLI local status: unauthenticated.
+
+CleverReach:
+
+- DF DEV and DF PROD Power Platform accounts both authenticated to CleverReach.
+- Template `THESIS_PROPOSAL_V0` exists in both.
+- Thesis filter:
+  - id `521671`
+  - name `Thesen`
+  - group id `560174`
+  - group name `DF Community (Aktuelle Studierende)`
+
+Power Automate:
+
+- No flow JSON edits.
+- Old thesis CleverReach path must be disabled by env/config before app path is enabled, otherwise duplicate drafts possible.
+
+## Decisions
+
+Deployment path:
+
+- Keep `chart_new` and `_new` values because live ArgoCD already uses them.
+- Delete old deployment files instead of updating them.
+- Do not rename paths in this branch. Renaming would require live ArgoCD + df-cloud + GitHub workflow move in one bigger rollout.
+
+Runtime env name:
+
+- Replace app/chart use of `DOPPLER_CONFIG`.
+- New neutral env var: `THESIS_PLATFORM_ENV`.
+- Values: `dev`, `stg`, `prd`, `prd_ibw`.
+- App fallback: if `THESIS_PLATFORM_ENV` missing, use existing safe fallbacks from `NODE_ENV` + department. No `DOPPLER_CONFIG` fallback after cleanup unless verification shows a still-live dependency.
 
-Scope stays narrow:
+Infisical secret contract:
 
-- Keep Power Automate as proposal workflow owner for now: PDF persistence, `addProposal`, supervision assignment, supervisor confirmation email.
-- Do not edit Power Automate solution or flow JSON.
-- Move only CleverReach draft creation into app code.
-- Use prepared template `THESIS_PROPOSAL_V0`.
-- Send to the CleverReach filter for users who signed up for `theses` updates.
-- Add a short preheader with new information, not the title.
-
-## Current State
-
-App entrypoint:
-
-- `src/server/routers/_app.ts` has `submitProposalPublish`.
-- It posts proposal data to `PROPOSAL_PUBLISH_URL`.
-- Staging already has external-flow safety through `areExternalFlowsEnabled()`.
-
-Power Automate thesis proposal posting flow:
-
-- `solutions/UZHBFThesisPlatform/Workflows/UZHBFThesisPlatform-ThesisProposalPosting-F3E0B1EB-152A-EE11-BDF5-000D3A831DD0.json`
-- Flow creates `ProposalId` with `guid()`.
-- Flow calls app callbacks:
-  - `/api/addProposal`
-  - `/api/getResponsibleIdAndAddProposalSupervision`
-  - `/api/addAttachment`
-- Flow currently runs CleverReach child flow when its CleverReach env params are not `EMPTY`.
-- Current CleverReach config there uses `THESIS_POSTING_TEST`, old `{{...}}` placeholders, whole group `560174`, no preheader.
-
-Power Automate CleverReach child flow:
-
-- `solutions/UZHBFThesisPlatform/Workflows/UZHBFThesisPlatform-Cleverreach-3FA5D199-C377-F011-B4CC-00224874B350.json`
-- Fetches template HTML, applies replacements, creates draft through `https://rest.cleverreach.com/v3/mailings.json`.
-- Sends `receivers.groups`, not `receivers.filter`.
-- Sends HTML content only, no text fallback.
-
-Careers pattern to copy:
-
-- Fetch OAuth token with client credentials.
-- Find user template by name.
-- Fetch template HTML.
-- Render placeholders in app code.
-- Create draft mailing with HTML and text content.
-- Use `receivers.filter`, not group ID.
-- Do not fail main publish flow if CleverReach draft creation fails. Log and notify instead.
-
-## Key Design
-
-Keep proposal publish flow unchanged, then resolve the proposal ID from the app DB.
-
-Reason:
-
-- CleverReach template needs proposal link.
-- Flow currently generates `ProposalId` internally.
-- We do not edit Power Automate.
-- App cannot know the ID before the flow calls `/api/addProposal`.
-- Smallest app-only fix: after successful flow submission, start a background lookup for the newly persisted proposal and use that real DB ID for the CleverReach draft.
-
-Lookup key:
-
-```text
-title + summary + study level + language + topic area slug + time frame + responder + recent createdAt
-```
-
-App then creates the CleverReach draft with:
-
-```text
-{APP_URL}/{persistedProposal.id}
-```
-
-## Template Contract
-
-Target template: `THESIS_PROPOSAL_V0`
-
-Expected placeholders:
-
-```text
-[[PREHEADER]]
-[[PROPOSAL_TITLE]]
-[[PROPOSAL_SUMMARY]]
-[[PROPOSAL_SUPERVISOR]]
-[[PROPOSAL_RESPONSIBLE]]
-[[PROPOSAL_TYPE]]
-[[PROPOSAL_LANGUAGE]]
-[[PROPOSAL_TIMEFRAME]]
-[[PROPOSAL_AREA]]
-[[PROPOSAL_LINK]]
-[[DEPARTMENT_NAME]]
-```
-
-Preheader belongs near top of template, before visible content:
-
-```html
-<div
-  style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;"
->
-  [[PREHEADER]]
-</div>
-```
-
-If prepared template still uses `{{...}}`, either update template to `[[...]]` or make thesis renderer accept exact placeholder strings. Prefer `[[...]]` for parity with careers.
-
-## Preheader Rule
-
-Subject already contains title:
-
-```text
-New Thesis Available: {proposalTitle}
-```
-
-Preheader must add new info, stay short, and avoid title repetition.
-
-Preferred format:
-
-```text
-{studyLevel}, {topicArea}, {timeFrame}.
-```
-
-Example:
-
-```text
-Master thesis, Corporate Finance, available now.
-```
-
-Fallback order:
-
-1. Study level
-2. Topic area display name
-3. Time frame
-4. Supervisor display name or email only if one of the above is missing
-
-Hard cap: about 80 chars. Trim at field boundaries, not mid-word.
-
-## Segment Rule
-
-Use CleverReach filter ID for the thesis segment.
-
-New env var:
-
-```text
-CLEVERREACH_FILTER_THESES
-```
-
-Do not use `receiver_group_id`. Careers smoke showed `receivers.filter` is the stable API path.
-
-## Implementation Slices
-
-### Slice 1 - App Config And Client
-
-Add thesis-scoped CleverReach config:
-
-```text
-CLEVERREACH_CLIENT_ID
-CLEVERREACH_CLIENT_SECRET
-CLEVERREACH_SENDER_NAME
-CLEVERREACH_SENDER_EMAIL
-CLEVERREACH_MAILING_NAME_PREFIX
-CLEVERREACH_TEMPLATE_THESIS_PROPOSAL=THESIS_PROPOSAL_V0
-CLEVERREACH_SUBJECT_THESIS_PROPOSAL=New Thesis Available: {title}
-CLEVERREACH_FILTER_THESES
-CLEVERREACH_ADMIN_URL
-```
-
-Add API client under `src/lib/cleverreach/`:
-
-- `getAccessToken`
-- `fetchTemplateHtml`
-- `renderTemplate`
-- `createDraftMailing`
-
-Use HTML escaping for user-controlled replacement values.
-
-### Slice 2 - Thesis Draft Builder
-
-Add `src/lib/cleverreach/thesisProposal.ts`.
-
-Inputs:
-
-- proposal ID
-- proposal title
-- summary
-- study level
-- language list
-- time frame
-- topic area display name
-- supervisor/responsible names and emails
-- department name
-- proposal URL
-
-Outputs:
-
-- mailing name
-- subject
-- preheader
-- HTML replacements
-- text fallback
-- receiver filter ID
-
-Resolve better display values before rendering:
-
-- `fieldOfResearch` from form is currently slug-like. Use `TopicArea.name` where possible.
-- Supervisor and responsible are emails. Lookup `User.name` or `Responsible.name` where possible, fallback to email.
-
-### Slice 3 - Router Integration
-
-Update `submitProposalPublish`:
-
-- Keep Power Automate payload contract unchanged.
-- After successful Power Automate response, start a non-blocking proposal lookup in the app DB.
-- Once the proposal created by the flow is found, trigger CleverReach draft creation with the persisted proposal ID.
-- If CleverReach env is incomplete, skip with clear log.
-- If CleverReach call fails, log and keep proposal publish success.
-- Reuse staging guard: no external CleverReach draft in staging unless `STAGING_ENABLE_EXTERNAL_FLOWS=true`.
-
-### Slice 4 - Duplicate Prevention Without Flow Edits
-
-Prevent duplicate drafts.
-
-Preferred rollout path:
-
-- Keep existing Power Automate CleverReach env params `EMPTY`.
-- Enable app CleverReach env only after old flow-side CleverReach config is confirmed inactive.
-- Never have both old child flow and app API enabled.
-- Do not edit solution JSON.
-
-### Slice 5 - Deployment Env
-
-Add CleverReach env wiring to current deployment chart:
-
-- `deploy/chart/templates/secret.yaml`
-- `deploy/chart/values.yaml`
-- `deploy/stg/values-envsubst.yaml`
-- `deploy/prd/values-envsubst.yaml`
-
-Check whether `deploy/chart_new`, `deploy/stg_new`, `deploy/prd_new`, and `deploy/prd_ibw_new` are active or legacy before editing them.
-
-Secrets live in Doppler, not repo:
-
-- client ID
-- client secret
-- thesis filter ID
-- sender details if not already shared
-
-### Slice 6 - Tests And Smoke
-
-Automated checks:
-
-- Template rendering replaces every expected placeholder.
-- Preheader avoids title and stays short.
-- Receiver payload uses `filter`, not `groups`.
-- Missing env skips draft creation.
-- Staging guard skips draft creation unless external flows are enabled.
-
-Manual/live smoke:
-
-1. Staging env configured with thesis CleverReach filter.
-2. Old CleverReach child flow remains inactive through its existing env config.
-3. Submit one proposal publish request.
-4. Confirm one draft exists in CleverReach.
-5. Confirm template is `THESIS_PROPOSAL_V0`.
-6. Confirm subject includes title.
-7. Confirm preheader shows study level, topic area, and time frame.
-8. Confirm recipients match `theses` segment.
-9. Confirm no duplicate draft from Power Automate.
-
-## Open Questions
-
-- Actual CleverReach filter ID for `theses` segment.
-- Exact placeholder syntax already present in `THESIS_PROPOSAL_V0`.
-- Desired sender name/email. Old flow used `DF Community <df-community@mailing.uzh.ch>`.
-- Active deployment path resolved for this change: current stg/prd Helmfiles use `deploy/chart`; `chart_new` left untouched.
-- Whether app should send the existing management-inbox "draft ready" email after API draft creation, or rely on logs/CleverReach UI.
-
-## Progress
-
-- [x] Created worktree and branch.
-- [x] Mapped thesis publish router.
-- [x] Mapped Power Automate proposal and CleverReach child flows.
-- [x] Compared against careers CleverReach API pattern.
-- [x] Identified proposal ID/link seam.
-- [x] Slice 1 done: app config and CleverReach REST client. Verified with targeted `tsc` and Prettier check.
-- [x] Slice 2 done: thesis draft builder and fake-client verification script. Verified with `tsx`, targeted `tsc`, and Prettier check.
-- [x] Slice 3 done: router keeps flow payload unchanged, looks up the persisted proposal created by flow, enriches labels, and triggers non-blocking CleverReach draft creation after flow success. Verified with full `tsc`, `next lint`, and fake-client script.
-- [x] Slice 4 done: Power Automate solution edits removed. Duplicate prevention is an env/ops gate: old flow-side CleverReach config must remain inactive before app API env is enabled.
-- [x] Slice 5 done: current Helm chart gets CleverReach env wiring; prod IBW release overrides required CleverReach values to empty. Verified stg/prd Helm renders and IBW empty override render.
-- [x] Slice 6 done: final local verification, build, Helm render checks, JSON parse, whitespace check, and local security review. No high-confidence security findings.
-- [ ] Confirm template placeholders and thesis filter ID.
-- [x] Implement app CleverReach client/config.
-- [x] Integrate with `submitProposalPublish`.
-- [x] Avoid Power Automate edits.
-- [x] Wire staging/production env.
-- [x] Run local tests.
-- [ ] Run staging smoke after `CLEVERREACH_FILTER_THESES` exists in stg and `THESIS_PROPOSAL_V0` placeholders are confirmed.
-
-## Final Verification
-
-- `./node_modules/.bin/prisma generate`
-- `./node_modules/.bin/tsc --noEmit --incremental false --pretty false`
-- `./node_modules/.bin/next lint`
-- `env NEXT_TELEMETRY_DISABLED=1 ./node_modules/.bin/next build`
-- `./node_modules/.bin/tsx scripts/verify-cleverreach-thesis.ts`
-- `helm template thesis-platform deploy/chart -f deploy/stg/values-envsubst.yaml`
-- `helm template thesis-platform deploy/chart -f deploy/prd/values-envsubst.yaml`
-- `helm template thesis-platform deploy/chart -f deploy/prd/values-envsubst.yaml --set-string cleverreach.clientId= --set-string cleverreach.clientSecret= --set-string cleverreach.filterTheses=`
-- `git diff --name-status origin/main...HEAD` to confirm no `solutions/` files are changed.
-- `git diff --check origin/main...HEAD`
-
-## Next Steps
-
-- Add stg/prd Doppler values for CleverReach:
+- Add only required CleverReach keys to thesispf ExternalSecret:
   - `CLEVERREACH_CLIENT_ID`
   - `CLEVERREACH_CLIENT_SECRET`
   - `CLEVERREACH_FILTER_THESES`
-  - optional sender/template/subject/admin URL overrides
-- Confirm old Power Automate CleverReach env params remain `EMPTY` before enabling app CleverReach env, so there is no duplicate draft.
-- Run one stg proposal publish smoke with `STAGING_ENABLE_EXTERNAL_FLOWS=true`.
-- Confirm one draft in CleverReach, template `THESIS_PROPOSAL_V0`, preheader metadata, and thesis-segment recipient count.
+- Do not add optional keys unless values are present in Infisical:
+  - `CLEVERREACH_SENDER_NAME`
+  - `CLEVERREACH_SENDER_EMAIL`
+  - `CLEVERREACH_MAILING_NAME_PREFIX`
+  - `CLEVERREACH_TEMPLATE_THESIS_PROPOSAL`
+  - `CLEVERREACH_SUBJECT_THESIS_PROPOSAL`
+  - `CLEVERREACH_ADMIN_URL`
+- Reason: missing optional Infisical keys would break ESO sync. App already has safe defaults.
+
+IBW:
+
+- Do not add CleverReach keys to `thesispf-ibw` ExternalSecret.
+- App sees missing required CR env -> skips CleverReach.
+
+Power Automate:
+
+- Extract old CleverReach credentials first.
+- Then disable old DF Power Automate CleverReach path by setting old CR env vars to `EMPTY` or equivalent ops gate.
+- Keep other Power Automate email/workflow behavior.
+
+## Slice 0 - Rebase And Remove Stale Deploy Edits
+
+Do:
+
+- Rebase/merge branch on current `origin/main`.
+- Keep app CleverReach implementation files.
+- Remove prior edits to old deploy files:
+  - `deploy/chart/templates/secret.yaml`
+  - `deploy/chart/values.yaml`
+  - `deploy/stg/values-envsubst.yaml`
+  - `deploy/prd/values-envsubst.yaml`
+  - `deploy/prd/helmfile.yaml`
+- Update this plan if conflict resolution changes file list.
+
+Check:
+
+- `git status --short --branch`
+- `git diff --name-status origin/main...HEAD`
+- No `solutions/` changes.
+
+Commit:
+
+- `docs(project): replan thesis CleverReach Infisical rollout`
+
+## Slice 1 - App CleverReach Path
+
+Do:
+
+- Keep/adjust app client:
+  - `src/lib/cleverreach/client.ts`
+  - `src/lib/cleverreach/config.ts`
+  - `src/lib/cleverreach/thesisProposal.ts`
+- Keep router integration in `src/server/routers/_app.ts`.
+- Required env only:
+  - `CLEVERREACH_CLIENT_ID`
+  - `CLEVERREACH_CLIENT_SECRET`
+  - `CLEVERREACH_FILTER_THESES`
+- Defaults in code:
+  - sender `DF Community <df-community@mailing.uzh.ch>`
+  - template `THESIS_PROPOSAL_V0`
+  - subject `New Thesis Available: {title}`
+  - admin URL if needed
+- Preheader:
+  - no title
+  - short
+  - prefers `{studyLevel}, {topicArea}, {timeFrame}.`
+- Staging guard:
+  - no external CleverReach draft unless `STAGING_ENABLE_EXTERNAL_FLOWS=true`.
+
+Check:
+
+- fake-client script creates payload with `receivers.filter`, not `groups`.
+- preheader under 80 chars, no title.
+- missing env skips draft.
+- `pnpm exec tsc --noEmit --incremental false --pretty false`
+- `pnpm exec next lint`
+- `pnpm test` if repo has test script; otherwise record "no test script".
+
+Commit:
+
+- `feat(cleverreach): create thesis proposal drafts from app`
+
+## Slice 2 - Remove Doppler Runtime Naming
+
+Do:
+
+- Replace `DOPPLER_CONFIG` usage with `THESIS_PLATFORM_ENV`.
+- Files likely:
+  - `src/server/routers/_app.ts`
+  - `src/lib/authOptions.ts`
+  - `scripts/staging-reset-seed.ts`
+  - `scripts/staging-db-backup.sh`
+  - `docs/staging-mysql-reset.md`
+  - `deploy/chart_new/templates/deployment.yaml`
+- Keep value key `.Values.env`; only emitted env var name changes.
+
+Check:
+
+- `rg -n "DOPPLER_CONFIG|doppler" src scripts docs deploy/chart_new package.json README.md`
+- Expected after slice: only historical changelog or removed docs, no active runtime refs.
+- `helm template thesis-platform deploy/chart_new -f deploy/stg_new/values.yaml`
+- `helm template thesis-platform deploy/chart_new -f deploy/prd_new/values.yaml`
+- `helm template thesis-platform deploy/chart_new -f deploy/prd_ibw_new/values.yaml`
+- `pnpm exec tsc --noEmit --incremental false --pretty false`
+- `pnpm test` if repo has test script; otherwise record "no test script".
+
+Commit:
+
+- `refactor(config): replace Doppler runtime environment marker`
+
+## Slice 3 - Remove Old Deployment Artifacts
+
+Do:
+
+- Delete:
+  - `deploy/chart/`
+  - `deploy/stg/`
+  - `deploy/prd/`
+  - `deploy/_doppler_deploy_common.sh`
+  - `deploy/doppler.yaml`
+  - `doppler.yaml`
+- Keep:
+  - `deploy/chart_new/`
+  - `deploy/stg_new/values.yaml`
+  - `deploy/prd_new/values.yaml`
+  - `deploy/prd_ibw_new/values.yaml`
+- Audit workflows:
+  - `.github/workflows/docker-image-stg-arm.yml`
+  - `.github/workflows/docker-image-stg.yml`
+  - `.github/workflows/docker-image-prd.yml`
+- Update README/deploy docs that still instruct Doppler/envsubst deploy.
+- Update `docs/prod-mysql-to-postgres.md` stale envsubst note or remove if obsolete.
+- State current deploy model clearly:
+  - no local deploy scripts.
+  - ArgoCD pulls repo state.
+  - `deploy/chart_new` and `_new` values are the only deploy artifacts kept.
+
+Check:
+
+- `find deploy -maxdepth 3 -type f | sort`
+- no old deploy files.
+- workflows still update `_new` values.
+- `helm template` for stg/prd/prd_ibw from `chart_new`.
+- `git diff --check origin/main...HEAD`
+
+Commit:
+
+- `deploy(thesis): remove legacy Doppler helm deployment`
+
+## Slice 4 - Remove Doppler Scripts And Docs
+
+Do:
+
+- Remove old package scripts that are only Doppler wrappers.
+- Do not mechanically translate every old Doppler wrapper to Infisical.
+- Keep plain scripts that do not need secret injection:
+  - `build`
+  - `lint`
+  - `prisma:generate`
+  - release scripts
+- Add only minimal Infisical-backed commands that are actively useful for local dev/admin:
+  - likely `dev`
+  - maybe `dev:ibw`
+  - maybe one generic `script:<env>` helper if repo maintainers still need it
+- Remove Doppler setup docs and replace with short Infisical note.
+- Confirm whether repo should commit `.infisical.json`.
+  - If team convention commits it: add project config without secrets.
+  - If not: document `infisical login` / project selection in README only.
+
+Check:
+
+- `rg -n "doppler|DOPPLER" package.json README.md docs scripts deploy src`
+- Expected: no active Doppler scripts/docs/runtime refs.
+- `pnpm run prisma:generate`
+- one minimal Infisical-backed command if local auth exists; otherwise document not run because local CLI unauthenticated.
+
+Commit:
+
+- `chore(config): remove Doppler scripts`
+
+## Slice 5 - df-cloud Desired State
+
+Worktree:
+
+- Use fresh df-cloud worktree under `~/.codex/worktrees/thesispf-infisical/df-cloud`.
+- Do not edit dirty existing checkout.
+
+Do:
+
+- Update `src/apps/thesispf/functions.ts`.
+- ArgoCD app profile must match live:
+  - `path: deploy/chart_new`
+  - stg value file `../stg_new/values.yaml`
+  - prd value file `../prd_new/values.yaml`
+  - prd_ibw value file `../prd_ibw_new/values.yaml`
+- ExternalSecrets:
+  - base secrets stay shared.
+  - add CleverReach required secrets only for `thesispf`.
+  - do not add them to `thesispf-ibw`.
+- Keep Infisical project slug `thesis-platform`.
+
+Check:
+
+- `pnpm exec tsc --noEmit`
+- no unrelated dirty files staged.
+- CI/Pulumi preview via GitLab, not local apply.
+- Preview shows ArgoCD source path reconciliation and CleverReach ExternalSecret additions only.
+
+Commit:
+
+- `deploy(thesispf): align Infisical ArgoCD desired state`
+
+## Slice 6 - Infisical Values And Old Flow Gate
+
+Do:
+
+- Ensure staging guard secret exists in Infisical stg:
+  - `STAGING_ENABLE_EXTERNAL_FLOWS=false` by default.
+  - set `true` only for controlled smoke.
+  - reset to `false` after smoke.
+- Populate Infisical stg:
+  - `CLEVERREACH_CLIENT_ID`: from DF Thesis DEV Power Platform env
+  - `CLEVERREACH_CLIENT_SECRET`: from DF Thesis DEV Power Platform env
+  - `CLEVERREACH_FILTER_THESES`: `521671`
+- Populate Infisical prd:
+  - `CLEVERREACH_CLIENT_ID`: from DF Thesis PROD Power Platform env
+  - `CLEVERREACH_CLIENT_SECRET`: from DF Thesis PROD Power Platform env
+  - `CLEVERREACH_FILTER_THESES`: `521671`
+- Leave `prd-ibw` without CleverReach keys unless explicitly requested.
+- Staging old-flow gate:
+  - disable old DF DEV Power Automate CleverReach path before stg app smoke if that env is used for stg.
+  - keep other Power Automate behavior.
+- Production old-flow gate:
+  - do not disable old DF PROD Power Automate CleverReach path in this slice.
+  - disable it during prod cutover only, immediately before app pods are restarted/synced with Infisical CleverReach env.
+  - reason: avoid a gap where neither old flow nor app creates drafts.
+  - do not alter flow logic.
+
+Check:
+
+- Secret presence only. Never print values.
+- ExternalSecrets Ready after df-cloud rollout.
+- App pods contain keys by name only if needed.
+- Staging old Power Automate CR env gate inactive before stg smoke.
+- Production old Power Automate CR env gate still active until prod cutover.
+
+Commit:
+
+- no repo commit for secret values.
+
+## Slice 7 - Staging Smoke
+
+Do:
+
+- Deploy thesis app branch to stg.
+- Deploy df-cloud stg companion MR first if needed.
+- Set `STAGING_ENABLE_EXTERNAL_FLOWS=true` only for controlled smoke.
+- Restart/sync stg app pods if needed so env secret changes are loaded.
+- Submit one thesis proposal publish.
+- Confirm:
+  - proposal still created by Power Automate.
+  - exactly one CleverReach draft appears.
+  - draft uses template `THESIS_PROPOSAL_V0`.
+  - subject contains title.
+  - preheader contains study level/topic/time frame, not title.
+  - receivers use filter `521671`.
+  - old Power Automate CR path did not create duplicate.
+- Reset `STAGING_ENABLE_EXTERNAL_FLOWS=false`.
+- Restart/sync stg app pods if needed so reset is loaded.
+
+Check:
+
+- app logs around publish.
+- CleverReach draft metadata.
+- ArgoCD app Healthy/Synced.
+- ExternalSecret Ready.
+
+Commit:
+
+- plan progress update only if smoke changes plan evidence.
+
+## Slice 8 - Final Review, MR, Rollout
+
+Do:
+
+- Run final thesis verification.
+- Run final df-cloud verification.
+- Independent final branch review.
+- Final security review.
+- Use `$df-mr-description-writer` for MR descriptions.
+- Target normal flow:
+  - thesis-platform MR to `main` after stg validation.
+  - df-cloud MR to `stg`; then promote to `prd` after stg evidence.
+- Production cutover order:
+  1. Confirm app code and df-cloud prd desired state are ready to sync.
+  2. Confirm Infisical prd CleverReach keys exist, but current pods have not loaded them unless intentionally restarted.
+  3. Disable old DF PROD Power Automate CleverReach env gate.
+  4. Sync/restart app pods so app-side CleverReach env is loaded.
+  5. Smoke one prd publish or controlled draft path.
+  6. If app path fails, re-enable old Power Automate gate or roll back app env before more publishes.
+
+Check:
+
+- `git diff --name-status <target>...HEAD`
+- `git diff --check <target>...HEAD`
+- CI green.
+- ArgoCD rollout monitored.
+- prd smoke confirms one draft only.
+- No draft-creation gap longer than cutover window.
+
+Commit:
+
+- final plan progress update if needed.
+
+## Risks
+
+- df-cloud repo drift: live ArgoCD already differs from `origin/stg`/`origin/prd`. Fix desired state before applying.
+- Duplicate drafts: old Power Automate CleverReach env must be disabled before app env enabled.
+- Optional CR envs in ExternalSecrets can break ESO if absent. Keep required keys only.
+- `THESIS_PLATFORM_ENV` rename touches staging safety. Verify stg guard before smoke.
+- Removing old deploy folders removes dead deploy artifacts only. Live deploy is ArgoCD repo pull.
+- Infisical CLI local unauthenticated. Secret writes may need browser/API/session auth.
+- EnvFrom secrets are not hot-reloaded into running pods. Any Infisical key or staging-flag change needs pod restart/sync before app behavior changes.
+- Production old-flow disable must be sequenced with app pod restart to avoid draft gap.
+
+## Progress
+
+- [x] Rechecked thesis `origin/main`.
+- [x] Rechecked df-cloud `origin/stg` and `origin/prd`.
+- [x] Verified live ArgoCD thesispf source path and value files.
+- [x] Verified thesispf ExternalSecrets Ready in stg/prd.
+- [x] Verified current ExternalSecrets lack CleverReach keys.
+- [x] Queried CleverReach through Power Platform credentials without printing secrets.
+- [x] Found thesis filter id `521671`.
+- [x] Found template `THESIS_PROPOSAL_V0`.
+- [x] Reviewed plan with `agy` / Gemini 3.5 Flash High.
+- [x] Accepted `agy` findings: staging flag lifecycle, prod cutover sequencing, test-script caveat.
+- [ ] Rebase thesis branch on `origin/main`.
+- [ ] Rework branch off old deploy files.
+- [ ] Remove Doppler/envsubst deployment.
+- [ ] Add `THESIS_PLATFORM_ENV`.
+- [ ] Add df-cloud companion branch.
+- [ ] Populate Infisical values.
+- [ ] Disable old Power Automate CleverReach gate.
+- [ ] Run stg smoke.
+- [ ] Promote prd.
+
+## Next Step
+
+Start Slice 0.
+
+First command:
+
+```bash
+git status --short --branch
+```
+
+Then rebase/merge `origin/main`, resolve conflicts, and keep only app-code changes plus this revised plan.
