@@ -455,8 +455,11 @@ Commit:
 - [x] Found template `THESIS_PROPOSAL_V0`.
 - [x] Reviewed plan with `agy` / Gemini 3.5 Flash High.
 - [x] Accepted `agy` findings: staging flag lifecycle, prod cutover sequencing, test-script caveat.
-- [ ] Rebase thesis branch on `origin/main`.
-- [ ] Rework branch off old deploy files.
+- [x] Committed reviewed plan: `docs(project): replan thesis CleverReach Infisical rollout`.
+- [x] Rebased thesis branch on `origin/main` at `b65cd32`.
+- [x] Restored stale old-deploy CleverReach edits from `origin/main`; old deploy files will be deleted later in Slice 3.
+- [x] Slice 0 review done: commit deploy reverts plus plan progress; no critical findings.
+- [x] Slice 0 simplification done: no smaller cleanup; keep deletion for Slice 3.
 - [ ] Remove Doppler/envsubst deployment.
 - [ ] Add `THESIS_PLATFORM_ENV`.
 - [ ] Add df-cloud companion branch.
@@ -467,7 +470,7 @@ Commit:
 
 ## Next Step
 
-Start Slice 0.
+Start Slice 1 after Slice 0 commit.
 
 First command:
 

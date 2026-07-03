@@ -24,11 +24,6 @@ releases:
       - image:
           repository: ghcr.io/uzh-bf/thesis-platform-ibw
 
-        cleverreach:
-          clientId: ''
-          clientSecret: ''
-          filterTheses: ''
-
         ingress:
           hosts:
             - host: theses-ibw.prd.env.df-app.ch

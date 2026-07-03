@@ -20,17 +20,6 @@ flows:
   faqUrlStudent: '$FAQ_URL_STUDENT'
   faqUrlSupervisor: '$FAQ_URL_SUPERVISOR'
 
-cleverreach:
-  clientId: '$CLEVERREACH_CLIENT_ID'
-  clientSecret: '$CLEVERREACH_CLIENT_SECRET'
-  senderName: '$CLEVERREACH_SENDER_NAME'
-  senderEmail: '$CLEVERREACH_SENDER_EMAIL'
-  mailingNamePrefix: '$CLEVERREACH_MAILING_NAME_PREFIX'
-  templateThesisProposal: '$CLEVERREACH_TEMPLATE_THESIS_PROPOSAL'
-  subjectThesisProposal: '$CLEVERREACH_SUBJECT_THESIS_PROPOSAL'
-  filterTheses: '$CLEVERREACH_FILTER_THESES'
-  adminUrl: '$CLEVERREACH_ADMIN_URL'
-
 azureAd:
   clientId: '$AZURE_AD_CLIENT_ID'
   clientSecret: '$AZURE_AD_CLIENT_SECRET'
