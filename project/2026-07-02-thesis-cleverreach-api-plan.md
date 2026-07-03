@@ -124,7 +124,6 @@ Infisical secret contract:
   - `CLEVERREACH_MAILING_NAME_PREFIX`
   - `CLEVERREACH_TEMPLATE_THESIS_PROPOSAL`
   - `CLEVERREACH_SUBJECT_THESIS_PROPOSAL`
-  - `CLEVERREACH_ADMIN_URL`
 - Reason: missing optional Infisical keys would break ESO sync. App already has safe defaults.
 
 IBW:
@@ -179,7 +178,6 @@ Do:
   - sender `DF Community <df-community@mailing.uzh.ch>`
   - template `THESIS_PROPOSAL_V0`
   - subject `New Thesis Available: {title}`
-  - admin URL if needed
 - Preheader:
   - no title
   - short
@@ -460,6 +458,23 @@ Commit:
 - [x] Restored stale old-deploy CleverReach edits from `origin/main`; old deploy files will be deleted later in Slice 3.
 - [x] Slice 0 review done: commit deploy reverts plus plan progress; no critical findings.
 - [x] Slice 0 simplification done: no smaller cleanup; keep deletion for Slice 3.
+- [x] Slice 1 app CleverReach path inspected:
+  - required envs only: `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, `CLEVERREACH_FILTER_THESES`.
+  - receiver payload uses `receivers.filter`.
+  - preheader builder avoids title and stays under 80 chars in verifier.
+  - staging guard reuses `STAGING_ENABLE_EXTERNAL_FLOWS`.
+- [x] Slice 1 verification:
+  - `./node_modules/.bin/tsx scripts/verify-cleverreach-thesis.ts`
+  - `./node_modules/.bin/tsc --noEmit --incremental false --pretty false`
+  - `./node_modules/.bin/next lint`
+  - no `pnpm test` script exists.
+  - `pnpm exec ...` blocked before command execution by local pnpm ignored-build policy; direct binaries used instead.
+- [x] Slice 1 review done: no critical or important correctness findings.
+- [x] Slice 1 simplification accepted:
+  - removed unused `CLEVERREACH_ADMIN_URL` / `adminUrl`.
+  - added verifier assertion for actual CleverReach HTTP body using `receivers.filter`.
+  - kept DB polling as temporary app-only bridge because Power Automate flow JSON is out of scope.
+- [x] Slice 1 final delta review done: no critical, important, or minor findings.
 - [ ] Remove Doppler/envsubst deployment.
 - [ ] Add `THESIS_PLATFORM_ENV`.
 - [ ] Add df-cloud companion branch.
@@ -470,7 +485,7 @@ Commit:
 
 ## Next Step
 
-Start Slice 1 after Slice 0 commit.
+Commit Slice 1 validation and simplification, then start Slice 2.
 
 First command:
 

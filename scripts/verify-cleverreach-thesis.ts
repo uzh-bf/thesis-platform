@@ -1,5 +1,6 @@
 import * as assert from 'node:assert/strict'
 
+import { createDraftMailing } from '../src/lib/cleverreach/client'
 import {
   buildThesisProposalMailingParams,
   buildThesisProposalPreheader,
@@ -100,6 +101,51 @@ async function main() {
   assert.match(createDraftPayload.html, /&lt;b&gt;Risk &amp; return&lt;\/b&gt;/)
   assert.match(createDraftPayload.html, /https:\/\/theses\.df\.uzh\.ch/)
   assert.match(createDraftPayload.text, /Study level: Master Thesis/)
+
+  const originalFetch = globalThis.fetch
+  const requests: { url: string; init?: RequestInit }[] = []
+
+  globalThis.fetch = (async (url, init) => {
+    requests.push({ url: String(url), init })
+    return new Response(JSON.stringify({ id: 'draft-id' }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 200,
+    })
+  }) as typeof fetch
+
+  try {
+    const mailingId = await createDraftMailing({
+      token: 'token',
+      name: 'name',
+      subject: 'subject',
+      senderName: 'sender',
+      senderEmail: 'sender@example.com',
+      html: '<p>Hello</p>',
+      text: 'Hello',
+      filterId: 'filter-theses',
+    })
+
+    assert.equal(mailingId, 'draft-id')
+    assert.equal(requests.length, 1)
+
+    const request = requests[0]
+    assert.match(request.url, /\/v3\/mailings\.json\?token=/)
+    assert.equal(request.init?.method, 'POST')
+
+    const body = JSON.parse(String(request.init?.body)) as {
+      receivers?: unknown
+      content?: { type?: string; html?: string; text?: string }
+    }
+
+    assert.deepEqual(body.receivers, { filter: 'filter-theses' })
+    assert.deepEqual(body.content, {
+      type: 'html',
+      html: '<p>Hello</p>',
+      text: 'Hello',
+    })
+  } finally {
+    globalThis.fetch = originalFetch
+  }
 
   console.log('CleverReach thesis proposal builder checks passed.')
 }

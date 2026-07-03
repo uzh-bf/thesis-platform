@@ -7,7 +7,6 @@ export interface CleverReachConfig {
   templateName: string
   subjectTemplate: string
   filterId: string
-  adminUrl: string
 }
 
 export type CleverReachConfigResult =
@@ -15,7 +14,6 @@ export type CleverReachConfigResult =
   | { ok: false; missing: string[] }
 
 const CLEVERREACH_DEFAULTS = {
-  adminUrl: 'https://eu2.cleverreach.com/admin',
   mailingNamePrefix: 'THESIS_PROPOSAL',
   senderEmail: 'df-community@mailing.uzh.ch',
   senderName: 'DF Community',
@@ -59,8 +57,6 @@ export function resolveThesisProposalCleverReachConfig(
       clientId,
       clientSecret,
       filterId,
-      adminUrl:
-        envValue(env, 'CLEVERREACH_ADMIN_URL') ?? CLEVERREACH_DEFAULTS.adminUrl,
       mailingNamePrefix:
         envValue(env, 'CLEVERREACH_MAILING_NAME_PREFIX') ??
         CLEVERREACH_DEFAULTS.mailingNamePrefix,
