@@ -557,10 +557,40 @@ Commit:
   - Slice 5 correctness review: `DONE`, no findings.
   - Slice 5 simplification review: inlined value file path and final delta `DONE`, no findings.
 - [ ] Populate Infisical values.
+  - Slice 6 status: blocked on write access.
+  - Infisical servers:
+    - stg: `infisical/infisical:v0.146.0-postgres`
+    - prd: `infisical/infisical:v0.146.0-postgres`
+  - API compatibility:
+    - `/api/v4/secrets` returns 404 on this self-hosted version.
+    - `/api/v3/secrets/raw` is the compatible route.
+    - read path uses `workspaceSlug=thesis-platform`.
+    - write path expects `projectSlug=thesis-platform`.
+  - Current access:
+    - local Infisical CLI profile has invalid token format.
+    - Azure CLI user lacks list permission on `kv-stg-thesispf-8dh3u` and `kv-prd-thesispf-LxhJG`.
+    - AKS SecretStore machine identities validate and can read but are `ReadOnly`; creating `STAGING_ENABLE_EXTERNAL_FLOWS=false` returned 403.
+  - Presence checks, values not printed:
+    - stg Infisical has `APP_URL`.
+    - stg Infisical lacks `STAGING_ENABLE_EXTERNAL_FLOWS`, `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, `CLEVERREACH_FILTER_THESES`.
+    - prd Infisical has `APP_URL`.
+    - prd Infisical lacks `STAGING_ENABLE_EXTERNAL_FLOWS`, `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, `CLEVERREACH_FILTER_THESES`.
+  - Needed unblock:
+    - Infisical admin/user token, or UI write access, or temporary write-capable machine identity for `thesis-platform`.
 - [ ] Disable old Power Automate CleverReach gate.
+  - Slice 6 mapping done; no flow disabled yet because Infisical app-side keys are not present.
+  - DEV and PROD both have populated value rows for:
+    - `uzhbf_thesisplatform_cleverreach_client_id_env_var`
+    - `uzhbf_thesisplatform_cleverreach_client_secret_env_var`
+  - DEV and PROD both have a separate activated modern flow:
+    - `UZH BF Thesis Platform - Cleverreach`
+  - Recommended gate for stg smoke/prod cutover:
+    - turn off only `UZH BF Thesis Platform - Cleverreach`.
+    - leave proposal posting/application/email flows active.
+    - do not clear Power Platform env vars unless we have a value backup and rollback path.
 - [ ] Run stg smoke.
 - [ ] Promote prd.
 
 ## Next Step
 
-Start Slice 5: create the df-cloud companion worktree and align desired ArgoCD/ExternalSecret state.
+Unblock Slice 6 by providing an Infisical write path for project `thesis-platform` in stg and prd. Then create the missing keys, keep staging external flows disabled by default, and only disable the old DEV CleverReach flow immediately before controlled stg smoke.
