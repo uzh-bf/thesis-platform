@@ -4,13 +4,13 @@ Purpose: reset the staging MySQL database to safe dummy data for workflow testin
 
 ## Email Safety
 
-Staging external flow calls are blocked by default when `DOPPLER_CONFIG=stg`.
+Staging external flow calls are blocked by default when `THESIS_PLATFORM_ENV=stg`.
 
 Set these only when deliberately testing flows:
 
 - `STAGING_ENABLE_EXTERNAL_FLOWS=true`: allows Power Automate flow calls in staging.
 - `STAGING_EMAIL_REDIRECT_TO=address@example.com`: redirects app-originated notification emails to test recipients.
-- `STAGING_GRANT_ALL_ADMINS=true`: with `DOPPLER_CONFIG=stg`, upgrades every staging login to `DEVELOPER` with `ADMIN` rights.
+- `STAGING_GRANT_ALL_ADMINS=true`: with `THESIS_PLATFORM_ENV=stg`, upgrades every staging login to `DEVELOPER` with `ADMIN` rights.
 - `STAGING_REAL_LOGIN_EMAILS=user@uzh.ch`: optional comma-separated real login users to pre-create as staging admins during a reset.
 
 Only staging values set `STAGING_GRANT_ALL_ADMINS=true`; production values leave it empty. Dummy workflow data uses reserved `example.com` recipients. Real login emails are only allowed in `User.email`, not in workflow recipient fields. Reset tooling also refuses targets whose database URL host or database name looks production-like (`prod` or `prd`).

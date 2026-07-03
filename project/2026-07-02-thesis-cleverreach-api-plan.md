@@ -214,8 +214,10 @@ Do:
 
 Check:
 
-- `rg -n "DOPPLER_CONFIG|doppler" src scripts docs deploy/chart_new package.json README.md`
-- Expected after slice: only historical changelog or removed docs, no active runtime refs.
+- `rg -n "DOPPLER_CONFIG" src scripts docs deploy/chart_new`
+- `rg -n "doppler|Doppler" src scripts deploy/chart_new docs/staging-mysql-reset.md`
+- Expected after slice: no active runtime refs. `package.json`, `README.md`, and old deploy docs are cleaned in Slice 4.
+- Existing staging package commands set `THESIS_PLATFORM_ENV=stg` until Slice 4 removes Doppler wrapper scripts.
 - `helm template thesis-platform deploy/chart_new -f deploy/stg_new/values.yaml`
 - `helm template thesis-platform deploy/chart_new -f deploy/prd_new/values.yaml`
 - `helm template thesis-platform deploy/chart_new -f deploy/prd_ibw_new/values.yaml`
@@ -475,8 +477,27 @@ Commit:
   - added verifier assertion for actual CleverReach HTTP body using `receivers.filter`.
   - kept DB polling as temporary app-only bridge because Power Automate flow JSON is out of scope.
 - [x] Slice 1 final delta review done: no critical, important, or minor findings.
+- [x] Slice 2 done:
+  - replaced active runtime `DOPPLER_CONFIG` marker with `THESIS_PLATFORM_ENV`.
+  - kept `.Values.env` as the Helm values key.
+  - bridged existing staging package commands with `THESIS_PLATFORM_ENV=stg` until Slice 4 removes Doppler wrapper scripts.
+  - removed inert prod/prd_ibw `STAGING_GRANT_ALL_ADMINS` manifest output.
+  - verification:
+    - `rg -n "DOPPLER_CONFIG" src scripts docs deploy/chart_new` returned no matches.
+    - `rg -n "doppler|Doppler" src scripts deploy/chart_new docs/staging-mysql-reset.md` returned no matches.
+    - `env THESIS_PLATFORM_ENV=stg bash scripts/staging-db-backup.sh` passed the env guard and stopped at expected missing `DATABASE_URL` guard.
+    - `helm template thesis-platform deploy/chart_new -f deploy/stg_new/values.yaml`
+    - `helm template thesis-platform deploy/chart_new -f deploy/prd_new/values.yaml`
+    - `helm template thesis-platform deploy/chart_new -f deploy/prd_ibw_new/values.yaml`
+    - rendered env check: stg emits `THESIS_PLATFORM_ENV=stg` and `STAGING_GRANT_ALL_ADMINS`; prd/prd_ibw emit `THESIS_PLATFORM_ENV` only.
+    - `./node_modules/.bin/tsc --noEmit --incremental false --pretty false`
+    - `./node_modules/.bin/next lint`
+    - `./node_modules/.bin/tsx scripts/verify-cleverreach-thesis.ts`
+    - `git diff --check`
+  - Slice 2 correctness review: initial Important package bridge finding resolved; final delta `DONE`, no findings.
+  - Slice 2 simplification review: final delta `DONE`, no findings.
 - [ ] Remove Doppler/envsubst deployment.
-- [ ] Add `THESIS_PLATFORM_ENV`.
+- [x] Add `THESIS_PLATFORM_ENV`.
 - [ ] Add df-cloud companion branch.
 - [ ] Populate Infisical values.
 - [ ] Disable old Power Automate CleverReach gate.
@@ -485,12 +506,4 @@ Commit:
 
 ## Next Step
 
-Commit Slice 1 validation and simplification, then start Slice 2.
-
-First command:
-
-```bash
-git status --short --branch
-```
-
-Then rebase/merge `origin/main`, resolve conflicts, and keep only app-code changes plus this revised plan.
+Start Slice 3: remove old deployment artifacts and stale deploy docs, then verify `chart_new` renders for stg/prd/prd_ibw.

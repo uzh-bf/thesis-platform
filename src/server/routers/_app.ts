@@ -154,12 +154,12 @@ const hasNotificationStateChanged = (oldState: unknown, newState: unknown) =>
   formatNotificationState(oldState) !== formatNotificationState(newState)
 
 const getNotificationEnvironment = (): NotificationEnvironment => {
-  const dopplerConfig = (process.env.DOPPLER_CONFIG ?? '').toLowerCase()
+  const thesisPlatformEnv = (process.env.THESIS_PLATFORM_ENV ?? '').toLowerCase()
 
-  if (dopplerConfig === 'prd_ibw') return 'PRD_IBW'
-  if (dopplerConfig === 'prd') return 'PROD'
-  if (dopplerConfig === 'stg') return 'STG'
-  if (dopplerConfig === 'dev') return 'DEV'
+  if (thesisPlatformEnv === 'prd_ibw') return 'PRD_IBW'
+  if (thesisPlatformEnv === 'prd') return 'PROD'
+  if (thesisPlatformEnv === 'stg') return 'STG'
+  if (thesisPlatformEnv === 'dev') return 'DEV'
 
   if (process.env.NODE_ENV === 'production') {
     const department = (process.env.NEXT_PUBLIC_DEPARTMENT_NAME ?? '').toUpperCase()

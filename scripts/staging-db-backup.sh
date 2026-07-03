@@ -7,8 +7,8 @@ mysql_bin="${MYSQL_BIN:-mysql}"
 mysqldump_bin="${MYSQLDUMP_BIN:-mysqldump}"
 node_bin="${NODE_BIN:-node}"
 
-if [[ "${DOPPLER_CONFIG:-}" != "stg" ]]; then
-  echo "Refusing backup: DOPPLER_CONFIG must be stg." >&2
+if [[ "${THESIS_PLATFORM_ENV:-}" != "stg" ]]; then
+  echo "Refusing backup: THESIS_PLATFORM_ENV must be stg." >&2
   exit 1
 fi
 
