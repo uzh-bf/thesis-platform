@@ -107,9 +107,9 @@ The execute mode requires `--confirm-prod-migration=MYSQL_TO_POSTGRES_PRD`.
 
 ## Deploy App
 
-Production runtime must receive the PostgreSQL URL as `DATABASE_URL`.
+Production runtime must receive the PostgreSQL URL as `DATABASE_URL` through the Infisical-backed Kubernetes secret.
 
-Current `deploy/prd/values-envsubst.yaml` still reads `$DATABASE_URL` from the deploy environment. Either sync the Infisical PostgreSQL URL into the deploy environment before Helm runs, or switch deployment to a Kubernetes secret that already contains the Infisical value.
+Deployment is now ArgoCD repo pull from `deploy/chart_new` with `deploy/prd_new/values.yaml` or `deploy/prd_ibw_new/values.yaml`. Do not use local Helmfile/envsubst deployment scripts. After changing Infisical values, confirm the ExternalSecret is synced and restart or resync pods so `envFrom` secrets are loaded.
 
 After deploy, run smoke checks:
 

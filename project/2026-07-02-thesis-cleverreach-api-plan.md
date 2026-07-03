@@ -238,7 +238,6 @@ Do:
   - `deploy/prd/`
   - `deploy/_doppler_deploy_common.sh`
   - `deploy/doppler.yaml`
-  - `doppler.yaml`
 - Keep:
   - `deploy/chart_new/`
   - `deploy/stg_new/values.yaml`
@@ -272,6 +271,7 @@ Commit:
 Do:
 
 - Remove old package scripts that are only Doppler wrappers.
+- Remove root `doppler.yaml`.
 - Do not mechanically translate every old Doppler wrapper to Infisical.
 - Keep plain scripts that do not need secret injection:
   - `build`
@@ -496,8 +496,22 @@ Commit:
     - `git diff --check`
   - Slice 2 correctness review: initial Important package bridge finding resolved; final delta `DONE`, no findings.
   - Slice 2 simplification review: final delta `DONE`, no findings.
-- [ ] Remove Doppler/envsubst deployment.
 - [x] Add `THESIS_PLATFORM_ENV`.
+- [x] Slice 3 done:
+  - removed legacy deploy-scoped Doppler/envsubst/Helmfile artifacts under `deploy/chart`, `deploy/stg`, `deploy/prd`, `deploy/_doppler_deploy_common.sh`, and `deploy/doppler.yaml`.
+  - kept root `doppler.yaml` until Slice 4 so remaining package Doppler scripts stay coherent within this commit.
+  - kept current ArgoCD artifacts only: `deploy/chart_new`, `deploy/stg_new/values.yaml`, `deploy/prd_new/values.yaml`, `deploy/prd_ibw_new/values.yaml`.
+  - updated README and prod migration deploy notes to say ArgoCD pulls repo state and local Helmfile/envsubst deploy scripts must not be used.
+  - verified workflows already target `_new` values.
+  - verification:
+    - `find deploy -maxdepth 3 -type f | sort`
+    - stale deploy-script reference scan outside the plan found only negative docs saying not to use local Helmfile/envsubst.
+    - `helm template thesis-platform deploy/chart_new -f deploy/stg_new/values.yaml`
+    - `helm template thesis-platform deploy/chart_new -f deploy/prd_new/values.yaml`
+    - `helm template thesis-platform deploy/chart_new -f deploy/prd_ibw_new/values.yaml`
+    - `git diff --check HEAD`
+  - Slice 3 correctness review: initial Important root `doppler.yaml` finding resolved; final delta `DONE`, no findings.
+  - Slice 3 simplification review: removed orphan README heading and redundant progress item; final delta `DONE`, no findings.
 - [ ] Add df-cloud companion branch.
 - [ ] Populate Infisical values.
 - [ ] Disable old Power Automate CleverReach gate.
@@ -506,4 +520,4 @@ Commit:
 
 ## Next Step
 
-Start Slice 3: remove old deployment artifacts and stale deploy docs, then verify `chart_new` renders for stg/prd/prd_ibw.
+Start Slice 4: remove remaining Doppler package scripts/docs and root `doppler.yaml`, keeping only useful non-secret or Infisical-backed commands.

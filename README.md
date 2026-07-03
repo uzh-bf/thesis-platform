@@ -40,81 +40,18 @@ pnpm run dev
 
 The web app should now be visible on <https://localhost:3000>.
 
-### Steps
-
 ## Deployment
 
-The following instructions will guide you through the deployment process step by step.
+Deployment is GitOps-based. ArgoCD pulls this repository and renders:
 
-### Pre-requisites
+- `deploy/chart_new`
+- `deploy/stg_new/values.yaml`
+- `deploy/prd_new/values.yaml`
+- `deploy/prd_ibw_new/values.yaml`
 
-Your system should have the following installed:
+Do not deploy this app with local Helmfile or envsubst scripts. Runtime secrets come from Infisical through Kubernetes ExternalSecrets.
 
-- [Helm](https://helm.sh/)
-- [Helmfile](https://helmfile.readthedocs.io/en/latest/)
-- [Helm diff plugin](https://github.com/databus23/helm-diff)
-- [kubectl](https://kubernetes.io/docs/tasks/tools/)
-- [az cli](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
-  - `az login`
-  - `az aks get-credentials --resource-group ibf_devops_rg --name bf-k8s463ba113`
-
-### Deployment steps
-
-Here are the steps you'll need to follow for deployment:
-
-1. Start in the development environment:
-
-   Run the command `pnpm run release:beta:dry` to test the setup.
-
-   ```bash
-   pnpm run release:beta:dry
-   ```
-
-2. Continue in the development environment:
-
-   Run `pnpm run release:beta` to start the deployment.
-
-   ```bash
-   pnpm run release:beta
-   ```
-
-3. Still within the development environment:
-
-   Push your changes to the dev branch using `git push --follow-tags origin dev`.
-
-   ```bash
-   git push --follow-tags origin dev
-   ```
-
-4. Switch to Github:
-
-   Actions will automatically generate a new Docker image with a new tag (for example, v1.0.0-beta.1).
-
-5. Now, move to the `.env/doppler`:
-
-   Update the APP_VERSION environment variable to the new tag (for example, v1.0.0-beta.1).
-
-6. Go back to the development environment:
-
-   Navigate to the deploy directory using `cd deploy/`.
-
-   ```bash
-   cd deploy/
-   ```
-
-7. Check the changes with `./_deploy_prod.sh diff`.
-
-   ```bash
-   ./_deploy_prod.sh diff
-   ```
-
-8. Apply the changes to the production environment using `./_deploy_prod.sh apply`.
-
-   ```bash
-   ./_deploy_prod.sh apply
-   ```
-
-9. Your new version is now deployed to the production environment on [https://theses.bf.uzh.ch/](https://theses.bf.uzh.ch/).
+GitHub Actions build images and open deployment image tag pull requests against the `_new` values files. Merge those pull requests to update the desired state that ArgoCD syncs to the cluster.
 
 ### Restart the app (if only Powerautomate Solution Update)
 
