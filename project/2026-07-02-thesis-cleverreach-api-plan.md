@@ -530,7 +530,32 @@ Commit:
   - `pnpm run prisma:generate` and `pnpm run staging:db:backup` still fail before script execution because local pnpm runs a dependency-status install blocked by `ERR_PNPM_IGNORED_BUILDS`; direct binaries verified the underlying commands.
   - Slice 4 correctness review: `DONE`, no findings.
   - Slice 4 simplification review: removed unnecessary `dev:tunnel`; final delta only requested this progress update.
-- [ ] Add df-cloud companion branch.
+- [x] Slice 5 done:
+  - created fresh df-cloud worktree: `/Users/rschlae/.codex/worktrees/thesispf-infisical/df-cloud`.
+  - branch: `codex/thesispf-infisical`.
+  - base: current `origin/stg` / `a513d95c535571d52ef946cedb88251d7186f88a`.
+  - committed companion change: `f08ae0f deploy(thesispf): align Infisical ArgoCD desired state`.
+  - aligned thesispf ArgoCD desired state:
+    - repository `https://github.com/uzh-bf/thesis-platform.git`
+    - path `deploy/chart_new`
+    - value files `../stg_new/values.yaml`, `../prd_new/values.yaml`, `../prd_ibw_new/values.yaml`
+  - added required CleverReach ExternalSecret keys only to `thesispf`:
+    - `CLEVERREACH_CLIENT_ID`
+    - `CLEVERREACH_CLIENT_SECRET`
+    - `CLEVERREACH_FILTER_THESES`
+  - left `thesispf-ibw` without CleverReach keys.
+  - added `STAGING_ENABLE_EXTERNAL_FLOWS` to stg ExternalSecret only.
+  - verification:
+    - GitLab API confirmed local df-cloud `origin/stg` and `origin/prd` heads before worktree setup; branch was later rebased to `a513d95` when `origin/stg` advanced.
+    - submodules initialized via HTTPS/glab fallback because SSH signing failed.
+    - `/Users/rschlae/.volta/bin/pnpm install --frozen-lockfile`
+    - direct `azure-helpers` `tsup` build
+    - `src/apps/thesispf/node_modules/.bin/tsc --noEmit --project src/apps/thesispf/tsconfig.json --pretty false`
+    - `node_modules/.bin/prettier --check src/apps/thesispf/functions.ts`
+    - `git diff --check`
+    - no local Pulumi preview/up was run; df-cloud preview remains GitLab CI-only.
+  - Slice 5 correctness review: `DONE`, no findings.
+  - Slice 5 simplification review: inlined value file path and final delta `DONE`, no findings.
 - [ ] Populate Infisical values.
 - [ ] Disable old Power Automate CleverReach gate.
 - [ ] Run stg smoke.
