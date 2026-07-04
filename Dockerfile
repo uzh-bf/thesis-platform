@@ -1,28 +1,25 @@
-# Install dependencies only when needed
-FROM node:24.18.0-alpine AS deps
+FROM node:24.18.0-bookworm-slim AS base
 
 WORKDIR /app
 
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
-RUN apk update
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates openssl \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install dependencies only when needed
+FROM base AS deps
 
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 
 # Install dependencies based on the preferred package manager
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm i --frozen-lockfile --ignore-scripts
+RUN pnpm i --frozen-lockfile
 
 # Rebuild the source code only when needed
-FROM node:24.18.0-alpine AS builder
-
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
-RUN apk update
+FROM base AS builder
 
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 
-WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
@@ -50,18 +47,13 @@ RUN pnpm run build
 # RUN npm run build
 
 # Production image, copy all the files and run next
-FROM node:24.18.0-alpine AS runner
-WORKDIR /app
-
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
-RUN apk update
+FROM base AS runner
 
 ARG NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN groupadd --system --gid 1001 nodejs \
+  && useradd --system --uid 1001 --gid nodejs nextjs
 
 COPY --from=builder /app/public ./public
 
@@ -70,13 +62,6 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Prisma CLI, config, schema and migrations so the deploy migration job can run
-# "prisma migrate deploy" with this image (version must match package.json);
-# owned by root so they stay read-only for the runtime user
-RUN npm install -g prisma@7.8.0
-COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
-COPY --from=builder /app/prisma ./prisma
-
 USER nextjs
 
 EXPOSE 3000
@@ -84,3 +69,20 @@ EXPOSE 3000
 ENV PORT=3000
 
 CMD ["node", "server.js"]
+
+FROM base AS migration-runner
+
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN groupadd --system --gid 1001 nodejs \
+  && useradd --system --uid 1001 --gid nodejs nextjs
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY prisma.config.ts ./prisma.config.ts
+COPY prisma ./prisma
+
+USER nextjs
+
+CMD ["/app/node_modules/.bin/prisma", "migrate", "deploy"]
+
+FROM runner AS app

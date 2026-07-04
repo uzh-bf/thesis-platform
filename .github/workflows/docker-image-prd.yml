@@ -142,6 +142,20 @@ jobs:
             NEXT_PUBLIC_APP_VERSION=stable-arm-${{ steps.release.outputs.sha }}
             ENABLE_DF_WEBSTATS=true
 
+      - name: Build and push migration image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: .
+          file: Dockerfile
+          target: migration-runner
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository }}:migration-${{ steps.release.outputs.tag }}-arm
+            ${{ env.REGISTRY }}/${{ github.repository }}:migration-stable-arm
+            ${{ env.REGISTRY }}/${{ github.repository }}:migration-stable-arm-${{ steps.release.outputs.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
+
   build-prd-ibw:
     if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore(release)')
     runs-on: ubuntu-latest
@@ -319,6 +333,7 @@ jobs:
         shell: bash
         env:
           PRODUCTION_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
+          PRODUCTION_MIGRATION_IMAGE_TAG: migration-stable-arm-${{ steps.release.outputs.sha }}
           PRODUCTION_IBW_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
         run: |
           UPDATE_BRANCH="chore/update-deploy-images"
@@ -333,6 +348,14 @@ jobs:
             git checkout -B "${UPDATE_BRANCH}"
           fi
           perl -0pi -e 's/tag: '\''(?:latest|stable)-arm(?:-[0-9a-f]+)?'\''/tag: '\''$ENV{PRODUCTION_IMAGE_TAG}'\''/' deploy/prd_new/values.yaml
+          if grep -q "tag: 'migration-" deploy/prd_new/values.yaml; then
+            perl -0pi -e 's/(migration:\n  image:\n(?:    repository: [^\n]+\n)?    tag: )'\''[^'\'']+'\''/${1}'\''$ENV{PRODUCTION_MIGRATION_IMAGE_TAG}'\''/' deploy/prd_new/values.yaml
+            grep -q "tag: '${PRODUCTION_MIGRATION_IMAGE_TAG}'" deploy/prd_new/values.yaml
+          elif grep -q '^migration:' deploy/prd_new/values.yaml; then
+            perl -0pi -e 's/(migration:\n)/${1}  image:\n    tag: '\''$ENV{PRODUCTION_MIGRATION_IMAGE_TAG}'\''\n/' deploy/prd_new/values.yaml
+          else
+            printf "\nmigration:\n  image:\n    tag: '%s'\n" "$PRODUCTION_MIGRATION_IMAGE_TAG" >> deploy/prd_new/values.yaml
+          fi
           perl -0pi -e 's/image:\n(?:  repository: [^\n]+\n)?  tag: '\''[^'\'']+'\''/image:\n  repository: ghcr.io\/uzh-bf\/thesis-platform-ibw\n  tag: '\''$ENV{PRODUCTION_IBW_IMAGE_TAG}'\''/' deploy/prd_ibw_new/values.yaml
           perl -0pi -e 's/env: prd-ibw/env: prd_ibw/' deploy/prd_ibw_new/values.yaml
           git add deploy/prd_new/values.yaml deploy/prd_ibw_new/values.yaml
@@ -351,12 +374,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PRODUCTION_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
+          PRODUCTION_MIGRATION_IMAGE_TAG: migration-stable-arm-${{ steps.release.outputs.sha }}
           PRODUCTION_IBW_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
         run: |
           UPDATE_BRANCH="chore/update-deploy-images"
           BODY="Updates deployment values files after Docker image builds complete.
 
           - deploy/prd_new/values.yaml -> ${PRODUCTION_IMAGE_TAG}
+          - deploy/prd_new/values.yaml migration image -> ${PRODUCTION_MIGRATION_IMAGE_TAG}
           - deploy/prd_ibw_new/values.yaml -> ghcr.io/uzh-bf/thesis-platform-ibw:${PRODUCTION_IBW_IMAGE_TAG}
           - deploy/stg_new/values.yaml updates are added to this same PR by the staging ARM workflow when present."
           OPEN_PR=$(gh pr list --repo "${GITHUB_REPOSITORY}" --head "${UPDATE_BRANCH}" --base main --state open --json number --jq '.[0].number')

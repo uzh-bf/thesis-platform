@@ -1283,6 +1283,34 @@ Decision:
     - `helm template thesis-platform deploy/chart_new -f deploy/stg_new/values.yaml` and `-f deploy/prd_new/values.yaml`: rendered PreSync migration Job, direct Prisma command, app image, env secret, and resources for staging and production.
     - `docker build -t thesis-platform:prisma7-smoke .`: passed on Node `24.18.0`; global Prisma npm allow-scripts warning remains known until Slice 6b removes migration tooling from the app runtime image.
     - `docker run --rm --network thesis-platform_thesis-platform -e DATABASE_URL='postgresql://thesis:thesis@postgres:5432/thesis_migrate_smoke_20260704_1308?sslmode=disable' thesis-platform:prisma7-smoke prisma migrate deploy`: applied baseline migration successfully on a fresh throwaway DB.
+- [x] Slice 6b Debian runtime parity and migration-image proof completed:
+  - Scope expanded to GitHub Actions because a Helm migration image override is not useful unless CI builds and tags that target.
+  - Dockerfile now uses Debian `node:24.18.0-bookworm-slim` for dependency, build, app, and migration stages.
+  - App runner no longer carries global Prisma, `node_modules/.bin/prisma`, `prisma.config.ts`, or `prisma/`; default Docker build resolves to the app runner through `FROM runner AS app`.
+  - Added `migration-runner` target with local Prisma CLI, `node_modules`, `prisma.config.ts`, schema, and migrations.
+  - Helm migration job now supports `migration.image.repository/tag/pullPolicy`; it falls back to the app image and direct `prisma migrate deploy` command when no migration tag is configured.
+  - Staging and production ARM image workflows now build and publish migration image tags next to app image tags and update `deploy/stg_new/values.yaml` / `deploy/prd_new/values.yaml` only. IBW values remain untouched for this staged rollout.
+  - Staging and production app image pull policies changed to `IfNotPresent` for immutable SHA/release-like tags.
+- [x] Slice 6b review completed by subagent `Locke`; accepted findings integrated:
+  - migration target now copies Prisma files directly from the build context instead of the `builder` stage, so building the migration image does not require a full Next build or app build args.
+  - workflow tag update logic now handles existing `migration.image` blocks, optional repositories, missing migration tags, and verifies replacements.
+- [x] Slice 6b simplification completed by subagent `Pasteur`; accepted findings integrated:
+  - migration job omits `command` when a migration image tag is configured and lets the migration image `CMD` run.
+  - workflow-generated values append only the migration tag; chart defaults pull policy to the app pull policy.
+  - migration runtime copies only `node_modules`, `prisma.config.ts`, and `prisma/`, not package metadata or lockfiles.
+- [x] Slice 6b verification passed:
+  - `git diff --check`
+  - `ruby -e "require 'yaml'; YAML.load_file('.github/workflows/docker-image-stg-arm.yml'); YAML.load_file('.github/workflows/docker-image-prd.yml'); puts 'yaml ok'"`
+  - `helm template thesis-platform deploy/chart_new -f deploy/stg_new/values.yaml`: rendered app image fallback, `IfNotPresent`, PreSync hook, and fallback direct Prisma command.
+  - `helm template thesis-platform deploy/chart_new -f deploy/stg_new/values.yaml --set migration.image.tag=migration-latest-arm-test --set migration.image.pullPolicy=IfNotPresent`: rendered migration image, PreSync hook, and no overridden command.
+  - `helm template thesis-platform deploy/chart_new -f deploy/prd_new/values.yaml`: rendered app image fallback, `IfNotPresent`, PreSync hook, and fallback direct Prisma command.
+  - `helm template thesis-platform deploy/chart_new -f deploy/prd_new/values.yaml --set migration.image.tag=migration-stable-arm-test --set migration.image.pullPolicy=IfNotPresent`: rendered migration image, PreSync hook, and no overridden command.
+  - `docker build -t thesis-platform:debian-smoke .`: app image built from Debian Node 24 without global Prisma tooling.
+  - `docker run --rm thesis-platform:debian-smoke sh -c 'test -f /app/server.js && test ! -e /app/node_modules/.bin/prisma && test ! -e /app/prisma && echo app-runner-ok'`: confirmed app runner contents.
+  - `docker build --target migration-runner -t thesis-platform:migration-smoke .`: migration target built without running the Next builder stage.
+  - `docker run --rm --network thesis-platform_thesis-platform -e DATABASE_URL='postgresql://thesis:thesis@postgres:5432/thesis_migration_runner_smoke_20260704_continue?sslmode=disable' thesis-platform:migration-smoke`: applied baseline migration successfully on a fresh throwaway DB.
+  - `docker run` app server smoke on `thesis-platform:debian-smoke`: Next server started and returned HTTP `404` for `/404` inside the Docker network.
+  - `CI=true npx -y pnpm@11.9.0 run test:e2e`: 1 Chromium test passed with local PostgreSQL, OIDC, Azurite setup, sign-in, SAS minting, browser upload, and blob readback; existing styled-jsx hydration and LCP warnings still appear.
 
 ## Open Questions
 
@@ -1292,6 +1320,6 @@ Decision:
 
 ## Next Steps
 
-1. Commit Slice 6.
-2. Start Slice 6b Debian runtime parity and migration-image proof.
-3. Revisit `imagePullPolicy: Always` for commit-like image tags in Slice 6b/deploy hardening.
+1. Commit Slice 6b.
+2. Start Slice 7 distroless runtime proof.
+3. Decide in Slice 7 whether distroless is realistic for this branch or should stay documented as a follow-up.

@@ -1,5 +1,6 @@
 image:
   tag: 'stable-arm-fc8de3d0660093c37b658a2825c8dbb08bc225f1'
+  pullPolicy: IfNotPresent
 
 env: prd
 appUrl: 'https://theses.df.uzh.ch'

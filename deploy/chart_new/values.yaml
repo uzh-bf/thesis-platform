@@ -44,6 +44,10 @@ resources:
     cpu: 200m
 
 migration:
+  image:
+    repository: ""
+    tag: ""
+    pullPolicy: ""
   resources:
     requests:
       memory: 256Mi
