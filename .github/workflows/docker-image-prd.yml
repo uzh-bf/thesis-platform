@@ -204,6 +204,7 @@ jobs:
         with:
           context: .
           file: Dockerfile
+          target: node-runner
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -284,6 +285,7 @@ jobs:
         with:
           context: .
           file: Dockerfile
+          target: node-runner
           platforms: linux/arm64
           push: true
           tags: ${{ steps.image.outputs.tags }}
@@ -348,6 +350,8 @@ jobs:
             git checkout -B "${UPDATE_BRANCH}"
           fi
           perl -0pi -e 's/tag: '\''(?:latest|stable)-arm(?:-[0-9a-f]+)?'\''/tag: '\''$ENV{PRODUCTION_IMAGE_TAG}'\''/' deploy/prd_new/values.yaml
+          perl -0pi -e 's/(image:\n(?:  repository: [^\n]+\n)?  tag: '\''[^'\'']+'\''\n)(?:  runtime: [^\n]+\n)?/${1}  runtime: distroless\n/' deploy/prd_new/values.yaml
+          grep -q "runtime: distroless" deploy/prd_new/values.yaml
           if grep -q "tag: 'migration-" deploy/prd_new/values.yaml; then
             perl -0pi -e 's/(migration:\n  image:\n(?:    repository: [^\n]+\n)?    tag: )'\''[^'\'']+'\''/${1}'\''$ENV{PRODUCTION_MIGRATION_IMAGE_TAG}'\''/' deploy/prd_new/values.yaml
             grep -q "tag: '${PRODUCTION_MIGRATION_IMAGE_TAG}'" deploy/prd_new/values.yaml
@@ -380,7 +384,7 @@ jobs:
           UPDATE_BRANCH="chore/update-deploy-images"
           BODY="Updates deployment values files after Docker image builds complete.
 
-          - deploy/prd_new/values.yaml -> ${PRODUCTION_IMAGE_TAG}
+          - deploy/prd_new/values.yaml -> ${PRODUCTION_IMAGE_TAG} (runtime distroless)
           - deploy/prd_new/values.yaml migration image -> ${PRODUCTION_MIGRATION_IMAGE_TAG}
           - deploy/prd_ibw_new/values.yaml -> ghcr.io/uzh-bf/thesis-platform-ibw:${PRODUCTION_IBW_IMAGE_TAG}
           - deploy/stg_new/values.yaml updates are added to this same PR by the staging ARM workflow when present."

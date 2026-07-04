@@ -47,26 +47,45 @@ RUN pnpm run build
 # RUN npm run build
 
 # Production image, copy all the files and run next
-FROM base AS runner
+FROM gcr.io/distroless/nodejs24-debian13:nonroot AS runner
+
+WORKDIR /app
 
 ARG NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+
+COPY --from=builder --chown=65532:65532 /app/public ./public
+
+# Automatically leverage output traces to reduce image size
+# https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder --chown=65532:65532 /app/.next/standalone ./
+COPY --from=builder --chown=65532:65532 /app/.next/static ./.next/static
+
+EXPOSE 3000
+
+CMD ["server.js"]
+
+FROM base AS node-runner
+
+ARG NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV PATH=/app/node_modules/.bin:$PATH
 
 RUN groupadd --system --gid 1001 nodejs \
   && useradd --system --uid 1001 --gid nodejs nextjs
 
+COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/public ./public
-
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY prisma.config.ts ./prisma.config.ts
+COPY prisma ./prisma
 
 USER nextjs
 
 EXPOSE 3000
-
-ENV PORT=3000
 
 CMD ["node", "server.js"]
 

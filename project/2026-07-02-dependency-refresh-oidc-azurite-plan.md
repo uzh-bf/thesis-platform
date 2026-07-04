@@ -1311,15 +1311,46 @@ Decision:
   - `docker run --rm --network thesis-platform_thesis-platform -e DATABASE_URL='postgresql://thesis:thesis@postgres:5432/thesis_migration_runner_smoke_20260704_continue?sslmode=disable' thesis-platform:migration-smoke`: applied baseline migration successfully on a fresh throwaway DB.
   - `docker run` app server smoke on `thesis-platform:debian-smoke`: Next server started and returned HTTP `404` for `/404` inside the Docker network.
   - `CI=true npx -y pnpm@11.9.0 run test:e2e`: 1 Chromium test passed with local PostgreSQL, OIDC, Azurite setup, sign-in, SAS minting, browser upload, and blob readback; existing styled-jsx hydration and LCP warnings still appear.
+- [x] Slice 7 distroless runtime proof completed:
+  - `docker manifest inspect gcr.io/distroless/nodejs24-debian13:nonroot`: image exists for `linux/amd64` and `linux/arm64`.
+  - Default app runner now uses `gcr.io/distroless/nodejs24-debian13:nonroot` with distroless Node entrypoint, `CMD ["server.js"]`, UID `65532`, and no shell/user creation step.
+  - `base`, `deps`, `builder`, and `migration-runner` stay on Debian slim because they need package-manager, shell, and Prisma tooling.
+  - Helm adds `image.runtime`; current fallback remains allowed for `node` runtime, but `image.runtime=distroless` fails unless `migration.image.tag` is set.
+  - Staging and production image-tag workflows set app tag, `runtime: distroless`, and migration image tag together. Temp-copy workflow proof produced `latest-arm-deadbeef distroless migration-latest-arm-deadbeef` for staging and `stable-arm-deadbeef distroless migration-stable-arm-deadbeef` for production.
+  - IBW production values remain unchanged for the staged rollout. Existing IBW image workflows now build `target: node-runner`, a Debian app target with local Prisma CLI on `PATH`, so the current IBW app-image migration fallback remains compatible until IBW gets the same separate migration-image rollout.
+- [x] Slice 7 review completed by subagent `Heisenberg`; accepted findings integrated:
+  - added Helm runtime guard so distroless app images cannot render without a migration image tag.
+  - added workflow `runtime: distroless` insertion next to migration tag insertion.
+  - kept IBW out of the current values rollout by routing both IBW image-build jobs to `node-runner`.
+- [x] Slice 7 simplification completed by subagent `Banach`; accepted findings integrated:
+  - both non-ARM and ARM IBW image jobs now use `target: node-runner`.
+  - plan language updated because Slice 7 is no longer app-runner-only; it includes the migration guard and IBW compatibility target.
+- [x] Slice 7 verification passed:
+  - `git diff --check`
+  - `ruby -e "require 'yaml'; YAML.load_file('.github/workflows/docker-image-stg-arm.yml'); YAML.load_file('.github/workflows/docker-image-prd.yml'); puts 'yaml ok'"`
+  - `helm template thesis-platform deploy/chart_new -f deploy/stg_new/values.yaml --set image.runtime=distroless`: failed as intended with `migration.image.tag is required when image.runtime is distroless`.
+  - `helm template thesis-platform deploy/chart_new -f deploy/stg_new/values.yaml --set image.runtime=distroless --set migration.image.tag=migration-latest-arm-test --set migration.image.pullPolicy=IfNotPresent`: rendered migration image and no fallback command.
+  - `helm template thesis-platform deploy/chart_new -f deploy/prd_new/values.yaml --set image.runtime=distroless`: failed as intended with `migration.image.tag is required when image.runtime is distroless`.
+  - `helm template thesis-platform deploy/chart_new -f deploy/prd_new/values.yaml --set image.runtime=distroless --set migration.image.tag=migration-stable-arm-test --set migration.image.pullPolicy=IfNotPresent`: rendered migration image and no fallback command.
+  - `helm template thesis-platform deploy/chart_new -f deploy/prd_ibw_new/values.yaml`: rendered current IBW fallback command against the IBW app image.
+  - `docker build -t thesis-platform:distroless-smoke .`: default app image built with distroless runner.
+  - `docker image inspect thesis-platform:distroless-smoke --format '{{.Architecture}} {{.Os}} {{json .Config.User}} {{json .Config.Entrypoint}} {{json .Config.Cmd}} {{json .Config.WorkingDir}}'`: `arm64 linux "65532" ["/nodejs/bin/node"] ["server.js"] "/app"`.
+  - `docker run --rm thesis-platform:distroless-smoke -e "...distroless content check..."`: confirmed `server.js` exists and Prisma CLI/schema are absent.
+  - `docker run` app server smoke on `thesis-platform:distroless-smoke`: Next server started and returned HTTP `404` for `/404` inside the Docker network.
+  - `docker build --target migration-runner -t thesis-platform:migration-smoke .`: migration image still builds.
+  - `docker build --target node-runner -t thesis-platform:node-runner-smoke .`: IBW compatibility image builds.
+  - `docker run --rm thesis-platform:node-runner-smoke sh -c 'test -f /app/server.js && command -v prisma && prisma --version >/dev/null && echo node-runner-ok'`: confirmed app server file and Prisma CLI on `PATH`.
+  - `docker run --rm --network thesis-platform_thesis-platform -e DATABASE_URL='postgresql://thesis:thesis@postgres:5432/thesis_node_runner_smoke_20260704_continue?sslmode=disable' thesis-platform:node-runner-smoke prisma migrate deploy`: applied baseline migration successfully on a fresh throwaway DB.
+  - `docker run` app server smoke on `thesis-platform:node-runner-smoke`: Next server started and returned HTTP `404` for `/404` inside the Docker network.
+  - `CI=true npx -y pnpm@11.9.0 run test:e2e`: 1 Chromium test passed with local PostgreSQL, OIDC, Azurite setup, sign-in, SAS minting, browser upload, and blob readback; existing styled-jsx hydration and LCP warnings still appear.
 
 ## Open Questions
 
 - Should Auth0 code be fully removed, or only removed from development path while old chart values remain?
-- Should distroless be required in this branch if it requires a second migration-capable image, or is proving and deferring the final switch acceptable?
 - Are legacy deploy surfaces under `deploy/chart`, `deploy/stg`, and `deploy/prd` still active, or can this branch target only the current staging and production deploy files?
 
 ## Next Steps
 
-1. Commit Slice 6b.
-2. Start Slice 7 distroless runtime proof.
-3. Decide in Slice 7 whether distroless is realistic for this branch or should stay documented as a follow-up.
+1. Commit Slice 7.
+2. Start Slice 8 remaining major dependency upgrades.
+3. Defer live GitHub workflow and Argo sync proof to the staging rollout after merge/update PR.
