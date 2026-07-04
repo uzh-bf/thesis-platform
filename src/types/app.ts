@@ -8,7 +8,7 @@ type AdminRole = 'COORDINATOR' | 'ADMIN' | 'UNSET'
 
 declare module 'next-auth' {
   interface User extends DefaultUser {
-    role: UserRole
+    role?: UserRole
     isAdmin?: boolean
     adminRole?: AdminRole
   }

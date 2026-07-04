@@ -40,9 +40,8 @@ pnpm run prisma:setup:local
 pnpm run dev:local
 ```
 
-The local OIDC mock is available at `http://localhost:4011/default` with fixed
-development admin claims for `admin@example.com`. The NextAuth provider wiring
-is handled in the local-auth slice. Azurite serves Blob Storage locally at
+The local OIDC mock signs in `admin@example.com` as a development admin through
+the `Local OIDC` provider. Azurite serves Blob Storage locally at
 `http://127.0.0.1:11000/devstoreaccount1`, and Postgres is published on
 `localhost:15432`. The compose `next` profile remains a container smoke path;
 the documented local development path runs Next on the host.

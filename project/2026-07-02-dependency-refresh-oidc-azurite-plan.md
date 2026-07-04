@@ -1105,6 +1105,16 @@ Decision:
   - `CI=true npx -y pnpm@10.15.0 exec dotenv -e .env.local.template -- ts-node --project tsconfig.tsnode.json prisma/seed-df.ts`
   - `CI=true npx -y pnpm@10.15.0 run lint`
   - `CI=true npx -y pnpm@10.15.0 exec tsc --noEmit`
+- [x] Slice 2 local OIDC provider wiring implemented.
+- [x] Slice 2 review completed by subagent `Poincare`; accepted finding integrated.
+- [x] Slice 2 simplification completed by subagent `Chandrasekhar`; accepted reductions integrated.
+- [x] Slice 2 verification passed:
+  - `CI=true npx -y pnpm@10.15.0 exec prettier --check src/lib/authOptions.ts src/types/app.ts src/components/Header.tsx README.md`
+  - `CI=true npx -y pnpm@10.15.0 run lint`
+  - `CI=true npx -y pnpm@10.15.0 exec tsc --noEmit`
+  - `NEXTAUTH_URL=http://localhost:3100 NEXT_PUBLIC_APP_URL=localhost:3100 CI=true npx -y pnpm@10.15.0 exec dotenv -e .env.local.template -- next dev -p 3100`
+  - `curl -fsS http://localhost:3100/api/auth/providers` returned only `local-oidc`
+  - Full CSRF sign-in through `local-oidc` returned session for `admin@example.com` with `role: DEVELOPER`, `adminRole: ADMIN`, `isAdmin: true`
 
 ## Open Questions
 
@@ -1115,5 +1125,5 @@ Decision:
 
 ## Next Steps
 
-1. Commit Slice 1.
-2. Start Slice 2 local auth provider wiring.
+1. Commit Slice 2.
+2. Start Slice 3 Azurite-compatible blob upload.
