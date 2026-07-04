@@ -41,7 +41,7 @@
     "prisma:studio:ibw": "doppler run --config prd_ibw -- prisma studio",
     "prisma:studio:stage": "doppler run --config stg -- prisma studio",
     "prisma:studio:prod": "doppler run --config prd -- prisma studio",
-    "prisma:generate:mysql": "DATABASE_URL=${DATABASE_URL:-mysql://prisma:prisma@localhost:3306/prisma} prisma generate --config prisma.mysql.config.ts",
+    "prisma:generate:mysql": "DATABASE_URL=${DATABASE_URL:-mysql://root@localhost:3306/prisma} prisma generate --config prisma.mysql.config.ts",
     "prisma:push:local": "dotenv -e .env.local -- prisma db push",
     "prisma:seed": "doppler run --config dev -- ts-node --project tsconfig.tsnode.json prisma/seed-df.ts",
     "prisma:seed:local": "dotenv -e .env.local -- ts-node --project tsconfig.tsnode.json prisma/seed-df.ts",
