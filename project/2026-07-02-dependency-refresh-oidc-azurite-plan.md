@@ -1393,6 +1393,24 @@ Decision:
   - `NEXT_PUBLIC_DEPARTMENT_NAME=DF ENABLE_DF_WEBSTATS=true CI=true npx -y pnpm@11.9.0 run build`
   - `CI=true npx -y pnpm@11.9.0 run test:e2e`: 1 Chromium test passed with local PostgreSQL, OIDC, Azurite setup, sign-in, SAS minting, browser upload, and blob readback; existing styled-jsx hydration and LCP warnings still appear.
   - `docker build -t thesis-platform:slice8-deps-smoke .`: passed and built the distroless app image.
+- [x] Slice 9 final E2E evidence refresh completed:
+  - Extended the existing browser smoke to verify the visible signed-in app shell and admin UI after local OIDC login, not only the session API and browser-origin Azurite PUT.
+  - Kept the existing OpenAPI healthcheck, OIDC sign-in, SAS minting, browser upload, and Azurite readback path.
+  - E2E first exposed a brittle broad `Admin` button selector and the overview's first-proposal auto-route. The final test proves the Admin entrypoint is visible, then navigates directly to `/admin` and asserts real tab roles to avoid that app race.
+  - E2E also exposed date-fns v4 protected-token warnings for `dd.MM.Y`; fixed local date formatting to `dd.MM.yyyy`.
+- [x] Slice 9 review completed by subagent `Raman`; no findings:
+  - accepted: direct `/admin` navigation is valid after proving the visible Admin entrypoint, because the overview can auto-select the first proposal after data loads.
+  - accepted: `dd.MM.yyyy` is the correct calendar-year token fix for date-fns v4.
+- [x] Slice 9 simplification completed by subagent `Planck`; accepted findings integrated:
+  - admin tab proof now uses `getByRole('tab', ...)` instead of broad text matching.
+  - direct `/admin` navigation is documented in the test as race avoidance.
+- [x] Slice 9 verification passed:
+  - `rg -n "dd\\.MM\\.Y|format\\([^\\n]+['\"][^'\"]*Y" src tests -g '*.ts' -g '*.tsx'`: no remaining matches.
+  - `CI=true npx -y pnpm@11.9.0 exec prettier --check src/components/ProposalMeta.tsx src/components/ApplicationDetailsModal.tsx tests/e2e/local-auth-blob.spec.ts project/2026-07-02-dependency-refresh-oidc-azurite-plan.md`
+  - `CI=true npx -y pnpm@11.9.0 run lint`: passed with the same 7 `react-hooks/set-state-in-effect` warnings and 0 errors.
+  - `CI=true npx -y pnpm@11.9.0 exec tsc --noEmit`
+  - `CI=true npx -y pnpm@11.9.0 run build`
+  - `CI=true npx -y pnpm@11.9.0 run test:e2e`: 1 Chromium test passed with local PostgreSQL, OIDC, Azurite setup, OpenAPI healthcheck, visible signed-in shell, admin tab UI, SAS minting, browser upload, and blob readback; existing styled-jsx hydration and LCP warnings still appear, and date-fns protected-token warnings are gone.
 
 ## Open Questions
 
@@ -1401,6 +1419,6 @@ Decision:
 
 ## Next Steps
 
-1. Commit Slice 8.
-2. Start Slice 9 final E2E evidence refresh.
+1. Commit Slice 9.
+2. Start Slice 10 final review and docs.
 3. Keep design-system Node 24 engine metadata as follow-up in the design-system package.

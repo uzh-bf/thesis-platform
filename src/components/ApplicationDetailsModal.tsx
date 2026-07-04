@@ -5,11 +5,7 @@ import { add, format, parseISO } from 'date-fns'
 import { useState } from 'react'
 import { ApplicationDetails } from 'src/types/app'
 
-function ApplicationDetailsModal({
-  row,
-}: {
-  row: ApplicationDetails
-}) {
+function ApplicationDetailsModal({ row }: { row: ApplicationDetails }) {
   const FileTypeIconMap: Record<string, IconDefinition> = {
     'application/pdf': faFilePdf,
   }
@@ -47,12 +43,12 @@ function ApplicationDetailsModal({
           <p className="pb-2 text-base">{row?.statusKey}</p>
           <h1 className="text-base font-bold">Working Period:</h1>
           <p className="pb-2 text-base">
-            {format(parseISO(row.plannedStartAt), 'dd.MM.Y')} -{' '}
+            {format(parseISO(row.plannedStartAt), 'dd.MM.yyyy')} -{' '}
             {format(
               add(parseISO(row.plannedStartAt), {
                 months: 6,
               }),
-              'dd.MM.Y'
+              'dd.MM.yyyy'
             )}
           </p>
 

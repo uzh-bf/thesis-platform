@@ -30,7 +30,7 @@ async function blobExists(name: string) {
   return containerClient.getBlobClient(name).exists()
 }
 
-test('OpenAPI healthcheck, local OIDC, and browser PUT to Azurite work locally', async ({
+test('OpenAPI healthcheck, local OIDC admin UI, and browser PUT to Azurite work locally', async ({
   page,
 }) => {
   const healthcheckResponse = await page.request.get('/api/healthcheck')
@@ -50,6 +50,17 @@ test('OpenAPI healthcheck, local OIDC, and browser PUT to Azurite work locally',
     role: 'DEVELOPER',
     isAdmin: true,
   })
+
+  await expect(page.getByText('Thesis Market')).toBeVisible()
+  const adminButton = page.getByRole('button', { name: 'Admin', exact: true })
+  await expect(adminButton).toBeVisible()
+
+  // The overview auto-selects the first proposal after data loads, so direct
+  // navigation keeps this smoke stable while still proving the Admin entrypoint.
+  await page.goto('/admin')
+  await expect(page).toHaveURL(/\/admin/)
+  await expect(page.getByRole('tab', { name: 'Proposals' })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Admin Info' })).toBeVisible()
 
   const uploadResult = await page.evaluate(async () => {
     const sasResponse = await fetch('/api/trpc/generateSasQueryToken?batch=1', {

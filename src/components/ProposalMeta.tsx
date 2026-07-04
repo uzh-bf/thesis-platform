@@ -147,7 +147,7 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
       : []),
     {
       label: 'Submitted On',
-      value: format(parseISO(proposalDetails.createdAt), 'dd.MM.Y'),
+      value: format(parseISO(proposalDetails.createdAt), 'dd.MM.yyyy'),
     },
     ...(!isStudentProposal && proposalDetails.supervisedBy[0]?.responsible
       ? [
