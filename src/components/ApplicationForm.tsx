@@ -1,4 +1,3 @@
-import { BlobServiceClient } from '@azure/storage-blob'
 import {
   Button,
   FormikDatePicker,
@@ -11,6 +10,7 @@ import { Form, Formik } from 'formik'
 import { useState } from 'react'
 import Dropzone from 'react-dropzone'
 import toast, { Toaster } from 'react-hot-toast'
+import { uploadFileToBlob } from 'src/lib/blobUpload'
 import useLocalStorage from 'src/lib/hooks/useLocalStorage'
 import { trpc } from 'src/lib/trpc'
 import * as Yup from 'yup'
@@ -35,19 +35,16 @@ export default function ApplicationForm({
     (fieldKey: string, fileName: string, formikProps: any) =>
     async (files: any[]) => {
       const file = files[0]
-      const { SAS_STRING } = await mutation.mutateAsync()
-      console.log('MUTATION RESULT: ', SAS_STRING)
-      const blobServiceClient = new BlobServiceClient(
-        `${process.env.NEXT_PUBLIC_BLOBSERVICECLIENT_URL}${SAS_STRING}`
-      )
-      const containerClient = blobServiceClient.getContainerClient(
-        process.env.NEXT_PUBLIC_CONTAINER_NAME!
-      )
       const name = `${formikProps.values.uzhemail}-${fileName}.pdf`
-      const blobClient = containerClient.getBlobClient(name)
-      const blockBlobClient = blobClient.getBlockBlobClient()
-      const result = await blockBlobClient.uploadData(file, {
-        blockSize: 4 * 1024 * 1024, // 4MB block size
+      const { sasString, serviceUrl, containerName } =
+        await mutation.mutateAsync()
+
+      await uploadFileToBlob({
+        file,
+        name,
+        sasString,
+        serviceUrl,
+        containerName,
       })
       if (fieldKey === 'cvFile') {
         setCv([file])

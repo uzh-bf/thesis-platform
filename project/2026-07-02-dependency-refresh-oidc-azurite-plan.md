@@ -1115,6 +1115,23 @@ Decision:
   - `NEXTAUTH_URL=http://localhost:3100 NEXT_PUBLIC_APP_URL=localhost:3100 CI=true npx -y pnpm@10.15.0 exec dotenv -e .env.local.template -- next dev -p 3100`
   - `curl -fsS http://localhost:3100/api/auth/providers` returned only `local-oidc`
   - Full CSRF sign-in through `local-oidc` returned session for `admin@example.com` with `role: DEVELOPER`, `adminRole: ADMIN`, `isAdmin: true`
+- [x] Slice 3 Azurite-compatible browser upload implemented.
+- [x] Slice 3 review completed by subagent `Kant`; accepted findings integrated:
+  - staged/committed helper must include new `src/lib/blobUpload.ts`
+  - browser-origin upload needed stronger evidence than Node SDK upload
+  - plan progress needed final evidence before commit
+- [x] Slice 3 simplification completed by subagent `Sartre`; accepted reductions integrated:
+  - client upload contract now uses `sasString`, `serviceUrl`, `containerName`
+  - upload helper return type/input surface trimmed to browser `Blob` use
+  - server normalizes accidental container suffixes out of the configured blob service URL
+- [x] Slice 3 verification passed:
+  - `CI=true npx -y pnpm@10.15.0 exec dotenv -e .env.local.template -- tsx scripts/setup-azurite.ts`
+  - browser-context upload from `http://localhost:3100` to Azurite returned HTTP `201` for `slice3-browser-1783150037551.pdf`
+  - account-credential readback confirmed `slice3-browser-1783150037551.pdf` exists in container `uploads`
+  - `CI=true npx -y pnpm@10.15.0 run lint`
+  - `CI=true npx -y pnpm@10.15.0 exec tsc --noEmit`
+  - `CI=true npx -y pnpm@10.15.0 run build`
+- [ ] Browser UI limitation found during Slice 3: `next dev` hydrates incorrectly in `agent-browser`; body remains hidden by Next FOUC CSS and console shows Next dev HMR `Cannot read properties of undefined (reading 'components')`. Browser-origin upload is proven, but full Dropzone UI automation should be revisited in Slice 3b/E2E harness.
 
 ## Open Questions
 
@@ -1125,5 +1142,5 @@ Decision:
 
 ## Next Steps
 
-1. Commit Slice 2.
-2. Start Slice 3 Azurite-compatible blob upload.
+1. Commit Slice 3.
+2. Start Slice 3b E2E browser harness and address the `next dev` hydration/HMR blocker or use a proven alternate local server mode.

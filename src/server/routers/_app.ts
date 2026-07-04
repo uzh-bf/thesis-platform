@@ -704,8 +704,33 @@ async function getSupervisorProposals({
   return proposals as ProposalDetailsRecord[]
 }
 
+const getBlobServiceClientUrl = (serviceUrl: string, containerName: string) => {
+  const queryIndex = serviceUrl.search(/[?#]/)
+  const baseUrl =
+    queryIndex === -1 ? serviceUrl : serviceUrl.slice(0, queryIndex)
+  const queryString = queryIndex === -1 ? '' : serviceUrl.slice(queryIndex)
+  const baseWithoutTrailingSlash = baseUrl.endsWith('/')
+    ? baseUrl.slice(0, -1)
+    : baseUrl
+  const containerSuffix = `/${containerName}`
+
+  if (baseWithoutTrailingSlash.endsWith(containerSuffix)) {
+    return `${baseWithoutTrailingSlash.slice(
+      0,
+      -containerSuffix.length
+    )}${queryString}`
+  }
+
+  return serviceUrl
+}
+
 export const appRouter = router({
   generateSasQueryToken: optionalAuthedProcedure.mutation(() => {
+    const containerName = process.env.NEXT_PUBLIC_CONTAINER_NAME!
+    const serviceUrl = getBlobServiceClientUrl(
+      process.env.NEXT_PUBLIC_BLOBSERVICECLIENT_URL!,
+      containerName
+    )
     const sharedKeyCredential = new StorageSharedKeyCredential(
       process.env.NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME!,
       process.env.AZURE_STORAGE_ACCOUNT_ACCESS_KEY!
@@ -716,15 +741,19 @@ export const appRouter = router({
     expiryDate.setMinutes(startDate.getMinutes() + 100)
     const queryParams = generateBlobSASQueryParameters(
       {
-        containerName: process.env.NEXT_PUBLIC_CONTAINER_NAME!,
+        containerName,
         permissions: permissions,
         expiresOn: expiryDate,
       },
       sharedKeyCredential
     )
     return {
+      sasString: queryParams.toString(),
+      containerName,
+      serviceUrl,
       SAS_STRING: queryParams.toString(),
-      CONTAINER_NAME: process.env.NEXT_PUBLIC_CONTAINER_NAME!,
+      CONTAINER_NAME: containerName,
+      BLOB_SERVICE_CLIENT_URL: serviceUrl,
       URL: process.env.NEXT_PUBLIC_AZURE_STORAGE_URL,
     }
   }),

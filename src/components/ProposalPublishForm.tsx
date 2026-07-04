@@ -1,4 +1,3 @@
-import { BlobServiceClient } from '@azure/storage-blob'
 import {
   Button,
   FormikSelectField,
@@ -10,6 +9,7 @@ import { useSession } from 'next-auth/react'
 import { useState } from 'react'
 import Dropzone from 'react-dropzone'
 import toast from 'react-hot-toast'
+import { uploadFileToBlob } from 'src/lib/blobUpload'
 import { trpc } from 'src/lib/trpc'
 import * as Yup from 'yup'
 
@@ -34,18 +34,16 @@ export default function ProposalPublishForm({
     (fieldKey: string, fileName: string, formikProps: any) =>
     async (files: any[]) => {
       const file = files[0]
-      const { SAS_STRING } = await mutation.mutateAsync()
-      const blobServiceClient = new BlobServiceClient(
-        `${process.env.NEXT_PUBLIC_BLOBSERVICECLIENT_URL}${SAS_STRING}`
-      )
-      const containerClient = blobServiceClient.getContainerClient(
-        process.env.NEXT_PUBLIC_CONTAINER_NAME!
-      )
       const name = `${formikProps.values.supervisor}-${fileName}-${Date.now()}.pdf`
-      const blobClient = containerClient.getBlobClient(name)
-      const blockBlobClient = blobClient.getBlockBlobClient()
-      await blockBlobClient.uploadData(file, {
-        blockSize: 4 * 1024 * 1024, // 4MB block size
+      const { sasString, serviceUrl, containerName } =
+        await mutation.mutateAsync()
+
+      await uploadFileToBlob({
+        file,
+        name,
+        sasString,
+        serviceUrl,
+        containerName,
       })
       if (fieldKey === 'researchProposalPDF') {
         setResearchProposalPDF([file])
@@ -303,8 +301,8 @@ export default function ProposalPublishForm({
             </div>
 
             <div>
-              <Button 
-                className={{ root: 'mt-2' }} 
+              <Button
+                className={{ root: 'mt-2' }}
                 type="submit"
                 disabled={submitProposal.isPending}
               >

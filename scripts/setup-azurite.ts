@@ -11,6 +11,14 @@ const connectionString =
   defaultConnectionString
 
 const containerName = process.env.NEXT_PUBLIC_CONTAINER_NAME ?? 'uploads'
+const corsAllowedOrigins =
+  process.env.AZURITE_CORS_ALLOWED_ORIGINS ??
+  [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:3100',
+    'http://127.0.0.1:3100',
+  ].join(',')
 
 async function main() {
   const blobServiceClient =
@@ -18,8 +26,20 @@ async function main() {
   const containerClient = blobServiceClient.getContainerClient(containerName)
 
   await containerClient.createIfNotExists()
+  await blobServiceClient.setProperties({
+    cors: [
+      {
+        allowedOrigins: corsAllowedOrigins,
+        allowedMethods: 'GET,HEAD,PUT,OPTIONS',
+        allowedHeaders: 'x-ms-*,content-type,accept,origin',
+        exposedHeaders: 'x-ms-*,etag',
+        maxAgeInSeconds: 3600,
+      },
+    ],
+  })
 
   console.log(`Azurite container ready: ${containerName}`)
+  console.log(`Azurite CORS origins: ${corsAllowedOrigins}`)
 }
 
 main().catch((error) => {
