@@ -1,0 +1,12 @@
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  # Reviewed during the Node 24/pnpm 11 upgrade on 2026-07-04.
+  - tsx@4.23.0
+  - electron-to-chromium@1.5.387
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  esbuild: true
+  prisma: true
+  sharp: true
+  unrs-resolver: true

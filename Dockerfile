@@ -1,5 +1,5 @@
 # Install dependencies only when needed
-FROM node:22.18.0-alpine AS deps
+FROM node:24.18.0-alpine AS deps
 
 WORKDIR /app
 
@@ -7,20 +7,20 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat
 RUN apk update
 
-RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 
 # Install dependencies based on the preferred package manager
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm i --frozen-lockfile --ignore-scripts
 
 # Rebuild the source code only when needed
-FROM node:22.18.0-alpine AS builder
+FROM node:24.18.0-alpine AS builder
 
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 RUN apk add --no-cache libc6-compat
 RUN apk update
 
-RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -50,7 +50,7 @@ RUN pnpm run build
 # RUN npm run build
 
 # Production image, copy all the files and run next
-FROM node:22.18.0-alpine AS runner
+FROM node:24.18.0-alpine AS runner
 WORKDIR /app
 
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.

@@ -1,5 +1,5 @@
 {
-  "extends": ["@tsconfig/node18/tsconfig.json", "@tsconfig/next/tsconfig.json"],
+  "extends": ["@tsconfig/node24/tsconfig.json", "@tsconfig/next/tsconfig.json"],
   "compilerOptions": {
     "baseUrl": ".",
     "moduleResolution": "bundler"

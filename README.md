@@ -6,6 +6,8 @@ The motivation behind this project is to offer academic institutions an efficien
 
 ## Requirements
 
+- Node.js 24.x
+- pnpm 11.9.x
 - PostgreSQL database
 
 ## Installation
