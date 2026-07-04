@@ -7,15 +7,6 @@ const run = (command: string, args: string[]) => {
   execFileSync(command, args, { stdio: 'inherit' })
 }
 
-const succeeds = (command: string, args: string[]) => {
-  try {
-    execFileSync(command, args, { stdio: 'ignore' })
-    return true
-  } catch (_error) {
-    return false
-  }
-}
-
 const wait = (ms: number) =>
   new Promise((resolve) => {
     setTimeout(resolve, ms)
@@ -60,19 +51,8 @@ async function main() {
     'oidc',
   ])
 
-  await waitFor('PostgreSQL', () =>
-    succeeds('docker', [
-      'compose',
-      'exec',
-      '-T',
-      'postgres',
-      'pg_isready',
-      '-U',
-      'thesis',
-      '-d',
-      'thesis',
-    ])
-  )
+  // `docker compose up --wait` already blocks on the postgres healthcheck, so
+  // only azurite/oidc need explicit readiness polling (they have no healthcheck).
   await waitFor('Azurite Blob endpoint', () =>
     canFetch('http://127.0.0.1:11000/devstoreaccount1')
   )

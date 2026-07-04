@@ -249,27 +249,20 @@ export default function AdminUserRoles() {
     try {
       setIsExporting(true)
 
-      const exportRows = exportableUsers.map((user) => ({
-        Name: user.name || '-',
-        Email: user.email || '-',
-        Role: getStoredRole(user.role),
-        Department: user.department ?? '-',
-      }))
-
       const now = new Date()
       const dateStamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
       const departmentSlug = instanceDepartment
         ? `${instanceDepartment.toLowerCase()}-`
         : ''
       await writeRowsToXlsx({
-        rows: exportRows,
+        rows: exportableUsers,
         sheet: 'Users',
         fileName: `users-overview-${departmentSlug}${dateStamp}.xlsx`,
         columns: [
-          { header: 'Name', value: (row) => row.Name },
-          { header: 'Email', value: (row) => row.Email },
-          { header: 'Role', value: (row) => row.Role },
-          { header: 'Department', value: (row) => row.Department },
+          { header: 'Name', value: (user) => user.name || '-' },
+          { header: 'Email', value: (user) => user.email || '-' },
+          { header: 'Role', value: (user) => getStoredRole(user.role) },
+          { header: 'Department', value: (user) => user.department ?? '-' },
         ],
       })
     } catch (error) {
