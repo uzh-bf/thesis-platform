@@ -311,8 +311,10 @@ Risk:
 - Current browser upload creates `BlobServiceClient` from `NEXT_PUBLIC_BLOBSERVICECLIENT_URL + SAS_STRING`.
 - Current SAS generation uses `StorageSharedKeyCredential` with account name/key.
 - Azurite default account is `devstoreaccount1` with fixed dev key and HTTP endpoint.
-- Browser must reach Azurite via `http://127.0.0.1:10000/devstoreaccount1`.
+- Browser must reach Azurite via the project-local host port `http://127.0.0.1:11000/devstoreaccount1`; Azurite still listens on its standard `10000` port inside compose.
+- `NEXT_PUBLIC_BLOBSERVICECLIENT_URL` must be the account URL ending in `?` because the existing client code calls `getContainerClient` with `NEXT_PUBLIC_CONTAINER_NAME`.
 - Server running inside Docker may need different endpoint host than browser.
+- Slice 1 keeps local OIDC as a running mock only. The documented host-run path uses `.env.local`; the compose `next` profile stays a container smoke path until a routed issuer can be shared by browser and server.
 
 Decision:
 
@@ -1066,14 +1068,13 @@ Results:
 - `CI=true npx -y pnpm@10.15.0 run prisma:generate`: passed.
 - `CI=true npx -y pnpm@10.15.0 run lint`: passed.
 - `CI=true npx -y pnpm@10.15.0 run build`: passed; Next type check skipped because `next.config.js` sets `typescript.ignoreBuildErrors: true`.
-- `CI=true npx -y pnpm@10.15.0 exec tsc --noEmit`: failed on existing strict TypeScript errors, including Prisma generated-client typing/export resolution and many implicit `any` / `unknown` errors.
+- `CI=true npx -y pnpm@10.15.0 exec tsc --noEmit`: initially failed on Prisma generated-client typing/export resolution and follow-on strict TypeScript errors.
+- After restoring `node_modules` with `CI=true npx -y pnpm@10.15.0 install --frozen-lockfile` and rerunning `prisma:generate`, Slice 1 reran `CI=true npx -y pnpm@10.15.0 exec tsc --noEmit` successfully.
 
 Decision:
 
-- Do not claim type-clean baseline.
 - Slices must run slice-specific checks and include build/lint/`tsc` evidence where relevant.
-- Treat `tsc` as an existing failing gate until a dedicated type cleanup or framework/tooling slice fixes it.
-- Same known `tsc` failure is allowed until cleanup; new or expanded type errors block slice commit.
+- Treat `tsc` as an active gate from Slice 1 onward; a new failure blocks the slice unless it is explicitly isolated to a planned major-upgrade breakage.
 - pnpm 11 slice must handle build approvals and avoid `pnpm-workspace.yaml` / `.pnpm-store` churn.
 
 ## Progress
@@ -1090,8 +1091,20 @@ Decision:
 - [x] Independent plan review completed and accepted findings integrated.
 - [x] Plan written.
 - [x] Plan committed alone: `6072919 docs(project): add dependency refresh plan`.
-- [x] Baseline verification completed with known `tsc` failure recorded.
-- [ ] Implementation pending.
+- [x] Baseline verification completed.
+- [x] Slice 1 local services implemented: PostgreSQL, Azurite, OIDC mock, `dev:local`, template env, and setup docs.
+- [x] Slice 1 review completed by subagent `Sagan`; accepted findings integrated.
+- [x] Slice 1 simplification completed by subagent `Hubble`; accepted reductions integrated.
+- [x] Slice 1 verification passed:
+  - `docker compose config`
+  - `docker compose up -d postgres azurite oidc`
+  - `docker compose exec -T postgres pg_isready -U thesis -d thesis`
+  - `curl -fsS http://localhost:4011/default/.well-known/openid-configuration`
+  - Azurite SDK setup/readback for `uploads`
+  - `CI=true npx -y pnpm@10.15.0 exec dotenv -e .env.local.template -- prisma db push`
+  - `CI=true npx -y pnpm@10.15.0 exec dotenv -e .env.local.template -- ts-node --project tsconfig.tsnode.json prisma/seed-df.ts`
+  - `CI=true npx -y pnpm@10.15.0 run lint`
+  - `CI=true npx -y pnpm@10.15.0 exec tsc --noEmit`
 
 ## Open Questions
 
@@ -1102,5 +1115,5 @@ Decision:
 
 ## Next Steps
 
-1. Commit Slice 0 baseline/progress update.
-2. Start Slice 1.
+1. Commit Slice 1.
+2. Start Slice 2 local auth provider wiring.
