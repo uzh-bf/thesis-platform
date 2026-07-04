@@ -382,7 +382,7 @@ New feature candidates:
 
 - `concurrently`: `^9.2.0` -> `10.0.3`
 - `dotenv-cli`: `7.3.0` -> `11.0.0`
-- `nodemailer`: `6.9.4` -> `9.0.3`
+- `nodemailer`: `6.9.4` -> remove if unused; `next-auth@4.24.14` optional peer wants `^7.0.7`
 - `cross-fetch`: `3.1.5` -> `4.1.0`
 - `cssnano`: `7.1.1` -> `8.0.2`
 - `prettier-plugin-organize-imports`: `3.2.3` -> `4.3.0`
@@ -392,6 +392,7 @@ Risk:
 
 - Script behavior may change for `concurrently` and `dotenv-cli`.
 - `react-dropzone` API/types may alter accept/dropzone props.
+- `nodemailer` is a commented EmailProvider-only dependency. Remove instead of carrying an incompatible unused optional peer.
 - `cross-fetch` may be removable because modern Node has fetch, but leave removal for separate cleanup unless safe.
 
 Decision:
@@ -407,39 +408,39 @@ New feature candidates:
 
 Minor/patch upgrades will be applied after major upgrade plan is clear. These still require build + browser verification, but no detailed changelog gate unless a failure points at the package.
 
-| Package | Current | Latest | Type | Research |
-| --- | ---: | ---: | --- | --- |
-| `@azure/storage-blob` | `12.15.0` | `12.33.0` | minor | Azure SDK changelog/docs checked for Azurite/SAS path |
-| `@microsoft/microsoft-graph-types` | `2.38.0` | `2.43.1` | minor | registry + repo metadata |
-| `@tailwindcss/postcss` | `~4.1.12` | `4.3.2` | minor | Tailwind group |
-| `@tanstack/react-query` | `^5.85.5` | `5.101.2` | minor | v5 same major |
-| `@tanstack/react-query-devtools` | `^5.85.5` | `5.101.2` | minor | v5 same major |
-| `@trpc/client` | `11.5.0` | `11.18.0` | minor | v11 same major |
-| `@trpc/next` | `11.5.0` | `11.18.0` | minor | v11 same major |
-| `@trpc/react-query` | `11.5.0` | `11.18.0` | minor | v11 same major |
-| `@trpc/server` | `11.5.0` | `11.18.0` | minor | v11 same major |
-| `@uzh-bf/design-system` | `4.0.11` | `4.1.6` | minor | private/local package metadata only; verify UI carefully |
-| `autoprefixer` | `10.4.15` | `10.5.2` | minor | PostCSS group |
-| `axios` | `1.5.1` | `1.18.1` | minor | v1 same major |
-| `postcss` | `8.4.47` | `8.5.16` | minor | PostCSS group |
-| `prettier` | `3.6.2` | `3.9.4` | minor | v3 same major |
-| `prettier-plugin-tailwindcss` | `~0.6.14` | `0.8.0` | minor | plugin peer compatibility with Prettier 3 |
-| `react-hot-toast` | `2.4.1` | `2.6.0` | minor | v2 same major |
-| `tailwind-merge` | `3.3.1` | `3.6.0` | minor | v3 same major |
-| `tailwindcss` | `~4.1.12` | `4.3.2` | minor | Tailwind 4 same major |
-| `trpc-to-openapi` | `^3.0.1` | `3.3.0` | minor | v3 same major |
-| `tsx` | `^4.19.2` | `4.23.0` | minor | v4 same major |
-| `tw-animate-css` | `~1.3.4` | `1.4.0` | minor | v1 same major |
-| `@microsoft/microsoft-graph-client` | `3.0.5` | `3.0.7` | patch | registry metadata |
-| `@tailwindcss/forms` | `~0.5.10` | `0.5.11` | patch | registry metadata |
-| `@tailwindcss/typography` | `~0.5.16` | `0.5.20` | patch | registry metadata |
-| `@types/jsonwebtoken` | `^9.0.0` | `9.0.10` | patch | registry metadata |
-| `dayjs` | `^1.11.13` | `1.11.21` | patch | registry metadata |
-| `formik` | `2.4.6` | `2.4.9` | patch | registry metadata |
-| `jsonwebtoken` | `9.0.1` | `9.0.3` | patch | registry metadata |
-| `next-auth` | `4.24.11` | `4.24.14` | patch | stable latest only; v5 beta deferred |
-| `nextjs-cors` | `2.2.0` | `2.2.1` | patch | registry metadata |
-| `ts-node` | `10.9.1` | `10.9.2` | patch | registry metadata |
+| Package                             |    Current |    Latest | Type  | Research                                                 |
+| ----------------------------------- | ---------: | --------: | ----- | -------------------------------------------------------- |
+| `@azure/storage-blob`               |  `12.15.0` | `12.33.0` | minor | Azure SDK changelog/docs checked for Azurite/SAS path    |
+| `@microsoft/microsoft-graph-types`  |   `2.38.0` |  `2.43.1` | minor | registry + repo metadata                                 |
+| `@tailwindcss/postcss`              |  `~4.1.12` |   `4.3.2` | minor | Tailwind group                                           |
+| `@tanstack/react-query`             |  `^5.85.5` | `5.101.2` | minor | v5 same major                                            |
+| `@tanstack/react-query-devtools`    |  `^5.85.5` | `5.101.2` | minor | v5 same major                                            |
+| `@trpc/client`                      |   `11.5.0` | `11.18.0` | minor | v11 same major                                           |
+| `@trpc/next`                        |   `11.5.0` | `11.18.0` | minor | v11 same major                                           |
+| `@trpc/react-query`                 |   `11.5.0` | `11.18.0` | minor | v11 same major                                           |
+| `@trpc/server`                      |   `11.5.0` | `11.18.0` | minor | v11 same major                                           |
+| `@uzh-bf/design-system`             |   `4.0.11` |   `4.1.6` | minor | private/local package metadata only; verify UI carefully |
+| `autoprefixer`                      |  `10.4.15` |  `10.5.2` | minor | PostCSS group                                            |
+| `axios`                             |    `1.5.1` |  `1.18.1` | minor | v1 same major                                            |
+| `postcss`                           |   `8.4.47` |  `8.5.16` | minor | PostCSS group                                            |
+| `prettier`                          |    `3.6.2` |   `3.9.4` | minor | v3 same major                                            |
+| `prettier-plugin-tailwindcss`       |  `~0.6.14` |   `0.8.0` | minor | plugin peer compatibility with Prettier 3                |
+| `react-hot-toast`                   |    `2.4.1` |   `2.6.0` | minor | v2 same major                                            |
+| `tailwind-merge`                    |    `3.3.1` |   `3.6.0` | minor | v3 same major                                            |
+| `tailwindcss`                       |  `~4.1.12` |   `4.3.2` | minor | Tailwind 4 same major                                    |
+| `trpc-to-openapi`                   |   `^3.0.1` |   `3.3.0` | minor | v3 same major                                            |
+| `tsx`                               |  `^4.19.2` |  `4.23.0` | minor | v4 same major                                            |
+| `tw-animate-css`                    |   `~1.3.4` |   `1.4.0` | minor | v1 same major                                            |
+| `@microsoft/microsoft-graph-client` |    `3.0.5` |   `3.0.7` | patch | registry metadata                                        |
+| `@tailwindcss/forms`                |  `~0.5.10` |  `0.5.11` | patch | registry metadata                                        |
+| `@tailwindcss/typography`           |  `~0.5.16` |  `0.5.20` | patch | registry metadata                                        |
+| `@types/jsonwebtoken`               |   `^9.0.0` |  `9.0.10` | patch | registry metadata                                        |
+| `dayjs`                             | `^1.11.13` | `1.11.21` | patch | registry metadata                                        |
+| `formik`                            |    `2.4.6` |   `2.4.9` | patch | registry metadata                                        |
+| `jsonwebtoken`                      |    `9.0.1` |   `9.0.3` | patch | registry metadata                                        |
+| `next-auth`                         |  `4.24.11` | `4.24.14` | patch | stable latest only; v5 beta deferred                     |
+| `nextjs-cors`                       |    `2.2.0` |   `2.2.1` | patch | registry metadata                                        |
+| `ts-node`                           |   `10.9.1` |  `10.9.2` | patch | registry metadata                                        |
 
 Already-latest direct dependencies:
 
@@ -447,87 +448,87 @@ Already-latest direct dependencies:
 
 ## Full Dependency Research Inventory
 
-| Package | Current | Latest | Type | Source |
-| --- | ---: | ---: | --- | --- |
-| `@azure/identity` | `3.3.0` | `4.13.1` | major | https://github.com/Azure/azure-sdk-for-js |
-| `@azure/storage-blob` | `12.15.0` | `12.33.0` | minor | https://github.com/Azure/azure-sdk-for-js |
-| `@fortawesome/fontawesome-svg-core` | `6.7.2` | `7.3.0` | major | https://github.com/FortAwesome/Font-Awesome |
-| `@fortawesome/free-regular-svg-icons` | `6.7.2` | `7.3.0` | major | https://github.com/FortAwesome/Font-Awesome |
-| `@fortawesome/free-solid-svg-icons` | `6.7.2` | `7.3.0` | major | https://github.com/FortAwesome/Font-Awesome |
-| `@fortawesome/react-fontawesome` | `0.2.2` | `3.3.1` | major | https://github.com/FortAwesome/react-fontawesome |
-| `@microsoft/microsoft-graph-client` | `3.0.5` | `3.0.7` | patch | https://github.com/microsoftgraph/msgraph-sdk-javascript |
-| `@microsoft/microsoft-graph-types` | `2.38.0` | `2.43.1` | minor | https://github.com/microsoftgraph/msgraph-typescript-typings |
-| `@next-auth/prisma-adapter` | `1.0.7` | `1.0.7` | same | https://github.com/nextauthjs/next-auth |
-| `@prisma/client` | `6.15.0` | `7.8.0` | major | https://github.com/prisma/prisma |
-| `@tailwindcss/aspect-ratio` | `~0.4.2` | `0.4.2` | same | https://github.com/tailwindlabs/tailwindcss-aspect-ratio |
-| `@tailwindcss/forms` | `~0.5.10` | `0.5.11` | patch | https://github.com/tailwindlabs/tailwindcss-forms |
-| `@tailwindcss/postcss` | `~4.1.12` | `4.3.2` | minor | https://github.com/tailwindlabs/tailwindcss |
-| `@tailwindcss/typography` | `~0.5.16` | `0.5.20` | patch | https://github.com/tailwindlabs/tailwindcss-typography |
-| `@tanstack/react-query` | `^5.85.5` | `5.101.2` | minor | https://github.com/TanStack/query |
-| `@tanstack/react-query-devtools` | `^5.85.5` | `5.101.2` | minor | https://github.com/TanStack/query |
-| `@trpc/client` | `11.5.0` | `11.18.0` | minor | https://github.com/trpc/trpc |
-| `@trpc/next` | `11.5.0` | `11.18.0` | minor | https://github.com/trpc/trpc |
-| `@trpc/react-query` | `11.5.0` | `11.18.0` | minor | https://github.com/trpc/trpc |
-| `@trpc/server` | `11.5.0` | `11.18.0` | minor | https://github.com/trpc/trpc |
-| `@tsconfig/next` | `1.0.5` | `2.0.6` | major | https://github.com/tsconfig/bases |
-| `@tsconfig/node18` | `2.0.0` | replace with `@tsconfig/node24@24.0.4` | runtime alignment | https://github.com/tsconfig/bases |
-| `@types/archiver` | `^8.0.0` | `8.0.0` | same | https://github.com/DefinitelyTyped/DefinitelyTyped |
-| `@types/jsonwebtoken` | `^9.0.0` | `9.0.10` | patch | https://github.com/DefinitelyTyped/DefinitelyTyped |
-| `@types/localtunnel` | `^2.0.4` | `2.0.4` | same | https://github.com/DefinitelyTyped/DefinitelyTyped |
-| `@types/node` | `^18.8.4` | `26.1.0` | major | https://github.com/DefinitelyTyped/DefinitelyTyped |
-| `@types/ramda` | `^0.29.0` | `0.32.0` | minor | https://github.com/DefinitelyTyped/DefinitelyTyped |
-| `@types/react` | `^18.0.21` | `19.2.17` | major | https://github.com/DefinitelyTyped/DefinitelyTyped |
-| `@types/react-dom` | `^18.0.6` | `19.2.3` | major | https://github.com/DefinitelyTyped/DefinitelyTyped |
-| `@types/uuid` | `^10.0.0` | `11.0.0` | major/remove | npm deprecated metadata |
-| `@uidotdev/usehooks` | `2.4.1` | `2.4.1` | same | https://github.com/uidotdev/usehooks |
-| `@uzh-bf/design-system` | `4.0.11` | `4.1.6` | minor | private npm metadata |
-| `archiver` | `^8.0.0` | `8.0.0` | same | https://github.com/archiverjs/node-archiver |
-| `autoprefixer` | `10.4.15` | `10.5.2` | minor | https://github.com/postcss/autoprefixer |
-| `axios` | `1.5.1` | `1.18.1` | minor | https://github.com/axios/axios |
-| `concurrently` | `^9.2.0` | `10.0.3` | major | https://github.com/open-cli-tools/concurrently |
-| `cross-fetch` | `3.1.5` | `4.1.0` | major | https://github.com/lquixada/cross-fetch |
-| `cssnano` | `7.1.1` | `8.0.2` | major | https://github.com/cssnano/cssnano |
-| `date-fns` | `2.30.0` | `4.4.0` | major | https://github.com/date-fns/date-fns |
-| `dayjs` | `^1.11.13` | `1.11.21` | patch | https://github.com/iamkun/dayjs |
-| `dotenv-cli` | `7.3.0` | `11.0.0` | major | https://github.com/entropitor/dotenv-cli |
-| `eslint` | `8.48.0` | `10.6.0` | major | https://github.com/eslint/eslint |
-| `eslint-config-next` | `13.4.19` | `16.2.10` | major | https://github.com/vercel/next.js |
-| `formik` | `2.4.6` | `2.4.9` | patch | https://github.com/jaredpalmer/formik |
-| `jsonwebtoken` | `9.0.1` | `9.0.3` | patch | https://github.com/auth0/node-jsonwebtoken |
-| `localforage` | `1.10.0` | `1.10.0` | same | https://github.com/localForage/localForage |
-| `localtunnel` | `^2.0.2` | `2.0.2` | same | https://github.com/localtunnel/localtunnel |
-| `next` | `15.3.4` | `16.2.10` | major | https://github.com/vercel/next.js |
-| `next-auth` | `4.24.11` | `4.24.14` | patch | https://github.com/nextauthjs/next-auth |
-| `nextjs-cors` | `2.2.0` | `2.2.1` | patch | https://github.com/yonycalsin/nextjs-cors |
-| `node-fetch` | `3.3.2` | `3.3.2` | same | https://github.com/node-fetch/node-fetch |
-| `nodemailer` | `6.9.4` | `9.0.3` | major | https://github.com/nodemailer/nodemailer |
-| `npm-run-all` | `4.1.5` | `4.1.5` | same | https://github.com/mysticatea/npm-run-all |
-| `postcss` | `8.4.47` | `8.5.16` | minor | https://github.com/postcss/postcss |
-| `prettier` | `3.6.2` | `3.9.4` | minor | https://github.com/prettier/prettier |
-| `prettier-plugin-organize-imports` | `3.2.3` | `4.3.0` | major | https://github.com/simonhaenisch/prettier-plugin-organize-imports |
-| `prettier-plugin-tailwindcss` | `~0.6.14` | `0.8.0` | minor | https://github.com/tailwindlabs/prettier-plugin-tailwindcss |
-| `prisma` | `6.15.0` | `7.8.0` | major | https://github.com/prisma/prisma |
-| `ramda` | `0.29.0` | `0.32.0` | minor | https://github.com/ramda/ramda |
-| `react` | `19.1.1` | `19.2.7` | minor | https://github.com/facebook/react |
-| `react-dom` | `19.1.1` | `19.2.7` | minor | https://github.com/facebook/react |
-| `react-dropzone` | `14.2.3` | `15.0.0` | major | https://github.com/react-dropzone/react-dropzone |
-| `react-hot-toast` | `2.4.1` | `2.6.0` | minor | https://github.com/timolins/react-hot-toast |
-| `standard-version` | `9.5.0` | `9.5.0` | same | https://github.com/conventional-changelog/standard-version |
-| `tailwind-merge` | `3.3.1` | `3.6.0` | minor | https://github.com/dcastil/tailwind-merge |
-| `tailwindcss` | `~4.1.12` | `4.3.2` | minor | https://github.com/tailwindlabs/tailwindcss |
-| `tailwindcss-animate` | `~1.0.7` | `1.0.7` | same | npm metadata |
-| `tailwindcss-radix` | `4.0.2` | `4.0.2` | same | https://github.com/ecklf/tailwindcss-radix |
-| `trpc-to-openapi` | `^3.0.1` | `3.3.0` | minor | https://github.com/mcampa/trpc-to-openapi |
-| `ts-node` | `10.9.1` | `10.9.2` | patch | https://github.com/TypeStrong/ts-node |
-| `ts-node-dev` | `2.0.0` | `2.0.0` | same | https://github.com/whitecolor/ts-node-dev |
-| `tsx` | `^4.19.2` | `4.23.0` | minor | https://github.com/privatenumber/tsx |
-| `tw-animate-css` | `~1.3.4` | `1.4.0` | minor | https://github.com/Wombosvideo/tw-animate-css |
-| `type-fest` | `4.5.0` | `5.7.0` | major | https://github.com/sindresorhus/type-fest |
-| `typescript` | `5.9.2` | `6.0.3` | major | https://github.com/microsoft/TypeScript |
-| `uuid` | `^11.0.5` | `14.0.1` | major | https://github.com/uuidjs/uuid |
-| `xlsx` | `^0.18.5` | `0.18.5` | same | https://github.com/SheetJS/sheetjs |
-| `yup` | `1.6.1` | `1.7.1` | minor | https://github.com/jquense/yup |
-| `zod` | `^4.1.3` | `4.4.3` | minor | https://github.com/colinhacks/zod |
+| Package                               |    Current |                                 Latest | Type              | Source                                                            |
+| ------------------------------------- | ---------: | -------------------------------------: | ----------------- | ----------------------------------------------------------------- |
+| `@azure/identity`                     |    `3.3.0` |                               `4.13.1` | major             | https://github.com/Azure/azure-sdk-for-js                         |
+| `@azure/storage-blob`                 |  `12.15.0` |                              `12.33.0` | minor             | https://github.com/Azure/azure-sdk-for-js                         |
+| `@fortawesome/fontawesome-svg-core`   |    `6.7.2` |                                `7.3.0` | major             | https://github.com/FortAwesome/Font-Awesome                       |
+| `@fortawesome/free-regular-svg-icons` |    `6.7.2` |                                `7.3.0` | major             | https://github.com/FortAwesome/Font-Awesome                       |
+| `@fortawesome/free-solid-svg-icons`   |    `6.7.2` |                                `7.3.0` | major             | https://github.com/FortAwesome/Font-Awesome                       |
+| `@fortawesome/react-fontawesome`      |    `0.2.2` |                                `3.3.1` | major             | https://github.com/FortAwesome/react-fontawesome                  |
+| `@microsoft/microsoft-graph-client`   |    `3.0.5` |                                `3.0.7` | patch             | https://github.com/microsoftgraph/msgraph-sdk-javascript          |
+| `@microsoft/microsoft-graph-types`    |   `2.38.0` |                               `2.43.1` | minor             | https://github.com/microsoftgraph/msgraph-typescript-typings      |
+| `@next-auth/prisma-adapter`           |    `1.0.7` |                                `1.0.7` | same              | https://github.com/nextauthjs/next-auth                           |
+| `@prisma/client`                      |   `6.15.0` |                                `7.8.0` | major             | https://github.com/prisma/prisma                                  |
+| `@tailwindcss/aspect-ratio`           |   `~0.4.2` |                                `0.4.2` | same              | https://github.com/tailwindlabs/tailwindcss-aspect-ratio          |
+| `@tailwindcss/forms`                  |  `~0.5.10` |                               `0.5.11` | patch             | https://github.com/tailwindlabs/tailwindcss-forms                 |
+| `@tailwindcss/postcss`                |  `~4.1.12` |                                `4.3.2` | minor             | https://github.com/tailwindlabs/tailwindcss                       |
+| `@tailwindcss/typography`             |  `~0.5.16` |                               `0.5.20` | patch             | https://github.com/tailwindlabs/tailwindcss-typography            |
+| `@tanstack/react-query`               |  `^5.85.5` |                              `5.101.2` | minor             | https://github.com/TanStack/query                                 |
+| `@tanstack/react-query-devtools`      |  `^5.85.5` |                              `5.101.2` | minor             | https://github.com/TanStack/query                                 |
+| `@trpc/client`                        |   `11.5.0` |                              `11.18.0` | minor             | https://github.com/trpc/trpc                                      |
+| `@trpc/next`                          |   `11.5.0` |                              `11.18.0` | minor             | https://github.com/trpc/trpc                                      |
+| `@trpc/react-query`                   |   `11.5.0` |                              `11.18.0` | minor             | https://github.com/trpc/trpc                                      |
+| `@trpc/server`                        |   `11.5.0` |                              `11.18.0` | minor             | https://github.com/trpc/trpc                                      |
+| `@tsconfig/next`                      |    `1.0.5` |                                `2.0.6` | major             | https://github.com/tsconfig/bases                                 |
+| `@tsconfig/node18`                    |    `2.0.0` | replace with `@tsconfig/node24@24.0.4` | runtime alignment | https://github.com/tsconfig/bases                                 |
+| `@types/archiver`                     |   `^8.0.0` |                                `8.0.0` | same              | https://github.com/DefinitelyTyped/DefinitelyTyped                |
+| `@types/jsonwebtoken`                 |   `^9.0.0` |                               `9.0.10` | patch             | https://github.com/DefinitelyTyped/DefinitelyTyped                |
+| `@types/localtunnel`                  |   `^2.0.4` |                                `2.0.4` | same              | https://github.com/DefinitelyTyped/DefinitelyTyped                |
+| `@types/node`                         |  `^18.8.4` |                               `26.1.0` | major             | https://github.com/DefinitelyTyped/DefinitelyTyped                |
+| `@types/ramda`                        |  `^0.29.0` |                               `0.32.0` | minor             | https://github.com/DefinitelyTyped/DefinitelyTyped                |
+| `@types/react`                        | `^18.0.21` |                              `19.2.17` | major             | https://github.com/DefinitelyTyped/DefinitelyTyped                |
+| `@types/react-dom`                    |  `^18.0.6` |                               `19.2.3` | major             | https://github.com/DefinitelyTyped/DefinitelyTyped                |
+| `@types/uuid`                         |  `^10.0.0` |                               `11.0.0` | major/remove      | npm deprecated metadata                                           |
+| `@uidotdev/usehooks`                  |    `2.4.1` |                                `2.4.1` | same              | https://github.com/uidotdev/usehooks                              |
+| `@uzh-bf/design-system`               |   `4.0.11` |                                `4.1.6` | minor             | private npm metadata                                              |
+| `archiver`                            |   `^8.0.0` |                                `8.0.0` | same              | https://github.com/archiverjs/node-archiver                       |
+| `autoprefixer`                        |  `10.4.15` |                               `10.5.2` | minor             | https://github.com/postcss/autoprefixer                           |
+| `axios`                               |    `1.5.1` |                               `1.18.1` | minor             | https://github.com/axios/axios                                    |
+| `concurrently`                        |   `^9.2.0` |                               `10.0.3` | major             | https://github.com/open-cli-tools/concurrently                    |
+| `cross-fetch`                         |    `3.1.5` |                                `4.1.0` | major             | https://github.com/lquixada/cross-fetch                           |
+| `cssnano`                             |    `7.1.1` |                                `8.0.2` | major             | https://github.com/cssnano/cssnano                                |
+| `date-fns`                            |   `2.30.0` |                                `4.4.0` | major             | https://github.com/date-fns/date-fns                              |
+| `dayjs`                               | `^1.11.13` |                              `1.11.21` | patch             | https://github.com/iamkun/dayjs                                   |
+| `dotenv-cli`                          |    `7.3.0` |                               `11.0.0` | major             | https://github.com/entropitor/dotenv-cli                          |
+| `eslint`                              |   `8.48.0` |                               `10.6.0` | major             | https://github.com/eslint/eslint                                  |
+| `eslint-config-next`                  |  `13.4.19` |                              `16.2.10` | major             | https://github.com/vercel/next.js                                 |
+| `formik`                              |    `2.4.6` |                                `2.4.9` | patch             | https://github.com/jaredpalmer/formik                             |
+| `jsonwebtoken`                        |    `9.0.1` |                                `9.0.3` | patch             | https://github.com/auth0/node-jsonwebtoken                        |
+| `localforage`                         |   `1.10.0` |                               `1.10.0` | same              | https://github.com/localForage/localForage                        |
+| `localtunnel`                         |   `^2.0.2` |                                `2.0.2` | same              | https://github.com/localtunnel/localtunnel                        |
+| `next`                                |   `15.3.4` |                              `16.2.10` | major             | https://github.com/vercel/next.js                                 |
+| `next-auth`                           |  `4.24.11` |                              `4.24.14` | patch             | https://github.com/nextauthjs/next-auth                           |
+| `nextjs-cors`                         |    `2.2.0` |                                `2.2.1` | patch             | https://github.com/yonycalsin/nextjs-cors                         |
+| `node-fetch`                          |    `3.3.2` |                                `3.3.2` | same              | https://github.com/node-fetch/node-fetch                          |
+| `nodemailer`                          |    `6.9.4` |                       remove if unused | major/remove      | https://github.com/nodemailer/nodemailer                          |
+| `npm-run-all`                         |    `4.1.5` |                                `4.1.5` | same              | https://github.com/mysticatea/npm-run-all                         |
+| `postcss`                             |   `8.4.47` |                               `8.5.16` | minor             | https://github.com/postcss/postcss                                |
+| `prettier`                            |    `3.6.2` |                                `3.9.4` | minor             | https://github.com/prettier/prettier                              |
+| `prettier-plugin-organize-imports`    |    `3.2.3` |                                `4.3.0` | major             | https://github.com/simonhaenisch/prettier-plugin-organize-imports |
+| `prettier-plugin-tailwindcss`         |  `~0.6.14` |                                `0.8.0` | minor             | https://github.com/tailwindlabs/prettier-plugin-tailwindcss       |
+| `prisma`                              |   `6.15.0` |                                `7.8.0` | major             | https://github.com/prisma/prisma                                  |
+| `ramda`                               |   `0.29.0` |                               `0.32.0` | minor             | https://github.com/ramda/ramda                                    |
+| `react`                               |   `19.1.1` |                               `19.2.7` | minor             | https://github.com/facebook/react                                 |
+| `react-dom`                           |   `19.1.1` |                               `19.2.7` | minor             | https://github.com/facebook/react                                 |
+| `react-dropzone`                      |   `14.2.3` |                               `15.0.0` | major             | https://github.com/react-dropzone/react-dropzone                  |
+| `react-hot-toast`                     |    `2.4.1` |                                `2.6.0` | minor             | https://github.com/timolins/react-hot-toast                       |
+| `standard-version`                    |    `9.5.0` |                                `9.5.0` | same              | https://github.com/conventional-changelog/standard-version        |
+| `tailwind-merge`                      |    `3.3.1` |                                `3.6.0` | minor             | https://github.com/dcastil/tailwind-merge                         |
+| `tailwindcss`                         |  `~4.1.12` |                                `4.3.2` | minor             | https://github.com/tailwindlabs/tailwindcss                       |
+| `tailwindcss-animate`                 |   `~1.0.7` |                                `1.0.7` | same              | npm metadata                                                      |
+| `tailwindcss-radix`                   |    `4.0.2` |                                `4.0.2` | same              | https://github.com/ecklf/tailwindcss-radix                        |
+| `trpc-to-openapi`                     |   `^3.0.1` |                                `3.3.0` | minor             | https://github.com/mcampa/trpc-to-openapi                         |
+| `ts-node`                             |   `10.9.1` |                               `10.9.2` | patch             | https://github.com/TypeStrong/ts-node                             |
+| `ts-node-dev`                         |    `2.0.0` |                                `2.0.0` | same              | https://github.com/whitecolor/ts-node-dev                         |
+| `tsx`                                 |  `^4.19.2` |                               `4.23.0` | minor             | https://github.com/privatenumber/tsx                              |
+| `tw-animate-css`                      |   `~1.3.4` |                                `1.4.0` | minor             | https://github.com/Wombosvideo/tw-animate-css                     |
+| `type-fest`                           |    `4.5.0` |                                `5.7.0` | major             | https://github.com/sindresorhus/type-fest                         |
+| `typescript`                          |    `5.9.2` |                                `6.0.3` | major             | https://github.com/microsoft/TypeScript                           |
+| `uuid`                                |  `^11.0.5` |                               `14.0.1` | major             | https://github.com/uuidjs/uuid                                    |
+| `xlsx`                                |  `^0.18.5` |                               `0.18.5` | same              | https://github.com/SheetJS/sheetjs                                |
+| `yup`                                 |    `1.6.1` |                                `1.7.1` | minor             | https://github.com/jquense/yup                                    |
+| `zod`                                 |   `^4.1.3` |                                `4.4.3` | minor             | https://github.com/colinhacks/zod                                 |
 
 ## Local Auth Design
 
@@ -958,7 +959,8 @@ Do:
 
 - Before upgrading, review official changelog/release notes for every remaining major package in this slice.
 - Record accepted migration actions and notable new features in this plan before changing versions.
-- Upgrade FontAwesome, Azure identity, date-fns, nodemailer, dotenv-cli, concurrently, cssnano, react-dropzone, type-fest, ramda, uuid, cross-fetch, prettier plugin.
+- Upgrade FontAwesome, Azure identity, date-fns, dotenv-cli, concurrently, cssnano, react-dropzone, type-fest, uuid, cross-fetch, prettier plugin.
+- Remove `nodemailer` if usage search confirms EmailProvider remains disabled/commented.
 - Fix surfaced API/type issues only.
 
 Check:
@@ -1204,7 +1206,7 @@ Decision:
   - New React Hooks plugin compiler-readiness rules `react-hooks/purity`, `react-hooks/set-state-in-effect`, and `react-hooks/preserve-manual-memoization` are disabled for now. They fail on existing component patterns and belong in Slice 5c React Compiler adoption, not the framework compatibility slice.
   - TypeScript 6 failed on inherited `target=ES5` and `baseUrl`. Replace app `baseUrl` with explicit `src/*` paths and override target to `ES2020`.
   - `ts-node` seed/reset config failed under TypeScript 6 with TS5011 and legacy `moduleResolution=node10` deprecation. Add explicit `rootDir` and temporary `ignoreDeprecations: "6.0"` there only; leave a full script-runner cleanup for the migration/Prisma slice.
-  - Turbopack initially warned that `styled-jsx/style.js` could not resolve under pnpm strict layout. Add exact direct `styled-jsx@5.1.6`, deduped with Next 16's own dependency, to remove the production-build warning.
+  - Turbopack initially warned that `styled-jsx/style.js` could not resolve under pnpm strict layout. Add exact direct `styled-jsx@5.1.6`, deduped with Next 16's own dependency at the time, to remove the production-build warning.
   - Webpack alias for DF Matomo tracking moved to `turbopack.resolveAlias`. Reviewer found absolute alias targets fail under Turbopack; use a project-relative alias target and verify the DF webstats branch explicitly.
 - [x] Slice 5b review completed by subagent `Epicurus`; accepted findings integrated:
   - run a Matomo-enabled build for the gated `ENABLE_DF_WEBSTATS=true` alias branch.
@@ -1212,7 +1214,7 @@ Decision:
   - record the temporary React Hooks rule disables as React Compiler follow-up scope.
 - [x] Slice 5b simplification completed by subagent `Averroes`; accepted findings integrated or explicitly deferred:
   - keep TS config changes because they map directly to observed TypeScript 6 failures.
-  - keep exact `styled-jsx@5.1.6` because it removes an observed Turbopack warning and dedupes to Next's pinned transitive version.
+  - keep exact `styled-jsx@5.1.6` in Slice 5b because it removes an observed Turbopack warning and dedupes to Next's pinned transitive version at that point.
   - keep React Hooks compiler-readiness rule disables only as a temporary Slice 5c follow-up.
 - [x] Slice 5b verification passed:
   - `CI=true npx -y pnpm@11.9.0 install --frozen-lockfile`
@@ -1343,6 +1345,54 @@ Decision:
   - `docker run --rm --network thesis-platform_thesis-platform -e DATABASE_URL='postgresql://thesis:thesis@postgres:5432/thesis_node_runner_smoke_20260704_continue?sslmode=disable' thesis-platform:node-runner-smoke prisma migrate deploy`: applied baseline migration successfully on a fresh throwaway DB.
   - `docker run` app server smoke on `thesis-platform:node-runner-smoke`: Next server started and returned HTTP `404` for `/404` inside the Docker network.
   - `CI=true npx -y pnpm@11.9.0 run test:e2e`: 1 Chromium test passed with local PostgreSQL, OIDC, Azurite setup, sign-in, SAS minting, browser upload, and blob readback; existing styled-jsx hydration and LCP warnings still appear.
+- [x] Slice 8 remaining major dependency upgrades completed:
+  - Upgraded direct remaining major targets: `@azure/identity@4.13.1`, FontAwesome 7 packages, `@fortawesome/react-fontawesome@3.3.1`, `@tsconfig/next@2.0.6`, `concurrently@10.0.3`, `cross-fetch@4.1.0`, `cssnano@8.0.2`, `date-fns@4.4.0`, `dotenv-cli@11.0.0`, `prettier-plugin-organize-imports@4.3.0`, `react-dropzone@15.0.0`, `type-fest@5.7.0`, and `uuid@14.0.1`; upgraded direct `styled-jsx` to latest patch `5.1.7`.
+  - Removed deprecated `@types/uuid`; `uuid@14.0.1` provides bundled declarations and `tsc` passed.
+  - Removed unused direct `nodemailer`; source search found only commented `EmailProvider` code, and keeping it caused an incompatible optional peer warning with `next-auth@4.24.14`.
+  - `ramda` / `@types/ramda` were already upgraded to `0.32.0`; no Slice 8 action needed.
+  - `zod-openapi@6` is deferred because `trpc-to-openapi@3.3.0` declares peer `zod-openapi: ^5.4.4`.
+  - `@types/node@26` is deferred because this branch targets Node 24 and direct types are already on the latest Node 24 line.
+  - `eslint@10` remains deferred because `eslint-config-next@16.2.10` plugin peers still resolve cleanly on ESLint 9, not 10.
+  - `@uzh-bf/design-system@4.1.6` lock metadata still says `engines.node: =22` while the app runs on Node 24. This is a private package metadata mismatch from the latest available design-system release, not a runtime failure: frozen install, `tsc`, Next build, DF webstats build, E2E, and Docker build passed under Node 24. Follow-up is to republish/upgrade the design system with Node 24 engine metadata.
+  - Context7 date-fns docs checked: v4 changed deep/CommonJS default-export behavior, but app imports named functions from `date-fns`, so no local import migration is expected; new time-zone support is not adopted in this slice.
+  - Context7 react-dropzone docs checked: v15 resets `isDragReject` after drop; app Dropzone render props use only `getRootProps`/`getInputProps`, so no local behavior change expected.
+  - Registry peer/engine checks: Node 24 satisfies new package engines; `react-dropzone` peer range still omits React 19 but the current v14 package has the same stale peer shape, so this is not a new upgrade blocker.
+  - Official changelog/release-note checks before edit:
+    - Azure Identity 4.1 changed additional-tenant behavior; app has only a commented `@azure/identity` import, so no runtime migration.
+    - FontAwesome 7 group upgraded together; compile catches missing icon exports.
+    - `concurrently@10` drops Node <22 and becomes ESM-only; repo uses CLI scripts under Node 24.
+    - `cross-fetch@4` drops old Node versions and keeps bundled declarations.
+    - `cssnano@8` drops Node 20 and removes `cssDeclarationSorter` from the default preset; current PostCSS use is default `cssnano: {}`.
+    - `date-fns@4` adds first-class time-zone support and keeps named top-level imports.
+    - `dotenv-cli@11` primarily updates dotenv/dotenv-expand behavior; local scripts use basic `dotenv -e ... -- command` form.
+    - `nodemailer@9` validates TLS for HTTPS remote content/OAuth/proxy by default; app does not configure an email provider in this branch, and usage search found only commented EmailProvider code, so the direct dependency was removed.
+    - `prettier-plugin-organize-imports@4` breaking note is Vue/Volar-specific; app has no Vue.
+    - `react-dropzone@15` rejected-drop UI should use callbacks/fileRejections, but app does not use rejected state.
+    - `type-fest@5` requires Node 20+; app only imports `IterableElement`.
+    - `uuid@14` keeps ESM/CJS exports and fixes TypeScript bundler resolution; app only imports `v4 as uuidv4`.
+  - `pnpm peers check` initially failed on `@uzh-bf/design-system@4.1.6` FontAwesome peer ranges. The private design-system source imports normal FontAwesome icon definitions/components, and `tsc` plus `next build` passed with FontAwesome 7, so `pnpm-workspace.yaml` now contains exact `peerDependencyRules.allowedVersions` for that package only.
+  - `styled-jsx@5.1.7` was kept as latest direct dependency even though Next still carries transitive `5.1.6`; this trades a small duplicate for satisfying the direct-dependency latest requirement, and Next/Turbopack builds passed.
+  - Post-upgrade outdated check now reports only deliberate deferrals: `@types/node@26.1.0`, `eslint@10.6.0`, and `zod-openapi@6.0.0`.
+- [x] Slice 8 review completed by subagent `Kepler`; accepted findings:
+  - recorded the private design-system Node 22 engine metadata mismatch as a follow-up because latest `@uzh-bf/design-system@4.1.6` still builds and tests under Node 24.
+  - updated progress with exact verification evidence before commit.
+- [x] Slice 8 simplification completed by subagent `Laplace`; accepted findings or explicit deferrals:
+  - removed stale `ramda` from the Slice 8 Do list.
+  - updated `@types/uuid` and Next Steps wording.
+  - accepted keeping `styled-jsx@5.1.7` for latest direct-dependency coverage after build proof, despite the duplicate with Next's transitive `5.1.6`.
+  - deferred reverting the Prettier table reflow because the plan file was formatted with the repo's formatter after a formatting check failed.
+- [x] Slice 8 verification passed:
+  - `CI=true npx -y pnpm@11.9.0 install --frozen-lockfile`
+  - `CI=true npx -y pnpm@11.9.0 peers check`
+  - `CI=true npx -y pnpm@11.9.0 outdated --format json`: only deferred `@types/node@26.1.0`, `eslint@10.6.0`, and `zod-openapi@6.0.0` remain.
+  - `git diff --check`
+  - `CI=true npx -y pnpm@11.9.0 exec prettier --check package.json pnpm-workspace.yaml project/2026-07-02-dependency-refresh-oidc-azurite-plan.md`
+  - `CI=true npx -y pnpm@11.9.0 run lint`: passed with the same 7 `react-hooks/set-state-in-effect` warnings and 0 errors.
+  - `CI=true npx -y pnpm@11.9.0 exec tsc --noEmit`
+  - `CI=true npx -y pnpm@11.9.0 run build`
+  - `NEXT_PUBLIC_DEPARTMENT_NAME=DF ENABLE_DF_WEBSTATS=true CI=true npx -y pnpm@11.9.0 run build`
+  - `CI=true npx -y pnpm@11.9.0 run test:e2e`: 1 Chromium test passed with local PostgreSQL, OIDC, Azurite setup, sign-in, SAS minting, browser upload, and blob readback; existing styled-jsx hydration and LCP warnings still appear.
+  - `docker build -t thesis-platform:slice8-deps-smoke .`: passed and built the distroless app image.
 
 ## Open Questions
 
@@ -1351,6 +1401,6 @@ Decision:
 
 ## Next Steps
 
-1. Commit Slice 7.
-2. Start Slice 8 remaining major dependency upgrades.
-3. Defer live GitHub workflow and Argo sync proof to the staging rollout after merge/update PR.
+1. Commit Slice 8.
+2. Start Slice 9 final E2E evidence refresh.
+3. Keep design-system Node 24 engine metadata as follow-up in the design-system package.
