@@ -11,6 +11,7 @@ const resolveAlias = hasMatomoTracking
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  reactCompiler: true,
   reactStrictMode: true,
   transpilePackages: ['@uzh-bf/design-system'],
   turbopack: {

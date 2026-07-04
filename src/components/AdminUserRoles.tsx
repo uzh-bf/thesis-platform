@@ -147,10 +147,6 @@ export default function AdminUserRoles() {
 
   const effectiveCurrentPage = Math.min(currentPage, totalPages)
 
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [search])
-
   const paginatedUsers =
     rowsPerPage === 'all'
       ? sortedUsers
@@ -287,7 +283,10 @@ export default function AdminUserRoles() {
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setCurrentPage(1)
+              }}
               placeholder="Search by name or email..."
               className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />

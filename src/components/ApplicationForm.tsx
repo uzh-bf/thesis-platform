@@ -25,6 +25,7 @@ export default function ApplicationForm({
 }: ApplicationFormProps) {
   const [cv, setCv] = useState<any[]>([])
   const [transcript, setTranscript] = useState<any[]>([])
+  const [startingDate] = useState(() => dayjs().format('YYYY-MM-DD'))
 
   const mutation = trpc.generateSasQueryToken.useMutation()
   const submitApplication = trpc.submitProposalApplication.useMutation()
@@ -104,7 +105,7 @@ export default function ApplicationForm({
         uzhemail: '',
         matriculationNumber: '',
         fullName: '',
-        startingDate: dayjs(Date.now()).format('YYYY-MM-DD'),
+        startingDate,
         motivation: '',
         proposalId: proposalId,
         cvFile: null,

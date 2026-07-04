@@ -1223,16 +1223,50 @@ Decision:
   - `NEXT_PUBLIC_DEPARTMENT_NAME=DF ENABLE_DF_WEBSTATS=true CI=true npx -y pnpm@11.9.0 run build`: Matomo alias branch passed.
   - `CI=true npx -y pnpm@11.9.0 run test:e2e`: 1 Chromium test passed with local PostgreSQL, OIDC, Azurite setup, OpenAPI healthcheck, sign-in, SAS minting, browser upload, and blob readback under Next 16 dev/Turbopack.
   - `docker build -t thesis-platform:next16-smoke .`: passed; Docker runner stage still warns on existing global `npm install -g prisma@6.15.0`, left for migration/Prisma slice.
+- [x] Slice 5c React Compiler and Turbopack adoption implemented:
+  - Next 16 docs checked through Context7: install `babel-plugin-react-compiler`, set `reactCompiler: true`, and use annotation mode only if full compilation blocks the branch.
+  - React docs checked through Context7: compiler diagnostics skip unsupported components by default with `panicThreshold: "none"`; not every compiler lint must be fixed immediately.
+  - Registry metadata checked on 2026-07-04: `babel-plugin-react-compiler@1.0.0` is latest stable; `eslint-plugin-react-hooks@7.1.1` supports ESLint 9 and 10.
+  - Full compiler mode is enabled through `reactCompiler: true`; annotation mode and undocumented Turbopack Rust compiler flags were not used because the stable documented path passes.
+  - React Compiler errors fixed before adopting full mode:
+    - `ApplicationForm` moved the default start date into a lazy state initializer to avoid render-time date impurity.
+    - `AdminStatsDashboard` now uses the stable query result object in the year-items memo dependency.
+    - `AdminStatsDashboard`, `AdminUserRoles`, and `AdminInfoOverview` moved pagination resets from synchronous effects into user-event handlers where practical.
+  - `react-hooks/set-state-in-effect` remains a warning, not an error, for 7 existing URL/localStorage/modal synchronization effects. React Compiler skips unsupported components by default and builds passed, so this is cleanup scope instead of a blocker.
+- [x] Slice 5c verification passed:
+  - `CI=true npx -y pnpm@11.9.0 install --frozen-lockfile`
+  - `CI=true npx -y pnpm@11.9.0 run lint`: passed with 7 `react-hooks/set-state-in-effect` warnings and 0 errors.
+  - `CI=true npx -y pnpm@11.9.0 exec tsc --noEmit`
+  - `CI=true npx -y pnpm@11.9.0 run build`: Next `16.2.10` production build passed with Turbopack and React Compiler.
+  - `NEXT_PUBLIC_DEPARTMENT_NAME=DF ENABLE_DF_WEBSTATS=true CI=true npx -y pnpm@11.9.0 run build`: Matomo alias branch passed with React Compiler.
+  - `CI=true npx -y pnpm@11.9.0 run test:e2e`: 1 Chromium test passed with local PostgreSQL, OIDC, Azurite setup, sign-in, SAS minting, browser upload, and blob readback; dev server still prints an existing styled-jsx hydration warning.
+  - `docker build -t thesis-platform:react-compiler-smoke .`: passed; Docker runner stage still warns on existing global `npm install -g prisma@6.15.0`, left for migration/Prisma slice.
+- [x] Slice 5c review completed by subagent `Fermat`; no critical or important findings:
+  - accepted: AdminInfo pagination now displays `effectiveCurrentPage` when the real state is clamped for filtered data.
+  - accepted: kept functional updater pagination handlers to avoid rapid-click stale state.
+  - deferred: data-driven professor sanitization can change selected IDs without resetting to page 1, but `effectiveCurrentPage` prevents an empty table and adding another synchronous effect update would increase the warning surface.
+  - noted: current E2E smoke covers auth/blob, not admin pagination; lint, typecheck, build, and existing E2E are sufficient for this compiler-adoption slice.
+- [x] Slice 5c simplification completed by subagent `Erdos`:
+  - accepted: removed answered React Compiler Rust-vs-stable open question from the plan.
+  - accepted: remaining diff is scoped to compiler config, compiler dependency, lint posture, and required component fixes.
+  - deferred: no extra simplification beyond keeping the functional updater pagination handlers after review.
+- [x] Slice 5c post-review verification passed:
+  - `git diff --check`
+  - `CI=true npx -y pnpm@11.9.0 run lint`: passed with the same 7 `react-hooks/set-state-in-effect` warnings and 0 errors.
+  - `CI=true npx -y pnpm@11.9.0 exec tsc --noEmit`
+  - `CI=true npx -y pnpm@11.9.0 run build`
+  - `NEXT_PUBLIC_DEPARTMENT_NAME=DF ENABLE_DF_WEBSTATS=true CI=true npx -y pnpm@11.9.0 run build`
+  - `CI=true npx -y pnpm@11.9.0 run test:e2e`: 1 Chromium test passed; existing styled-jsx hydration warning still appears.
+  - `docker build -t thesis-platform:react-compiler-smoke .`: passed on Node `24.18.0`; existing global Prisma npm warning remains migration/Prisma slice scope.
 
 ## Open Questions
 
 - Should Auth0 code be fully removed, or only removed from development path while old chart values remain?
 - Should distroless be required in this branch if it requires a second migration-capable image, or is proving and deferring the final switch acceptable?
-- Should React Compiler use stable Babel plugin path first, or try Turbopack Rust compiler immediately?
 - Are legacy deploy surfaces under `deploy/chart`, `deploy/stg`, and `deploy/prd` still active, or can this branch target only the current staging and production deploy files?
 
 ## Next Steps
 
-1. Commit Slice 5b.
-2. Start Slice 5c React Compiler and full Turbopack adoption.
+1. Commit Slice 5c.
+2. Start the migration/Prisma/Argo slice.
 3. Keep Prisma/global npm runner warning in scope for the migration/Prisma slice.

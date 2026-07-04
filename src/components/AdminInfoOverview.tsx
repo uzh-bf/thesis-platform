@@ -558,6 +558,8 @@ export default function AdminInfoOverview() {
       setSortColumn(column)
       setSortDirection('asc')
     }
+
+    setCurrentPage(1)
   }
 
   const getSortIcon = (column: SortColumn) => {
@@ -669,16 +671,19 @@ export default function AdminInfoOverview() {
       }
       return [...current, professorId]
     })
+    setCurrentPage(1)
   }
 
   const selectAllProfessors = () => {
     setSelectedResponsibleIds(null)
     setIsProfessorDropdownOpen(false)
+    setCurrentPage(1)
   }
 
   const clearAllProfessors = () => {
     setSelectedResponsibleIds([])
     setIsProfessorDropdownOpen(false)
+    setCurrentPage(1)
   }
 
   const sortedProfessors = useMemo(() => {
@@ -869,46 +874,31 @@ export default function AdminInfoOverview() {
     sortDirection,
   ])
 
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [
-    selectedResponsibleIds,
-    selectedStatuses,
-    studentSearch,
-    sortColumn,
-    sortDirection,
-    rowsPerPage,
-  ])
-
   const totalPages = useMemo(() => {
     if (rowsPerPage === 'all') return 1
     return Math.max(1, Math.ceil(displayedSupervisions.length / rowsPerPage))
   }, [displayedSupervisions.length, rowsPerPage])
 
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages)
-    }
-  }, [currentPage, totalPages])
+  const effectiveCurrentPage = Math.min(currentPage, totalPages)
 
   const paginatedSupervisions = useMemo(() => {
     if (rowsPerPage === 'all') return displayedSupervisions
 
-    const startIndex = (currentPage - 1) * rowsPerPage
+    const startIndex = (effectiveCurrentPage - 1) * rowsPerPage
     return displayedSupervisions.slice(startIndex, startIndex + rowsPerPage)
-  }, [displayedSupervisions, currentPage, rowsPerPage])
+  }, [displayedSupervisions, effectiveCurrentPage, rowsPerPage])
 
   const visibleStart =
     displayedSupervisions.length === 0
       ? 0
       : rowsPerPage === 'all'
         ? 1
-        : (currentPage - 1) * rowsPerPage + 1
+        : (effectiveCurrentPage - 1) * rowsPerPage + 1
 
   const visibleEnd =
     rowsPerPage === 'all'
       ? displayedSupervisions.length
-      : Math.min(currentPage * rowsPerPage, displayedSupervisions.length)
+      : Math.min(effectiveCurrentPage * rowsPerPage, displayedSupervisions.length)
 
   const totalDisplayedSupervisions = useMemo(() => {
     return displayedSupervisions.length
@@ -1074,7 +1064,10 @@ export default function AdminInfoOverview() {
               <input
                 type="text"
                 value={studentSearch}
-                onChange={(e) => setStudentSearch(e.target.value)}
+                onChange={(e) => {
+                  setStudentSearch(e.target.value)
+                  setCurrentPage(1)
+                }}
                 placeholder="Filter by student name…"
                 className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
@@ -1110,7 +1103,10 @@ export default function AdminInfoOverview() {
                   <div className="sticky top-0 bg-white border-b border-gray-200 p-2 flex gap-2">
                     <button
                       type="button"
-                      onClick={() => setSelectedStatuses([])}
+                      onClick={() => {
+                        setSelectedStatuses([])
+                        setCurrentPage(1)
+                      }}
                       className="text-xs text-blue-600 hover:text-blue-800 font-medium"
                     >
                       Clear
@@ -1124,13 +1120,14 @@ export default function AdminInfoOverview() {
                       <input
                         type="checkbox"
                         checked={selectedStatuses.includes(status)}
-                        onChange={() =>
+                        onChange={() => {
                           setSelectedStatuses((prev) =>
                             prev.includes(status)
                               ? prev.filter((s) => s !== status)
                               : [...prev, status]
                           )
-                        }
+                          setCurrentPage(1)
+                        }}
                         className="mt-0"
                       />
                       <span className="text-sm text-gray-900">
@@ -1412,7 +1409,10 @@ export default function AdminInfoOverview() {
                         <button
                           key={String(option)}
                           type="button"
-                          onClick={() => setRowsPerPage(option)}
+                          onClick={() => {
+                            setRowsPerPage(option)
+                            setCurrentPage(1)
+                          }}
                           className={`h-7 min-w-[34px] rounded px-2 text-xs font-medium ${
                             isActive
                               ? 'bg-blue-600 text-white'
@@ -1428,8 +1428,8 @@ export default function AdminInfoOverview() {
 
                   <button
                     type="button"
-                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                    disabled={rowsPerPage === 'all' || currentPage === 1}
+                    onClick={() => setCurrentPage((prev) => Math.max(1, Math.min(prev, totalPages) - 1))}
+                    disabled={rowsPerPage === 'all' || effectiveCurrentPage === 1}
                     className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label="Previous page"
                   >
@@ -1437,15 +1437,17 @@ export default function AdminInfoOverview() {
                   </button>
 
                   <span className="text-xs text-gray-600 min-w-[48px] text-center">
-                    {rowsPerPage === 'all' ? '1 / 1' : `${currentPage} / ${totalPages}`}
+                    {rowsPerPage === 'all' ? '1 / 1' : `${effectiveCurrentPage} / ${totalPages}`}
                   </span>
 
                   <button
                     type="button"
                     onClick={() =>
-                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                      setCurrentPage((prev) =>
+                        Math.min(totalPages, Math.min(prev, totalPages) + 1)
+                      )
                     }
-                    disabled={rowsPerPage === 'all' || currentPage >= totalPages}
+                    disabled={rowsPerPage === 'all' || effectiveCurrentPage >= totalPages}
                     className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label="Next page"
                   >
