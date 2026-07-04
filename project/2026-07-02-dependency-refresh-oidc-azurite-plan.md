@@ -1196,6 +1196,33 @@ Decision:
   - `docker build -t thesis-platform:node24-pnpm11-smoke .`: passed for `linux/arm64`.
   - `docker buildx build --platform linux/amd64 -t thesis-platform:node24-pnpm11-amd64-smoke --load .`: passed for the GitHub Actions default platform.
   - Docker runner stage still warns on existing global `npm install -g prisma@6.15.0`; leave for the planned migration/Prisma slice where the hook should move to the app package script or a migration-capable image.
+- [x] Slice 5b framework major upgrade implemented:
+  - Current package targets checked on 2026-07-04: `next@16.2.10`, `eslint-config-next@16.2.10`, `typescript@6.0.3`, `@types/react@19.2.17`, `@types/react-dom@19.2.3`; `react` and `react-dom` are already latest at `19.2.7`.
+  - ESLint 10.6.0 was checked but deferred: `eslint-config-next@16.2.10` still pulls current `eslint-plugin-import`, `eslint-plugin-react`, and `eslint-plugin-jsx-a11y` versions whose peer ranges stop at ESLint 9. Use latest compatible `eslint@9.39.4`.
+  - Next 16 docs checked through Context7: Turbopack is default for `next dev` and `next build`; `next lint` is removed and should migrate to ESLint CLI; aliases belong under `turbopack.resolveAlias`.
+  - ESLint 10 docs checked through Context7: use flat config and the migration tool/codemod as the starting point. The slice uses `eslint-config-next/core-web-vitals` without `eslint-config-next/typescript` to preserve the old `.eslintrc.json` lint surface.
+  - `@next/codemod@canary next-lint-to-eslint-cli --force .` was used as the starting point; manually kept the flat config scoped to current behavior.
+  - New React Hooks plugin compiler-readiness rules `react-hooks/purity`, `react-hooks/set-state-in-effect`, and `react-hooks/preserve-manual-memoization` are disabled for now. They fail on existing component patterns and belong in Slice 5c React Compiler adoption, not the framework compatibility slice.
+  - TypeScript 6 failed on inherited `target=ES5` and `baseUrl`. Replace app `baseUrl` with explicit `src/*` paths and override target to `ES2020`.
+  - `ts-node` seed/reset config failed under TypeScript 6 with TS5011 and legacy `moduleResolution=node10` deprecation. Add explicit `rootDir` and temporary `ignoreDeprecations: "6.0"` there only; leave a full script-runner cleanup for the migration/Prisma slice.
+  - Turbopack initially warned that `styled-jsx/style.js` could not resolve under pnpm strict layout. Add exact direct `styled-jsx@5.1.6`, deduped with Next 16's own dependency, to remove the production-build warning.
+  - Webpack alias for DF Matomo tracking moved to `turbopack.resolveAlias`. Reviewer found absolute alias targets fail under Turbopack; use a project-relative alias target and verify the DF webstats branch explicitly.
+- [x] Slice 5b review completed by subagent `Epicurus`; accepted findings integrated:
+  - run a Matomo-enabled build for the gated `ENABLE_DF_WEBSTATS=true` alias branch.
+  - fix the Turbopack alias target from an absolute filesystem path to `./analytics/MatomoTracking.tsx`.
+  - record the temporary React Hooks rule disables as React Compiler follow-up scope.
+- [x] Slice 5b simplification completed by subagent `Averroes`; accepted findings integrated or explicitly deferred:
+  - keep TS config changes because they map directly to observed TypeScript 6 failures.
+  - keep exact `styled-jsx@5.1.6` because it removes an observed Turbopack warning and dedupes to Next's pinned transitive version.
+  - keep React Hooks compiler-readiness rule disables only as a temporary Slice 5c follow-up.
+- [x] Slice 5b verification passed:
+  - `CI=true npx -y pnpm@11.9.0 install --frozen-lockfile`
+  - `CI=true npx -y pnpm@11.9.0 run lint`
+  - `CI=true npx -y pnpm@11.9.0 exec tsc --noEmit`
+  - `CI=true npx -y pnpm@11.9.0 run build`: Next `16.2.10` production build uses Turbopack.
+  - `NEXT_PUBLIC_DEPARTMENT_NAME=DF ENABLE_DF_WEBSTATS=true CI=true npx -y pnpm@11.9.0 run build`: Matomo alias branch passed.
+  - `CI=true npx -y pnpm@11.9.0 run test:e2e`: 1 Chromium test passed with local PostgreSQL, OIDC, Azurite setup, OpenAPI healthcheck, sign-in, SAS minting, browser upload, and blob readback under Next 16 dev/Turbopack.
+  - `docker build -t thesis-platform:next16-smoke .`: passed; Docker runner stage still warns on existing global `npm install -g prisma@6.15.0`, left for migration/Prisma slice.
 
 ## Open Questions
 
@@ -1206,6 +1233,6 @@ Decision:
 
 ## Next Steps
 
-1. Commit Slice 5.
-2. Start Slice 5b framework major upgrade.
+1. Commit Slice 5b.
+2. Start Slice 5c React Compiler and full Turbopack adoption.
 3. Keep Prisma/global npm runner warning in scope for the migration/Prisma slice.
