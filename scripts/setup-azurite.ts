@@ -31,7 +31,7 @@ async function main() {
       {
         allowedOrigins: corsAllowedOrigins,
         allowedMethods: 'GET,HEAD,PUT,OPTIONS',
-        allowedHeaders: 'x-ms-*,content-type,accept,origin',
+        allowedHeaders: 'x-ms-*,content-type,accept,origin,if-none-match',
         exposedHeaders: 'x-ms-*,etag',
         maxAgeInSeconds: 3600,
       },

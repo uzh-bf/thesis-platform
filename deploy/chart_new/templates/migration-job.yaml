@@ -1,4 +1,8 @@
-{{- if and (eq (default "node" .Values.image.runtime) "distroless") (not .Values.migration.image.tag) }}
+{{- $imageRuntime := default "node-runner" .Values.image.runtime }}
+{{- if not (or (eq $imageRuntime "node-runner") (eq $imageRuntime "distroless")) }}
+{{- fail "image.runtime must be either node-runner or distroless" }}
+{{- end }}
+{{- if and (eq $imageRuntime "distroless") (not .Values.migration.image.tag) }}
 {{- fail "migration.image.tag is required when image.runtime is distroless" }}
 {{- end }}
 apiVersion: batch/v1

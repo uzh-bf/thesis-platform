@@ -63,44 +63,47 @@ test('OpenAPI healthcheck, local OIDC admin UI, and browser PUT to Azurite work 
   await expect(page.getByRole('tab', { name: 'Admin Info' })).toBeVisible()
 
   const uploadResult = await page.evaluate(async () => {
+    const file = new Blob(['%PDF-1.4\n% e2e upload\n%%EOF'], {
+      type: 'application/pdf',
+    })
     const sasResponse = await fetch('/api/trpc/generateSasQueryToken?batch=1', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ 0: { json: null } }),
+      body: JSON.stringify({
+        0: {
+          requestedFileName: 'e2e-browser.pdf',
+          contentType: 'application/pdf',
+          size: file.size,
+          purpose: 'application-cv',
+        },
+      }),
     })
 
     if (!sasResponse.ok) {
-      throw new Error(`SAS request failed with HTTP ${sasResponse.status}`)
+      const body = await sasResponse.text()
+      throw new Error(
+        `SAS request failed with HTTP ${sasResponse.status}: ${body}`
+      )
     }
 
     const [{ result }] = await sasResponse.json()
-    if (
-      !result?.data?.containerName ||
-      !result.data.sasString ||
-      !result.data.serviceUrl
-    ) {
+    if (!result?.data?.blobName || !result.data.uploadUrl) {
       throw new Error('SAS response did not include upload fields')
     }
 
-    const { containerName, sasString, serviceUrl } = result.data
-    const name = `e2e-browser-${Date.now()}.pdf`
-    const baseUrl = serviceUrl.replace(/[?&]$/, '')
-    const response = await fetch(
-      `${baseUrl}/${containerName}/${name}?${sasString}`,
-      {
-        method: 'PUT',
-        headers: {
-          'content-type': 'application/pdf',
-          'x-ms-blob-type': 'BlockBlob',
-          'x-ms-version': '2023-01-03',
-        },
-        body: new Blob(['%PDF-1.4\n% e2e upload\n%%EOF'], {
-          type: 'application/pdf',
-        }),
-      }
-    )
+    const { blobName, uploadUrl } = result.data
+    const response = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'content-type': 'application/pdf',
+        'if-none-match': '*',
+        'x-ms-blob-type': 'BlockBlob',
+        'x-ms-version': '2023-01-03',
+      },
+      body: file,
+    })
 
-    return { name, ok: response.ok, status: response.status }
+    return { name: blobName, ok: response.ok, status: response.status }
   })
 
   expect(uploadResult).toMatchObject({ ok: true, status: 201 })

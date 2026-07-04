@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: thesis
       POSTGRES_PASSWORD: thesis
     ports:
-      - 15432:5432
+      - 127.0.0.1:15432:5432
     networks:
       - thesis-platform
     volumes:
@@ -21,7 +21,7 @@ services:
     image: mcr.microsoft.com/azure-storage/azurite:3.35.0
     command: azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
     ports:
-      - 11000:10000
+      - 127.0.0.1:11000:10000
     networks:
       - thesis-platform
     volumes:
@@ -53,7 +53,7 @@ services:
           ]
         }
     ports:
-      - 4011:4011
+      - 127.0.0.1:4011:4011
     networks:
       - thesis-platform
 
@@ -70,7 +70,7 @@ services:
       EMAIL_SERVER_PASSWORD:
       DATABASE_URL: postgresql://thesis:thesis@postgres:5432/thesis?sslmode=disable
     ports:
-      - 3000:3000
+      - 127.0.0.1:3000:3000
     networks:
       - thesis-platform
     depends_on:
@@ -80,8 +80,8 @@ services:
   mailhog:
     image: docker.io/mailhog/mailhog:latest
     ports:
-      - 1025:1025
-      - 8025:8025
+      - 127.0.0.1:1025:1025
+      - 127.0.0.1:8025:8025
     networks:
       - thesis-platform
 

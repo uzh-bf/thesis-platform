@@ -307,7 +307,6 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore(release)')
     needs:
       - build-prd-arm
-      - build-prd-ibw-arm
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -336,7 +335,6 @@ jobs:
         env:
           PRODUCTION_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
           PRODUCTION_MIGRATION_IMAGE_TAG: migration-stable-arm-${{ steps.release.outputs.sha }}
-          PRODUCTION_IBW_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
         run: |
           UPDATE_BRANCH="chore/update-deploy-images"
           git config user.name "github-actions[bot]"
@@ -360,9 +358,7 @@ jobs:
           else
             printf "\nmigration:\n  image:\n    tag: '%s'\n" "$PRODUCTION_MIGRATION_IMAGE_TAG" >> deploy/prd_new/values.yaml
           fi
-          perl -0pi -e 's/image:\n(?:  repository: [^\n]+\n)?  tag: '\''[^'\'']+'\''/image:\n  repository: ghcr.io\/uzh-bf\/thesis-platform-ibw\n  tag: '\''$ENV{PRODUCTION_IBW_IMAGE_TAG}'\''/' deploy/prd_ibw_new/values.yaml
-          perl -0pi -e 's/env: prd-ibw/env: prd_ibw/' deploy/prd_ibw_new/values.yaml
-          git add deploy/prd_new/values.yaml deploy/prd_ibw_new/values.yaml
+          git add deploy/prd_new/values.yaml
           if git diff --cached --quiet; then
             echo "No ArgoCD production image tag change."
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -379,14 +375,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PRODUCTION_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
           PRODUCTION_MIGRATION_IMAGE_TAG: migration-stable-arm-${{ steps.release.outputs.sha }}
-          PRODUCTION_IBW_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
         run: |
           UPDATE_BRANCH="chore/update-deploy-images"
           BODY="Updates deployment values files after Docker image builds complete.
 
           - deploy/prd_new/values.yaml -> ${PRODUCTION_IMAGE_TAG} (runtime distroless)
           - deploy/prd_new/values.yaml migration image -> ${PRODUCTION_MIGRATION_IMAGE_TAG}
-          - deploy/prd_ibw_new/values.yaml -> ghcr.io/uzh-bf/thesis-platform-ibw:${PRODUCTION_IBW_IMAGE_TAG}
           - deploy/stg_new/values.yaml updates are added to this same PR by the staging ARM workflow when present."
           OPEN_PR=$(gh pr list --repo "${GITHUB_REPOSITORY}" --head "${UPDATE_BRANCH}" --base main --state open --json number --jq '.[0].number')
           if [[ -n "$OPEN_PR" ]]; then

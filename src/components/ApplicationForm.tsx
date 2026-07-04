@@ -36,23 +36,25 @@ export default function ApplicationForm({
     (fieldKey: string, fileName: string, formikProps: any) =>
     async (files: any[]) => {
       const file = files[0]
-      const name = `${formikProps.values.uzhemail}-${fileName}.pdf`
-      const { sasString, serviceUrl, containerName } =
-        await mutation.mutateAsync()
+      const requestedFileName = `${formikProps.values.uzhemail}-${fileName}.pdf`
+      const { blobName, uploadUrl } = await mutation.mutateAsync({
+        requestedFileName,
+        contentType: 'application/pdf',
+        size: file.size,
+        purpose:
+          fieldKey === 'cvFile' ? 'application-cv' : 'application-transcript',
+      })
 
       await uploadFileToBlob({
         file,
-        name,
-        sasString,
-        serviceUrl,
-        containerName,
+        uploadUrl,
       })
       if (fieldKey === 'cvFile') {
         setCv([file])
       } else {
         setTranscript([file])
       }
-      formikProps.setFieldValue(fieldKey, name)
+      formikProps.setFieldValue(fieldKey, blobName)
     }
 
   const SignupSchema = Yup.object().shape({
@@ -199,8 +201,8 @@ export default function ApplicationForm({
                     {!formikProps.values.uzhemail.endsWith('uzh.ch')
                       ? 'Enter your UZH Email before uploading files ⚠️'
                       : cv.length > 0
-                      ? `Attached File 📄: '${cv[0].name}'`
-                      : 'Drag and drop your file 🗃️ here, or click to select the file'}
+                        ? `Attached File 📄: '${cv[0].name}'`
+                        : 'Drag and drop your file 🗃️ here, or click to select the file'}
                   </p>
                 </div>
               </section>
@@ -231,8 +233,8 @@ export default function ApplicationForm({
                     {!formikProps.values.uzhemail.endsWith('uzh.ch')
                       ? 'Enter your UZH Email before uploading files ⚠️'
                       : transcript.length > 0
-                      ? `Attached File 📄: '${transcript[0].name}'`
-                      : 'Drag and drop your file 🗃️ here, or click to select the file'}
+                        ? `Attached File 📄: '${transcript[0].name}'`
+                        : 'Drag and drop your file 🗃️ here, or click to select the file'}
                   </p>
                 </div>
               </section>

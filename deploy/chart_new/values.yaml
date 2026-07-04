@@ -14,7 +14,7 @@ azureAd:
 image:
   repository: ghcr.io/uzh-bf/thesis-platform
   tag: dev
-  runtime: node
+  runtime: node-runner
   pullPolicy: Always
 
 service:

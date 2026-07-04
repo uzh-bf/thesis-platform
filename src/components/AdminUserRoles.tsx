@@ -1,16 +1,17 @@
 import {
   faChevronLeft,
   faChevronRight,
+  faPlus,
   faSort,
   faSortDown,
   faSortUp,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import { Button } from '@uzh-bf/design-system'
 import { useSession } from 'next-auth/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { UserRole } from 'src/lib/constants'
+import { writeRowsToXlsx } from 'src/lib/excelExport'
 import { trpc } from 'src/lib/trpc'
 
 const EDITABLE_ROLES = ['UNSET', UserRole.SUPERVISOR] as const
@@ -33,7 +34,9 @@ export default function AdminUserRoles() {
   const selfUserId = session?.user?.sub
 
   const [search, setSearch] = useState('')
-  const [draftByUserId, setDraftByUserId] = useState<Record<string, EditableRole>>({})
+  const [draftByUserId, setDraftByUserId] = useState<
+    Record<string, EditableRole>
+  >({})
   const [savingUserId, setSavingUserId] = useState<string | null>(null)
   const [rowsPerPage, setRowsPerPage] = useState<PageSizeOption>(20)
   const [currentPage, setCurrentPage] = useState(1)
@@ -117,9 +120,13 @@ export default function AdminUserRoles() {
           })
           break
         case 'email':
-          compareValue = (a.email ?? '').localeCompare(b.email ?? '', undefined, {
-            sensitivity: 'base',
-          })
+          compareValue = (a.email ?? '').localeCompare(
+            b.email ?? '',
+            undefined,
+            {
+              sensitivity: 'base',
+            }
+          )
           break
         case 'role': {
           const aRole = draftByUserId[a.id] ?? getStoredRole(a.role)
@@ -130,9 +137,13 @@ export default function AdminUserRoles() {
           break
         }
         case 'department':
-          compareValue = (a.department ?? '').localeCompare(b.department ?? '', undefined, {
-            sensitivity: 'base',
-          })
+          compareValue = (a.department ?? '').localeCompare(
+            b.department ?? '',
+            undefined,
+            {
+              sensitivity: 'base',
+            }
+          )
           break
       }
 
@@ -238,9 +249,6 @@ export default function AdminUserRoles() {
     try {
       setIsExporting(true)
 
-      const xlsxModule = await import('xlsx')
-      const XLSX: any = (xlsxModule as any).default ?? xlsxModule
-
       const exportRows = exportableUsers.map((user) => ({
         Name: user.name || '-',
         Email: user.email || '-',
@@ -248,16 +256,22 @@ export default function AdminUserRoles() {
         Department: user.department ?? '-',
       }))
 
-      const worksheet = XLSX.utils.json_to_sheet(exportRows)
-      const workbook = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Users')
-
       const now = new Date()
       const dateStamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
       const departmentSlug = instanceDepartment
         ? `${instanceDepartment.toLowerCase()}-`
         : ''
-      XLSX.writeFile(workbook, `users-overview-${departmentSlug}${dateStamp}.xlsx`)
+      await writeRowsToXlsx({
+        rows: exportRows,
+        sheet: 'Users',
+        fileName: `users-overview-${departmentSlug}${dateStamp}.xlsx`,
+        columns: [
+          { header: 'Name', value: (row) => row.Name },
+          { header: 'Email', value: (row) => row.Email },
+          { header: 'Role', value: (row) => row.Role },
+          { header: 'Department', value: (row) => row.Department },
+        ],
+      })
     } catch (error) {
       console.error('Failed to export users overview:', error)
       alert('Export failed. Please try again.')
@@ -272,14 +286,16 @@ export default function AdminUserRoles() {
         <div>
           <h2 className="text-lg font-semibold text-gray-900">User Roles</h2>
           <p className="mt-1 text-sm text-gray-600">
-            Modify <span className="font-medium">Role</span> for users (your own row is
-            read-only).
+            Modify <span className="font-medium">Role</span> for users (your own
+            row is read-only).
           </p>
         </div>
 
         <div className="flex items-end gap-2">
           <div className="w-full md:w-80">
-            <label className="block text-xs font-medium text-gray-700 mb-0.5">Search</label>
+            <label className="block text-xs font-medium text-gray-700 mb-0.5">
+              Search
+            </label>
             <input
               type="text"
               value={search}
@@ -319,7 +335,9 @@ export default function AdminUserRoles() {
 
       {showAddUser && (
         <div className="mt-3 flex flex-col gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-          <p className="text-sm font-medium text-gray-800">Add a new user by email</p>
+          <p className="text-sm font-medium text-gray-800">
+            Add a new user by email
+          </p>
           <div className="flex items-center gap-2">
             <input
               ref={addUserNameRef}
@@ -350,7 +368,9 @@ export default function AdminUserRoles() {
             />
             <Button
               onClick={handleAddUser}
-              disabled={!newName.trim() || !newEmail.trim() || addUserByEmail.isPending}
+              disabled={
+                !newName.trim() || !newEmail.trim() || addUserByEmail.isPending
+              }
               className={{ root: 'text-sm' }}
             >
               {addUserByEmail.isPending ? 'Adding...' : 'Add'}
@@ -392,7 +412,10 @@ export default function AdminUserRoles() {
                     >
                       <div className="flex items-center gap-2">
                         Name
-                        <FontAwesomeIcon icon={getSortIcon('name')} className="text-gray-400" />
+                        <FontAwesomeIcon
+                          icon={getSortIcon('name')}
+                          className="text-gray-400"
+                        />
                       </div>
                     </th>
                     <th
@@ -401,7 +424,10 @@ export default function AdminUserRoles() {
                     >
                       <div className="flex items-center gap-2">
                         Email
-                        <FontAwesomeIcon icon={getSortIcon('email')} className="text-gray-400" />
+                        <FontAwesomeIcon
+                          icon={getSortIcon('email')}
+                          className="text-gray-400"
+                        />
                       </div>
                     </th>
                     <th
@@ -410,7 +436,10 @@ export default function AdminUserRoles() {
                     >
                       <div className="flex items-center gap-2">
                         Role
-                        <FontAwesomeIcon icon={getSortIcon('role')} className="text-gray-400" />
+                        <FontAwesomeIcon
+                          icon={getSortIcon('role')}
+                          className="text-gray-400"
+                        />
                       </div>
                     </th>
                     <th
@@ -436,23 +465,38 @@ export default function AdminUserRoles() {
                     const displayRole = getDisplayRole(user)
                     const storedRole = getStoredRole(user.role)
                     const dirty = storedRole !== displayRole
-                    const canEdit = isSelf ? false : isEditableRole(storedRole) || storedRole === displayRole
+                    const canEdit = isSelf
+                      ? false
+                      : isEditableRole(storedRole) || storedRole === displayRole
 
                     return (
-                      <tr key={user.id} className={isSelf ? 'bg-gray-50' : 'hover:bg-gray-50'}>
+                      <tr
+                        key={user.id}
+                        className={isSelf ? 'bg-gray-50' : 'hover:bg-gray-50'}
+                      >
                         <td className="px-2 py-1 text-sm text-gray-900 whitespace-nowrap">
                           {user.name}
-                          {isSelf && <span className="ml-2 text-xs text-gray-500">(you)</span>}
+                          {isSelf && (
+                            <span className="ml-2 text-xs text-gray-500">
+                              (you)
+                            </span>
+                          )}
                         </td>
                         <td className="px-2 py-1 text-sm text-gray-700 whitespace-nowrap">
                           {user.email}
                         </td>
                         <td className="px-2 py-1">
-                          {isEditableRole(storedRole) || draftByUserId[user.id] ? (
+                          {isEditableRole(storedRole) ||
+                          draftByUserId[user.id] ? (
                             <select
                               value={displayRole}
                               disabled={isSelf || updateUserRoles.isPending}
-                              onChange={(e) => setDraftRole(user.id, e.target.value as EditableRole)}
+                              onChange={(e) =>
+                                setDraftRole(
+                                  user.id,
+                                  e.target.value as EditableRole
+                                )
+                              }
                               className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md disabled:bg-gray-100"
                             >
                               {EDITABLE_ROLES.map((opt) => (
@@ -479,17 +523,24 @@ export default function AdminUserRoles() {
                                 !canEdit ||
                                 !dirty ||
                                 updateUserRoles.isPending ||
-                                (savingUserId !== null && savingUserId !== user.id)
+                                (savingUserId !== null &&
+                                  savingUserId !== user.id)
                               }
                               className={{ root: 'text-xs' }}
                             >
-                              {updateUserRoles.isPending && savingUserId === user.id
+                              {updateUserRoles.isPending &&
+                              savingUserId === user.id
                                 ? 'Saving…'
                                 : 'Save'}
                             </Button>
                             <Button
                               onClick={() => resetDraft(user.id)}
-                              disabled={isSelf || !canEdit || !dirty || updateUserRoles.isPending}
+                              disabled={
+                                isSelf ||
+                                !canEdit ||
+                                !dirty ||
+                                updateUserRoles.isPending
+                              }
                               className={{ root: 'text-xs' }}
                             >
                               Reset
@@ -539,7 +590,9 @@ export default function AdminUserRoles() {
                 <button
                   type="button"
                   onClick={() =>
-                    setCurrentPage((prev) => Math.max(1, Math.min(prev, totalPages) - 1))
+                    setCurrentPage((prev) =>
+                      Math.max(1, Math.min(prev, totalPages) - 1)
+                    )
                   }
                   disabled={rowsPerPage === 'all' || effectiveCurrentPage === 1}
                   className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
@@ -561,7 +614,9 @@ export default function AdminUserRoles() {
                       Math.min(totalPages, Math.min(prev, totalPages) + 1)
                     )
                   }
-                  disabled={rowsPerPage === 'all' || effectiveCurrentPage >= totalPages}
+                  disabled={
+                    rowsPerPage === 'all' || effectiveCurrentPage >= totalPages
+                  }
                   className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label="Next page"
                 >

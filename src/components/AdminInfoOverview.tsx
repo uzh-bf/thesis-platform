@@ -17,6 +17,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button, Modal } from '@uzh-bf/design-system'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { writeRowsToXlsx } from 'src/lib/excelExport'
 import { trpc } from 'src/lib/trpc'
 
 type SortColumn =
@@ -158,7 +159,9 @@ function hasWorkflowValue(value: unknown): boolean {
   return value !== null && value !== undefined && value !== ''
 }
 
-function getAdminInfoWorkflowState(source: AdminInfoWorkflowSource): AdminInfoWorkflowState {
+function getAdminInfoWorkflowState(
+  source: AdminInfoWorkflowSource
+): AdminInfoWorkflowState {
   const statusRank =
     source.status === 'OPEN'
       ? 0
@@ -196,26 +199,30 @@ export default function AdminInfoOverview() {
   const [rowsPerPage, setRowsPerPage] = useState<PageSizeOption>(20)
   const [currentPage, setCurrentPage] = useState(1)
   const [editState, setEditState] = useState<AdminInfoEditState | null>(null)
-  const [detailsState, setDetailsState] = useState<DetailsModalState | null>(null)
-  const [selectedResponsibleIds, setSelectedResponsibleIds] = useState<null | string[]>(
+  const [detailsState, setDetailsState] = useState<DetailsModalState | null>(
     null
   )
+  const [selectedResponsibleIds, setSelectedResponsibleIds] = useState<
+    null | string[]
+  >(null)
   const [isProfessorDropdownOpen, setIsProfessorDropdownOpen] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const professorDropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
-  const [selectedStatuses, setSelectedStatuses] = useState<StatusFilterOption[]>([])
-  const [hasLoadedPersistedFilters, setHasLoadedPersistedFilters] = useState(false)
+  const [selectedStatuses, setSelectedStatuses] = useState<
+    StatusFilterOption[]
+  >([])
+  const [hasLoadedPersistedFilters, setHasLoadedPersistedFilters] =
+    useState(false)
   const [studentSearch, setStudentSearch] = useState('')
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false)
   const statusDropdownRef = useRef<HTMLDivElement>(null)
   const statusButtonRef = useRef<HTMLButtonElement>(null)
 
   // Create entry form state
-  const [createForm, setCreateForm] = useState<CreateEntryFormState>(
-    INITIAL_CREATE_FORM
-  )
+  const [createForm, setCreateForm] =
+    useState<CreateEntryFormState>(INITIAL_CREATE_FORM)
   const [hasTriedCreateSubmit, setHasTriedCreateSubmit] = useState(false)
 
   useEffect(() => {
@@ -276,7 +283,9 @@ export default function AdminInfoOverview() {
         }
       }
 
-      const storedStatuses = window.localStorage.getItem(STATUS_FILTER_STORAGE_KEY)
+      const storedStatuses = window.localStorage.getItem(
+        STATUS_FILTER_STORAGE_KEY
+      )
       if (storedStatuses !== null) {
         const parsedStatuses = JSON.parse(storedStatuses)
         if (Array.isArray(parsedStatuses)) {
@@ -289,7 +298,9 @@ export default function AdminInfoOverview() {
         }
       }
 
-      const storedRowsPerPage = window.localStorage.getItem(ROWS_PER_PAGE_STORAGE_KEY)
+      const storedRowsPerPage = window.localStorage.getItem(
+        ROWS_PER_PAGE_STORAGE_KEY
+      )
       if (storedRowsPerPage !== null) {
         const parsedRowsPerPage = JSON.parse(storedRowsPerPage)
         if (
@@ -388,7 +399,8 @@ export default function AdminInfoOverview() {
   const handleSaveAdminInfo = () => {
     if (!editState) return
 
-    const gradeValue = editState.grade.trim() === '' ? null : Number(editState.grade)
+    const gradeValue =
+      editState.grade.trim() === '' ? null : Number(editState.grade)
     if (gradeValue !== null && Number.isNaN(gradeValue)) {
       alert('Grade must be a number')
       return
@@ -419,7 +431,9 @@ export default function AdminInfoOverview() {
       }
 
       if (hasSubmissionDate || hasOlatGradeDate || hasGrade) {
-        alert('Submission Date, OLAT Grade Date and Grade are locked until step 1 is saved.')
+        alert(
+          'Submission Date, OLAT Grade Date and Grade are locked until step 1 is saved.'
+        )
         return
       }
     }
@@ -455,7 +469,9 @@ export default function AdminInfoOverview() {
 
     if (workflowState === 'COMPLETED') {
       if (!hasOlatCapturedDate || !hasSubmissionDate || !hasGrade) {
-        alert('Completed entries must keep all required workflow fields filled.')
+        alert(
+          'Completed entries must keep all required workflow fields filled.'
+        )
         return
       }
     }
@@ -572,7 +588,11 @@ export default function AdminInfoOverview() {
   const getStatusIconConfig = (status?: string | null) => {
     switch (status) {
       case 'OPEN':
-        return { icon: faFolderOpen, label: 'Offen (OPEN)', className: 'text-blue-600' }
+        return {
+          icon: faFolderOpen,
+          label: 'Offen (OPEN)',
+          className: 'text-blue-600',
+        }
       case 'SUBMITTED':
         return {
           icon: faPaperPlane,
@@ -586,9 +606,17 @@ export default function AdminInfoOverview() {
           className: 'text-blue-600',
         }
       case 'GRADING':
-        return { icon: faPen, label: 'In Benotung (GRADING)', className: 'text-purple-600' }
+        return {
+          icon: faPen,
+          label: 'In Benotung (GRADING)',
+          className: 'text-purple-600',
+        }
       case 'WITHDRAWN':
-        return { icon: faBan, label: 'Zurückgezogen (WITHDRAWN)', className: 'text-gray-500' }
+        return {
+          icon: faBan,
+          label: 'Zurückgezogen (WITHDRAWN)',
+          className: 'text-gray-500',
+        }
       case 'COMPLETED':
         return {
           icon: faCheck,
@@ -646,7 +674,8 @@ export default function AdminInfoOverview() {
           ? ''
           : String(adminInfo.grade),
       capturedOnZora:
-        adminInfo.capturedOnZora === null || adminInfo.capturedOnZora === undefined
+        adminInfo.capturedOnZora === null ||
+        adminInfo.capturedOnZora === undefined
           ? ''
           : adminInfo.capturedOnZora
             ? 'true'
@@ -662,9 +691,7 @@ export default function AdminInfoOverview() {
   const toggleProfessor = (professorId: string) => {
     setSelectedResponsibleIds((prev) => {
       const current =
-        prev === null
-          ? (professorsOverview?.map((r) => r.id) ?? [])
-          : prev
+        prev === null ? (professorsOverview?.map((r) => r.id) ?? []) : prev
 
       if (current.includes(professorId)) {
         return current.filter((id) => id !== professorId)
@@ -706,8 +733,12 @@ export default function AdminInfoOverview() {
   useEffect(() => {
     if (!professorsOverview || selectedResponsibleIds === null) return
 
-    const validIds = new Set(professorsOverview.map((professor) => professor.id))
-    const sanitizedSelectedIds = selectedResponsibleIds.filter((id) => validIds.has(id))
+    const validIds = new Set(
+      professorsOverview.map((professor) => professor.id)
+    )
+    const sanitizedSelectedIds = selectedResponsibleIds.filter((id) =>
+      validIds.has(id)
+    )
 
     if (sanitizedSelectedIds.length !== selectedResponsibleIds.length) {
       setSelectedResponsibleIds(sanitizedSelectedIds)
@@ -723,7 +754,9 @@ export default function AdminInfoOverview() {
     return [...source].sort((a, b) => {
       const aEmail = String(a.email ?? '')
       const bEmail = String(b.email ?? '')
-      const emailOrder = aEmail.localeCompare(bEmail, undefined, { sensitivity: 'base' })
+      const emailOrder = aEmail.localeCompare(bEmail, undefined, {
+        sensitivity: 'base',
+      })
       if (emailOrder !== 0) return emailOrder
 
       const aName = String(a.name ?? '')
@@ -794,8 +827,14 @@ export default function AdminInfoOverview() {
 
       switch (sortColumn) {
         case 'professor':
-          aValue = a.professor.name?.toLowerCase() || a.professor.email?.toLowerCase() || ''
-          bValue = b.professor.name?.toLowerCase() || b.professor.email?.toLowerCase() || ''
+          aValue =
+            a.professor.name?.toLowerCase() ||
+            a.professor.email?.toLowerCase() ||
+            ''
+          bValue =
+            b.professor.name?.toLowerCase() ||
+            b.professor.email?.toLowerCase() ||
+            ''
           break
         case 'thesis':
           aValue = a.supervision.proposal.title?.toLowerCase() || ''
@@ -831,26 +870,38 @@ export default function AdminInfoOverview() {
           break
         case 'olatCaptured':
           aValue = a.supervision.proposal.AdminInfo?.olatCapturedDate
-            ? new Date(a.supervision.proposal.AdminInfo.olatCapturedDate).getTime()
+            ? new Date(
+                a.supervision.proposal.AdminInfo.olatCapturedDate
+              ).getTime()
             : 0
           bValue = b.supervision.proposal.AdminInfo?.olatCapturedDate
-            ? new Date(b.supervision.proposal.AdminInfo.olatCapturedDate).getTime()
+            ? new Date(
+                b.supervision.proposal.AdminInfo.olatCapturedDate
+              ).getTime()
             : 0
           break
         case 'latestSubmission':
           aValue = a.supervision.proposal.AdminInfo?.latestSubmissionDate
-            ? new Date(a.supervision.proposal.AdminInfo.latestSubmissionDate).getTime()
+            ? new Date(
+                a.supervision.proposal.AdminInfo.latestSubmissionDate
+              ).getTime()
             : 0
           bValue = b.supervision.proposal.AdminInfo?.latestSubmissionDate
-            ? new Date(b.supervision.proposal.AdminInfo.latestSubmissionDate).getTime()
+            ? new Date(
+                b.supervision.proposal.AdminInfo.latestSubmissionDate
+              ).getTime()
             : 0
           break
         case 'submissionDate':
           aValue = a.supervision.proposal.AdminInfo?.submissionDate
-            ? new Date(a.supervision.proposal.AdminInfo.submissionDate).getTime()
+            ? new Date(
+                a.supervision.proposal.AdminInfo.submissionDate
+              ).getTime()
             : 0
           bValue = b.supervision.proposal.AdminInfo?.submissionDate
-            ? new Date(b.supervision.proposal.AdminInfo.submissionDate).getTime()
+            ? new Date(
+                b.supervision.proposal.AdminInfo.submissionDate
+              ).getTime()
             : 0
           break
         case 'grade':
@@ -898,21 +949,23 @@ export default function AdminInfoOverview() {
   const visibleEnd =
     rowsPerPage === 'all'
       ? displayedSupervisions.length
-      : Math.min(effectiveCurrentPage * rowsPerPage, displayedSupervisions.length)
+      : Math.min(
+          effectiveCurrentPage * rowsPerPage,
+          displayedSupervisions.length
+        )
 
   const totalDisplayedSupervisions = useMemo(() => {
     return displayedSupervisions.length
   }, [displayedSupervisions])
 
   const totalDisplayedProfessors = useMemo(() => {
-    return new Set(
-      displayedSupervisions.map((row: any) => row.professor.id)
-    )
+    return new Set(displayedSupervisions.map((row: any) => row.professor.id))
       .size
   }, [displayedSupervisions])
 
   const detailsStudyLevelAbbreviation = toStudyLevelAbbreviation(
-    detailsState?.supervision?.proposal?.studyLevel || detailsState?.supervision?.studyLevel
+    detailsState?.supervision?.proposal?.studyLevel ||
+      detailsState?.supervision?.studyLevel
   )
 
   const handleExportTable = async () => {
@@ -926,35 +979,53 @@ export default function AdminInfoOverview() {
     try {
       setIsExporting(true)
 
-      const xlsxModule = await import('xlsx')
-      const XLSX: any = (xlsxModule as any).default ?? xlsxModule
+      const exportRows = displayedSupervisions.map(
+        ({ professor, supervision }: any) => {
+          const acceptedApp = supervision.proposal.applications?.find(
+            (app: any) => app.statusKey === 'ACCEPTED'
+          )
+          const adminInfo = supervision.proposal.AdminInfo
 
-      const exportRows = displayedSupervisions.map(({ professor, supervision }: any) => {
-        const acceptedApp = supervision.proposal.applications?.find(
-          (app: any) => app.statusKey === 'ACCEPTED'
-        )
-        const adminInfo = supervision.proposal.AdminInfo
-
-        return {
-          Professor: professor.name || '-',
-          Supervisor: supervision.supervisor?.name || '-',
-          Student: acceptedApp?.fullName || '-',
-          Title: supervision.proposal.title || '-',
-          'BA / MA': toStudyLevelAbbreviation(supervision.proposal.studyLevel),
-          Status: getStatusIconConfig(adminInfo?.status).label,
-          'OLAT Captured': toShortDateLabel(adminInfo?.olatCapturedDate),
-          'Latest Submission': toShortDateLabel(adminInfo?.latestSubmissionDate),
-          'Submission Date': toShortDateLabel(adminInfo?.submissionDate),
-          Grade: adminInfo?.grade ?? '-',
+          return {
+            Professor: professor.name || '-',
+            Supervisor: supervision.supervisor?.name || '-',
+            Student: acceptedApp?.fullName || '-',
+            Title: supervision.proposal.title || '-',
+            'BA / MA': toStudyLevelAbbreviation(
+              supervision.proposal.studyLevel
+            ),
+            Status: getStatusIconConfig(adminInfo?.status).label,
+            'OLAT Captured': toShortDateLabel(adminInfo?.olatCapturedDate),
+            'Latest Submission': toShortDateLabel(
+              adminInfo?.latestSubmissionDate
+            ),
+            'Submission Date': toShortDateLabel(adminInfo?.submissionDate),
+            Grade: adminInfo?.grade ?? '-',
+          }
         }
-      })
-
-      const worksheet = XLSX.utils.json_to_sheet(exportRows)
-      const workbook = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Admin Info')
+      )
 
       const dateStamp = toDateInputValue(new Date()) || 'export'
-      XLSX.writeFile(workbook, `admin-info-overview-${dateStamp}.xlsx`)
+      await writeRowsToXlsx({
+        rows: exportRows,
+        sheet: 'Admin Info',
+        fileName: `admin-info-overview-${dateStamp}.xlsx`,
+        columns: [
+          { header: 'Professor', value: (row) => row.Professor },
+          { header: 'Supervisor', value: (row) => row.Supervisor },
+          { header: 'Student', value: (row) => row.Student },
+          { header: 'Title', value: (row) => row.Title },
+          { header: 'BA / MA', value: (row) => row['BA / MA'] },
+          { header: 'Status', value: (row) => row.Status },
+          { header: 'OLAT Captured', value: (row) => row['OLAT Captured'] },
+          {
+            header: 'Latest Submission',
+            value: (row) => row['Latest Submission'],
+          },
+          { header: 'Submission Date', value: (row) => row['Submission Date'] },
+          { header: 'Grade', value: (row) => row.Grade },
+        ],
+      })
     } catch (error) {
       console.error('Failed to export Admin Info overview:', error)
       alert('Export failed. Please try again.')
@@ -986,7 +1057,9 @@ export default function AdminInfoOverview() {
               <button
                 ref={buttonRef}
                 type="button"
-                onClick={() => setIsProfessorDropdownOpen(!isProfessorDropdownOpen)}
+                onClick={() =>
+                  setIsProfessorDropdownOpen(!isProfessorDropdownOpen)
+                }
                 className="w-full px-3 py-1.5 text-left border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between"
               >
                 <span className="text-sm text-gray-700">
@@ -1002,12 +1075,20 @@ export default function AdminInfoOverview() {
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
 
               {isProfessorDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 z-20 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-64 overflow-auto" ref={professorDropdownRef}>
+                <div
+                  className="absolute top-full left-0 right-0 z-20 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-64 overflow-auto"
+                  ref={professorDropdownRef}
+                >
                   <div className="sticky top-0 bg-white border-b border-gray-200 p-2 flex gap-2">
                     <button
                       type="button"
@@ -1027,9 +1108,13 @@ export default function AdminInfoOverview() {
                   </div>
 
                   {professorsLoading ? (
-                    <p className="p-3 text-sm text-gray-600">Loading professors...</p>
+                    <p className="p-3 text-sm text-gray-600">
+                      Loading professors...
+                    </p>
                   ) : sortedProfessors.length === 0 ? (
-                    <p className="p-3 text-sm text-gray-600">No professors found</p>
+                    <p className="p-3 text-sm text-gray-600">
+                      No professors found
+                    </p>
                   ) : (
                     sortedProfessors.map((professor: any) => (
                       <label
@@ -1094,12 +1179,20 @@ export default function AdminInfoOverview() {
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
 
               {isStatusDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 z-20 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-64 overflow-auto" ref={statusDropdownRef}>
+                <div
+                  className="absolute top-full left-0 right-0 z-20 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-64 overflow-auto"
+                  ref={statusDropdownRef}
+                >
                   <div className="sticky top-0 bg-white border-b border-gray-200 p-2 flex gap-2">
                     <button
                       type="button"
@@ -1132,7 +1225,8 @@ export default function AdminInfoOverview() {
                       />
                       <span className="text-sm text-gray-900">
                         {status === 'OPEN' && 'Offen (OPEN)'}
-                        {status === 'IN_PROGRESS' && 'In Bearbeitung (IN_PROGRESS)'}
+                        {status === 'IN_PROGRESS' &&
+                          'In Bearbeitung (IN_PROGRESS)'}
                         {status === 'OVERDUE' && 'Überfällig (OVERDUE)'}
                         {status === 'GRADING' && 'In Benotung (GRADING)'}
                         {status === 'COMPLETED' && 'Abgeschlossen (COMPLETED)'}
@@ -1151,14 +1245,18 @@ export default function AdminInfoOverview() {
                 setHasTriedCreateSubmit(false)
                 setIsCreateModalOpen(true)
               }}
-              className={{ root: 'text-sm bg-blue-600 hover:bg-blue-700 text-white' }}
+              className={{
+                root: 'text-sm bg-blue-600 hover:bg-blue-700 text-white',
+              }}
             >
               Create New Entry
             </Button>
             <div title="Exports the currently filtered and sorted table to an XLSX file.">
               <Button
                 onClick={handleExportTable}
-                className={{ root: 'text-sm bg-slate-600 hover:bg-slate-700 text-white' }}
+                className={{
+                  root: 'text-sm bg-slate-600 hover:bg-slate-700 text-white',
+                }}
               >
                 {isExporting ? 'Exporting…' : 'Export XLSX'}
               </Button>
@@ -1169,297 +1267,318 @@ export default function AdminInfoOverview() {
             {professorsLoading ? (
               <p className="text-gray-600">Loading professors...</p>
             ) : displayedSupervisions.length === 0 ? (
-              <p className="text-gray-600">No results for the current filters</p>
+              <p className="text-gray-600">
+                No results for the current filters
+              </p>
             ) : (
               <>
                 <div className="max-h-[calc(100vh-27rem)] min-h-[18rem] overflow-auto border border-gray-400">
                   <table className="min-w-[1050px] w-full table-fixed divide-y divide-gray-200">
-                <thead className="bg-gray-50 sticky top-0 z-10">
-                  <tr>
-                    <th
-                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
-                      onClick={() => handleSort('professor')}
-                    >
-                      <div className="flex items-center gap-2">
-                        Professor
-                        <FontAwesomeIcon
-                          icon={getSortIcon('professor')}
-                          className="text-gray-400"
-                        />
-                      </div>
-                    </th>
-
-                    <th
-                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
-                      onClick={() => handleSort('supervisor')}
-                    >
-                      <div className="flex items-center gap-2">
-                        Supervisor
-                        <FontAwesomeIcon
-                          icon={getSortIcon('supervisor')}
-                          className="text-gray-400"
-                        />
-                      </div>
-                    </th>
-
-                    <th
-                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
-                      onClick={() => handleSort('student')}
-                    >
-                      <div className="flex items-center gap-2">
-                        Student
-                        <FontAwesomeIcon
-                          icon={getSortIcon('student')}
-                          className="text-gray-400"
-                        />
-                      </div>
-                    </th>
-
-                    <th
-                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
-                      onClick={() => handleSort('thesis')}
-                    >
-                      <div className="flex items-center gap-2">
-                        Title
-                        <FontAwesomeIcon
-                          icon={getSortIcon('thesis')}
-                          className="text-gray-400"
-                        />
-                      </div>
-                    </th>
-
-                    <th
-                      className="px-2 py-1 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-12"
-                      onClick={() => handleSort('studyLevel')}
-                    >
-                      <div className="flex items-center justify-center gap-1">
-                        BA/MA
-                        <FontAwesomeIcon
-                          icon={getSortIcon('studyLevel')}
-                          className="text-gray-400"
-                        />
-                      </div>
-                    </th>
-
-                    <th
-                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-16"
-                      onClick={() => handleSort('status')}
-                    >
-                      <div className="flex items-center gap-2">
-                        Status
-                        <FontAwesomeIcon
-                          icon={getSortIcon('status')}
-                          className="text-gray-400"
-                        />
-                      </div>
-                    </th>
-
-                    <th
-                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-20"
-                      onClick={() => handleSort('olatCaptured')}
-                    >
-                      <div className="flex items-center gap-2">
-                        OLAT Captured
-                        <FontAwesomeIcon
-                          icon={getSortIcon('olatCaptured')}
-                          className="text-gray-400"
-                        />
-                      </div>
-                    </th>
-
-                    <th
-                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
-                      onClick={() => handleSort('latestSubmission')}
-                    >
-                      <div className="flex items-center gap-2">
-                        Latest Submission
-                        <FontAwesomeIcon
-                          icon={getSortIcon('latestSubmission')}
-                          className="text-gray-400"
-                        />
-                      </div>
-                    </th>
-
-                    <th
-                      className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
-                      onClick={() => handleSort('submissionDate')}
-                    >
-                      <div className="flex items-center gap-2">
-                        Submission Date
-                        <FontAwesomeIcon
-                          icon={getSortIcon('submissionDate')}
-                          className="text-gray-400"
-                        />
-                      </div>
-                    </th>
-
-                    <th
-                      className="px-2 py-1 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-14"
-                      onClick={() => handleSort('grade')}
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        Grade
-                        <FontAwesomeIcon
-                          icon={getSortIcon('grade')}
-                          className="text-gray-400"
-                        />
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {paginatedSupervisions.map(({ professor, supervision }: any) => {
-                    const acceptedApp = supervision.proposal.applications?.find(
-                      (app: any) => app.statusKey === 'ACCEPTED'
-                    )
-                    const supervisorName = supervision.supervisor?.name || '-'
-                    const studentName = acceptedApp?.fullName || '-'
-                    const statusConfig = getStatusIconConfig(
-                      supervision.proposal.AdminInfo?.status
-                    )
-
-                    return (
-                      <tr
-                        key={`${professor.id}-${supervision.id}`}
-                        className="hover:bg-gray-50 cursor-pointer"
-                        onClick={() => openDetailsModal(professor, supervision)}
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault()
-                            openDetailsModal(professor, supervision)
-                          }
-                        }}
-                      >
-                        <td className="px-2 py-1 w-24">
-                          <div className="text-sm font-medium text-gray-900 truncate">
-                            {professor.name}
+                    <thead className="bg-gray-50 sticky top-0 z-10">
+                      <tr>
+                        <th
+                          className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
+                          onClick={() => handleSort('professor')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Professor
+                            <FontAwesomeIcon
+                              icon={getSortIcon('professor')}
+                              className="text-gray-400"
+                            />
                           </div>
-                        </td>
-                        <td className="px-2 py-1 text-sm text-gray-900 w-24">
-                          <div className="truncate">
-                            {supervisorName}
+                        </th>
+
+                        <th
+                          className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
+                          onClick={() => handleSort('supervisor')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Supervisor
+                            <FontAwesomeIcon
+                              icon={getSortIcon('supervisor')}
+                              className="text-gray-400"
+                            />
                           </div>
-                        </td>
-                        <td className="px-2 py-1 w-24">
-                          <div className="text-sm font-medium text-gray-900 truncate">
-                            {studentName}
+                        </th>
+
+                        <th
+                          className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
+                          onClick={() => handleSort('student')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Student
+                            <FontAwesomeIcon
+                              icon={getSortIcon('student')}
+                              className="text-gray-400"
+                            />
                           </div>
-                        </td>
-                        <td className="px-2 py-1 w-24">
-                          <div className="text-sm font-medium text-gray-900 truncate">
-                            {supervision.proposal.title}
+                        </th>
+
+                        <th
+                          className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
+                          onClick={() => handleSort('thesis')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Title
+                            <FontAwesomeIcon
+                              icon={getSortIcon('thesis')}
+                              className="text-gray-400"
+                            />
                           </div>
-                        </td>
-                        <td className="px-2 py-1 text-sm font-medium text-gray-900 text-center w-12">
-                          {toStudyLevelAbbreviation(supervision.proposal.studyLevel)}
-                        </td>
-                        <td className="px-2 py-1 text-sm text-gray-900 w-10">
-                          <div className="flex items-center justify-center">
-                            <span
-                              title={statusConfig.label}
-                              aria-label={statusConfig.label}
-                              className="inline-flex items-center justify-center"
-                            >
-                              <FontAwesomeIcon
-                                icon={statusConfig.icon}
-                                className={statusConfig.className}
-                              />
-                            </span>
+                        </th>
+
+                        <th
+                          className="px-2 py-1 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-12"
+                          onClick={() => handleSort('studyLevel')}
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            BA/MA
+                            <FontAwesomeIcon
+                              icon={getSortIcon('studyLevel')}
+                              className="text-gray-400"
+                            />
                           </div>
-                        </td>
-                        <td className="px-2 py-1 text-sm text-gray-900 w-20">
-                          {toShortDateLabel(
-                            supervision.proposal.AdminInfo?.olatCapturedDate
-                          )}
-                        </td>
-                        <td className="px-2 py-1 text-sm text-gray-900 w-24">
-                          {toShortDateLabel(
-                            supervision.proposal.AdminInfo?.latestSubmissionDate
-                          )}
-                        </td>
-                        <td className="px-2 py-1 text-sm text-gray-900 w-24">
-                          {toShortDateLabel(
-                            supervision.proposal.AdminInfo?.submissionDate
-                          )}
-                        </td>
-                        <td className="px-2 py-1 text-sm text-gray-900 text-center w-12">
-                          {supervision.proposal.AdminInfo?.grade ?? '-'}
-                        </td>
+                        </th>
+
+                        <th
+                          className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-16"
+                          onClick={() => handleSort('status')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Status
+                            <FontAwesomeIcon
+                              icon={getSortIcon('status')}
+                              className="text-gray-400"
+                            />
+                          </div>
+                        </th>
+
+                        <th
+                          className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-20"
+                          onClick={() => handleSort('olatCaptured')}
+                        >
+                          <div className="flex items-center gap-2">
+                            OLAT Captured
+                            <FontAwesomeIcon
+                              icon={getSortIcon('olatCaptured')}
+                              className="text-gray-400"
+                            />
+                          </div>
+                        </th>
+
+                        <th
+                          className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
+                          onClick={() => handleSort('latestSubmission')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Latest Submission
+                            <FontAwesomeIcon
+                              icon={getSortIcon('latestSubmission')}
+                              className="text-gray-400"
+                            />
+                          </div>
+                        </th>
+
+                        <th
+                          className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
+                          onClick={() => handleSort('submissionDate')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Submission Date
+                            <FontAwesomeIcon
+                              icon={getSortIcon('submissionDate')}
+                              className="text-gray-400"
+                            />
+                          </div>
+                        </th>
+
+                        <th
+                          className="px-2 py-1 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-14"
+                          onClick={() => handleSort('grade')}
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            Grade
+                            <FontAwesomeIcon
+                              icon={getSortIcon('grade')}
+                              className="text-gray-400"
+                            />
+                          </div>
+                        </th>
                       </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-              </div>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {paginatedSupervisions.map(
+                        ({ professor, supervision }: any) => {
+                          const acceptedApp =
+                            supervision.proposal.applications?.find(
+                              (app: any) => app.statusKey === 'ACCEPTED'
+                            )
+                          const supervisorName =
+                            supervision.supervisor?.name || '-'
+                          const studentName = acceptedApp?.fullName || '-'
+                          const statusConfig = getStatusIconConfig(
+                            supervision.proposal.AdminInfo?.status
+                          )
 
-              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-xs text-gray-600">
-                  Showing {visibleStart}-{visibleEnd} of {displayedSupervisions.length}
+                          return (
+                            <tr
+                              key={`${professor.id}-${supervision.id}`}
+                              className="hover:bg-gray-50 cursor-pointer"
+                              onClick={() =>
+                                openDetailsModal(professor, supervision)
+                              }
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault()
+                                  openDetailsModal(professor, supervision)
+                                }
+                              }}
+                            >
+                              <td className="px-2 py-1 w-24">
+                                <div className="text-sm font-medium text-gray-900 truncate">
+                                  {professor.name}
+                                </div>
+                              </td>
+                              <td className="px-2 py-1 text-sm text-gray-900 w-24">
+                                <div className="truncate">{supervisorName}</div>
+                              </td>
+                              <td className="px-2 py-1 w-24">
+                                <div className="text-sm font-medium text-gray-900 truncate">
+                                  {studentName}
+                                </div>
+                              </td>
+                              <td className="px-2 py-1 w-24">
+                                <div className="text-sm font-medium text-gray-900 truncate">
+                                  {supervision.proposal.title}
+                                </div>
+                              </td>
+                              <td className="px-2 py-1 text-sm font-medium text-gray-900 text-center w-12">
+                                {toStudyLevelAbbreviation(
+                                  supervision.proposal.studyLevel
+                                )}
+                              </td>
+                              <td className="px-2 py-1 text-sm text-gray-900 w-10">
+                                <div className="flex items-center justify-center">
+                                  <span
+                                    title={statusConfig.label}
+                                    aria-label={statusConfig.label}
+                                    className="inline-flex items-center justify-center"
+                                  >
+                                    <FontAwesomeIcon
+                                      icon={statusConfig.icon}
+                                      className={statusConfig.className}
+                                    />
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-2 py-1 text-sm text-gray-900 w-20">
+                                {toShortDateLabel(
+                                  supervision.proposal.AdminInfo
+                                    ?.olatCapturedDate
+                                )}
+                              </td>
+                              <td className="px-2 py-1 text-sm text-gray-900 w-24">
+                                {toShortDateLabel(
+                                  supervision.proposal.AdminInfo
+                                    ?.latestSubmissionDate
+                                )}
+                              </td>
+                              <td className="px-2 py-1 text-sm text-gray-900 w-24">
+                                {toShortDateLabel(
+                                  supervision.proposal.AdminInfo?.submissionDate
+                                )}
+                              </td>
+                              <td className="px-2 py-1 text-sm text-gray-900 text-center w-12">
+                                {supervision.proposal.AdminInfo?.grade ?? '-'}
+                              </td>
+                            </tr>
+                          )
+                        }
+                      )}
+                    </tbody>
+                  </table>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-600">Rows</span>
-
-                  <div className="inline-flex items-center rounded-md border border-gray-300 bg-white p-0.5">
-                    {PAGE_SIZE_OPTIONS.map((option) => {
-                      const isActive = rowsPerPage === option
-
-                      return (
-                        <button
-                          key={String(option)}
-                          type="button"
-                          onClick={() => {
-                            setRowsPerPage(option)
-                            setCurrentPage(1)
-                          }}
-                          className={`h-7 min-w-[34px] rounded px-2 text-xs font-medium ${
-                            isActive
-                              ? 'bg-blue-600 text-white'
-                              : 'text-gray-700 hover:bg-gray-100'
-                          }`}
-                          aria-label={`Show ${option === 'all' ? 'all' : option} rows`}
-                        >
-                          {option === 'all' ? 'All' : option}
-                        </button>
-                      )
-                    })}
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="text-xs text-gray-600">
+                    Showing {visibleStart}-{visibleEnd} of{' '}
+                    {displayedSupervisions.length}
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((prev) => Math.max(1, Math.min(prev, totalPages) - 1))}
-                    disabled={rowsPerPage === 'all' || effectiveCurrentPage === 1}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label="Previous page"
-                  >
-                    <FontAwesomeIcon icon={faChevronLeft} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-600">Rows</span>
 
-                  <span className="text-xs text-gray-600 min-w-[48px] text-center">
-                    {rowsPerPage === 'all' ? '1 / 1' : `${effectiveCurrentPage} / ${totalPages}`}
-                  </span>
+                    <div className="inline-flex items-center rounded-md border border-gray-300 bg-white p-0.5">
+                      {PAGE_SIZE_OPTIONS.map((option) => {
+                        const isActive = rowsPerPage === option
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setCurrentPage((prev) =>
-                        Math.min(totalPages, Math.min(prev, totalPages) + 1)
-                      )
-                    }
-                    disabled={rowsPerPage === 'all' || effectiveCurrentPage >= totalPages}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label="Next page"
-                  >
-                    <FontAwesomeIcon icon={faChevronRight} />
-                  </button>
+                        return (
+                          <button
+                            key={String(option)}
+                            type="button"
+                            onClick={() => {
+                              setRowsPerPage(option)
+                              setCurrentPage(1)
+                            }}
+                            className={`h-7 min-w-[34px] rounded px-2 text-xs font-medium ${
+                              isActive
+                                ? 'bg-blue-600 text-white'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                            aria-label={`Show ${option === 'all' ? 'all' : option} rows`}
+                          >
+                            {option === 'all' ? 'All' : option}
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentPage((prev) =>
+                          Math.max(1, Math.min(prev, totalPages) - 1)
+                        )
+                      }
+                      disabled={
+                        rowsPerPage === 'all' || effectiveCurrentPage === 1
+                      }
+                      className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label="Previous page"
+                    >
+                      <FontAwesomeIcon icon={faChevronLeft} />
+                    </button>
+
+                    <span className="text-xs text-gray-600 min-w-[48px] text-center">
+                      {rowsPerPage === 'all'
+                        ? '1 / 1'
+                        : `${effectiveCurrentPage} / ${totalPages}`}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentPage((prev) =>
+                          Math.min(totalPages, Math.min(prev, totalPages) + 1)
+                        )
+                      }
+                      disabled={
+                        rowsPerPage === 'all' ||
+                        effectiveCurrentPage >= totalPages
+                      }
+                      className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-gray-600 enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label="Next page"
+                    >
+                      <FontAwesomeIcon icon={faChevronRight} />
+                    </button>
+                  </div>
                 </div>
-              </div>
               </>
             )}
           </div>
         </div>
-
       </div>
 
       {detailsState && (
@@ -1519,7 +1638,8 @@ export default function AdminInfoOverview() {
                 workflowState === 'GRADING' || workflowState === 'COMPLETED'
               const submissionDateLockMessage =
                 'Locked until OLAT Captured Date is saved.'
-              const olatGradeDateLockMessage = 'Locked until Submission Date is saved.'
+              const olatGradeDateLockMessage =
+                'Locked until Submission Date is saved.'
               const gradeLockMessage = 'Locked until Submission Date is saved.'
               const capturedOnZoraLockMessage = 'Locked until Grade is saved.'
               const workflowStepMessage =
@@ -1540,7 +1660,9 @@ export default function AdminInfoOverview() {
                 proposal?.ownedByStudent ||
                 '-'
               const supervisorEmail =
-                supervision?.supervisor?.email || supervision?.supervisorEmail || '-'
+                supervision?.supervisor?.email ||
+                supervision?.supervisorEmail ||
+                '-'
               const allowPublication =
                 acceptedApp?.allowPublication === true
                   ? 'Yes'
@@ -1570,14 +1692,18 @@ export default function AdminInfoOverview() {
                       <div className="text-xs font-medium text-gray-500 uppercase">
                         Supervisor
                       </div>
-                      <div className="text-sm text-gray-900">{supervisorEmail}</div>
+                      <div className="text-sm text-gray-900">
+                        {supervisorEmail}
+                      </div>
                     </div>
 
                     <div>
                       <div className="text-xs font-medium text-gray-500 uppercase">
                         Student Email
                       </div>
-                      <div className="text-sm text-gray-900">{studentEmail}</div>
+                      <div className="text-sm text-gray-900">
+                        {studentEmail}
+                      </div>
                     </div>
 
                     <div>
@@ -1611,7 +1737,9 @@ export default function AdminInfoOverview() {
                       <div className="text-xs font-medium text-gray-500 uppercase">
                         Allow Publication
                       </div>
-                      <div className="text-sm text-gray-900">{allowPublication}</div>
+                      <div className="text-sm text-gray-900">
+                        {allowPublication}
+                      </div>
                     </div>
 
                     <div>
@@ -1632,11 +1760,15 @@ export default function AdminInfoOverview() {
                   </div>
 
                   <div className="mt-4 border-t border-gray-200 pt-4">
-                    <h3 className="text-base font-semibold text-gray-900">Admin Information</h3>
+                    <h3 className="text-base font-semibold text-gray-900">
+                      Admin Information
+                    </h3>
 
                     {editState ? (
                       <>
-                        <p className="mt-1 text-xs text-blue-700">{workflowStepMessage}</p>
+                        <p className="mt-1 text-xs text-blue-700">
+                          {workflowStepMessage}
+                        </p>
 
                         <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
                           <div>
@@ -1688,10 +1820,14 @@ export default function AdminInfoOverview() {
                             </label>
                             <div
                               title={
-                                isSubmissionStepUnlocked ? undefined : submissionDateLockMessage
+                                isSubmissionStepUnlocked
+                                  ? undefined
+                                  : submissionDateLockMessage
                               }
                               className={
-                                isSubmissionStepUnlocked ? undefined : 'cursor-not-allowed'
+                                isSubmissionStepUnlocked
+                                  ? undefined
+                                  : 'cursor-not-allowed'
                               }
                             >
                               <input
@@ -1705,7 +1841,9 @@ export default function AdminInfoOverview() {
                                 }
                                 disabled={!isSubmissionStepUnlocked}
                                 title={
-                                  isSubmissionStepUnlocked ? undefined : submissionDateLockMessage
+                                  isSubmissionStepUnlocked
+                                    ? undefined
+                                    : submissionDateLockMessage
                                 }
                                 className={`w-full px-3 py-2 border rounded-md ${
                                   isSubmissionStepUnlocked
@@ -1725,10 +1863,14 @@ export default function AdminInfoOverview() {
                             </label>
                             <div
                               title={
-                                isOlatGradeDateUnlocked ? undefined : olatGradeDateLockMessage
+                                isOlatGradeDateUnlocked
+                                  ? undefined
+                                  : olatGradeDateLockMessage
                               }
                               className={
-                                isOlatGradeDateUnlocked ? undefined : 'cursor-not-allowed'
+                                isOlatGradeDateUnlocked
+                                  ? undefined
+                                  : 'cursor-not-allowed'
                               }
                             >
                               <input
@@ -1742,7 +1884,9 @@ export default function AdminInfoOverview() {
                                 }
                                 disabled={!isOlatGradeDateUnlocked}
                                 title={
-                                  isOlatGradeDateUnlocked ? undefined : olatGradeDateLockMessage
+                                  isOlatGradeDateUnlocked
+                                    ? undefined
+                                    : olatGradeDateLockMessage
                                 }
                                 className={`w-full px-3 py-2 border rounded-md ${
                                   isOlatGradeDateUnlocked
@@ -1756,11 +1900,21 @@ export default function AdminInfoOverview() {
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Grade
-                              {isGradeRequired && <span className="ml-0.5 text-red-500">*</span>}
+                              {isGradeRequired && (
+                                <span className="ml-0.5 text-red-500">*</span>
+                              )}
                             </label>
                             <div
-                              title={isGradeStepUnlocked ? undefined : gradeLockMessage}
-                              className={isGradeStepUnlocked ? undefined : 'cursor-not-allowed'}
+                              title={
+                                isGradeStepUnlocked
+                                  ? undefined
+                                  : gradeLockMessage
+                              }
+                              className={
+                                isGradeStepUnlocked
+                                  ? undefined
+                                  : 'cursor-not-allowed'
+                              }
                             >
                               <input
                                 type="number"
@@ -1775,7 +1929,11 @@ export default function AdminInfoOverview() {
                                   })
                                 }
                                 disabled={!isGradeStepUnlocked}
-                                title={isGradeStepUnlocked ? undefined : gradeLockMessage}
+                                title={
+                                  isGradeStepUnlocked
+                                    ? undefined
+                                    : gradeLockMessage
+                                }
                                 className={`w-full px-3 py-2 border rounded-md ${
                                   !isGradeStepUnlocked
                                     ? 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed pointer-events-none'
@@ -1803,7 +1961,9 @@ export default function AdminInfoOverview() {
                                   : capturedOnZoraLockMessage
                               }
                               className={
-                                isCapturedOnZoraUnlocked ? undefined : 'cursor-not-allowed'
+                                isCapturedOnZoraUnlocked
+                                  ? undefined
+                                  : 'cursor-not-allowed'
                               }
                             >
                               <select
@@ -1886,7 +2046,9 @@ export default function AdminInfoOverview() {
                         <Button
                           onClick={handleSaveAdminInfo}
                           className={{ root: 'text-sm' }}
-                          disabled={updateAdminInfo.isPending || isGradeValueInvalid}
+                          disabled={
+                            updateAdminInfo.isPending || isGradeValueInvalid
+                          }
                         >
                           {updateAdminInfo.isPending ? 'Saving…' : 'Save'}
                         </Button>
@@ -1912,7 +2074,9 @@ export default function AdminInfoOverview() {
           className={{ content: 'max-w-6xl max-h-[95vh] overflow-auto' }}
         >
           <div className="p-4">
-            <h2 className="text-lg font-bold text-gray-900">Create New Entry</h2>
+            <h2 className="text-lg font-bold text-gray-900">
+              Create New Entry
+            </h2>
 
             <div className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               <div>
@@ -1928,7 +2092,12 @@ export default function AdminInfoOverview() {
                 </label>
                 <select
                   value={createForm.responsibleId}
-                  onChange={(e) => setCreateForm({ ...createForm, responsibleId: e.target.value })}
+                  onChange={(e) =>
+                    setCreateForm({
+                      ...createForm,
+                      responsibleId: e.target.value,
+                    })
+                  }
                   onKeyDown={handleCreateFormSelectKeyDown}
                   aria-invalid={isCreateFieldInvalid('responsibleId')}
                   className={`w-full px-3 py-1.5 border rounded-md ${
@@ -1938,12 +2107,15 @@ export default function AdminInfoOverview() {
                   }`}
                 >
                   <option value="">
-                    {createEntryProfessorsLoading && createEntryProfessorOptions.length === 0
+                    {createEntryProfessorsLoading &&
+                    createEntryProfessorOptions.length === 0
                       ? 'Loading options...'
                       : 'Choose an option'}
                   </option>
                   {createEntryProfessorOptions.map((prof: any) => (
-                    <option key={prof.id} value={prof.id}>{prof.email}</option>
+                    <option key={prof.id} value={prof.id}>
+                      {prof.email}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -1961,7 +2133,12 @@ export default function AdminInfoOverview() {
                 </label>
                 <select
                   value={createForm.supervisorEmail}
-                  onChange={(e) => setCreateForm({ ...createForm, supervisorEmail: e.target.value })}
+                  onChange={(e) =>
+                    setCreateForm({
+                      ...createForm,
+                      supervisorEmail: e.target.value,
+                    })
+                  }
                   onKeyDown={handleCreateFormSelectKeyDown}
                   aria-invalid={isCreateFieldInvalid('supervisorEmail')}
                   className={`w-full px-3 py-1.5 border rounded-md ${
@@ -1972,7 +2149,9 @@ export default function AdminInfoOverview() {
                 >
                   <option value="">Choose an option</option>
                   {supervisors?.map((supervisor: any) => (
-                    <option key={supervisor.email} value={supervisor.email}>{supervisor.email}</option>
+                    <option key={supervisor.email} value={supervisor.email}>
+                      {supervisor.email}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -1991,7 +2170,12 @@ export default function AdminInfoOverview() {
                 <input
                   type="email"
                   value={createForm.studentEmail}
-                  onChange={(e) => setCreateForm({ ...createForm, studentEmail: e.target.value })}
+                  onChange={(e) =>
+                    setCreateForm({
+                      ...createForm,
+                      studentEmail: e.target.value,
+                    })
+                  }
                   placeholder="e.g. max.mustermann@uzh.ch"
                   aria-invalid={isCreateFieldInvalid('studentEmail')}
                   className={`w-full px-3 py-1.5 border rounded-md ${
@@ -2016,7 +2200,12 @@ export default function AdminInfoOverview() {
                 <input
                   type="text"
                   value={createForm.studentName}
-                  onChange={(e) => setCreateForm({ ...createForm, studentName: e.target.value })}
+                  onChange={(e) =>
+                    setCreateForm({
+                      ...createForm,
+                      studentName: e.target.value,
+                    })
+                  }
                   placeholder="e.g. Max Mustermann"
                   aria-invalid={isCreateFieldInvalid('studentName')}
                   className={`w-full px-3 py-1.5 border rounded-md ${
@@ -2041,7 +2230,12 @@ export default function AdminInfoOverview() {
                 <input
                   type="text"
                   value={createForm.matriculationNumber}
-                  onChange={(e) => setCreateForm({ ...createForm, matriculationNumber: e.target.value })}
+                  onChange={(e) =>
+                    setCreateForm({
+                      ...createForm,
+                      matriculationNumber: e.target.value,
+                    })
+                  }
                   placeholder="e.g. 24-230-230 or 'No information'"
                   aria-invalid={isCreateFieldInvalid('matriculationNumber')}
                   className={`w-full px-3 py-1.5 border rounded-md ${
@@ -2065,7 +2259,9 @@ export default function AdminInfoOverview() {
                 </label>
                 <select
                   value={createForm.language}
-                  onChange={(e) => setCreateForm({ ...createForm, language: e.target.value })}
+                  onChange={(e) =>
+                    setCreateForm({ ...createForm, language: e.target.value })
+                  }
                   onKeyDown={handleCreateFormSelectKeyDown}
                   aria-invalid={isCreateFieldInvalid('language')}
                   className={`w-full px-3 py-1.5 border rounded-md ${
@@ -2093,7 +2289,9 @@ export default function AdminInfoOverview() {
                 </label>
                 <select
                   value={createForm.studyLevel}
-                  onChange={(e) => setCreateForm({ ...createForm, studyLevel: e.target.value })}
+                  onChange={(e) =>
+                    setCreateForm({ ...createForm, studyLevel: e.target.value })
+                  }
                   onKeyDown={handleCreateFormSelectKeyDown}
                   aria-invalid={isCreateFieldInvalid('studyLevel')}
                   className={`w-full px-3 py-1.5 border rounded-md ${
@@ -2103,7 +2301,9 @@ export default function AdminInfoOverview() {
                   }`}
                 >
                   <option value="">Choose an option</option>
-                  <option value="Bachelor Thesis (18 ECTS)">BA (Bachelor)</option>
+                  <option value="Bachelor Thesis (18 ECTS)">
+                    BA (Bachelor)
+                  </option>
                   <option value="Master Thesis (30 ECTS)">MA (Master)</option>
                 </select>
               </div>
@@ -2121,7 +2321,12 @@ export default function AdminInfoOverview() {
                 </label>
                 <select
                   value={createForm.topicAreaSlug}
-                  onChange={(e) => setCreateForm({ ...createForm, topicAreaSlug: e.target.value })}
+                  onChange={(e) =>
+                    setCreateForm({
+                      ...createForm,
+                      topicAreaSlug: e.target.value,
+                    })
+                  }
                   onKeyDown={handleCreateFormSelectKeyDown}
                   aria-invalid={isCreateFieldInvalid('topicAreaSlug')}
                   className={`w-full px-3 py-1.5 border rounded-md ${
@@ -2132,7 +2337,9 @@ export default function AdminInfoOverview() {
                 >
                   <option value="">Choose an option</option>
                   {topicAreas?.map((area: any) => (
-                    <option key={area.id} value={area.slug}>{area.name}</option>
+                    <option key={area.id} value={area.slug}>
+                      {area.name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -2144,7 +2351,12 @@ export default function AdminInfoOverview() {
                 </label>
                 <select
                   value={createForm.allowPublication}
-                  onChange={(e) => setCreateForm({ ...createForm, allowPublication: e.target.value })}
+                  onChange={(e) =>
+                    setCreateForm({
+                      ...createForm,
+                      allowPublication: e.target.value,
+                    })
+                  }
                   onKeyDown={handleCreateFormSelectKeyDown}
                   className="w-full px-3 py-1.5 border border-gray-300 rounded-md"
                 >
@@ -2160,7 +2372,9 @@ export default function AdminInfoOverview() {
                 </label>
                 <select
                   value={createForm.allowUsage}
-                  onChange={(e) => setCreateForm({ ...createForm, allowUsage: e.target.value })}
+                  onChange={(e) =>
+                    setCreateForm({ ...createForm, allowUsage: e.target.value })
+                  }
                   onKeyDown={handleCreateFormSelectKeyDown}
                   className="w-full px-3 py-1.5 border border-gray-300 rounded-md"
                 >
@@ -2182,7 +2396,9 @@ export default function AdminInfoOverview() {
                 </label>
                 <textarea
                   value={createForm.title}
-                  onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+                  onChange={(e) =>
+                    setCreateForm({ ...createForm, title: e.target.value })
+                  }
                   rows={2}
                   aria-invalid={isCreateFieldInvalid('title')}
                   className={`w-full px-3 py-1.5 border rounded-md ${
@@ -2195,7 +2411,9 @@ export default function AdminInfoOverview() {
             </div>
 
             {hasTriedCreateSubmit &&
-              CREATE_REQUIRED_FIELDS.some((field) => createForm[field].trim() === '') && (
+              CREATE_REQUIRED_FIELDS.some(
+                (field) => createForm[field].trim() === ''
+              ) && (
                 <p className="mt-2 text-xs text-red-600">
                   Please fill the highlighted required fields.
                 </p>
@@ -2214,7 +2432,9 @@ export default function AdminInfoOverview() {
               </Button>
               <Button
                 onClick={handleCreateEntry}
-                className={{ root: 'text-sm bg-blue-600 hover:bg-blue-700 text-white' }}
+                className={{
+                  root: 'text-sm bg-blue-600 hover:bg-blue-700 text-white',
+                }}
                 disabled={createAdminInfoEntry.isPending}
               >
                 {createAdminInfoEntry.isPending ? 'Saving…' : 'Save'}

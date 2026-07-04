@@ -34,23 +34,27 @@ export default function ProposalPublishForm({
     (fieldKey: string, fileName: string, formikProps: any) =>
     async (files: any[]) => {
       const file = files[0]
-      const name = `${formikProps.values.supervisor}-${fileName}-${Date.now()}.pdf`
-      const { sasString, serviceUrl, containerName } =
-        await mutation.mutateAsync()
+      const requestedFileName = `${formikProps.values.supervisor}-${fileName}-${Date.now()}.pdf`
+      const { blobName, uploadUrl } = await mutation.mutateAsync({
+        requestedFileName,
+        contentType: 'application/pdf',
+        size: file.size,
+        purpose:
+          fieldKey === 'researchProposalPDF'
+            ? 'proposal-file'
+            : 'proposal-attachment',
+      })
 
       await uploadFileToBlob({
         file,
-        name,
-        sasString,
-        serviceUrl,
-        containerName,
+        uploadUrl,
       })
       if (fieldKey === 'researchProposalPDF') {
         setResearchProposalPDF([file])
       } else {
         setFurtherAttachments([file])
       }
-      formikProps.setFieldValue(fieldKey, name)
+      formikProps.setFieldValue(fieldKey, blobName)
     }
 
   const ProposalPublishSchema = Yup.object().shape({
@@ -61,14 +65,14 @@ export default function ProposalPublishForm({
       .min(100, 'Must be at least 100 characters')
       .required('Required'),
     fieldOfResearch: Yup.string().required('Required'),
-    supervisor: Yup.string()
-      .email('Invalid email')
-      .required('Required'),
+    supervisor: Yup.string().email('Invalid email').required('Required'),
     personResponsibleEmail: Yup.string()
       .email('Invalid email')
       .required('Required'),
     bachelorOrMasterLevel: Yup.string().required('Required'),
-    proposalLanguage: Yup.array().min(1, 'At least one language is required').required('Required'),
+    proposalLanguage: Yup.array()
+      .min(1, 'At least one language is required')
+      .required('Required'),
     timeFrame: Yup.string().required('Required'),
     researchProposalPDF: Yup.string().nullable(),
     furtherAttachments: Yup.string().nullable(),
@@ -114,7 +118,8 @@ export default function ProposalPublishForm({
           toast.success('Proposal submitted successfully!')
         } catch (error: any) {
           console.error('Form submission error:', error)
-          const errorMessage = error?.message || 'Failed to submit proposal. Please try again.'
+          const errorMessage =
+            error?.message || 'Failed to submit proposal. Please try again.'
           toast.error(errorMessage)
         }
       }}
@@ -204,7 +209,10 @@ export default function ProposalPublishForm({
               </label>
               <div className="space-y-2">
                 {languageOptions.map((option) => (
-                  <label key={option.value} className="flex items-center space-x-2">
+                  <label
+                    key={option.value}
+                    className="flex items-center space-x-2"
+                  >
                     <Field
                       type="checkbox"
                       name="proposalLanguage"
@@ -215,11 +223,12 @@ export default function ProposalPublishForm({
                   </label>
                 ))}
               </div>
-              {formikProps.errors.proposalLanguage && formikProps.touched.proposalLanguage && (
-                <div className="text-sm text-red-500">
-                  {formikProps.errors.proposalLanguage}
-                </div>
-              )}
+              {formikProps.errors.proposalLanguage &&
+                formikProps.touched.proposalLanguage && (
+                  <div className="text-sm text-red-500">
+                    {formikProps.errors.proposalLanguage}
+                  </div>
+                )}
             </div>
             <FormikTextField
               required
@@ -257,8 +266,8 @@ export default function ProposalPublishForm({
                         {!formikProps.values.supervisor
                           ? 'Select a supervisor before uploading files ⚠️'
                           : researchProposalPDF.length > 0
-                          ? `Attached File 📄: '${researchProposalPDF[0].name}'`
-                          : 'Drag and drop your file 🗃️ here, or click to select the file'}
+                            ? `Attached File 📄: '${researchProposalPDF[0].name}'`
+                            : 'Drag and drop your file 🗃️ here, or click to select the file'}
                       </p>
                     </div>
                   </section>
@@ -291,8 +300,8 @@ export default function ProposalPublishForm({
                         {!formikProps.values.supervisor
                           ? 'Select a supervisor before uploading files ⚠️'
                           : furtherAttachments.length > 0
-                          ? `Attached File 📄: '${furtherAttachments[0].name}'`
-                          : 'Drag and drop your file 🗃️ here, or click to select the file'}
+                            ? `Attached File 📄: '${furtherAttachments[0].name}'`
+                            : 'Drag and drop your file 🗃️ here, or click to select the file'}
                       </p>
                     </div>
                   </section>
