@@ -8,6 +8,7 @@ const hasMatomoTracking =
 const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
+  transpilePackages: ['@uzh-bf/design-system'],
   typescript: {
     ignoreBuildErrors: true,
   },

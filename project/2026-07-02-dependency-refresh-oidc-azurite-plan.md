@@ -427,7 +427,7 @@ Minor/patch upgrades will be applied after major upgrade plan is clear. These st
 | `tailwind-merge` | `3.3.1` | `3.6.0` | minor | v3 same major |
 | `tailwindcss` | `~4.1.12` | `4.3.2` | minor | Tailwind 4 same major |
 | `trpc-to-openapi` | `^3.0.1` | `3.3.0` | minor | v3 same major |
-| `tsx` | `^4.19.2` | `4.22.5` | minor | v4 same major |
+| `tsx` | `^4.19.2` | `4.23.0` | minor | v4 same major |
 | `tw-animate-css` | `~1.3.4` | `1.4.0` | minor | v1 same major |
 | `@microsoft/microsoft-graph-client` | `3.0.5` | `3.0.7` | patch | registry metadata |
 | `@tailwindcss/forms` | `~0.5.10` | `0.5.11` | patch | registry metadata |
@@ -519,7 +519,7 @@ Already-latest direct dependencies:
 | `trpc-to-openapi` | `^3.0.1` | `3.3.0` | minor | https://github.com/mcampa/trpc-to-openapi |
 | `ts-node` | `10.9.1` | `10.9.2` | patch | https://github.com/TypeStrong/ts-node |
 | `ts-node-dev` | `2.0.0` | `2.0.0` | same | https://github.com/whitecolor/ts-node-dev |
-| `tsx` | `^4.19.2` | `4.22.5` | minor | https://github.com/privatenumber/tsx |
+| `tsx` | `^4.19.2` | `4.23.0` | minor | https://github.com/privatenumber/tsx |
 | `tw-animate-css` | `~1.3.4` | `1.4.0` | minor | https://github.com/Wombosvideo/tw-animate-css |
 | `type-fest` | `4.5.0` | `5.7.0` | major | https://github.com/sindresorhus/type-fest |
 | `typescript` | `5.9.2` | `6.0.3` | major | https://github.com/microsoft/TypeScript |
@@ -1147,6 +1147,26 @@ Decision:
   - `CI=true npx -y pnpm@10.15.0 exec tsc --noEmit`
   - `CI=true npx -y pnpm@10.15.0 exec prettier --check package.json playwright.config.ts scripts/setup-e2e.ts tests/e2e/local-auth-blob.spec.ts`
   - `CI=true npx -y pnpm@10.15.0 run build`
+- [x] Slice 4 minor/patch dependency upgrade implemented:
+  - Runtime same-major updates applied first with pinned `pnpm@10.15.0`.
+  - `next-auth@4.24.14` peer warning for `nodemailer@^7.0.7` checked against package metadata; `nodemailer` is optional and remains deferred to the planned major-upgrade slice because the app does not enable the email provider.
+  - `trpc-to-openapi@3.3.0` peer warning for `zod-openapi@^5.4.4` settled by adding exact `zod-openapi@5.4.4`; `zod-openapi@6` remains a major deferral.
+  - `@uzh-bf/design-system@4.1.6` required TypeScript `moduleResolution: "bundler"` for export-map type resolution and Next `transpilePackages` because its development export resolves to source `.tsx`.
+  - `@azure/storage-blob@12.33.0` required local Azurite `--skipApiVersionCheck` because SDK API version `2026-06-06` is newer than Azurite `3.35.0`.
+  - Final outdated check shows only deferred major upgrades and deprecated `@types/uuid`, which remains deferred because `uuid@11.1.0` has no bundled declarations.
+- [x] Slice 4 review completed by subagent `Bernoulli`; accepted finding integrated:
+  - added E2E OpenAPI `/api/healthcheck` smoke for the upgraded `trpc-to-openapi` and `zod-openapi` path.
+- [x] Slice 4 simplification completed by subagent `Gibbs`; accepted findings integrated:
+  - reverted formatting-only Markdown table churn in the plan.
+  - corrected stale plan reference from `tsx@4.22.5` to `tsx@4.23.0`.
+- [x] Slice 4 verification passed:
+  - `CI=true npx -y pnpm@10.15.0 install --frozen-lockfile`
+  - `CI=true npx -y pnpm@10.15.0 run prisma:generate`
+  - `CI=true npx -y pnpm@10.15.0 run lint`
+  - `CI=true npx -y pnpm@10.15.0 exec tsc --noEmit`
+  - `CI=true npx -y pnpm@10.15.0 exec prettier --check tests/e2e/local-auth-blob.spec.ts package.json tsconfig.json next.config.js docker-compose.yml`
+  - `CI=true npx -y pnpm@10.15.0 run build`
+  - `CI=true npx -y pnpm@10.15.0 run test:e2e`: 1 Chromium test passed with local PostgreSQL, OIDC, Azurite setup, OpenAPI healthcheck, sign-in, SAS minting, browser upload, and blob readback.
 
 ## Open Questions
 
@@ -1157,5 +1177,5 @@ Decision:
 
 ## Next Steps
 
-1. Commit Slice 3b.
-2. Start Slice 4 minor/patch dependency upgrades using `pnpm run test:e2e` as the browser gate.
+1. Commit Slice 4.
+2. Start Slice 5 Node and pnpm runtime upgrade.

@@ -30,9 +30,13 @@ async function blobExists(name: string) {
   return containerClient.getBlobClient(name).exists()
 }
 
-test('local OIDC session can mint SAS and browser PUT to Azurite', async ({
+test('OpenAPI healthcheck, local OIDC, and browser PUT to Azurite work locally', async ({
   page,
 }) => {
+  const healthcheckResponse = await page.request.get('/api/healthcheck')
+  expect(healthcheckResponse.ok()).toBe(true)
+  await expect(healthcheckResponse.text()).resolves.toContain('OK')
+
   await page.goto('/api/auth/signin')
   await page.getByRole('button', { name: 'Sign in with Local OIDC' }).click()
   await page.waitForURL('**/')
