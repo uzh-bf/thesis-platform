@@ -1132,6 +1132,21 @@ Decision:
   - `CI=true npx -y pnpm@10.15.0 exec tsc --noEmit`
   - `CI=true npx -y pnpm@10.15.0 run build`
 - [ ] Browser UI limitation found during Slice 3: `next dev` hydrates incorrectly in `agent-browser`; body remains hidden by Next FOUC CSS and console shows Next dev HMR `Cannot read properties of undefined (reading 'components')`. Browser-origin upload is proven, but full Dropzone UI automation should be revisited in Slice 3b/E2E harness.
+- [x] Slice 3b E2E browser harness implemented.
+- [x] Slice 3b review completed by subagent `Planck`; accepted findings integrated:
+  - setup now waits for Docker services plus PostgreSQL, Azurite, and OIDC readiness
+  - Playwright test process now runs under `.env.local.template`
+  - SAS response shape is checked before browser upload
+- [x] Slice 3b simplification completed by subagent `Archimedes`; accepted reductions integrated:
+  - removed premature `E2E_BASE_URL` and redundant Playwright config
+  - test name now reflects SAS/browser PUT proof instead of full Dropzone coverage
+  - Azurite readback now fails fast on missing local env instead of duplicating defaults
+- [x] Slice 3b verification passed:
+  - `CI=true npx -y pnpm@10.15.0 run test:e2e`: 1 Chromium test passed; local OIDC session, browser-origin SAS upload to Azurite, and account-credential blob readback
+  - `CI=true npx -y pnpm@10.15.0 run lint`
+  - `CI=true npx -y pnpm@10.15.0 exec tsc --noEmit`
+  - `CI=true npx -y pnpm@10.15.0 exec prettier --check package.json playwright.config.ts scripts/setup-e2e.ts tests/e2e/local-auth-blob.spec.ts`
+  - `CI=true npx -y pnpm@10.15.0 run build`
 
 ## Open Questions
 
@@ -1142,5 +1157,5 @@ Decision:
 
 ## Next Steps
 
-1. Commit Slice 3.
-2. Start Slice 3b E2E browser harness and address the `next dev` hydration/HMR blocker or use a proven alternate local server mode.
+1. Commit Slice 3b.
+2. Start Slice 4 minor/patch dependency upgrades using `pnpm run test:e2e` as the browser gate.

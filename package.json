@@ -45,6 +45,9 @@
     "prisma:setup:local": "run-s prisma:push:local prisma:seed:local azurite:setup:local",
     "prisma:setup:ibw": "run-s prisma:reset:ibw prisma:push:ibw prisma:seed:ibw",
     "azurite:setup:local": "dotenv -e .env.local -- tsx scripts/setup-azurite.ts",
+    "dev:e2e": "dotenv -e .env.local.template -- sh -c 'NEXTAUTH_URL=http://localhost:${PORT:-3100} NEXT_PUBLIC_APP_URL=localhost:${PORT:-3100} next dev -p ${PORT:-3100}'",
+    "test:e2e:setup": "dotenv -e .env.local.template -- tsx scripts/setup-e2e.ts",
+    "test:e2e": "pnpm run test:e2e:setup && dotenv -e .env.local.template -- playwright test",
     "staging:db:audit": "doppler run --config stg -- ts-node --project tsconfig.tsnode.json scripts/staging-reset-seed.ts --audit-only",
     "staging:db:backup": "doppler run --config stg -- bash scripts/staging-db-backup.sh",
     "staging:db:reset-seed": "doppler run --config stg -- ts-node --project tsconfig.tsnode.json scripts/staging-reset-seed.ts",
@@ -109,6 +112,7 @@
   },
   "devDependencies": {
     "@microsoft/microsoft-graph-types": "2.38.0",
+    "@playwright/test": "1.61.1",
     "@tailwindcss/aspect-ratio": "~0.4.2",
     "@tailwindcss/forms": "~0.5.10",
     "@tailwindcss/postcss": "~4.1.12",
