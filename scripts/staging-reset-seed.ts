@@ -14,8 +14,9 @@ import {
   TopicAreas,
   UserRole,
 } from '../src/lib/constants'
+import { createPrismaPgAdapter } from '../src/server/prismaAdapter'
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient({ adapter: createPrismaPgAdapter() })
 
 type DbInfo = {
   database_name: string

@@ -70,10 +70,11 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Prisma CLI, schema and migrations so the deploy migration job can run
+# Prisma CLI, config, schema and migrations so the deploy migration job can run
 # "prisma migrate deploy" with this image (version must match package.json);
 # owned by root so they stay read-only for the runtime user
-RUN npm install -g prisma@6.15.0
+RUN npm install -g prisma@7.8.0
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/prisma ./prisma
 
 USER nextjs

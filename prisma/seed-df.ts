@@ -3,15 +3,17 @@ import readline from 'readline'
 
 import {
   ApplicationStatus,
+  Department,
   ProposalFeedbackType,
   ProposalStatus,
   ProposalType,
   TopicAreas,
   UserRole,
-  Department,
 } from '../src/lib/constants'
+import { createPrismaPgAdapter } from '../src/server/prismaAdapter'
 
 const prismaClient = new PrismaClient({
+  adapter: createPrismaPgAdapter(),
   log: ['query', 'info', 'warn', 'error'],
 })
 

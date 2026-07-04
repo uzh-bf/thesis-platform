@@ -134,8 +134,9 @@ Decision:
 - Migrations must run through Argo sync, like careers.
 - Do not move production migrations into app startup, CI deployment scripts, or manual post-deploy commands.
 - Keep the thesis migration resource as an Argo `PreSync` hook with `BeforeHookCreation,HookSucceeded`.
-- Replace direct global `prisma` execution with a Kubernetes-safe package script, for example `pnpm run prisma:deploy:k8s`, where the script runs `prisma migrate deploy` without Doppler because Kubernetes secrets provide env vars.
-- Add `CI=true` to the migration job when invoking pnpm.
+- First keep the current direct `prisma migrate deploy` hook compatible with Prisma 7 by matching the global CLI version to package.json and copying Prisma config into the image.
+- Then replace direct global `prisma` execution with a migration-capable image or Kubernetes-safe package script, for example `pnpm run prisma:deploy:k8s`, where the script runs `prisma migrate deploy` without Doppler because Kubernetes secrets provide env vars.
+- Add `CI=true` to the migration job only when invoking pnpm.
 - If the app runtime becomes distroless, the migration hook should use a separate migration-capable image or Docker target that includes Node, pnpm, node_modules, Prisma schema, and migrations.
 - Add Helm values for `migration.image` only if the migration image diverges from the app image.
 - Verify rendered manifests show the hook annotations, command, image, env, resources, and secret reference for both staging and production.
@@ -858,11 +859,9 @@ Do:
 
 - Upgrade Prisma packages.
 - Add adapter/client output changes required by Prisma 7.
-- Add a Kubernetes-safe migration script, for example `prisma:deploy:k8s`, that runs `prisma migrate deploy` without Doppler.
 - Keep migrations on the Argo `PreSync` hook path, like careers.
-- Change the migration hook from direct global `prisma` to a package script or explicit local CLI invocation.
-- Add `CI=true` to the migration job if the hook invokes pnpm.
-- Remove the app runtime dependency on global Prisma if the migration image/stage covers it.
+- Keep the current direct `prisma migrate deploy` hook working with Prisma 7 by matching the global Prisma CLI version and copying Prisma config into the runtime image.
+- Defer package-script execution and app-runtime/global-Prisma removal to Slice 6b, where a migration-capable image/stage can be proven.
 - Keep app DB behavior unchanged.
 - Validate migrations remain untouched.
 
@@ -1258,6 +1257,32 @@ Decision:
   - `NEXT_PUBLIC_DEPARTMENT_NAME=DF ENABLE_DF_WEBSTATS=true CI=true npx -y pnpm@11.9.0 run build`
   - `CI=true npx -y pnpm@11.9.0 run test:e2e`: 1 Chromium test passed; existing styled-jsx hydration warning still appears.
   - `docker build -t thesis-platform:react-compiler-smoke .`: passed on Node `24.18.0`; existing global Prisma npm warning remains migration/Prisma slice scope.
+- [x] Slice 6 Prisma 7 and Argo migration compatibility completed:
+  - Registry metadata checked on 2026-07-04: `prisma@7.8.0`, `@prisma/client@7.8.0`, `@prisma/adapter-pg@7.8.0`, `@prisma/adapter-mariadb@7.8.0`, and `@prisma/client-runtime-utils@7.8.0` are current latest versions; `@prisma/adapter-pg@7.8.0` brings `pg@8.22.0` transitively.
+  - Context7 Prisma 7 docs refreshed: `datasource.url` moves from schema to `prisma.config.ts`; PostgreSQL runtime access needs a driver adapter; MariaDB/MySQL access uses `@prisma/adapter-mariadb`; legacy `prisma-client-js` remains available and preserves `@prisma/client` imports.
+  - Minimal Prisma 7 path selected: keep `prisma-client-js` and existing imports, add `prisma.config.ts`, add PostgreSQL adapter wiring, and keep migrations unchanged.
+  - `prisma generate` initially failed with P1012 on `datasource.url`; accepted fix moves URLs to config files and adds a build-time placeholder only for generate scripts.
+  - `prisma:generate:mysql` preserved with `prisma.mysql.config.ts`; review found the archived MySQL migration client also needs `@prisma/adapter-mariadb` and direct `@prisma/client-runtime-utils` under pnpm, so the script now uses a MariaDB adapter instead of removed `datasources` constructor overrides.
+  - `build:next` now provides the same placeholder PostgreSQL URL only during `next build`, so runtime/start remains strict while build-time module evaluation does not need a real database secret.
+  - Argo migration hook remains `PreSync` and direct `prisma migrate deploy` in this slice because the current final Next standalone image does not carry pnpm/local Prisma CLI reliably. Dockerfile now installs matching global `prisma@7.8.0` and copies `prisma.config.ts`; package-script/migration-capable-image split stays in Slice 6b.
+  - `helm template thesis-platform deploy/chart_new -f deploy/stg_new/values.yaml` and `-f deploy/prd_new/values.yaml` render the migration Job with `argocd.argoproj.io/hook: PreSync`, delete policy, app image, direct Prisma command, env secret, and resources.
+  - Slice 6 review findings accepted:
+    - dropped redundant direct `pg` dependency because `@prisma/adapter-pg` owns it.
+    - dropped unused `prisma:deploy:k8s` script because the hook still uses direct global Prisma in this slice.
+    - deferred existing `imagePullPolicy: Always` on commit-like tags to Slice 6b/deploy hardening with the migration-image work.
+    - accepted missing app-container DB smoke and live Argo sync as residual risks until a real environment rollout.
+  - Slice 6 post-review verification passed:
+    - `CI=true npx -y pnpm@11.9.0 install --frozen-lockfile`
+    - `CI=true npx -y pnpm@11.9.0 run prisma:generate:mysql`
+    - MySQL archived-client constructor smoke with `@prisma/adapter-mariadb`: passed with plain Node.
+    - `CI=true npx -y pnpm@11.9.0 run lint`: passed with the same 7 `react-hooks/set-state-in-effect` warnings and 0 errors.
+    - `CI=true npx -y pnpm@11.9.0 exec tsc --noEmit`
+    - `CI=true npx -y pnpm@11.9.0 run build`
+    - `NEXT_PUBLIC_DEPARTMENT_NAME=DF ENABLE_DF_WEBSTATS=true CI=true npx -y pnpm@11.9.0 run build`
+    - `CI=true npx -y pnpm@11.9.0 run test:e2e`: 1 Chromium test passed with local PostgreSQL, OIDC, Azurite setup, sign-in, SAS minting, browser upload, and blob readback; existing styled-jsx hydration and LCP warnings still appear.
+    - `helm template thesis-platform deploy/chart_new -f deploy/stg_new/values.yaml` and `-f deploy/prd_new/values.yaml`: rendered PreSync migration Job, direct Prisma command, app image, env secret, and resources for staging and production.
+    - `docker build -t thesis-platform:prisma7-smoke .`: passed on Node `24.18.0`; global Prisma npm allow-scripts warning remains known until Slice 6b removes migration tooling from the app runtime image.
+    - `docker run --rm --network thesis-platform_thesis-platform -e DATABASE_URL='postgresql://thesis:thesis@postgres:5432/thesis_migrate_smoke_20260704_1308?sslmode=disable' thesis-platform:prisma7-smoke prisma migrate deploy`: applied baseline migration successfully on a fresh throwaway DB.
 
 ## Open Questions
 
@@ -1267,6 +1292,6 @@ Decision:
 
 ## Next Steps
 
-1. Commit Slice 5c.
-2. Start the migration/Prisma/Argo slice.
-3. Keep Prisma/global npm runner warning in scope for the migration/Prisma slice.
+1. Commit Slice 6.
+2. Start Slice 6b Debian runtime parity and migration-image proof.
+3. Revisit `imagePullPolicy: Always` for commit-like image tags in Slice 6b/deploy hardening.
