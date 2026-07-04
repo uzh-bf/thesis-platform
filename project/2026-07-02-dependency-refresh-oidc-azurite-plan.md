@@ -1053,6 +1053,29 @@ Accepted fixes:
 - `image.pullPolicy` review added for immutable deploy tags.
 - Matomo webpack alias from refreshed `origin/main` added as Turbopack adoption risk.
 
+## Baseline Verification
+
+Ran on 2026-07-04 after plan commit `6072919`.
+
+Environment: Node `v22.18.0`; shell `pnpm` `11.7.0`; repo Volta pin `pnpm@10.15.0`.
+
+Results:
+
+- `pnpm install --frozen-lockfile` with shell `pnpm@11.7.0`: failed with `ERR_PNPM_IGNORED_BUILDS`.
+- `CI=true npx -y pnpm@10.15.0 install --frozen-lockfile`: passed, with ignored-build warnings for Prisma/Tailwind/esbuild/sharp packages.
+- `CI=true npx -y pnpm@10.15.0 run prisma:generate`: passed.
+- `CI=true npx -y pnpm@10.15.0 run lint`: passed.
+- `CI=true npx -y pnpm@10.15.0 run build`: passed; Next type check skipped because `next.config.js` sets `typescript.ignoreBuildErrors: true`.
+- `CI=true npx -y pnpm@10.15.0 exec tsc --noEmit`: failed on existing strict TypeScript errors, including Prisma generated-client typing/export resolution and many implicit `any` / `unknown` errors.
+
+Decision:
+
+- Do not claim type-clean baseline.
+- Slices must run slice-specific checks and include build/lint/`tsc` evidence where relevant.
+- Treat `tsc` as an existing failing gate until a dedicated type cleanup or framework/tooling slice fixes it.
+- Same known `tsc` failure is allowed until cleanup; new or expanded type errors block slice commit.
+- pnpm 11 slice must handle build approvals and avoid `pnpm-workspace.yaml` / `.pnpm-store` churn.
+
 ## Progress
 
 - [x] Branch created: `codex/dependency-refresh-oidc-azurite`
@@ -1066,7 +1089,8 @@ Accepted fixes:
 - [x] `rs-dependency-upgrade-planner` applied to this thesis plan.
 - [x] Independent plan review completed and accepted findings integrated.
 - [x] Plan written.
-- [ ] Baseline verification pending.
+- [x] Plan committed alone: `6072919 docs(project): add dependency refresh plan`.
+- [x] Baseline verification completed with known `tsc` failure recorded.
 - [ ] Implementation pending.
 
 ## Open Questions
@@ -1078,7 +1102,5 @@ Accepted fixes:
 
 ## Next Steps
 
-1. Review plan.
-2. Run independent plan review if user wants strict workflow gate.
-3. Commit plan alone.
-4. Start Slice 1.
+1. Commit Slice 0 baseline/progress update.
+2. Start Slice 1.
