@@ -1448,10 +1448,26 @@ Decision:
 - Follow-up: confirm whether legacy deploy surfaces under `deploy/chart`, `deploy/stg`, and `deploy/prd` are retired before deleting or relying on them for future changes.
 - Follow-up (accepted residual risk, security reviewer Aristotle): the blob-scoped SAS is much safer than before (blob-scoped, UUID-prefixed name, 10 min TTL) but Azure SAS cannot bind uploaded file bytes/size/content-type or force the browser helper's `if-none-match`. Add server-side post-upload validation/scan (size/content-type/magic-byte check) before treating an uploaded PDF as trusted. Not blocking for this branch.
 
+## Pre-Merge Code-Quality Review (thermo-nuclear)
+
+Ran the strict maintainability audit against the whole branch (focus on new/changed app code). Verdict: mergeable as-is; no blocking findings. Both large files (`_app.ts` 3929 lines, `AdminInfoOverview.tsx` 2448 lines) were already >1000 lines before this branch; the PR is mostly Prettier reflow with small net additions and did not create the size problem. All 8 findings are maintainability debts, deferred (not blocking); none are bugs:
+
+- #2 (important) DEFERRED: `generateSasQueryToken` requires + zod-validates `purpose` (`uploadPurposeSchema`) but never reads it — a required-but-unused input that looks load-bearing. Harmless (no bug). Correct resolution (segment blob path by purpose vs remove the param) depends on product intent; follow-up.
+- #3 (important -> downgraded) DEFERRED: local-OIDC auth-defaults are threaded inconsistently (initial `jwt` login passes `account.provider`, refresh branch and `createUser` do not). Verified NOT a live bug: admin defaults are persisted to the DB at initial login, and the provider-less refresh path returns the already-admin DB user unchanged (`getSessionUser` no-ops when `authDefaults` is null), so no downgrade on refresh. Optional cleanup: unify into one `getAuthDefaults(context)` and grant local defaults in `createUser` too.
+- #1 (minor) DEFERRED/KEEP: `ExcelColumn<T>` is a thin but reasonable entity->(header,value) mapper with explicit ordering + null handling, not a pure identity wrapper. Optional simplification only.
+- #4 (important) DEFERRED: two runtime paths (`node-runner` default + opt-in `distroless`) with the CI deploy-image workflow flipping runtime via `perl -0pi` regex on YAML. This is the intentional staged-distroless-rollout design (documented above), but the regex-on-YAML flip is fragile; follow-up is to template/patch the runtime value properly instead of regex surgery.
+- #5 (minor) DEFERRED: `Dockerfile` duplicates the non-root Debian runtime setup between `node-runner` and `migration-runner`; factor a shared intermediate stage. `Dockerfile` unchanged in Slice 10.
+- #6 (minor) DEFERRED (recommended quick add): document why `generateSasQueryToken` is `publicProcedure` (anonymous student uploads are intended) so the widened auth is not misread as a regression.
+- #7 (minor) DEFERRED: split the pre-existing 3.9k-line `_app.ts` into per-domain routers; extract `generateSasQueryToken` + blob helpers into `src/server/routers/blob.ts`.
+
+No code changed for these findings; branch verification remains valid and the PR stays green.
+
 ## Next Steps
 
-1. Commit Slice 10 (pending user approval): `chore(release): finalize dependency refresh rollout`. Stage explicit paths only.
-2. Open/refresh PR to `main` with `df-mr-description-writer`; create as draft.
-3. Before marking merge-ready: run `thermo-nuclear-code-quality-review`; resolve or explicitly defer findings.
-4. After Slice 10 committed and PR safe: delete recovery tag `recovery/slice10-snapshot`.
-5. Rollout order: staging first, then production; IBW (`deploy/prd_ibw_new`) only in a later separate rollout.
+1. [x] Slice 10 committed: `499cad8 chore: finalize dependency refresh rollout`.
+2. [x] Draft PR #148 opened to `main` (body via `df-mr-description-writer`); desktop + mobile landing screenshots captured under Next 16.
+3. [x] Thermo-nuclear review run; all findings deferred with rationale (above); none blocking.
+4. [ ] After PR confirmed safe: delete recovery tag `recovery/slice10-snapshot` (snapshot superseded by pushed `499cad8`).
+5. [ ] Attach the captured UI screenshots to PR #148 and clear draft status when ready.
+6. [ ] Rollout order: staging first, then production; IBW (`deploy/prd_ibw_new`) only in a later separate rollout.
+7. [ ] Deferred maintainability follow-ups from the code-quality review (#2, #3, #4, #6, #7 above).
