@@ -602,6 +602,26 @@ Commit:
       - [infra-preview-mr-stg](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/jobs/1938263): success.
       - [post-infra-preview-mr-stg](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/jobs/1938266): success.
       - Pipeline passed.
+  - df-cloud stg rollout done on 2026-07-05:
+    - final `agy` / Gemini 3.5 Flash High review before merge: no Critical, Important, Minor, or simplification findings; decision `Merge`.
+    - MR [!226](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/merge_requests/226) marked ready and merged to `stg`.
+    - merge commit: `0db6ae66b63fe81f56db1e663b410410a374e02d`.
+    - squash commit: `ace54cae82ba4fae586d400dbe99488c63fedd58`.
+    - parent stg pipeline [622453](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/pipelines/622453):
+      - [infra-preview-stg](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/jobs/1938288): success.
+      - [infra-up-stg](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/jobs/1938290): success.
+    - the root infra stack did not apply thesispf app resources; the scoped app bridge was required.
+    - thesispf app child pipeline [622457](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/pipelines/622457):
+      - [build-azure-helpers](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/jobs/1938324): success.
+      - [app-preview](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/jobs/1938325): success.
+      - [app-up](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/jobs/1938326): success.
+    - live stg verification on `aks-stg-apps` / `stg-thesispf`:
+      - ExternalSecret `df-infra-k8s-es-inf-stg-apps-stg-thesisplatform-secrets` has `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, `CLEVERREACH_FILTER_THESES`, and `STAGING_ENABLE_EXTERNAL_FLOWS`.
+      - ExternalSecret status is `Ready=True`, reason `SecretSynced`.
+      - Kubernetes secret `stg-thesisplatform-secrets` contains the same four keys.
+      - existing pod did not have the new env vars because it predated the secret update.
+      - restarted deployment `app-thesispf-thesis-platform`; rollout completed.
+      - restarted pod has all four required env vars present; values were not printed.
   - Thesis branch verification refreshed:
     - `./node_modules/.bin/tsc --noEmit --incremental false --pretty false`
     - `./node_modules/.bin/next lint`
@@ -612,7 +632,7 @@ Commit:
     - `git diff --check origin/main...HEAD`
     - note: `tsx` and `next lint` required sandbox escalation because local IPC/cache writes were blocked.
 - [ ] Disable old Power Automate CleverReach gate.
-  - Slice 6 mapping done; no flow disabled yet because df-cloud rollout and stg cutover smoke have not run.
+  - Slice 6 mapping done; no flow disabled yet because controlled stg cutover smoke has not run.
   - DEV and PROD both have populated value rows for:
     - `uzhbf_thesisplatform_cleverreach_client_id_env_var`
     - `uzhbf_thesisplatform_cleverreach_client_secret_env_var`
@@ -630,4 +650,4 @@ Commit:
 
 ## Next Step
 
-Wait for rollout-owner approval to merge/apply df-cloud MR [!226](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/merge_requests/226) to `stg`. After it is applied, continue with controlled stg smoke. Before the smoke, disable only the old DEV `UZH BF Thesis Platform - Cleverreach` flow and leave the other Power Automate flows active.
+Continue with controlled stg smoke. Before the smoke, disable only the old DEV `UZH BF Thesis Platform - Cleverreach` flow and leave the other Power Automate flows active.
