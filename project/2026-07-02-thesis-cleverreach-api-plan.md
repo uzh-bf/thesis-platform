@@ -609,6 +609,9 @@ Commit:
     - `uzhbf_thesisplatform_cleverreach_client_secret_env_var`
   - DEV and PROD both have a separate activated modern flow:
     - `UZH BF Thesis Platform - Cleverreach`
+    - workflow id in both environments: `3fa5d199-c377-f011-b4cc-00224874b350`
+    - DEV environment URL: `https://orgc222f0ec.crm17.dynamics.com/`
+    - PROD environment URL: `https://org778b7285.crm17.dynamics.com/`
   - Recommended gate for stg smoke/prod cutover:
     - turn off only `UZH BF Thesis Platform - Cleverreach`.
     - leave proposal posting/application/email flows active.
