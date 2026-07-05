@@ -662,8 +662,24 @@ Commit:
       - DEV `UZH BF Thesis Platform - Cleverreach` flow reactivated (`statecode=1`, `statuscode=2`).
       - final stg DB query still showed zero records for the smoke title.
     - conclusion: deploy/merge the thesis-platform app branch to stg before repeating smoke.
+  - 2026-07-05 branch deployment for real stg testing:
+    - built and pushed ARM64 image `ghcr.io/uzh-bf/thesis-platform:codex-thesis-cleverreach-api-arm-9099a43775c2`.
+    - committed stg values update to point at that image: `6f50d11 chore(deploy): point staging to thesis smoke image`.
+    - pushed branch `codex/thesis-cleverreach-api` to GitHub.
+    - temporarily changed stg ArgoCD `app-thesispf` `targetRevision` from `main` to `codex/thesis-cleverreach-api`.
+    - ArgoCD stg app synced branch revision `6f50d11a39622762057f71ada3550bb527179c5d`.
+    - stg deployment rolled out image `ghcr.io/uzh-bf/thesis-platform:codex-thesis-cleverreach-api-arm-9099a43775c2`.
+    - stg pod now has `THESIS_PLATFORM_ENV=stg`, `DOPPLER_CONFIG` missing, CleverReach env keys present, and HTTP 200 on `https://theses.stg.df-app.ch`.
+  - 2026-07-05 repeat smoke against branch image still blocked before CleverReach draft creation:
+    - DEV `UZH BF Thesis Platform - Cleverreach` flow temporarily deactivated and later reactivated.
+    - stg `STAGING_ENABLE_EXTERNAL_FLOWS` temporarily set to `true`, then reset to `false`.
+    - submitted proposal title `Codex Real Stg Smoke Thesis 2026-07-05T14:24:17.583Z`.
+    - app logs showed Power Automate submit succeeded.
+    - app logs then showed `CleverReach thesis proposal draft skipped because the published proposal could not be found after flow submission.`
+    - stg DB query found zero records for the smoke title after the polling window.
+    - conclusion: app/Argo/image migration is now testable on stg; end-to-end smoke is blocked by the DEV Power Automate proposal-posting callback not creating the proposal record.
 - [ ] Promote prd.
 
 ## Next Step
 
-Deploy the thesis-platform app branch to stg before repeating controlled smoke. Before the next smoke, disable only the old DEV `UZH BF Thesis Platform - Cleverreach` flow and leave the other Power Automate flows active.
+Investigate why the DEV Power Automate proposal-posting flow accepts the request but does not create the proposal record in stg. Stg currently serves the branch image from `codex/thesis-cleverreach-api`; before any further smoke, disable only the old DEV `UZH BF Thesis Platform - Cleverreach` flow and leave the other Power Automate flows active.
