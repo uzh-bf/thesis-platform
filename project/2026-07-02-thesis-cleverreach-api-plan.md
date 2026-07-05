@@ -593,6 +593,15 @@ Commit:
       - `git diff --check origin/stg...HEAD`
       - `src/apps/thesispf/node_modules/.bin/tsc --noEmit --project src/apps/thesispf/tsconfig.json --pretty false`
       - `node_modules/.bin/prettier --check src/apps/thesispf/functions.ts`
+  - Thesis branch verification refreshed:
+    - `./node_modules/.bin/tsc --noEmit --incremental false --pretty false`
+    - `./node_modules/.bin/next lint`
+    - `./node_modules/.bin/tsx scripts/verify-cleverreach-thesis.ts`
+    - `helm template thesis-platform deploy/chart_new -f deploy/stg_new/values.yaml`
+    - `helm template thesis-platform deploy/chart_new -f deploy/prd_new/values.yaml`
+    - `helm template thesis-platform deploy/chart_new -f deploy/prd_ibw_new/values.yaml`
+    - `git diff --check origin/main...HEAD`
+    - note: `tsx` and `next lint` required sandbox escalation because local IPC/cache writes were blocked.
 - [ ] Disable old Power Automate CleverReach gate.
   - Slice 6 mapping done; no flow disabled yet because Infisical app-side keys are not present.
   - DEV and PROD both have populated value rows for:
