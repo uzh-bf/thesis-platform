@@ -17,7 +17,7 @@ const CLEVERREACH_DEFAULTS = {
   mailingNamePrefix: 'THESIS_PROPOSAL',
   senderEmail: 'df-community@mailing.uzh.ch',
   senderName: 'DF Community',
-  subjectTemplate: 'New Thesis Available: {title}',
+  subjectTemplate: 'Neue Abschlussarbeit: {title}',
   templateName: 'THESIS_PROPOSAL_V0',
 } as const
 

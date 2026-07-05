@@ -80,6 +80,30 @@ function formatContact(name: string | null | undefined, email: string): string {
   return cleanName || cleanEmail
 }
 
+function formatGermanStudyLevel(value: string): string {
+  const cleanValue = cleanText(value)
+  const ects = cleanValue.match(/\(([^)]+ECTS)\)/i)?.[1]
+  const suffix = ects ? ` (${ects})` : ''
+  const lowerValue = cleanValue.toLowerCase()
+
+  if (lowerValue.includes('bachelor')) return `Bachelorarbeit${suffix}`
+  if (lowerValue.includes('master')) return `Masterarbeit${suffix}`
+
+  return cleanValue
+}
+
+function formatGermanTimeFrame(value: string): string {
+  const cleanValue = cleanText(value)
+
+  return cleanValue
+    .replace(/\bspring semester\b/gi, 'Fruehlingssemester')
+    .replace(/\bfall semester\b/gi, 'Herbstsemester')
+    .replace(/\bautumn semester\b/gi, 'Herbstsemester')
+    .replace(/^flexible$/i, 'flexibel')
+    .replace(/^ongoing$/i, 'laufend')
+    .replace(/^completed$/i, 'abgeschlossen')
+}
+
 function sentenceFromParts(parts: string[]): string {
   return `${parts.join(', ')}.`
 }
@@ -123,7 +147,11 @@ export function buildThesisProposalPreheader({
   | 'supervisorName'
   | 'supervisorEmail'
 >): string {
-  const primaryParts = [studyLevel, topicAreaName, timeFrame]
+  const primaryParts = [
+    formatGermanStudyLevel(studyLevel),
+    topicAreaName,
+    formatGermanTimeFrame(timeFrame),
+  ]
     .map(cleanText)
     .filter(Boolean)
   const fallback = formatContact(supervisorName, supervisorEmail)
@@ -139,7 +167,7 @@ export function buildThesisProposalPreheader({
   }
 
   if (selected.length === 0) {
-    return 'Neue Thesis Proposal Details.'
+    return 'Neue Abschlussarbeit im Thesis-Newsletter.'
   }
 
   return trimAtWordBoundary(sentenceFromParts(selected), PREHEADER_MAX_LENGTH)

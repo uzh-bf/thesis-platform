@@ -177,7 +177,7 @@ Do:
 - Defaults in code:
   - sender `DF Community <df-community@mailing.uzh.ch>`
   - template `THESIS_PROPOSAL_V0`
-  - subject `New Thesis Available: {title}`
+  - subject `Neue Abschlussarbeit: {title}`
 - Preheader:
   - no title
   - short
@@ -381,8 +381,8 @@ Do:
   - proposal still created by Power Automate.
   - exactly one CleverReach draft appears.
   - draft uses template `THESIS_PROPOSAL_V0`.
-  - subject contains title.
-  - preheader contains study level/topic/time frame, not title.
+  - subject contains title and uses German title-case copy.
+  - preheader contains German study level/topic/time frame, not title.
   - receivers use filter `521671`.
   - old Power Automate CR path did not create duplicate.
 - Reset `STAGING_ENABLE_EXTERNAL_FLOWS=false`.
@@ -678,6 +678,15 @@ Commit:
     - app logs then showed `CleverReach thesis proposal draft skipped because the published proposal could not be found after flow submission.`
     - stg DB query found zero records for the smoke title after the polling window.
     - conclusion: app/Argo/image migration is now testable on stg; end-to-end smoke is blocked by the DEV Power Automate proposal-posting callback not creating the proposal record.
+  - 2026-07-05 Power Automate callback fix and successful API smoke:
+    - DEV Power Platform `Root URL` environment variable was updated from the stale ngrok URL to `https://theses.stg.df-app.ch` and verified with `pac org fetch`.
+    - first retry used the staging service account as `responder`; the parent flow reached the correct staging `/api/addProposal` URL but stayed running because the service account is not a staging `User`.
+    - corrected retry used existing staging supervisor `staging.supervisor.one@example.com` as `responder`.
+    - parent flow action `addProposal` succeeded and stg DB contained proposal `83f6c854-f66c-4c7d-b78a-c8775e21fc8f` for `Codex Valid Responder Stg Smoke Thesis 2026-07-05T15:01:07.455Z`.
+    - app logs confirmed `CleverReach thesis proposal draft created for 83f6c854-f66c-4c7d-b78a-c8775e21fc8f { mailingId: '17238974' }`.
+    - the old DEV `UZH BF Thesis Platform - Cleverreach` child flow was disabled only during the smoke and reactivated afterward.
+    - the temporary live stg `STAGING_ENABLE_EXTERNAL_FLOWS=true` deployment override was removed afterward; running pod again reported `STAGING_ENABLE_EXTERNAL_FLOWS=false`.
+    - two smoke flow runs left retrying by intentionally incomplete smoke data were cancelled through the Flow Management API.
 - [ ] Promote prd.
 
 ## Next Step

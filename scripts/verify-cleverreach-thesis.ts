@@ -14,7 +14,7 @@ const env = {
   CLEVERREACH_CLIENT_SECRET: 'client-secret',
   CLEVERREACH_FILTER_THESES: 'filter-theses',
   CLEVERREACH_TEMPLATE_THESIS_PROPOSAL: 'THESIS_PROPOSAL_V0',
-  CLEVERREACH_SUBJECT_THESIS_PROPOSAL: 'New Thesis Available: {title}',
+  CLEVERREACH_SUBJECT_THESIS_PROPOSAL: 'Neue Abschlussarbeit: {title}',
 }
 
 const payload: ThesisProposalDraftPayload = {
@@ -23,7 +23,7 @@ const payload: ThesisProposalDraftPayload = {
   summary: '<b>Risk & return</b>\nSecond line',
   studyLevel: 'Master Thesis (30 ECTS)',
   languages: parseProposalLanguages('["English","German"]'),
-  timeFrame: '6 months starting September 2026',
+  timeFrame: 'Fall Semester 2026',
   topicAreaName: 'Corporate Finance',
   supervisorEmail: 'supervisor@example.com',
   supervisorName: 'Prof. Example',
@@ -42,8 +42,10 @@ assert.deepEqual(parseProposalLanguages('English, German'), [
 const preheader = buildThesisProposalPreheader(payload)
 assert.ok(preheader.length <= 80)
 assert.ok(!preheader.includes(payload.title))
-assert.match(preheader, /Master Thesis/)
-assert.match(preheader, /Corporate Finance/)
+assert.equal(
+  preheader,
+  'Masterarbeit (30 ECTS), Corporate Finance, Herbstsemester 2026.'
+)
 
 const params = buildThesisProposalMailingParams({
   payload,
@@ -56,7 +58,7 @@ assert.equal(params.config.filterId, 'filter-theses')
 assert.equal(params.config.templateName, 'THESIS_PROPOSAL_V0')
 assert.equal(
   params.subject,
-  'New Thesis Available: Asset Pricing With Machine Learning'
+  'Neue Abschlussarbeit: Asset Pricing With Machine Learning'
 )
 assert.equal(
   params.name,
