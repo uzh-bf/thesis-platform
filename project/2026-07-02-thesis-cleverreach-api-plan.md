@@ -601,7 +601,7 @@ Commit:
       - [build-azure-helpers-mr-stg](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/jobs/1938262): success.
       - [infra-preview-mr-stg](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/jobs/1938263): success.
       - [post-infra-preview-mr-stg](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/jobs/1938266): success.
-      - Pipeline still shows running because optional manual jobs remain untriggered.
+      - Pipeline passed.
   - Thesis branch verification refreshed:
     - `./node_modules/.bin/tsc --noEmit --incremental false --pretty false`
     - `./node_modules/.bin/next lint`
