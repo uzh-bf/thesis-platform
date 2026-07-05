@@ -557,26 +557,32 @@ Commit:
   - Slice 5 correctness review: `DONE`, no findings.
   - Slice 5 simplification review: inlined value file path and final delta `DONE`, no findings.
 - [ ] Populate Infisical values.
-  - Slice 6 status: blocked on write access.
+  - Slice 6 status: Infisical upgraded; write access still the only blocker.
   - Infisical servers:
-    - stg: `infisical/infisical:v0.146.0-postgres`
-    - prd: `infisical/infisical:v0.146.0-postgres`
+    - stg: `infisical/infisical:v0.161.12`
+    - prd: `infisical/infisical:v0.161.12`
   - API compatibility:
-    - `/api/v4/secrets` returns 404 on this self-hosted version.
-    - `/api/v3/secrets/raw` is the compatible route.
-    - read path uses `workspaceSlug=thesis-platform`.
-    - write path expects `projectSlug=thesis-platform`.
+    - `/api/v4/secrets` now exists; unauthenticated dummy probes return 401.
+    - use `/api/v4/secrets`, not the old `/api/v3/secrets/raw` route.
+    - stg project id: `1abaaea3-1bfd-4a53-ab71-114225ad27d9`.
+    - prd project id: `3a5a7194-3034-44ee-8a58-97b8d98effef`.
   - Current access:
     - local Infisical CLI profile has invalid token format.
     - Azure CLI user lacks list permission on `kv-stg-thesispf-8dh3u` and `kv-prd-thesispf-LxhJG`.
-    - AKS SecretStore machine identities validate and can read but are `ReadOnly`; creating `STAGING_ENABLE_EXTERNAL_FLOWS=false` returned 403.
+    - AKS SecretStore machine identities validate and can read project metadata and v4 secrets by status only.
+    - no write attempt after upgrade; investigation stayed read-only.
   - Presence checks, values not printed:
     - stg Infisical has `APP_URL`.
     - stg Infisical lacks `STAGING_ENABLE_EXTERNAL_FLOWS`, `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, `CLEVERREACH_FILTER_THESES`.
     - prd Infisical has `APP_URL`.
     - prd Infisical lacks `STAGING_ENABLE_EXTERNAL_FLOWS`, `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, `CLEVERREACH_FILTER_THESES`.
   - Needed unblock:
-    - Infisical admin/user token, or UI write access, or temporary write-capable machine identity for `thesis-platform`.
+    - Infisical admin/user token, fixed CLI login, or temporary write-capable machine identity for `thesis-platform`.
+  - Next write plan once access exists:
+    - create stg `STAGING_ENABLE_EXTERNAL_FLOWS=false`.
+    - create stg `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, `CLEVERREACH_FILTER_THESES=521671`.
+    - create prd `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, `CLEVERREACH_FILTER_THESES=521671`.
+    - verify with v4 status checks only; do not print values.
 - [ ] Disable old Power Automate CleverReach gate.
   - Slice 6 mapping done; no flow disabled yet because Infisical app-side keys are not present.
   - DEV and PROD both have populated value rows for:
@@ -593,4 +599,4 @@ Commit:
 
 ## Next Step
 
-Unblock Slice 6 by providing an Infisical write path for project `thesis-platform` in stg and prd. Then create the missing keys, keep staging external flows disabled by default, and only disable the old DEV CleverReach flow immediately before controlled stg smoke.
+Get write-capable Infisical auth for project `thesis-platform`, then create missing stg/prd keys through `/api/v4/secrets`. After key presence is confirmed, rebase df-cloud branch `codex/thesispf-infisical` because it is now behind `origin/stg`, push the df-cloud MR, run GitLab Pulumi preview, and continue with controlled stg smoke.
