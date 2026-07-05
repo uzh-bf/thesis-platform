@@ -1,5 +1,5 @@
 image:
-  tag: 'latest-arm-b7225d42725c6c0ec3293e2102b14a2599d1371b'
+  tag: 'codex-thesis-cleverreach-api-arm-9099a43775c2'
 
 env: stg
 appUrl: 'https://theses.stg.df-app.ch'
