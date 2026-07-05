@@ -590,7 +590,7 @@ Commit:
     - rebased df-cloud base commit is `de2fa74 deploy(thesispf): align Infisical ArgoCD desired state`.
     - final df-cloud review found `STAGING_ENABLE_EXTERNAL_FLOWS` was also requested by `thesispf-ibw`; fixed in `989990c fix(thesispf): keep staging flow gate scoped`.
     - df-cloud MR: [!226](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/merge_requests/226), draft to `stg`.
-    - df-cloud MR pipeline: [622446](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/pipelines/622446), running at creation.
+    - df-cloud MR pipeline: [622446](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/pipelines/622446).
     - df-cloud branch is clean and `ahead 2` of current `origin/stg`.
     - df-cloud diff remains scoped to `src/apps/thesispf/functions.ts`.
     - df-cloud verification:
@@ -598,6 +598,10 @@ Commit:
       - `src/apps/thesispf/node_modules/.bin/tsc --noEmit --project src/apps/thesispf/tsconfig.json --pretty false`
       - `node_modules/.bin/prettier --check src/apps/thesispf/functions.ts`
       - `agy` / Gemini 3.5 Flash High review: one Important finding accepted and fixed; follow-up re-review call timed out without output.
+      - [build-azure-helpers-mr-stg](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/jobs/1938262): success.
+      - [infra-preview-mr-stg](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/jobs/1938263): success.
+      - [post-infra-preview-mr-stg](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/jobs/1938266): success.
+      - Pipeline still shows running because optional manual jobs remain untriggered.
   - Thesis branch verification refreshed:
     - `./node_modules/.bin/tsc --noEmit --incremental false --pretty false`
     - `./node_modules/.bin/next lint`
@@ -626,4 +630,4 @@ Commit:
 
 ## Next Step
 
-Monitor df-cloud MR [!226](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/merge_requests/226) pipeline [622446](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/pipelines/622446). If the stg preview is clean, merge/apply the df-cloud stg change, then continue with controlled stg smoke. Before the smoke, disable only the old DEV `UZH BF Thesis Platform - Cleverreach` flow and leave the other Power Automate flows active.
+Wait for rollout-owner approval to merge/apply df-cloud MR [!226](https://gitlab.uzh.ch/uzh-bf/cloud/df-cloud-klickeruzh/-/merge_requests/226) to `stg`. After it is applied, continue with controlled stg smoke. Before the smoke, disable only the old DEV `UZH BF Thesis Platform - Cleverreach` flow and leave the other Power Automate flows active.
