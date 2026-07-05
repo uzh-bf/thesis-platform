@@ -583,6 +583,16 @@ Commit:
     - create stg `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, `CLEVERREACH_FILTER_THESES=521671`.
     - create prd `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, `CLEVERREACH_FILTER_THESES=521671`.
     - verify with v4 status checks only; do not print values.
+  - Independent prep done after upgrade:
+    - committed this plan update: `8a12559 docs(project): update thesis Infisical rollout plan`.
+    - rebased df-cloud `codex/thesispf-infisical` from stale `origin/stg` to `dd7ea1a`.
+    - rebased df-cloud commit is now `de2fa74 deploy(thesispf): align Infisical ArgoCD desired state`.
+    - df-cloud branch is clean and `ahead 1` of current `origin/stg`.
+    - df-cloud diff remains scoped to `src/apps/thesispf/functions.ts`.
+    - df-cloud verification:
+      - `git diff --check origin/stg...HEAD`
+      - `src/apps/thesispf/node_modules/.bin/tsc --noEmit --project src/apps/thesispf/tsconfig.json --pretty false`
+      - `node_modules/.bin/prettier --check src/apps/thesispf/functions.ts`
 - [ ] Disable old Power Automate CleverReach gate.
   - Slice 6 mapping done; no flow disabled yet because Infisical app-side keys are not present.
   - DEV and PROD both have populated value rows for:
@@ -599,4 +609,4 @@ Commit:
 
 ## Next Step
 
-Get write-capable Infisical auth for project `thesis-platform`, then create missing stg/prd keys through `/api/v4/secrets`. After key presence is confirmed, rebase df-cloud branch `codex/thesispf-infisical` because it is now behind `origin/stg`, push the df-cloud MR, run GitLab Pulumi preview, and continue with controlled stg smoke.
+Get write-capable Infisical auth for project `thesis-platform`, then create missing stg/prd keys through `/api/v4/secrets`. After key presence is confirmed, push the already-rebased df-cloud branch, open the df-cloud MR to `stg`, run GitLab Pulumi preview, and continue with controlled stg smoke.
