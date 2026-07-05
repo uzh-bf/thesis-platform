@@ -632,7 +632,7 @@ Commit:
     - `git diff --check origin/main...HEAD`
     - note: `tsx` and `next lint` required sandbox escalation because local IPC/cache writes were blocked.
 - [ ] Disable old Power Automate CleverReach gate.
-  - Slice 6 mapping done; no flow disabled yet because controlled stg cutover smoke has not run.
+  - Slice 6 mapping done; DEV flow was disabled only during the blocked 2026-07-05 smoke attempt and reactivated after rollback.
   - DEV and PROD both have populated value rows for:
     - `uzhbf_thesisplatform_cleverreach_client_id_env_var`
     - `uzhbf_thesisplatform_cleverreach_client_secret_env_var`
@@ -646,8 +646,24 @@ Commit:
     - leave proposal posting/application/email flows active.
     - do not clear Power Platform env vars unless we have a value backup and rollback path.
 - [ ] Run stg smoke.
+  - 2026-07-05 attempt blocked before CleverReach validation:
+    - DEV `UZH BF Thesis Platform - Cleverreach` flow was confirmed active, then temporarily deactivated through Dataverse Web API (`statecode=0`, `statuscode=1`).
+    - stg `STAGING_ENABLE_EXTERNAL_FLOWS` was temporarily patched to `true` in Kubernetes Secret `stg-thesisplatform-secrets` because the local stg Infisical user/API write path returned 403.
+    - deployment `app-thesispf-thesis-platform` was restarted and confirmed to read `STAGING_ENABLE_EXTERNAL_FLOWS=true`.
+    - submitted one unique proposal through stg tRPC: `Codex Stg Smoke Thesis 2026-07-05T13:38:20.403Z`.
+    - app logs showed `Submitting proposal to Power Automate flow...` and `Successfully submitted proposal`.
+    - stg DB did not contain the smoke title after the app polling window; no smoke proposal record was created.
+    - running stg image was still `ghcr.io/uzh-bf/thesis-platform:latest-arm-b7225d42725c6c0ec3293e2102b14a2599d1371b`.
+    - running stg deployment still had old env marker `DOPPLER_CONFIG=stg` and lacked `THESIS_PLATFORM_ENV`.
+    - running stg image did not contain `/app/src/lib/cleverreach`; the app branch was not deployed to stg.
+    - rollback done:
+      - stg `STAGING_ENABLE_EXTERNAL_FLOWS` reset to `false` in Kubernetes Secret and deployment restarted.
+      - restarted pod confirmed `STAGING_ENABLE_EXTERNAL_FLOWS=false`.
+      - DEV `UZH BF Thesis Platform - Cleverreach` flow reactivated (`statecode=1`, `statuscode=2`).
+      - final stg DB query still showed zero records for the smoke title.
+    - conclusion: deploy/merge the thesis-platform app branch to stg before repeating smoke.
 - [ ] Promote prd.
 
 ## Next Step
 
-Continue with controlled stg smoke. Before the smoke, disable only the old DEV `UZH BF Thesis Platform - Cleverreach` flow and leave the other Power Automate flows active.
+Deploy the thesis-platform app branch to stg before repeating controlled smoke. Before the next smoke, disable only the old DEV `UZH BF Thesis Platform - Cleverreach` flow and leave the other Power Automate flows active.
