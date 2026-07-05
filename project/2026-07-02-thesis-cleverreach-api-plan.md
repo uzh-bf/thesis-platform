@@ -631,7 +631,7 @@ Commit:
     - `helm template thesis-platform deploy/chart_new -f deploy/prd_ibw_new/values.yaml`
     - `git diff --check origin/main...HEAD`
     - note: `tsx` and `next lint` required sandbox escalation because local IPC/cache writes were blocked.
-- [ ] Disable old Power Automate CleverReach gate.
+- [x] Disable old Power Automate CleverReach gate.
   - Slice 6 mapping done; DEV flow was disabled only during the blocked 2026-07-05 smoke attempt and reactivated after rollback.
   - DEV and PROD both have populated value rows for:
     - `uzhbf_thesisplatform_cleverreach_client_id_env_var`
@@ -644,8 +644,12 @@ Commit:
   - Recommended gate for stg smoke/prod cutover:
     - turn off only `UZH BF Thesis Platform - Cleverreach`.
     - leave proposal posting/application/email flows active.
-    - do not clear Power Platform env vars unless we have a value backup and rollback path.
-- [ ] Run stg smoke.
+    - set the old CleverReach env values to `EMPTY` so the parent proposal flow skips the old child-flow branch while keeping the other email actions.
+  - 2026-07-05 final stg state:
+    - DEV `UZH BF Thesis Platform - Cleverreach` remains disabled (`statecode=0`, `statuscode=1`) and must not be re-enabled for stg.
+    - DEV Power Platform CleverReach client id and client secret env value rows now read `EMPTY`; values were not printed.
+    - old CleverReach child-flow run history has no run newer than 2026-06-26.
+- [x] Run stg smoke.
   - 2026-07-05 attempt blocked before CleverReach validation:
     - DEV `UZH BF Thesis Platform - Cleverreach` flow was confirmed active, then temporarily deactivated through Dataverse Web API (`statecode=0`, `statuscode=1`).
     - stg `STAGING_ENABLE_EXTERNAL_FLOWS` was temporarily patched to `true` in Kubernetes Secret `stg-thesisplatform-secrets` because the local stg Infisical user/API write path returned 403.
@@ -687,8 +691,48 @@ Commit:
     - the old DEV `UZH BF Thesis Platform - Cleverreach` child flow was disabled only during the smoke and reactivated afterward.
     - the temporary live stg `STAGING_ENABLE_EXTERNAL_FLOWS=true` deployment override was removed afterward; running pod again reported `STAGING_ENABLE_EXTERNAL_FLOWS=false`.
     - two smoke flow runs left retrying by intentionally incomplete smoke data were cancelled through the Flow Management API.
+  - 2026-07-05 final stg deploy and smoke:
+    - merged app branch to GitHub `main` by fast-forwarding from `codex/thesis-cleverreach-api`.
+    - built and pushed ARM64 image `ghcr.io/uzh-bf/thesis-platform:latest-arm-a4362b18c8e593a96faf3572db51c44979d3340c`.
+    - committed and pushed stg deploy values update `c51c2a1 chore(deploy): update thesis staging image tag`.
+    - ArgoCD `app-thesispf` was restored to `targetRevision=main`, synced revision `c51c2a1ae8df59c481989e7372e6ce9cb46d6b81`, `Healthy`, `Synced`.
+    - live stg deployment runs image `ghcr.io/uzh-bf/thesis-platform:latest-arm-a4362b18c8e593a96faf3572db51c44979d3340c`.
+    - temporary live deployment override `STAGING_ENABLE_EXTERNAL_FLOWS=true` was removed after smoke; restarted pod reports `STAGING_ENABLE_EXTERNAL_FLOWS=false`.
+    - final smoke title: `Codex Final Stg No Flow CR 2026-07-05T17:30:49.963Z`.
+    - parent proposal flow run `08584183342353203771179843761CU21` succeeded.
+    - parent flow action evidence:
+      - `SupervisorConfirmationEmail`: `Succeeded`.
+      - `Run_a_Child_Flow`: `Skipped` because the branch condition was not satisfied.
+      - `SendCleverreachConfirmationMail`: `Skipped`.
+      - `SendFailureNotification`: `Skipped`.
+    - app logs confirmed `CleverReach thesis proposal draft created for 98c57e16-fb40-4ffe-857c-416ec8b454b5 { mailingId: '17239031' }`.
+    - CleverReach API metadata for mailing `17239031` confirmed subject `Neue Abschlussarbeit: Codex Final Stg No Flow CR 2026-07-05T17:30:49.963Z`.
+    - CleverReach API body check confirmed short German preheader `Masterarbeit (30 ECTS), Corporate Finance, Herbstsemester 2026.`
+    - GitHub Actions staging image run `28748454337` built the image but failed in the deployment-tag update step because the build-time `.env.production`/`.env.stg` swap left the checkout dirty before branch checkout.
+    - workflow fix added: restore `.env.production` and `.env.stg` before the staging deployment-tag update branch is checked out.
 - [ ] Promote prd.
 
 ## Next Step
 
-Investigate why the DEV Power Automate proposal-posting flow accepts the request but does not create the proposal record in stg. Stg currently serves the branch image from `codex/thesis-cleverreach-api`; before any further smoke, disable only the old DEV `UZH BF Thesis Platform - Cleverreach` flow and leave the other Power Automate flows active.
+Production rollout plan:
+
+1. Confirm production preflight:
+   - `main` contains the app CleverReach implementation and staging deploy evidence above.
+   - prd Infisical has `APP_URL`, `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, and `CLEVERREACH_FILTER_THESES`; values must not be printed.
+   - prd `thesispf-ibw` remains without CleverReach keys unless explicitly requested.
+   - PROD Power Platform `Root URL` points to the production thesis URL and `Flow Secret` still matches the app.
+2. Build the production ARM image from an immutable release tag.
+   - use the production workflow/release path, not a mutable staging tag.
+   - update `deploy/prd_new/values.yaml` to the release/immutable image tag after the image exists.
+3. Disable the old PROD Power Automate CleverReach branch immediately before syncing prd.
+   - set the PROD CleverReach client id and client secret env values to `EMPTY`.
+   - turn off only PROD `UZH BF Thesis Platform - Cleverreach` (`3fa5d199-c377-f011-b4cc-00224874b350`).
+   - keep proposal posting, application, supervisor confirmation, and other email flows active.
+4. Sync/restart prd through ArgoCD and verify the app receives the Infisical CleverReach env.
+5. Run one controlled prd smoke.
+   - verify the parent proposal flow succeeds.
+   - verify the old PROD child flow has no new run.
+   - verify the app creates exactly one CleverReach draft.
+   - verify subject is German/title case and the preheader contains useful non-title metadata.
+6. Monitor app logs, ArgoCD health, Power Automate run history, and CleverReach draft state.
+   - rollback path is to remove app CleverReach env or stop app draft creation; re-enabling the old child flow is only a last-resort rollback because it can reintroduce duplicate drafts.

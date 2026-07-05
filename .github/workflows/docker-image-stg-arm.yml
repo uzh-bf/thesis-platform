@@ -75,6 +75,10 @@ jobs:
             NEXT_PUBLIC_FAQ_URL_SUPERVISOR=https://www.df.uzh.ch/de/intranet/phd/thesis-supervision.html
             NEXT_PUBLIC_APP_VERSION=latest-arm-${{ github.sha }}
 
+      - name: Restore build-time env file swap
+        shell: bash
+        run: git restore .env.production .env.stg
+
       - name: Update ArgoCD staging image tag
         id: argocd-tag
         if: ${{ github.ref == 'refs/heads/main' }}
