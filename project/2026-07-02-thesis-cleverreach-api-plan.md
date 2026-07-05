@@ -556,8 +556,8 @@ Commit:
     - no local Pulumi preview/up was run; df-cloud preview remains GitLab CI-only.
   - Slice 5 correctness review: `DONE`, no findings.
   - Slice 5 simplification review: inlined value file path and final delta `DONE`, no findings.
-- [ ] Populate Infisical values.
-  - Slice 6 status: Infisical upgraded; write access still the only blocker.
+- [x] Populate Infisical values.
+  - Slice 6 status: Infisical values populated on 2026-07-05; df-cloud rollout is still required before pods receive the new CleverReach env.
   - Infisical servers:
     - stg: `infisical/infisical:v0.161.12`
     - prd: `infisical/infisical:v0.161.12`
@@ -567,22 +567,23 @@ Commit:
     - stg project id: `1abaaea3-1bfd-4a53-ab71-114225ad27d9`.
     - prd project id: `3a5a7194-3034-44ee-8a58-97b8d98effef`.
   - Current access:
-    - local Infisical CLI profile has invalid token format.
+    - local Infisical CLI user login now works for stg and prd when run outside the sandbox/keychain restriction.
     - Azure CLI user lacks list permission on `kv-stg-thesispf-8dh3u` and `kv-prd-thesispf-LxhJG`.
-    - AKS SecretStore machine identities validate and can read project metadata and v4 secrets by status only.
-    - no write attempt after upgrade; investigation stayed read-only.
+    - Azure CLI user also lacks list permission on `kv-stg-master-aJ0Bn` and `kv-prd-master-GakvV`.
+    - AKS SecretStore machine identities validate and can read v4 secrets by status only.
+    - direct write with stg AKS SecretStore machine identity still returns HTTP 403; user login was used for writes.
   - Presence checks, values not printed:
     - stg Infisical has `APP_URL`.
-    - stg Infisical lacks `STAGING_ENABLE_EXTERNAL_FLOWS`, `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, `CLEVERREACH_FILTER_THESES`.
+    - stg Infisical has `STAGING_ENABLE_EXTERNAL_FLOWS`, `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, `CLEVERREACH_FILTER_THESES`.
     - prd Infisical has `APP_URL`.
-    - prd Infisical lacks `STAGING_ENABLE_EXTERNAL_FLOWS`, `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, `CLEVERREACH_FILTER_THESES`.
-  - Needed unblock:
-    - Infisical admin/user token, fixed CLI login, or temporary write-capable machine identity for `thesis-platform`.
-  - Next write plan once access exists:
-    - create stg `STAGING_ENABLE_EXTERNAL_FLOWS=false`.
-    - create stg `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, `CLEVERREACH_FILTER_THESES=521671`.
-    - create prd `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, `CLEVERREACH_FILTER_THESES=521671`.
-    - verify with v4 status checks only; do not print values.
+    - prd Infisical has `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, `CLEVERREACH_FILTER_THESES`.
+    - prd `STAGING_ENABLE_EXTERNAL_FLOWS` intentionally not created.
+  - Write evidence:
+    - extracted DEV/PROD CleverReach client id/secret values from Power Platform environment variable value rows without printing them.
+    - created/updated stg `STAGING_ENABLE_EXTERNAL_FLOWS=false`.
+    - created/updated stg `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, `CLEVERREACH_FILTER_THESES=521671`.
+    - created/updated prd `CLEVERREACH_CLIENT_ID`, `CLEVERREACH_CLIENT_SECRET`, `CLEVERREACH_FILTER_THESES=521671`.
+    - verified each new key with v4 HTTP 200 status checks through the AKS SecretStore machine identities; values were not printed.
   - Independent prep done after upgrade:
     - committed this plan update: `8a12559 docs(project): update thesis Infisical rollout plan`.
     - rebased df-cloud `codex/thesispf-infisical` from stale `origin/stg` to `dd7ea1a`.
@@ -603,7 +604,7 @@ Commit:
     - `git diff --check origin/main...HEAD`
     - note: `tsx` and `next lint` required sandbox escalation because local IPC/cache writes were blocked.
 - [ ] Disable old Power Automate CleverReach gate.
-  - Slice 6 mapping done; no flow disabled yet because Infisical app-side keys are not present.
+  - Slice 6 mapping done; no flow disabled yet because df-cloud rollout and stg cutover smoke have not run.
   - DEV and PROD both have populated value rows for:
     - `uzhbf_thesisplatform_cleverreach_client_id_env_var`
     - `uzhbf_thesisplatform_cleverreach_client_secret_env_var`
@@ -621,4 +622,4 @@ Commit:
 
 ## Next Step
 
-Get write-capable Infisical auth for project `thesis-platform`, then create missing stg/prd keys through `/api/v4/secrets`. After key presence is confirmed, push the already-rebased df-cloud branch, open the df-cloud MR to `stg`, run GitLab Pulumi preview, and continue with controlled stg smoke.
+Push the already-rebased df-cloud branch, open the df-cloud MR to `stg`, run GitLab Pulumi preview, then continue with controlled stg smoke. Before the smoke, disable only the old DEV `UZH BF Thesis Platform - Cleverreach` flow and leave the other Power Automate flows active.
