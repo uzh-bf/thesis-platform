@@ -283,8 +283,9 @@ export default function AdminUserRoles() {
 
         <div className="flex items-end gap-2">
           <div className="w-full md:w-80">
-            <label className="block text-xs font-medium text-gray-700 mb-0.5">Search</label>
+            <label htmlFor="user-roles-search" className="block text-xs font-medium text-gray-700 mb-0.5">Search</label>
             <input
+              id="user-roles-search"
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -324,6 +325,7 @@ export default function AdminUserRoles() {
           <div className="flex items-center gap-2">
             <input
               ref={addUserNameRef}
+              aria-label="Full name for new user"
               type="text"
               value={newName}
               onChange={(e) => {
@@ -337,6 +339,7 @@ export default function AdminUserRoles() {
               className="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
             <input
+              aria-label="Email address for new user"
               type="email"
               value={newEmail}
               onChange={(e) => {

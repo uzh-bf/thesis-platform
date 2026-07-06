@@ -263,10 +263,11 @@ export default function AdminStatsDashboard() {
           </div>
 
           <div className="md:col-span-3">
-            <label className="block text-xs font-medium text-gray-700 mb-0.5">
+            <label htmlFor="admin-stats-search" className="block text-xs font-medium text-gray-700 mb-0.5">
               Search
             </label>
             <input
+              id="admin-stats-search"
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
