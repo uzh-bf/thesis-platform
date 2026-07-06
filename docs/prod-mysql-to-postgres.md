@@ -1,6 +1,6 @@
 # Production MySQL to PostgreSQL Migration
 
-Purpose: copy all production data from Doppler-managed MySQL to the new Infisical-managed PostgreSQL database, then deploy the app with the PostgreSQL Prisma client.
+Purpose: copy all production data from the legacy production MySQL database to the Infisical-managed PostgreSQL database, then deploy the app with the PostgreSQL Prisma client.
 
 The script never prints connection strings. It prints only protocol, host, port, database, SSL mode, PgBouncer flag, and row counts.
 
@@ -8,8 +8,8 @@ Use these environment pairings:
 
 | Instance | MySQL source | PostgreSQL target |
 | --- | --- | --- |
-| DF | Doppler `prd` | Infisical `prd` |
-| IBW | Doppler `prd_ibw` | Infisical `prd-ibw` |
+| DF | legacy DF production MySQL URL | Infisical `prd` |
+| IBW | legacy IBW production MySQL URL | Infisical `prd-ibw` |
 
 ## Before Maintenance
 
@@ -107,9 +107,9 @@ The execute mode requires `--confirm-prod-migration=MYSQL_TO_POSTGRES_PRD`.
 
 ## Deploy App
 
-Production runtime must receive the PostgreSQL URL as `DATABASE_URL`.
+Production runtime must receive the PostgreSQL URL as `DATABASE_URL` through the Infisical-backed Kubernetes secret.
 
-Current `deploy/prd/values-envsubst.yaml` still reads `$DATABASE_URL` from the deploy environment. Either sync the Infisical PostgreSQL URL into the deploy environment before Helm runs, or switch deployment to a Kubernetes secret that already contains the Infisical value.
+Deployment is now ArgoCD repo pull from `deploy/chart_new` with `deploy/prd_new/values.yaml` or `deploy/prd_ibw_new/values.yaml`. Do not use local Helmfile/envsubst deployment scripts. After changing Infisical values, confirm the ExternalSecret is synced and restart or resync pods so `envFrom` secrets are loaded.
 
 After deploy, run smoke checks:
 

@@ -142,11 +142,13 @@ const getCurrentDbInfo = async (client: PrismaClient) => {
 }
 
 const assertStagingTarget = async (client: PrismaClient) => {
-  const dopplerConfig = normalizeEnv(process.env.DOPPLER_CONFIG).toLowerCase()
+  const thesisPlatformEnv = normalizeEnv(
+    process.env.THESIS_PLATFORM_ENV
+  ).toLowerCase()
 
-  if (dopplerConfig !== 'stg') {
+  if (thesisPlatformEnv !== 'stg') {
     throw new Error(
-      `Refusing to continue: DOPPLER_CONFIG must be stg, got '${dopplerConfig || 'unset'}'.`
+      `Refusing to continue: THESIS_PLATFORM_ENV must be stg, got '${thesisPlatformEnv || 'unset'}'.`
     )
   }
 

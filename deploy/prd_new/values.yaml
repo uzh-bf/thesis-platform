@@ -5,7 +5,7 @@ env: prd
 appUrl: 'https://theses.df.uzh.ch'
 
 stagingSafety:
-  grantAllAdmins: 'true'
+  grantAllAdmins: false
 
 azureAd:
   clientId: ''

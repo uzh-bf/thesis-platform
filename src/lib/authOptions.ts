@@ -12,10 +12,10 @@ const isEnabled = (value: string | undefined) =>
   ['1', 'true', 'yes'].includes((value ?? '').trim().toLowerCase())
 
 const getStagingAuthDefaults = () => {
-  const dopplerConfig = (process.env.DOPPLER_CONFIG ?? '').toLowerCase()
+  const thesisPlatformEnv = (process.env.THESIS_PLATFORM_ENV ?? '').toLowerCase()
 
   if (
-    dopplerConfig !== 'stg' ||
+    thesisPlatformEnv !== 'stg' ||
     !isEnabled(process.env.STAGING_GRANT_ALL_ADMINS)
   ) {
     return null

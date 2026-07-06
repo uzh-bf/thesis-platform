@@ -34,7 +34,7 @@ spec:
           {{- if or .Values.appUrl .Values.env .Values.stagingSafety.grantAllAdmins .Values.azureAd.clientId .Values.azureAd.tenantId }}
           env:
             {{- if .Values.env }}
-            - name: DOPPLER_CONFIG
+            - name: THESIS_PLATFORM_ENV
               value: {{ .Values.env | quote }}
             {{- end }}
             {{- if .Values.appUrl }}
