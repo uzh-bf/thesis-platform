@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.16.0](///compare/v1.15.0...v1.16.0) (2026-07-06)
+
+
+### Features
+
+* **cleverreach:** app-side thesis proposal drafts + Infisical deploy cleanup 298e170
+
+
+### Enhancements
+
+* **analytics:** add DF webstats tracking ([#146](undefined/undefined/undefined/issues/146)) b65cd32
+
 ## [1.15.0](https://github.com/uzh-bf/thesis-platform/compare/v1.14.2...v1.15.0) (2026-06-25)
 
 
