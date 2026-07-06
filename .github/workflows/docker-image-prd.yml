@@ -321,17 +321,13 @@ jobs:
           PRODUCTION_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
           PRODUCTION_IBW_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
         run: |
-          UPDATE_BRANCH="chore/update-deploy-images"
+          UPDATE_BRANCH="chore/update-deploy-images-prd"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin main
-          if git ls-remote --exit-code --heads origin "${UPDATE_BRANCH}" >/dev/null 2>&1; then
-            git fetch origin "${UPDATE_BRANCH}"
-            git checkout -B "${UPDATE_BRANCH}" "origin/${UPDATE_BRANCH}"
-            git rebase origin/main
-          else
-            git checkout -B "${UPDATE_BRANCH}"
-          fi
+          # Always recreate the update branch from current main so a stale,
+          # unmerged deploy-values commit can never cause a rebase conflict.
+          git checkout -B "${UPDATE_BRANCH}" origin/main
           perl -0pi -e 's/tag: '\''(?:latest|stable)-arm(?:-[0-9a-f]+)?'\''/tag: '\''$ENV{PRODUCTION_IMAGE_TAG}'\''/' deploy/prd_new/values.yaml
           perl -0pi -e 's/image:\n(?:  repository: [^\n]+\n)?  tag: '\''[^'\'']+'\''/image:\n  repository: ghcr.io\/uzh-bf\/thesis-platform-ibw\n  tag: '\''$ENV{PRODUCTION_IBW_IMAGE_TAG}'\''/' deploy/prd_ibw_new/values.yaml
           perl -0pi -e 's/env: prd-ibw/env: prd_ibw/' deploy/prd_ibw_new/values.yaml
@@ -342,7 +338,7 @@ jobs:
             exit 0
           fi
           git commit -m "chore(deploy): update deployment image tags [skip ci]"
-          git push --force-with-lease origin HEAD:"${UPDATE_BRANCH}"
+          git push --force origin HEAD:"${UPDATE_BRANCH}"
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Open ArgoCD deployment image tag PR
@@ -353,7 +349,7 @@ jobs:
           PRODUCTION_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
           PRODUCTION_IBW_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
         run: |
-          UPDATE_BRANCH="chore/update-deploy-images"
+          UPDATE_BRANCH="chore/update-deploy-images-prd"
           BODY="Updates deployment values files after Docker image builds complete.
 
           - deploy/prd_new/values.yaml -> ${PRODUCTION_IMAGE_TAG}
