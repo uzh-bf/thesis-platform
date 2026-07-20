@@ -19,8 +19,9 @@ jobs:
   deploy-production:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment: production
     permissions:
-      contents: write
+      contents: read
       packages: read
 
     steps:
@@ -28,6 +29,7 @@ jobs:
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
         with:
           fetch-depth: 0
+          token: ${{ secrets.PRODUCTION_DEPLOY_TOKEN }}
 
       - name: Resolve release tag
         id: release
