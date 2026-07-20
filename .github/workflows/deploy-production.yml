@@ -31,10 +31,12 @@ jobs:
 
       - name: Resolve release tag
         id: release
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
         shell: bash
         run: |
           set -euo pipefail
-          TAG="${{ inputs.release_tag }}"
+          TAG="$RELEASE_TAG"
 
           if [[ ! "$TAG" =~ ^v[0-9A-Za-z._-]+$ ]]; then
             echo "Invalid release tag: $TAG" >&2
