@@ -125,6 +125,14 @@ export default function ProposalCard({
           <div className="min-w-0 max-w-full break-words text-[17px] font-semibold leading-6 [overflow-wrap:anywhere]">
             {proposal.title}
           </div>
+          {proposal.isTestData && (
+            <span
+              className="mt-1 shrink-0 rounded-full bg-[#FFE8CC] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#8A4B00]"
+              title="Test data created via developer test mode — hidden from students and supervisors"
+            >
+              Test
+            </span>
+          )}
           {statusIcon && (
             <div
               className={twMerge(

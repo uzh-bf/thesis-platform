@@ -13,7 +13,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { UserRole } from 'src/lib/constants'
 import { trpc } from 'src/lib/trpc'
 
-const EDITABLE_ROLES = ['UNSET', UserRole.SUPERVISOR] as const
+const EDITABLE_ROLES = ['UNSET', UserRole.SUPERVISOR, UserRole.DEVELOPER] as const
 
 type EditableRole = (typeof EDITABLE_ROLES)[number]
 type PageSizeOption = 20 | 50 | 100 | 'all'

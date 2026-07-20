@@ -220,6 +220,36 @@ const getBlockedStagingFlowResponse = (flowName: string, data?: unknown) => {
   }
 }
 
+// Developer test mode: users with the DEVELOPER role exercise the full
+// proposal lifecycle directly against the database. Their records are marked
+// with isTestData=true, hidden from students/supervisors/admins, and never
+// trigger Power Automate flows, CleverReach drafts, or notification emails.
+const isDeveloperUser = (user?: { role?: string | null } | null) =>
+  user?.role === UserRole.DEVELOPER
+
+const getUploadedBlobHref = (blobName: string) =>
+  `${process.env.NEXT_PUBLIC_AZURE_STORAGE_URL}/${process.env.NEXT_PUBLIC_CONTAINER_NAME}/${blobName}`
+
+async function getTestProposalOrThrow(proposalId: string) {
+  const proposal = await prisma.proposal.findUnique({
+    where: { id: proposalId },
+  })
+
+  if (!proposal) {
+    throw new TRPCError({ code: 'NOT_FOUND', message: 'Proposal not found' })
+  }
+
+  if (!proposal.isTestData) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message:
+        'Developer accounts can only perform this action on test proposals to avoid interfering with production data',
+    })
+  }
+
+  return proposal
+}
+
 const getAppBaseUrl = () => {
   const nextAuthUrl = process.env.NEXTAUTH_URL?.trim()
 
@@ -635,6 +665,7 @@ async function getStudentProposals({
       typeKey: ProposalType.SUPERVISOR,
       statusKey: ProposalStatus.OPEN,
       department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+      isTestData: false,
     },
     include: {
       attachments: true,
@@ -699,6 +730,7 @@ async function getSupervisorProposals({
         in: ['SUPERVISOR', 'STUDENT'],
       },
       department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+      isTestData: false,
     }
     applications = {
       where: {
@@ -756,6 +788,7 @@ async function getSupervisorProposals({
         in: ['SUPERVISOR'],
       },
       department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+      isTestData: false,
     }
   }
 
@@ -897,6 +930,203 @@ async function getSupervisorProposals({
   return proposals as ProposalDetailsRecord[]
 }
 
+async function createDeveloperTestProposal(
+  input: ProposalPublishInput,
+  developerEmail: string
+) {
+  const responsible = await prisma.responsible.findFirst({
+    where: { email: input.personResponsibleEmail },
+  })
+
+  if (!responsible) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Responsible person not found',
+    })
+  }
+
+  const proposalId = uuidv4()
+  const attachments = [
+    input.researchProposalPDF
+      ? {
+          name: 'Proposal',
+          href: getUploadedBlobHref(input.researchProposalPDF),
+          type: 'application/pdf',
+          proposalId,
+        }
+      : null,
+    input.furtherAttachments
+      ? {
+          name: 'Attachment',
+          href: getUploadedBlobHref(input.furtherAttachments),
+          type: 'application/pdf',
+          proposalId,
+        }
+      : null,
+  ].filter(
+    (attachment): attachment is NonNullable<typeof attachment> =>
+      attachment !== null
+  )
+
+  await prisma.$transaction([
+    prisma.proposal.create({
+      data: {
+        id: proposalId,
+        title: input.proposalTitle,
+        description: input.proposalSummary,
+        // stored as a JSON array string, mirroring flow-created proposals
+        language: input.proposalLanguage,
+        studyLevel: input.bachelorOrMasterLevel,
+        topicAreaSlug: input.fieldOfResearch,
+        timeFrame: input.timeFrame,
+        typeKey: ProposalType.SUPERVISOR,
+        statusKey: ProposalStatus.OPEN,
+        ownedByUserEmail: developerEmail,
+        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+        isTestData: true,
+      },
+    }),
+    prisma.userProposalSupervision.create({
+      data: {
+        id: proposalId,
+        proposalId,
+        supervisorEmail: input.supervisor,
+        studyLevel: input.bachelorOrMasterLevel,
+        responsibleId: responsible.id,
+      },
+    }),
+    ...(attachments.length > 0
+      ? [prisma.proposalAttachment.createMany({ data: attachments })]
+      : []),
+  ])
+
+  return { success: true, testData: true, proposalId }
+}
+
+async function persistDeveloperTestFeedback(input: {
+  proposalId: string
+  supervisorEmail: string
+  actionType: string
+  personResponsible?: string
+  reason?: string
+  comment: string
+}) {
+  const proposal = await getTestProposalOrThrow(input.proposalId)
+  const department = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+
+  if (input.actionType === 'ACCEPT') {
+    const responsible = await prisma.responsible.findFirst({
+      where: { name: input.personResponsible },
+    })
+
+    if (!responsible) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Responsible person not found',
+      })
+    }
+
+    await prisma.$transaction([
+      prisma.proposal.update({
+        where: { id: proposal.id },
+        data: { statusKey: 'MATCHED' },
+      }),
+      prisma.userProposalSupervision.upsert({
+        where: { id: proposal.id },
+        create: {
+          id: proposal.id,
+          proposalId: proposal.id,
+          supervisorEmail: input.supervisorEmail,
+          responsibleId: responsible.id,
+        },
+        update: {
+          supervisorEmail: input.supervisorEmail,
+          responsibleId: responsible.id,
+        },
+      }),
+      prisma.proposalApplication.updateMany({
+        where: { id: proposal.id },
+        data: { statusKey: 'ACCEPTED' },
+      }),
+      prisma.adminInfo.upsert({
+        where: { proposalId: proposal.id },
+        create: { proposalId: proposal.id, status: 'OPEN', department },
+        update: { status: 'OPEN' },
+      }),
+    ])
+  } else if (input.actionType === 'ACCEPT_TENTATIVE') {
+    await prisma.$transaction([
+      prisma.proposal.update({
+        where: { id: proposal.id },
+        data: { statusKey: 'MATCHED_TENTATIVE' },
+      }),
+      prisma.userProposalSupervision.upsert({
+        where: { id: proposal.id },
+        create: {
+          id: proposal.id,
+          proposalId: proposal.id,
+          supervisorEmail: input.supervisorEmail,
+        },
+        update: { supervisorEmail: input.supervisorEmail },
+      }),
+      prisma.proposalApplication.updateMany({
+        where: { id: proposal.id },
+        data: { statusKey: 'ACCEPTED_TENTATIVE' },
+      }),
+    ])
+  } else if (input.actionType === 'DECLINE' || input.actionType === 'REJECT') {
+    const typeKey = input.actionType === 'DECLINE' ? 'DECLINED' : 'REJECTED'
+    const reason = input.reason ? `${typeKey}_${input.reason}` : typeKey
+    const feedbackUpsert = prisma.userProposalFeedback.upsert({
+      where: {
+        proposalId_userEmail: {
+          proposalId: proposal.id,
+          userEmail: input.supervisorEmail,
+        },
+      },
+      create: {
+        proposalId: proposal.id,
+        userEmail: input.supervisorEmail,
+        typeKey,
+        reason,
+        comment: input.comment,
+      },
+      update: { typeKey, reason, comment: input.comment },
+    })
+
+    const revertTentativeMatch =
+      input.actionType === 'REJECT' && proposal.statusKey === 'MATCHED_TENTATIVE'
+
+    await prisma.$transaction(
+      [
+        revertTentativeMatch
+          ? [
+              prisma.userProposalSupervision.delete({
+                where: { id: proposal.id },
+              }),
+              prisma.proposalApplication.updateMany({
+                where: { id: proposal.id },
+                data: { statusKey: 'OPEN' },
+              }),
+              prisma.proposal.update({
+                where: { id: proposal.id },
+                data: { statusKey: 'OPEN' },
+              }),
+            ]
+          : [],
+        feedbackUpsert,
+      ].flat()
+    )
+  } else {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: `Unknown feedback action type: ${input.actionType}`,
+    })
+  }
+
+  return { success: true, testData: true }
+}
+
 export const appRouter = router({
   generateSasQueryToken: optionalAuthedProcedure.mutation(() => {
     const sharedKeyCredential = new StorageSharedKeyCredential(
@@ -1023,7 +1253,10 @@ export const appRouter = router({
         },
       })
 
-      if (!proposal) {
+      if (
+        !proposal ||
+        (proposal.isTestData && !isDeveloperUser(ctx.user))
+      ) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Supervisor proposal not found',
@@ -1064,6 +1297,10 @@ export const appRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      if (isDeveloperUser(ctx.user)) {
+        return persistDeveloperTestFeedback(input)
+      }
+
       if (!areExternalFlowsEnabled()) {
         return getBlockedStagingFlowResponse('PROPOSAL_FEEDBACK_URL', input)
       }
@@ -1080,7 +1317,7 @@ export const appRouter = router({
       )
     }),
 
-  submitProposalApplication: publicProcedure
+  submitProposalApplication: optionalAuthedProcedure
     .input(
       z.object({
         proposalTitle: z.string(),
@@ -1097,6 +1334,56 @@ export const appRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      if (isDeveloperUser(ctx.user)) {
+        const proposal = await getTestProposalOrThrow(input.proposalId)
+
+        try {
+          await prisma.$transaction(async (tx) => {
+            const application = await tx.proposalApplication.create({
+              data: {
+                statusKey: 'OPEN',
+                email: input.uzhemail,
+                matriculationNumber: input.matriculationNumber,
+                fullName: input.fullName,
+                plannedStartAt: dayjs(input.startingDate).toDate(),
+                motivation: input.motivation,
+                proposalId: proposal.id,
+                allowUsage: input.allowUsage,
+                allowPublication: input.allowPublication,
+              },
+            })
+
+            await tx.applicationAttachment.createMany({
+              data: [
+                {
+                  name: 'CV',
+                  href: getUploadedBlobHref(String(input.cvFile)),
+                  type: 'application/pdf',
+                  proposalApplicationId: application.id,
+                },
+                {
+                  name: 'Transcript',
+                  href: getUploadedBlobHref(String(input.transcriptFile)),
+                  type: 'application/pdf',
+                  proposalApplicationId: application.id,
+                },
+              ],
+            })
+          })
+        } catch (error: any) {
+          if (error?.code === 'P2002') {
+            throw new TRPCError({
+              code: 'CONFLICT',
+              message:
+                'An application with this email already exists for this test proposal',
+            })
+          }
+          throw error
+        }
+
+        return { success: true, testData: true }
+      }
+
       try {
         console.log('Submitting application to Power Automate...')
         console.log('APPLICATION_URL:', process.env.APPLICATION_URL)
@@ -1138,9 +1425,16 @@ export const appRouter = router({
       }
     }),
 
-  submitProposalPublish: publicProcedure
+  submitProposalPublish: optionalAuthedProcedure
     .input(proposalPublishInputSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      if (isDeveloperUser(ctx.user)) {
+        return createDeveloperTestProposal(
+          input,
+          ctx.user?.email ?? input.responder
+        )
+      }
+
       const submittedAt = new Date()
       const submitDate = submittedAt.toISOString()
 
@@ -1212,7 +1506,7 @@ export const appRouter = router({
       }
     }),
 
-  acceptProposalApplication: publicProcedure
+  acceptProposalApplication: optionalAuthedProcedure
     .input(
       z.object({
         proposalId: z.string(),
@@ -1221,6 +1515,74 @@ export const appRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      if (isDeveloperUser(ctx.user)) {
+        const proposal = await getTestProposalOrThrow(input.proposalId)
+
+        const supervision = await prisma.userProposalSupervision.findUnique({
+          where: { proposalId: proposal.id },
+        })
+
+        if (!supervision) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Supervision information not found',
+          })
+        }
+
+        const application = await prisma.proposalApplication.findFirst({
+          where: {
+            id: input.proposalApplicationId,
+            email: input.applicantEmail,
+          },
+        })
+
+        if (!application) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Application not found',
+          })
+        }
+
+        await prisma.$transaction([
+          prisma.proposal.update({
+            where: { id: proposal.id },
+            data: { statusKey: ProposalStatus.MATCHED },
+          }),
+          prisma.userProposalSupervision.update({
+            where: { id: supervision.id },
+            data: { studentEmail: input.applicantEmail },
+          }),
+          prisma.proposalApplication.update({
+            where: { id: application.id },
+            data: {
+              statusKey: ApplicationStatus.ACCEPTED,
+              supervisionId: supervision.id,
+            },
+          }),
+          prisma.proposalApplication.updateMany({
+            where: {
+              proposalId: proposal.id,
+              email: { not: input.applicantEmail },
+            },
+            data: {
+              statusKey: ApplicationStatus.DECLINED,
+              supervisionId: null,
+            },
+          }),
+          prisma.adminInfo.upsert({
+            where: { proposalId: proposal.id },
+            create: {
+              proposalId: proposal.id,
+              status: 'OPEN',
+              department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+            },
+            update: {},
+          }),
+        ])
+
+        return { success: true, testData: true }
+      }
+
       if (!areExternalFlowsEnabled()) {
         return getBlockedStagingFlowResponse('APPLICATION_ACCEPTANCE_URL', input)
       }
@@ -1269,12 +1631,15 @@ export const appRouter = router({
         })
       }
 
-      // Verify the user is either a supervisor or a responsible person for this proposal
-      const isAuthorized = proposal.supervisedBy.some(
-        supervision => 
-          supervision.supervisorEmail === ctx.user.email || 
-          supervision.responsible?.email === ctx.user.email
-      )
+      // Verify the user is either a supervisor or a responsible person for this
+      // proposal, or a developer acting on a test proposal
+      const isAuthorized =
+        (proposal.isTestData && isDeveloperUser(ctx.user)) ||
+        proposal.supervisedBy.some(
+          supervision =>
+            supervision.supervisorEmail === ctx.user.email ||
+            supervision.responsible?.email === ctx.user.email
+        )
 
       if (!isAuthorized) {
         throw new TRPCError({
@@ -1295,9 +1660,9 @@ export const appRouter = router({
         },
       })
       
-      // Send the email notification
+      // Send the email notification (never for test data)
       try {
-        if (!areExternalFlowsEnabled()) {
+        if (proposal.isTestData || !areExternalFlowsEnabled()) {
           return { success: true }
         }
 
@@ -1747,6 +2112,7 @@ export const appRouter = router({
               },
               ownedByUserEmail: null, // Proposal must not be owned by a user (Student Proposal | otherwise it is a Supervisor Proposal)
               department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+              isTestData: false,
             },
           },
           select: {
@@ -1925,6 +2291,7 @@ updateProposalStatus: publicProcedure
           },
           ownedByUserEmail: null,
           department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+          isTestData: false,
         },
         select: {
           id: true,
@@ -3199,6 +3566,7 @@ updateProposalStatus: publicProcedure
             typeKey: true,
             statusKey: true,
             ownedByUserEmail: true,
+            isTestData: true,
             supervisedBy: {
               select: {
                 supervisorEmail: true,
@@ -3349,7 +3717,7 @@ updateProposalStatus: publicProcedure
         },
       }
 
-      if (hasNotificationStateChanged(oldState, newState)) {
+      if (!proposal.isTestData && hasNotificationStateChanged(oldState, newState)) {
         await sendAdminChangeNotification({
           tab: 'Proposals',
           action: 'Assign supervisor and responsible',
@@ -3381,9 +3749,15 @@ updateProposalStatus: publicProcedure
         statusFilter: z.string().optional(),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const where: any = {
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+      }
+
+      // Test data stays out of the admin overview unless a developer is
+      // verifying the admin workflows themselves
+      if (!isDeveloperUser(ctx.user)) {
+        where.isTestData = false
       }
 
       if (input.search) {
@@ -3433,6 +3807,7 @@ updateProposalStatus: publicProcedure
         where: {
           proposal: {
             department: envDepartment,
+            isTestData: false,
             AdminInfo: {
               is: {
                 olatCapturedDate: {
@@ -3476,6 +3851,7 @@ updateProposalStatus: publicProcedure
           where: {
             proposal: {
               department: envDepartment,
+              isTestData: false,
               AdminInfo: {
                 is: {
                   olatCapturedDate: {
@@ -3544,6 +3920,7 @@ updateProposalStatus: publicProcedure
             typeKey: true,
             statusKey: true,
             ownedByUserEmail: true,
+            isTestData: true,
             supervisedBy: {
               select: {
                 supervisorEmail: true,
@@ -3627,7 +4004,10 @@ updateProposalStatus: publicProcedure
           },
         }
 
-        if (hasNotificationStateChanged(oldState, newState)) {
+        if (
+          !proposal.isTestData &&
+          hasNotificationStateChanged(oldState, newState)
+        ) {
           await sendAdminChangeNotification({
             tab: 'Proposals',
             action: 'Withdraw proposal',
@@ -3722,7 +4102,7 @@ updateProposalStatus: publicProcedure
     .input(
       z.object({
         userId: z.string(),
-        role: z.enum(['UNSET', 'SUPERVISOR']),
+        role: z.enum(['UNSET', 'SUPERVISOR', 'DEVELOPER']),
       })
     )
     .output(z.object({ success: z.boolean() }))
@@ -3812,6 +4192,94 @@ updateProposalStatus: publicProcedure
       }
 
       return { success: true }
+    }),
+
+  developerCreateTestStudentProposal: authedProcedure
+    .output(z.object({ success: z.boolean(), proposalId: z.string() }))
+    .mutation(async ({ ctx }) => {
+      if (!isDeveloperUser(ctx.user)) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Developer role required',
+        })
+      }
+
+      const department = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+      const topicArea = await prisma.topicArea.findFirst({
+        where: { OR: [{ department }, { department: null }] },
+      })
+
+      if (!topicArea) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No topic area available to create a test proposal',
+        })
+      }
+
+      const proposalId = uuidv4()
+
+      // Mirrors the structure created by persistProposalSubmission (the
+      // Power Automate callback for student proposals): the application and
+      // supervision records share the proposal id.
+      await prisma.$transaction([
+        prisma.proposal.create({
+          data: {
+            id: proposalId,
+            title: `Test Student Proposal ${proposalId.slice(0, 8)}`,
+            description:
+              'Automatically generated student proposal for developer test mode. It is hidden from students, supervisors, and admin views, and can be deleted at any time via "Delete all test data".',
+            language: JSON.stringify(['English']),
+            studyLevel: 'Bachelor Thesis (18 ECTS)',
+            topicAreaSlug: topicArea.slug,
+            additionalStudentComment: 'Created by developer test mode.',
+            typeKey: 'STUDENT',
+            statusKey: 'OPEN',
+            department,
+            isTestData: true,
+          },
+        }),
+        prisma.proposalApplication.create({
+          data: {
+            id: proposalId,
+            statusKey: 'OPEN',
+            email: ctx.user.email ?? 'developer-test@uzh.ch',
+            matriculationNumber: '00-000-000',
+            fullName: 'Test Student',
+            plannedStartAt: new Date(),
+            motivation:
+              'Test motivation generated by developer test mode to exercise the student proposal feedback workflow.',
+            proposalId,
+            allowUsage: true,
+            allowPublication: true,
+          },
+        }),
+      ])
+
+      return { success: true, proposalId }
+    }),
+
+  developerDeleteTestData: authedProcedure
+    .input(z.object({ proposalId: z.string().optional() }).optional())
+    .output(z.object({ success: z.boolean(), deletedProposals: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!isDeveloperUser(ctx.user)) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Developer role required',
+        })
+      }
+
+      // Only rows explicitly flagged as test data can ever be deleted here;
+      // applications, attachments, supervisions, feedbacks, and admin info
+      // are removed via onDelete: Cascade.
+      const result = await prisma.proposal.deleteMany({
+        where: {
+          isTestData: true,
+          ...(input?.proposalId ? { id: input.proposalId } : {}),
+        },
+      })
+
+      return { success: true, deletedProposals: result.count }
     }),
 
   createUserWithSupervisorRole: publicProcedure
