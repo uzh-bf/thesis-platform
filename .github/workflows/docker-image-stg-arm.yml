@@ -63,7 +63,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=stg-arm
-          cache-to: type=gha,mode=max,scope=stg-arm
           build-args: |
             NEXT_PUBLIC_APP_URL=theses.stg.df-app.ch
             NEXT_PUBLIC_FORMS_URL_PUBLISH=''
