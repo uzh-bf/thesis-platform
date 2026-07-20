@@ -11,10 +11,14 @@ on:
 env:
   REGISTRY: ghcr.io
 
+concurrency:
+  group: build-staging-arm-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-stg-arm:
     if: ${{ github.ref == 'refs/heads/main' && !startsWith(github.event.head_commit.message, 'chore(release)') && !startsWith(github.event.head_commit.message, 'chore(deploy)') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     permissions:
       contents: write
       packages: write
@@ -22,9 +26,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
@@ -61,6 +62,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=stg-arm
+          cache-to: type=gha,mode=max,scope=stg-arm
           build-args: |
             NEXT_PUBLIC_APP_URL=theses.stg.df-app.ch
             NEXT_PUBLIC_FORMS_URL_PUBLISH=''
