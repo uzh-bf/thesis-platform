@@ -1,4 +1,4 @@
-name: Build production Docker images
+name: Build production ARM Docker images
 
 on:
   push:
@@ -6,78 +6,16 @@ on:
       - 'main'
     paths-ignore:
       - 'deploy/stg_new/values.yaml'
-  workflow_dispatch:
+      - 'deploy/prd_new/values.yaml'
+      - 'deploy/prd_ibw_new/values.yaml'
 
 env:
   REGISTRY: ghcr.io
 
 jobs:
-  build-prd:
-    if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore(release)')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
-        with:
-          fetch-depth: 0
-
-      - name: Resolve release tag and commit hash
-        id: release
-        shell: bash
-        run: |
-          TAG=$(git tag --points-at HEAD | grep '^v' | head -1)
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
-
-      - name: Log into registry ${{ env.REGISTRY }}
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051
-        with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}
-          tags: |
-            type=raw,value=${{ steps.release.outputs.tag }}
-            type=raw,value=stable
-            type=raw,value=stable-${{ steps.release.outputs.sha }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
-        with:
-          context: .
-          file: Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            NEXT_PUBLIC_APP_VERSION=stable-${{ steps.release.outputs.sha }}
-
-      - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "${{ steps.release.outputs.tag }}" \
-            --target main \
-            --generate-notes \
-            --title "${{ steps.release.outputs.tag }}"
-
   build-prd-arm:
     if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore(release)')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     permissions:
       contents: read
       packages: write
@@ -92,14 +30,12 @@ jobs:
         shell: bash
         run: |
           TAG=$(git tag --points-at HEAD | grep '^v' | head -1)
+          if [[ -z "$TAG" ]]; then
+            echo "Release push did not have a v* tag on HEAD." >&2
+            exit 1
+          fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
 
       - name: Log into registry ${{ env.REGISTRY }}
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
@@ -142,160 +78,12 @@ jobs:
             NEXT_PUBLIC_APP_VERSION=stable-arm-${{ steps.release.outputs.sha }}
             ENABLE_DF_WEBSTATS=true
 
-  build-prd-ibw:
-    if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore(release)')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
-        with:
-          fetch-depth: 0
-
-      - name: Resolve release tag and commit hash
-        id: release
-        shell: bash
-        run: |
-          TAG=$(git tag --points-at HEAD | grep '^v' | head -1)
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
-
-      - name: Log into registry ${{ env.REGISTRY }}
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051
-        with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}-ibw
-          tags: |
-            type=raw,value=${{ steps.release.outputs.tag }}
-            type=raw,value=stable
-            type=raw,value=stable-${{ steps.release.outputs.sha }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
-        with:
-          context: .
-          file: Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            NEXT_PUBLIC_APP_URL=theses.business.uzh.ch
-            NEXT_PUBLIC_FORMS_URL_PUBLISH=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAswMW9Ql8fXxAnGa_PK_OI41UQ1AyT1pNRFVRV1FGQ1NDVTJORERFMlZXNCQlQCN0PWcu
-            NEXT_PUBLIC_FORMS_URL_SUBMIT=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAswMW9Ql8fXxAnGa_PK_OI41UMlpJRDYxUjdBRk5WVk05N0JZNFNLRlNHNiQlQCN0PWcu
-            NEXT_PUBLIC_BLOBSERVICECLIENT_URL=https://thesisplatformbusiness.blob.core.windows.net/uploads?
-            NEXT_PUBLIC_CONTAINER_NAME=uploads
-            NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME=thesisplatformbusiness
-            NEXT_PUBLIC_FOOTER_COPYRIGHT=Department of Business Administration, University of Zurich. All rights reserved.
-            NEXT_PUBLIC_DEPARTMENT_NAME=IBW
-            NEXT_PUBLIC_DEPARTMENT_LONG_NAME=Department of Business Administration
-            NEXT_PUBLIC_FAQ_URL_STUDENT=https://www.business.uzh.ch/en/teaching/theses/faqs.html
-            NEXT_PUBLIC_FAQ_URL_SUPERVISOR=https://www.business.uzh.ch/de/Intranet/Lehre/businessthesesmarket.html
-            NEXT_PUBLIC_APP_VERSION=stable-${{ steps.release.outputs.sha }}
-
   build-prd-ibw-arm:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore(release)'))
-    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore(release)')
+    runs-on: ubuntu-24.04-arm
     permissions:
       contents: read
       packages: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
-        with:
-          fetch-depth: 0
-
-      - name: Resolve image tags and commit hash
-        id: image
-        shell: bash
-        run: |
-          SHA=$(git rev-parse HEAD)
-          RELEASE_TAG=$(git tag --points-at HEAD | grep '^v' | head -1 || true)
-
-          if [[ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" && -z "$RELEASE_TAG" ]]; then
-            echo "Release push did not have a v* tag on HEAD." >&2
-            exit 1
-          fi
-
-          if [[ -n "$RELEASE_TAG" ]]; then
-            DEPLOY_TAG="stable-arm-${SHA}"
-            TAGS=$(cat <<EOF
-          ${REGISTRY}/${GITHUB_REPOSITORY}-ibw:${RELEASE_TAG}-arm
-          ${REGISTRY}/${GITHUB_REPOSITORY}-ibw:stable-arm
-          ${REGISTRY}/${GITHUB_REPOSITORY}-ibw:${DEPLOY_TAG}
-          EOF
-          )
-          else
-            DEPLOY_TAG="manual-arm-${SHA}"
-            TAGS="${REGISTRY}/${GITHUB_REPOSITORY}-ibw:${DEPLOY_TAG}"
-          fi
-
-          {
-            echo "sha=${SHA}"
-            echo "deploy_tag=${DEPLOY_TAG}"
-            echo "tags<<EOF"
-            echo "${TAGS}"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
-
-      - name: Log into registry ${{ env.REGISTRY }}
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
-        with:
-          context: .
-          file: Dockerfile
-          platforms: linux/arm64
-          push: true
-          tags: ${{ steps.image.outputs.tags }}
-          build-args: |
-            NEXT_PUBLIC_APP_URL=theses.business.uzh.ch
-            NEXT_PUBLIC_FORMS_URL_PUBLISH=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAswMW9Ql8fXxAnGa_PK_OI41UQ1AyT1pNRFVRV1FGQ1NDVTJORERFMlZXNCQlQCN0PWcu
-            NEXT_PUBLIC_FORMS_URL_SUBMIT=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAswMW9Ql8fXxAnGa_PK_OI41UMlpJRDYxUjdBRk5WVk05N0JZNFNLRlNHNiQlQCN0PWcu
-            NEXT_PUBLIC_BLOBSERVICECLIENT_URL=https://prdthesisplatformbz89yx5.blob.core.windows.net/uploads?
-            NEXT_PUBLIC_CONTAINER_NAME=uploads
-            NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME=prdthesisplatformbz89yx5
-            NEXT_PUBLIC_FOOTER_COPYRIGHT=Department of Business Administration, University of Zurich. All rights reserved.
-            NEXT_PUBLIC_DEPARTMENT_NAME=IBW
-            NEXT_PUBLIC_DEPARTMENT_LONG_NAME=Department of Business Administration
-            NEXT_PUBLIC_FAQ_URL_STUDENT=https://www.business.uzh.ch/en/teaching/theses/faqs.html
-            NEXT_PUBLIC_FAQ_URL_SUPERVISOR=https://www.business.uzh.ch/de/Intranet/Lehre/businessthesesmarket.html
-            NEXT_PUBLIC_APP_VERSION=${{ steps.image.outputs.deploy_tag }}
-
-  update-production-deploy-images:
-    if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore(release)')
-    needs:
-      - build-prd-arm
-      - build-prd-ibw-arm
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
@@ -314,61 +102,81 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: Update ArgoCD production image tags
-        id: argocd-tag
-        shell: bash
-        env:
-          PRODUCTION_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
-          PRODUCTION_IBW_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
-        run: |
-          UPDATE_BRANCH="chore/update-deploy-images-prd"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          # Always recreate the update branch from current main so a stale,
-          # unmerged deploy-values commit can never cause a rebase conflict.
-          git checkout -B "${UPDATE_BRANCH}" origin/main
-          perl -0pi -e 's/tag: '\''(?:latest|stable)-arm(?:-[0-9a-f]+)?'\''/tag: '\''$ENV{PRODUCTION_IMAGE_TAG}'\''/' deploy/prd_new/values.yaml
-          perl -0pi -e 's/image:\n(?:  repository: [^\n]+\n)?  tag: '\''[^'\'']+'\''/image:\n  repository: ghcr.io\/uzh-bf\/thesis-platform-ibw\n  tag: '\''$ENV{PRODUCTION_IBW_IMAGE_TAG}'\''/' deploy/prd_ibw_new/values.yaml
-          perl -0pi -e 's/env: prd-ibw/env: prd_ibw/' deploy/prd_ibw_new/values.yaml
-          git add deploy/prd_new/values.yaml deploy/prd_ibw_new/values.yaml
-          if git diff --cached --quiet; then
-            echo "No ArgoCD production image tag change."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          git commit -m "chore(deploy): update deployment image tags [skip ci]"
-          git push --force origin HEAD:"${UPDATE_BRANCH}"
-          echo "changed=true" >> "$GITHUB_OUTPUT"
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Open ArgoCD deployment image tag PR
-        if: ${{ steps.argocd-tag.outputs.changed == 'true' }}
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}-ibw
+          tags: |
+            type=raw,value=${{ steps.release.outputs.tag }}-arm
+            type=raw,value=stable-arm
+            type=raw,value=stable-arm-${{ steps.release.outputs.sha }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_APP_URL=theses.business.uzh.ch
+            NEXT_PUBLIC_FORMS_URL_PUBLISH=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAswMW9Ql8fXxAnGa_PK_OI41UQ1AyT1pNRFVRV1FGQ1NDVTJORERFMlZXNCQlQCN0PWcu
+            NEXT_PUBLIC_FORMS_URL_SUBMIT=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAswMW9Ql8fXxAnGa_PK_OI41UMlpJRDYxUjdBRk5WVk05N0JZNFNLRlNHNiQlQCN0PWcu
+            NEXT_PUBLIC_BLOBSERVICECLIENT_URL=https://prdthesisplatformbz89yx5.blob.core.windows.net/uploads?
+            NEXT_PUBLIC_CONTAINER_NAME=uploads
+            NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME=prdthesisplatformbz89yx5
+            NEXT_PUBLIC_FOOTER_COPYRIGHT=Department of Business Administration, University of Zurich. All rights reserved.
+            NEXT_PUBLIC_DEPARTMENT_NAME=IBW
+            NEXT_PUBLIC_DEPARTMENT_LONG_NAME=Department of Business Administration
+            NEXT_PUBLIC_FAQ_URL_STUDENT=https://www.business.uzh.ch/en/teaching/theses/faqs.html
+            NEXT_PUBLIC_FAQ_URL_SUPERVISOR=https://www.business.uzh.ch/de/Intranet/Lehre/businessthesesmarket.html
+            NEXT_PUBLIC_APP_VERSION=stable-arm-${{ steps.release.outputs.sha }}
+
+  publish-github-release:
+    if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore(release)')
+    needs:
+      - build-prd-arm
+      - build-prd-ibw-arm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release tag
+        id: release
         shell: bash
+        run: |
+          TAG=$(git tag --points-at HEAD | grep '^v' | head -1)
+          if [[ -z "$TAG" ]]; then
+            echo "Release push did not have a v* tag on HEAD." >&2
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          PRODUCTION_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
-          PRODUCTION_IBW_IMAGE_TAG: stable-arm-${{ steps.release.outputs.sha }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
         run: |
-          UPDATE_BRANCH="chore/update-deploy-images-prd"
-          BODY="Updates deployment values files after Docker image builds complete.
-
-          - deploy/prd_new/values.yaml -> ${PRODUCTION_IMAGE_TAG}
-          - deploy/prd_ibw_new/values.yaml -> ghcr.io/uzh-bf/thesis-platform-ibw:${PRODUCTION_IBW_IMAGE_TAG}
-          - deploy/stg_new/values.yaml updates are added to this same PR by the staging ARM workflow when present."
-          OPEN_PR=$(gh pr list --repo "${GITHUB_REPOSITORY}" --head "${UPDATE_BRANCH}" --base main --state open --json number --jq '.[0].number')
-          if [[ -n "$OPEN_PR" ]]; then
-            echo "PR already exists."
-            gh pr edit "$OPEN_PR" \
-              --repo "${GITHUB_REPOSITORY}" \
-              --title "chore(deploy): update deployment image tags" \
-              --body "$BODY" \
-              --add-reviewer mxmlnwbr
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "GitHub Release $RELEASE_TAG already exists."
             exit 0
           fi
-          gh pr create \
-            --repo "${GITHUB_REPOSITORY}" \
-            --head "${UPDATE_BRANCH}" \
-            --base main \
-            --title "chore(deploy): update deployment image tags" \
-            --body "$BODY" \
-            --reviewer mxmlnwbr
+          gh release create "$RELEASE_TAG" \
+            --target main \
+            --generate-notes \
+            --title "$RELEASE_TAG"
