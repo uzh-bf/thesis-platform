@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.17.0](https://github.com/uzh-bf/thesis-platform/compare/v1.16.0...v1.17.0) (2026-07-20)
+
+
+### Features
+
+* **developer:** production-safe test mode for the DEVELOPER role ([#154](https://github.com/uzh-bf/thesis-platform/issues/154)) ([cc51a29](https://github.com/uzh-bf/thesis-platform/commit/cc51a2989d43d716f32c419c1694d2909326aec9))
+
+
+### Bug Fixes
+
+* **ci:** make deploy-image update jobs robust against stale branch ([#152](https://github.com/uzh-bf/thesis-platform/issues/152)) ([bb282dc](https://github.com/uzh-bf/thesis-platform/commit/bb282dc7f56176859bd138205b487b3df6b7d171))
+
+
+### Build and CI
+
+* add ARM-only production release workflows ([#162](https://github.com/uzh-bf/thesis-platform/issues/162)) ([70eea0e](https://github.com/uzh-bf/thesis-platform/commit/70eea0eb0b85a16e1a9154607873623826df3631))
+* optimize staging ARM image build ([#156](https://github.com/uzh-bf/thesis-platform/issues/156)) ([49599b3](https://github.com/uzh-bf/thesis-platform/commit/49599b3bf91b118b56411ae26186e761bb4be10a))
+* stop exporting staging ARM build cache ([#158](https://github.com/uzh-bf/thesis-platform/issues/158)) ([7803618](https://github.com/uzh-bf/thesis-platform/commit/7803618d6373a40126d49429217b21509b792960))
+
 ## [1.16.0](///compare/v1.15.0...v1.16.0) (2026-07-06)
 
 
