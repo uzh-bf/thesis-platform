@@ -52,6 +52,14 @@ The job performs these operations in order:
 6. Commit only those two files with a `chore(deploy)` message and push normally
    to `main`.
 
+The job targets the protected GitHub `production` environment. Its checkout
+uses the environment secret `PRODUCTION_DEPLOY_TOKEN`, a fine-grained token with
+repository Contents read/write permission whose owner is explicitly allowed to
+bypass the `main` pull-request requirement. `actions/checkout` persists that
+credential for the final normal `git push`. GHCR authentication continues to
+use the short-lived `GITHUB_TOKEN`; the deployment token is not passed to Docker
+or interpolated into shell commands.
+
 The workflow does not force-push and never opens or updates a pull request. A
 no-change deployment exits successfully without a commit.
 
@@ -63,9 +71,10 @@ no-change deployment exits successfully without a commit.
   not cancel an in-progress production deployment.
 - Main advances during deployment: normal push is rejected; rerun the manual
   workflow against current `main`.
-- Branch protection blocks GitHub Actions: job fails visibly. No automatic PR
-  fallback is allowed; repository rules must explicitly permit the bot's direct
-  deployment commit if this workflow is desired.
+- Missing or unauthorized `PRODUCTION_DEPLOY_TOKEN`: checkout or the final push
+  fails visibly. No automatic PR fallback is allowed.
+- The deployment token is scoped through the protected `production` environment
+  and used only for repository checkout and the final direct push.
 - Image builds fail: GitHub Release job does not run, and deployment remains a
   separate unavailable manual action until valid images exist.
 
@@ -83,8 +92,10 @@ staging and production builds.
    ARM with `platforms: linux/arm64`.
 3. Confirm no QEMU, explicit Buildx setup, amd64 image tags, deployment-update
    branch, or PR command remains in the production build workflow.
-4. Confirm manual deploy requires `release_tag`, verifies both image manifests,
-   changes only the two production values files, and uses a non-force push.
+4. Confirm manual deploy requires `release_tag`, targets the `production`
+   environment, checks out with `PRODUCTION_DEPLOY_TOKEN`, verifies both image
+   manifests, changes only the two production values files, and uses a
+   non-force push.
 5. Run `git diff --check` and inspect the complete workflow diff.
 6. After merge, validate image publication on the next release. Then dispatch the
    deploy workflow from `main` with that release tag and confirm the direct commit
