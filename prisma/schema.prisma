@@ -157,6 +157,8 @@ model Proposal {
   ownedByUserEmail String?
   ownedByStudent   String?
 
+  isTestData Boolean @default(false)
+
   supervisedBy      UserProposalSupervision[]
   applications      ProposalApplication[]
   receivedFeedbacks UserProposalFeedback[]

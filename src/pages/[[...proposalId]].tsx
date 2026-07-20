@@ -11,6 +11,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import DeveloperTestModeBanner from 'src/components/DeveloperTestModeBanner'
 import EmptyState from 'src/components/EmptyState'
 import LoadingSkeleton from 'src/components/LoadingSkeleton'
 import ProposalApplication from 'src/components/ProposalApplication'
@@ -165,6 +166,8 @@ export default function Index() {
         id="proposals"
         className="mx-auto w-full max-w-[1440px] px-4 py-10 md:px-10 xl:px-10"
       >
+        {isDeveloper && <DeveloperTestModeBanner refetch={refetch} />}
+
         {isLoading ? (
           <LoadingSkeleton />
         ) : (
