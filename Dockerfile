@@ -5,7 +5,6 @@ WORKDIR /app
 
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 RUN apk add --no-cache libc6-compat
-RUN apk update
 
 RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
 
@@ -18,7 +17,6 @@ FROM node:22.18.0-alpine AS builder
 
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 RUN apk add --no-cache libc6-compat
-RUN apk update
 
 RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
 
@@ -55,7 +53,6 @@ WORKDIR /app
 
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 RUN apk add --no-cache libc6-compat
-RUN apk update
 
 ARG NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
