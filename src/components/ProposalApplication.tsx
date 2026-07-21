@@ -187,11 +187,14 @@ export default function ProposalApplication({
   if (proposalDetails?.typeKey === 'SUPERVISOR') {
     return (
       <div className="p-4">
-        {isStudent && (
+        {(isStudent || (isDeveloper && proposalDetails.isTestData)) && (
           <ApplicationForm
             key={proposalDetails.id}
             proposalName={proposalDetails.title}
             proposalId={proposalDetails.id}
+            isDeveloperTestMode={isDeveloper && proposalDetails.isTestData}
+            defaultEmail={isDeveloper ? (currentUserEmail ?? undefined) : undefined}
+            onSubmitted={refetch}
           />
         )}
         {canManageApplications ? (

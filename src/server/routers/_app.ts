@@ -227,6 +227,50 @@ const getBlockedStagingFlowResponse = (flowName: string, data?: unknown) => {
 const isDeveloperUser = (user?: { role?: string | null } | null) =>
   user?.role === UserRole.DEVELOPER
 
+function assertDeveloperUser(user?: { role?: string | null } | null) {
+  if (!isDeveloperUser(user)) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Developer role required',
+    })
+  }
+}
+
+const TEST_PROPOSAL_STUDY_LEVEL = 'Bachelor Thesis (18 ECTS)'
+
+// Shared scaffold for the one-click test proposals: both variants live in the
+// developer's department, use the first available topic area, and are always
+// flagged as test data.
+async function buildTestProposalScaffold() {
+  const department = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+  const topicArea = await prisma.topicArea.findFirst({
+    where: { OR: [{ department }, { department: null }] },
+  })
+
+  if (!topicArea) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'No topic area available to create a test proposal',
+    })
+  }
+
+  const proposalId = uuidv4()
+
+  return {
+    department,
+    proposalId,
+    baseProposalData: {
+      id: proposalId,
+      language: JSON.stringify(['English']),
+      studyLevel: TEST_PROPOSAL_STUDY_LEVEL,
+      topicAreaSlug: topicArea.slug,
+      statusKey: ProposalStatus.OPEN,
+      department,
+      isTestData: true,
+    },
+  }
+}
+
 const getUploadedBlobHref = (blobName: string) =>
   `${process.env.NEXT_PUBLIC_AZURE_STORAGE_URL}/${process.env.NEXT_PUBLIC_CONTAINER_NAME}/${blobName}`
 
@@ -4197,26 +4241,9 @@ updateProposalStatus: publicProcedure
   developerCreateTestStudentProposal: authedProcedure
     .output(z.object({ success: z.boolean(), proposalId: z.string() }))
     .mutation(async ({ ctx }) => {
-      if (!isDeveloperUser(ctx.user)) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Developer role required',
-        })
-      }
+      assertDeveloperUser(ctx.user)
 
-      const department = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
-      const topicArea = await prisma.topicArea.findFirst({
-        where: { OR: [{ department }, { department: null }] },
-      })
-
-      if (!topicArea) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'No topic area available to create a test proposal',
-        })
-      }
-
-      const proposalId = uuidv4()
+      const { proposalId, baseProposalData } = await buildTestProposalScaffold()
 
       // Mirrors the structure created by persistProposalSubmission (the
       // Power Automate callback for student proposals): the application and
@@ -4224,18 +4251,12 @@ updateProposalStatus: publicProcedure
       await prisma.$transaction([
         prisma.proposal.create({
           data: {
-            id: proposalId,
+            ...baseProposalData,
             title: `Test Student Proposal ${proposalId.slice(0, 8)}`,
             description:
               'Automatically generated student proposal for developer test mode. It is hidden from students, supervisors, and admin views, and can be deleted at any time via "Delete all test data".',
-            language: JSON.stringify(['English']),
-            studyLevel: 'Bachelor Thesis (18 ECTS)',
-            topicAreaSlug: topicArea.slug,
             additionalStudentComment: 'Created by developer test mode.',
-            typeKey: 'STUDENT',
-            statusKey: 'OPEN',
-            department,
-            isTestData: true,
+            typeKey: ProposalType.STUDENT,
           },
         }),
         prisma.proposalApplication.create({
@@ -4258,16 +4279,54 @@ updateProposalStatus: publicProcedure
       return { success: true, proposalId }
     }),
 
+  developerCreateTestSupervisorProposal: authedProcedure
+    .output(z.object({ success: z.boolean(), proposalId: z.string() }))
+    .mutation(async ({ ctx }) => {
+      assertDeveloperUser(ctx.user)
+
+      const { department, proposalId, baseProposalData } =
+        await buildTestProposalScaffold()
+
+      const responsible = await prisma.responsible.findFirst({
+        where: { OR: [{ department }, { department: null }] },
+      })
+
+      // Mirrors the structure created by createDeveloperTestProposal (the
+      // developer branch of the publish form): the supervision record shares
+      // the proposal id and names the developer as supervisor, so the
+      // developer can apply to the proposal themselves and exercise the
+      // accept/decline application workflow end to end.
+      await prisma.$transaction([
+        prisma.proposal.create({
+          data: {
+            ...baseProposalData,
+            title: `Test Supervisor Proposal ${proposalId.slice(0, 8)}`,
+            description:
+              'Automatically generated supervisor proposal for developer test mode. Apply to it yourself to exercise the application workflow. It is hidden from students, supervisors, and admin views, and can be deleted at any time via "Delete all test data".',
+            timeFrame: '6 months',
+            typeKey: ProposalType.SUPERVISOR,
+            ownedByUserEmail: ctx.user.email ?? null,
+          },
+        }),
+        prisma.userProposalSupervision.create({
+          data: {
+            id: proposalId,
+            proposalId,
+            supervisorEmail: ctx.user.email ?? null,
+            studyLevel: TEST_PROPOSAL_STUDY_LEVEL,
+            responsibleId: responsible?.id ?? null,
+          },
+        }),
+      ])
+
+      return { success: true, proposalId }
+    }),
+
   developerDeleteTestData: authedProcedure
     .input(z.object({ proposalId: z.string().optional() }).optional())
     .output(z.object({ success: z.boolean(), deletedProposals: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      if (!isDeveloperUser(ctx.user)) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Developer role required',
-        })
-      }
+      assertDeveloperUser(ctx.user)
 
       // Only rows explicitly flagged as test data can ever be deleted here;
       // applications, attachments, supervisions, feedbacks, and admin info
