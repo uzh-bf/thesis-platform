@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.18.0](https://github.com/uzh-bf/thesis-platform/compare/v1.17.1...v1.18.0) (2026-07-21)
+
+
+### Features
+
+* add one-click test supervisor proposal with self-application for developers ([#165](https://github.com/uzh-bf/thesis-platform/issues/165)) ([7480830](https://github.com/uzh-bf/thesis-platform/commit/7480830945622d6563b37a82857c5c4b427ba8ea))
+
+
+### Documentation
+
+* design staging Auth0-only login ([de6a693](https://github.com/uzh-bf/thesis-platform/commit/de6a69303e6409bba4f083771b1725a62d1cdffa))
+
 ### [1.17.1](https://github.com/uzh-bf/thesis-platform/compare/v1.17.0...v1.17.1) (2026-07-21)
 
 
