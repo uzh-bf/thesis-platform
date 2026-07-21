@@ -11,6 +11,8 @@ import { Form, Formik } from 'formik'
 import { useState } from 'react'
 import Dropzone from 'react-dropzone'
 import toast, { Toaster } from 'react-hot-toast'
+import { createApplicationUploadBlobName } from 'src/lib/applicationUploadBlobName'
+import type { ApplicationUploadDocumentType } from 'src/lib/applicationUploadBlobName'
 import useLocalStorage from 'src/lib/hooks/useLocalStorage'
 import { trpc } from 'src/lib/trpc'
 import * as Yup from 'yup'
@@ -40,7 +42,11 @@ export default function ApplicationForm({
   const [submitted, setLocalStorage] = useLocalStorage<boolean>(proposalId)
 
   const handleFileFieldChange =
-    (fieldKey: string, fileName: string, formikProps: any) =>
+    (
+      fieldKey: string,
+      documentType: ApplicationUploadDocumentType,
+      formikProps: any
+    ) =>
     async (files: any[]) => {
       const file = files[0]
       const { SAS_STRING } = await mutation.mutateAsync()
@@ -51,7 +57,7 @@ export default function ApplicationForm({
       const containerClient = blobServiceClient.getContainerClient(
         process.env.NEXT_PUBLIC_CONTAINER_NAME!
       )
-      const name = `${formikProps.values.uzhemail}-${fileName}.pdf`
+      const name = createApplicationUploadBlobName(proposalId, documentType)
       const blobClient = containerClient.getBlobClient(name)
       const blockBlobClient = blobClient.getBlockBlobClient()
       const result = await blockBlobClient.uploadData(file, {
