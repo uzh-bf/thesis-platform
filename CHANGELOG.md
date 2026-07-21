@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.18.3](https://github.com/uzh-bf/thesis-platform/compare/v1.18.2...v1.18.3) (2026-07-21)
+
+
+### Documentation
+
+* design unique application upload names ([7678801](https://github.com/uzh-bf/thesis-platform/commit/76788018155c0b94b8f0d04ab9da2644bda28767))
+
 ### [1.18.2](https://github.com/uzh-bf/thesis-platform/compare/v1.18.1...v1.18.2) (2026-07-21)
 
 ### [1.18.1](https://github.com/uzh-bf/thesis-platform/compare/v1.18.0...v1.18.1) (2026-07-21)
