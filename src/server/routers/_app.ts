@@ -271,8 +271,15 @@ async function buildTestProposalScaffold() {
   }
 }
 
-const getUploadedBlobHref = (blobName: string) =>
-  `${process.env.NEXT_PUBLIC_AZURE_STORAGE_URL}/${process.env.NEXT_PUBLIC_CONTAINER_NAME}/${blobName}`
+const getUploadedBlobHref = (blobName: string) => {
+  const storageUrl =
+    process.env.NEXT_PUBLIC_AZURE_STORAGE_URL ??
+    `https://${process.env.NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net`
+
+  return `${storageUrl.replace(/\/$/, '')}/${
+    process.env.NEXT_PUBLIC_CONTAINER_NAME
+  }/${blobName}`
+}
 
 async function getTestProposalOrThrow(proposalId: string) {
   const proposal = await prisma.proposal.findUnique({
