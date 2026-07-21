@@ -4258,6 +4258,71 @@ updateProposalStatus: publicProcedure
       return { success: true, proposalId }
     }),
 
+  developerCreateTestSupervisorProposal: authedProcedure
+    .output(z.object({ success: z.boolean(), proposalId: z.string() }))
+    .mutation(async ({ ctx }) => {
+      if (!isDeveloperUser(ctx.user)) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Developer role required',
+        })
+      }
+
+      const department = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+      const topicArea = await prisma.topicArea.findFirst({
+        where: { OR: [{ department }, { department: null }] },
+      })
+
+      if (!topicArea) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No topic area available to create a test proposal',
+        })
+      }
+
+      const responsible = await prisma.responsible.findFirst({
+        where: { OR: [{ department }, { department: null }] },
+      })
+
+      const proposalId = uuidv4()
+
+      // Mirrors the structure created by createDeveloperTestProposal (the
+      // developer branch of the publish form): the supervision record shares
+      // the proposal id and names the developer as supervisor, so the
+      // developer can apply to the proposal themselves and exercise the
+      // accept/decline application workflow end to end.
+      await prisma.$transaction([
+        prisma.proposal.create({
+          data: {
+            id: proposalId,
+            title: `Test Supervisor Proposal ${proposalId.slice(0, 8)}`,
+            description:
+              'Automatically generated supervisor proposal for developer test mode. Apply to it yourself to exercise the application workflow. It is hidden from students, supervisors, and admin views, and can be deleted at any time via "Delete all test data".',
+            language: JSON.stringify(['English']),
+            studyLevel: 'Bachelor Thesis (18 ECTS)',
+            topicAreaSlug: topicArea.slug,
+            timeFrame: '6 months',
+            typeKey: ProposalType.SUPERVISOR,
+            statusKey: ProposalStatus.OPEN,
+            ownedByUserEmail: ctx.user.email ?? null,
+            department,
+            isTestData: true,
+          },
+        }),
+        prisma.userProposalSupervision.create({
+          data: {
+            id: proposalId,
+            proposalId,
+            supervisorEmail: ctx.user.email ?? null,
+            studyLevel: 'Bachelor Thesis (18 ECTS)',
+            responsibleId: responsible?.id ?? null,
+          },
+        }),
+      ])
+
+      return { success: true, proposalId }
+    }),
+
   developerDeleteTestData: authedProcedure
     .input(z.object({ proposalId: z.string().optional() }).optional())
     .output(z.object({ success: z.boolean(), deletedProposals: z.number() }))
