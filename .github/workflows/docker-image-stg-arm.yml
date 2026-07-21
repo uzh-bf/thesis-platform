@@ -23,16 +23,15 @@ env:
 
 concurrency:
   group: build-staging-arm-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build-stg-arm:
     if: ${{ github.ref == 'refs/heads/main' && !startsWith(github.event.head_commit.message, 'chore(release)') && !startsWith(github.event.head_commit.message, 'chore(deploy)') }}
     runs-on: ubuntu-24.04-arm
     permissions:
-      contents: write
+      contents: read
       packages: write
-      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
@@ -87,53 +86,28 @@ jobs:
         shell: bash
         run: git restore .env.production .env.stg
 
+      - name: Authenticate deployment push
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.DEPLOY_PUSH_TOKEN }}
+
       - name: Update ArgoCD staging image tag
-        id: argocd-tag
         if: ${{ github.ref == 'refs/heads/main' }}
         shell: bash
         env:
           STAGING_IMAGE_TAG: latest-arm-${{ github.sha }}
         run: |
-          UPDATE_BRANCH="chore/update-deploy-images-stg"
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin main
-          # Always recreate the update branch from current main so a stale,
-          # unmerged deploy-values commit can never cause a rebase conflict.
-          git checkout -B "${UPDATE_BRANCH}" origin/main
+          git checkout -B main origin/main
           perl -0pi -e 's/tag: '\''latest-arm(?:-[0-9a-f]+)?'\''/tag: '\''$ENV{STAGING_IMAGE_TAG}'\''/' deploy/stg_new/values.yaml
           git add deploy/stg_new/values.yaml
           if git diff --cached --quiet; then
             echo "No ArgoCD image tag change."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git commit -m "chore(deploy): update deployment image tags [skip ci]"
-          git push --force origin HEAD:"${UPDATE_BRANCH}"
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-
-      - name: Open ArgoCD staging image tag PR
-        if: ${{ github.ref == 'refs/heads/main' && steps.argocd-tag.outputs.changed == 'true' }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          STAGING_IMAGE_TAG: latest-arm-${{ github.sha }}
-        run: |
-          UPDATE_BRANCH="chore/update-deploy-images-stg"
-          OPEN_PR=$(gh pr list --repo "${GITHUB_REPOSITORY}" --head "${UPDATE_BRANCH}" --base main --state open --json number --jq '.[0].number')
-          if [[ -n "$OPEN_PR" ]]; then
-            echo "PR already exists."
-            gh pr edit "$OPEN_PR" \
-              --repo "${GITHUB_REPOSITORY}" \
-              --title "chore(deploy): update deployment image tags" \
-              --body "Updates deployment values files after Docker image builds complete. This run includes deploy/stg_new/values.yaml -> ${STAGING_IMAGE_TAG}." \
-              --add-reviewer mxmlnwbr
-            exit 0
-          fi
-          gh pr create \
-            --repo "${GITHUB_REPOSITORY}" \
-            --head "${UPDATE_BRANCH}" \
-            --base main \
-            --title "chore(deploy): update deployment image tags" \
-            --body "Updates deployment values files after Docker image builds complete. This run includes deploy/stg_new/values.yaml -> ${STAGING_IMAGE_TAG}." \
-            --reviewer mxmlnwbr
+          git commit -m "chore(deploy): update staging image tag [skip ci]"
+          git push origin HEAD:main

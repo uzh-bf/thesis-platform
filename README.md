@@ -58,7 +58,38 @@ Deployment is GitOps-based. ArgoCD pulls this repository and renders:
 
 Do not deploy this app with local Helmfile or envsubst scripts. Runtime secrets come from Infisical through Kubernetes ExternalSecrets.
 
-GitHub Actions build images and open deployment image tag pull requests against the `_new` values files. Merge those pull requests to update the desired state that ArgoCD syncs to the cluster.
+GitHub Actions build images and commit deployment image tags directly to `main`.
+ArgoCD then syncs the desired state from the `_new` values files.
+
+### Deployment push token
+
+Direct deployment commits use the repository Actions secret
+`DEPLOY_PUSH_TOKEN`. Create a fine-grained personal access token owned by an
+actor listed under **Allow specified actors to bypass required pull requests**
+for `main`.
+
+Configure the token with:
+
+- Repository access: only `uzh-bf/thesis-platform`
+- Repository permission: **Contents — Read and write**
+
+Do not enable force pushes. The workflows fetch current `main` and use normal
+fast-forward pushes. Add the token under **Settings → Secrets and variables →
+Actions → New repository secret** as `DEPLOY_PUSH_TOKEN`.
+
+### Automatic deployments
+
+- A qualifying push to `main` builds the staging ARM64 image and commits the
+  immutable image tag to `deploy/stg_new/values.yaml`.
+- `pnpm release:publish` creates and pushes the release commit and tag. After
+  both production ARM64 images build successfully, Actions commits their
+  immutable image tag to `deploy/prd_new/values.yaml` and
+  `deploy/prd_ibw_new/values.yaml`.
+- `pnpm release` only creates the release commit and tag locally. It does not
+  start the production workflow until those refs are pushed.
+
+Deployment commits contain `[skip ci]` and only modify the relevant values
+files, preventing build loops.
 
 ### Restart the app (if only Powerautomate Solution Update)
 

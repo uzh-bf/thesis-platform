@@ -1,5 +1,9 @@
 # Production ARM Build and Manual Deploy
 
+> Superseded by
+> `2026-07-21-automated-deployment-flow-design.md`, which replaces manual
+> production dispatch with automatic deployment after successful release builds.
+
 ## Goal
 
 Publish only ARM64 production images for DF and IBW, using native free GitHub

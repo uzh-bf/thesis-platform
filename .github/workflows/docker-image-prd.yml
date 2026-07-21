@@ -12,6 +12,10 @@ on:
 env:
   REGISTRY: ghcr.io
 
+concurrency:
+  group: release-production
+  cancel-in-progress: false
+
 jobs:
   build-prd-arm:
     if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore(release)')
@@ -141,6 +145,44 @@ jobs:
             NEXT_PUBLIC_FAQ_URL_STUDENT=https://www.business.uzh.ch/en/teaching/theses/faqs.html
             NEXT_PUBLIC_FAQ_URL_SUPERVISOR=https://www.business.uzh.ch/de/Intranet/Lehre/businessthesesmarket.html
             NEXT_PUBLIC_APP_VERSION=stable-arm-${{ steps.release.outputs.sha }}
+
+  deploy-production:
+    if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore(release)')
+    needs:
+      - build-prd-arm
+      - build-prd-ibw-arm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.DEPLOY_PUSH_TOKEN }}
+
+      - name: Update production image tags
+        env:
+          PRODUCTION_IMAGE_TAG: stable-arm-${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout -B main origin/main
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          perl -0pi -e 's/tag: '\''stable-arm(?:-[0-9a-f]+)?'\''/tag: '\''$ENV{PRODUCTION_IMAGE_TAG}'\''/' deploy/prd_new/values.yaml
+          perl -0pi -e 's/tag: '\''stable-arm(?:-[0-9a-f]+)?'\''/tag: '\''$ENV{PRODUCTION_IMAGE_TAG}'\''/' deploy/prd_ibw_new/values.yaml
+
+          git add deploy/prd_new/values.yaml deploy/prd_ibw_new/values.yaml
+          if git diff --cached --quiet; then
+            echo "Production already uses images from ${{ github.sha }}."
+            exit 0
+          fi
+
+          git commit -m "chore(deploy): update production image tags [skip ci]"
+          git push origin HEAD:main
 
   publish-github-release:
     if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore(release)')
