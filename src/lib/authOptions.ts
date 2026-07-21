@@ -11,11 +11,12 @@ import { UserRole } from './constants'
 const isEnabled = (value: string | undefined) =>
   ['1', 'true', 'yes'].includes((value ?? '').trim().toLowerCase())
 
-const getStagingAuthDefaults = () => {
-  const thesisPlatformEnv = (process.env.THESIS_PLATFORM_ENV ?? '').toLowerCase()
+const isStagingEnvironment = () =>
+  (process.env.THESIS_PLATFORM_ENV ?? '').trim().toLowerCase() === 'stg'
 
+const getStagingAuthDefaults = () => {
   if (
-    thesisPlatformEnv !== 'stg' ||
+    !isStagingEnvironment() ||
     !isEnabled(process.env.STAGING_GRANT_ALL_ADMINS)
   ) {
     return null
@@ -66,7 +67,8 @@ export const authOptions: NextAuthOptions = {
     //   },
     //   from: process.env.EMAIL_FROM,
     // }),
-    typeof process.env.AZURE_AD_CLIENT_ID === 'string' &&
+    !isStagingEnvironment() &&
+      typeof process.env.AZURE_AD_CLIENT_ID === 'string' &&
       process.env.AZURE_AD_CLIENT_ID !== '' &&
       AzureADProvider({
         clientId: process.env.AZURE_AD_CLIENT_ID as string,
