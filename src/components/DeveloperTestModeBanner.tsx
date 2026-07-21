@@ -20,6 +20,17 @@ export default function DeveloperTestModeBanner({
       },
     })
 
+  const createTestSupervisorProposal =
+    trpc.developerCreateTestSupervisorProposal.useMutation({
+      onSuccess: () => {
+        toast.success('Test supervisor proposal created — apply to it yourself')
+        refetch()
+      },
+      onError: (error) => {
+        toast.error(error.message)
+      },
+    })
+
   const deleteTestData = trpc.developerDeleteTestData.useMutation({
     onSuccess: (result) => {
       toast.success(
@@ -60,6 +71,14 @@ export default function DeveloperTestModeBanner({
             {createTestStudentProposal.isPending
               ? 'Creating...'
               : 'Create test student proposal'}
+          </Button>
+          <Button
+            onClick={() => createTestSupervisorProposal.mutate()}
+            disabled={createTestSupervisorProposal.isPending}
+          >
+            {createTestSupervisorProposal.isPending
+              ? 'Creating...'
+              : 'Create test supervisor proposal'}
           </Button>
           <Button
             onClick={() => {

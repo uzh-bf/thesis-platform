@@ -27,9 +27,18 @@ While signed in with the `DEVELOPER` role:
   CleverReach newsletter draft, and all notification emails are skipped.
 - **Apply to a test proposal** via the regular application form (applications
   and CV/transcript attachments are stored directly, no flow call, no emails).
+  On test proposals the form is shown to the developer as well: the email is
+  prefilled with the developer's own address, the strict `@uzh.ch` domain
+  requirement is lifted, and the one-submission-per-proposal gate is skipped
+  so multiple test applications (with distinct emails) can be created on the
+  same proposal.
 - **Create a test student proposal** with one click from the banner on the
   proposal market, to exercise the student-proposal feedback workflow
   (accept / tentatively accept / decline / reject).
+- **Create a test supervisor proposal** with one click from the banner on the
+  proposal market. The proposal is owned and supervised by the developer, who
+  can then apply to it themselves and exercise the application workflow
+  (accept / decline, including declining competing applications) end to end.
 - **Give feedback and accept/decline applications** on test proposals. Status
   transitions (`OPEN → MATCHED_TENTATIVE → MATCHED`, feedback records,
   `AdminInfo` creation, declining competing applications) mirror what the
