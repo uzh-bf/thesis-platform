@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.17.1](https://github.com/uzh-bf/thesis-platform/compare/v1.17.0...v1.17.1) (2026-07-21)
+
+
+### Documentation
+
+* design automated deployment flow ([53924a8](https://github.com/uzh-bf/thesis-platform/commit/53924a81f3ee485b272591a7b915c00369117d1d))
+
+
+### Build and CI
+
+* authenticate production deploy push ([#164](https://github.com/uzh-bf/thesis-platform/issues/164)) ([35f05f1](https://github.com/uzh-bf/thesis-platform/commit/35f05f1615681360836c970177e8425ac2cb80d9))
+* automate staging and production deployments ([6612eca](https://github.com/uzh-bf/thesis-platform/commit/6612ecaf76208fb136ef9d29985883f53e1dcfd2))
+
 ## [1.17.0](https://github.com/uzh-bf/thesis-platform/compare/v1.16.0...v1.17.0) (2026-07-20)
 
 
