@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.18.1](https://github.com/uzh-bf/thesis-platform/compare/v1.18.0...v1.18.1) (2026-07-21)
+
+
+### Bug Fixes
+
+* show only Auth0 on staging ([#166](https://github.com/uzh-bf/thesis-platform/issues/166)) ([5fca9c2](https://github.com/uzh-bf/thesis-platform/commit/5fca9c23728021ab0e0fe402d81861b6490e813b))
+
 ## [1.18.0](https://github.com/uzh-bf/thesis-platform/compare/v1.17.1...v1.18.0) (2026-07-21)
 
 
