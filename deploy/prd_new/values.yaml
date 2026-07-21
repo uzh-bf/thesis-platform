@@ -1,5 +1,5 @@
 image:
-  tag: 'stable-arm-8200034095c43f997f17e06c623524e84025c778'
+  tag: 'stable-arm-21448aad7aaa7aec01e2cc87f6ba8b5bc0165611'
 
 env: prd
 appUrl: 'https://theses.df.uzh.ch'
