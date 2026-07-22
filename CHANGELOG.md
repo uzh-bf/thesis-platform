@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.18.4](https://github.com/uzh-bf/thesis-platform/compare/v1.18.3...v1.18.4) (2026-07-22)
+
+
+### Documentation
+
+* design removal of developer test mode ([0ce2ebb](https://github.com/uzh-bf/thesis-platform/commit/0ce2ebbbbcb89916fb3aee5ee8b9e94b7a5590ef))
+
+
+### Refactors
+
+* remove developer test mode ([#170](https://github.com/uzh-bf/thesis-platform/issues/170)) ([11bf54c](https://github.com/uzh-bf/thesis-platform/commit/11bf54c59c6699f9a00ddba8a6a2e00aea7f120b))
+
 ### [1.18.3](https://github.com/uzh-bf/thesis-platform/compare/v1.18.2...v1.18.3) (2026-07-21)
 
 
