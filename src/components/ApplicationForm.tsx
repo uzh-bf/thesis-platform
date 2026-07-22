@@ -20,17 +20,11 @@ import * as Yup from 'yup'
 interface ApplicationFormProps {
   proposalName: string
   proposalId: string
-  // Developer test mode: the developer applies to their own test proposal,
-  // so the strict @uzh.ch email requirement does not apply.
-  isDeveloperTestMode?: boolean
-  defaultEmail?: string
   onSubmitted?: () => void
 }
 export default function ApplicationForm({
   proposalName,
   proposalId,
-  isDeveloperTestMode = false,
-  defaultEmail,
   onSubmitted,
 }: ApplicationFormProps) {
   const [cv, setCv] = useState<any[]>([])
@@ -71,12 +65,7 @@ export default function ApplicationForm({
       formikProps.setFieldValue(fieldKey, name)
     }
 
-  const isUploadEnabled = (email: string) =>
-    isDeveloperTestMode ? email.trim().length > 0 : email.endsWith('uzh.ch')
-
-  const uploadHint = isDeveloperTestMode
-    ? 'Enter your email before uploading files ⚠️'
-    : 'Enter your UZH Email before uploading files ⚠️'
+  const isUploadEnabled = (email: string) => email.endsWith('uzh.ch')
 
   const SignupSchema = Yup.object().shape({
     uzhemail: Yup.string()
@@ -85,7 +74,6 @@ export default function ApplicationForm({
         'uzh-domain',
         'Please enter your @uzh.ch email address',
         (value) => {
-          if (isDeveloperTestMode) return true
           if (value) {
             const domain = value.split('@')[1]
             return domain === 'uzh.ch'
@@ -120,15 +108,13 @@ export default function ApplicationForm({
     allowPublication: Yup.boolean().required('Required'),
   })
 
-  // Developer test mode skips the one-submission-per-proposal gate so several
-  // test applications (with distinct emails) can be created on one proposal.
-  return submitted === null && !isDeveloperTestMode ? (
+  return submitted === null ? (
     <>Loading 🔄</>
-  ) : !submitted || isDeveloperTestMode ? (
+  ) : !submitted ? (
     <Formik
       initialValues={{
         proposalTitle: proposalName,
-        uzhemail: isDeveloperTestMode ? (defaultEmail ?? '') : '',
+        uzhemail: '',
         matriculationNumber: '',
         fullName: '',
         startingDate: dayjs(Date.now()).format('YYYY-MM-DD'),
@@ -142,9 +128,7 @@ export default function ApplicationForm({
       validationSchema={SignupSchema}
       onSubmit={async (values, { resetForm }) => {
         await submitApplication.mutateAsync(values)
-        if (!isDeveloperTestMode) {
-          await setLocalStorage(true)
-        }
+        await setLocalStorage(true)
         resetForm()
         setCv([])
         setTranscript([])
@@ -226,7 +210,7 @@ export default function ApplicationForm({
                   <input type="file" {...getInputProps()} />
                   <p className="p-2 text-base">
                     {!isUploadEnabled(formikProps.values.uzhemail)
-                      ? uploadHint
+                      ? 'Enter your UZH Email before uploading files ⚠️'
                       : cv.length > 0
                       ? `Attached File 📄: '${cv[0].name}'`
                       : 'Drag and drop your file 🗃️ here, or click to select the file'}
@@ -258,7 +242,7 @@ export default function ApplicationForm({
                   <input type="file" {...getInputProps()} />
                   <p className="p-2 text-base">
                     {!isUploadEnabled(formikProps.values.uzhemail)
-                      ? uploadHint
+                      ? 'Enter your UZH Email before uploading files ⚠️'
                       : transcript.length > 0
                       ? `Attached File 📄: '${transcript[0].name}'`
                       : 'Drag and drop your file 🗃️ here, or click to select the file'}

@@ -4,9 +4,6 @@ image:
 env: stg
 appUrl: 'https://theses.stg.df-app.ch'
 
-stagingSafety:
-  grantAllAdmins: 'true'
-
 azureAd:
   clientId: ''
   clientSecret: ''

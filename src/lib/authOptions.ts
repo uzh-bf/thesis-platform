@@ -7,51 +7,13 @@ import AzureADProvider from 'next-auth/providers/azure-ad'
 
 import prisma from '../server/prisma'
 import { UserRole } from './constants'
-
-const isEnabled = (value: string | undefined) =>
-  ['1', 'true', 'yes'].includes((value ?? '').trim().toLowerCase())
-
 const isStagingEnvironment = () =>
   (process.env.THESIS_PLATFORM_ENV ?? '').trim().toLowerCase() === 'stg'
 
-const getStagingAuthDefaults = () => {
-  if (
-    !isStagingEnvironment() ||
-    !isEnabled(process.env.STAGING_GRANT_ALL_ADMINS)
-  ) {
-    return null
-  }
-
-  return {
-    role: UserRole.DEVELOPER,
-    adminRole: 'ADMIN' as const,
-    department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as any,
-  }
-}
-
-const getSessionUser = async (userId: string) => {
-  const dbUser = await prisma.user.findUnique({
+const getSessionUser = (userId: string) =>
+  prisma.user.findUnique({
     where: { id: userId },
   })
-  const stagingDefaults = getStagingAuthDefaults()
-
-  if (!dbUser || !stagingDefaults) {
-    return dbUser
-  }
-
-  if (
-    dbUser.role === stagingDefaults.role &&
-    dbUser.adminRole === stagingDefaults.adminRole &&
-    dbUser.department === stagingDefaults.department
-  ) {
-    return dbUser
-  }
-
-  return prisma.user.update({
-    where: { id: userId },
-    data: stagingDefaults,
-  })
-}
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -104,14 +66,11 @@ export const authOptions: NextAuthOptions = {
   events: {
     async createUser({ user }) {
       // Update the newly created user with department from environment variable
-      const stagingDefaults = getStagingAuthDefaults()
-
       await prisma.user.update({
         where: { id: user.id },
-        data:
-          stagingDefaults ?? {
-            department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as any, // Cast as any since department is an enum
-          },
+        data: {
+          department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as any, // Cast as any since department is an enum
+        },
       });
     },
     async signOut({ token }) {
