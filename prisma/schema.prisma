@@ -77,8 +77,8 @@ model User {
   emailVerified DateTime?
   image         String?   @db.Text
 
-  role       String     @default("UNSET")
-  adminRole  AdminRole  @default(UNSET) @map("AdminRole")
+  role       String      @default("UNSET")
+  adminRole  AdminRole   @default(UNSET) @map("AdminRole")
   department Department?
 
   accounts Account[]
@@ -156,8 +156,6 @@ model Proposal {
   ownedByUser      User?   @relation(fields: [ownedByUserEmail], references: [email], onDelete: SetNull)
   ownedByUserEmail String?
   ownedByStudent   String?
-
-  isTestData Boolean @default(false)
 
   supervisedBy      UserProposalSupervision[]
   applications      ProposalApplication[]
