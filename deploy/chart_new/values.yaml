@@ -3,9 +3,6 @@ replicaCount: 1
 env: ""
 appUrl: ""
 
-stagingSafety:
-  grantAllAdmins: ""
-
 azureAd:
   clientId: ""
   clientSecret: ""

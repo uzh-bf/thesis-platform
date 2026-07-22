@@ -31,7 +31,7 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
-          {{- if or .Values.appUrl .Values.env .Values.stagingSafety.grantAllAdmins .Values.azureAd.clientId .Values.azureAd.tenantId }}
+          {{- if or .Values.appUrl .Values.env .Values.azureAd.clientId .Values.azureAd.tenantId }}
           env:
             {{- if .Values.env }}
             - name: THESIS_PLATFORM_ENV
@@ -40,10 +40,6 @@ spec:
             {{- if .Values.appUrl }}
             - name: NEXTAUTH_URL
               value: {{ .Values.appUrl | quote }}
-            {{- end }}
-            {{- if .Values.stagingSafety.grantAllAdmins }}
-            - name: STAGING_GRANT_ALL_ADMINS
-              value: {{ .Values.stagingSafety.grantAllAdmins | quote }}
             {{- end }}
             {{- if .Values.azureAd.clientId }}
             - name: AZURE_AD_CLIENT_ID

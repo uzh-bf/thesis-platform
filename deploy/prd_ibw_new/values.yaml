@@ -5,9 +5,6 @@ image:
 env: prd_ibw
 appUrl: 'https://theses.business.uzh.ch'
 
-stagingSafety:
-  grantAllAdmins: false
-
 azureAd:
   clientId: ''
   clientSecret: ''
