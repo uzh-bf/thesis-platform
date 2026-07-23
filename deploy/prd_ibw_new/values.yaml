@@ -5,6 +5,9 @@ image:
 env: prd_ibw
 appUrl: 'https://theses.business.uzh.ch'
 
+# Admin area is only reachable from the UZH network / VPN
+adminAllowedIpRanges: '130.60.0.0/16'
+
 azureAd:
   clientId: ''
   clientSecret: ''
