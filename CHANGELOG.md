@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.19.0](https://github.com/uzh-bf/thesis-platform/compare/v1.18.4...v1.19.0) (2026-07-23)
+
+
+### Features
+
+* Restrict admin area to UZH network / VPN via IP allowlist middleware ([#172](https://github.com/uzh-bf/thesis-platform/issues/172)) ([7d83361](https://github.com/uzh-bf/thesis-platform/commit/7d83361f524b246bf8e7d919afa9487acc98ddaa))
+
 ### [1.18.4](https://github.com/uzh-bf/thesis-platform/compare/v1.18.3...v1.18.4) (2026-07-22)
 
 
