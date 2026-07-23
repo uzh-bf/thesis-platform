@@ -11,9 +11,12 @@ FROM base AS deps
 
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 
-# Install dependencies based on the preferred package manager
+# Install dependencies based on the preferred package manager. Lifecycle
+# scripts are skipped: prisma generate runs explicitly during the build, and
+# Prisma 7 / sharp / esbuild ship their binaries as platform packages, so no
+# install script is required (verified: generate, next build, migrate deploy).
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm i --frozen-lockfile
+RUN pnpm i --frozen-lockfile --ignore-scripts
 
 # Rebuild the source code only when needed
 FROM base AS builder
