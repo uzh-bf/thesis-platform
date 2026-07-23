@@ -3,6 +3,11 @@ replicaCount: 1
 env: ""
 appUrl: ""
 
+# Comma-separated CIDR ranges allowed to access the admin area (/admin and
+# admin tRPC procedures). Empty = no network restriction.
+# UZH networks: 130.60.0.0/16 (institutes/servers), 89.206.64.0/18 (WLAN/VPN).
+adminAllowedIpRanges: ""
+
 azureAd:
   clientId: ""
   clientSecret: ""
