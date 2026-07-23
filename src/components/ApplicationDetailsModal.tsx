@@ -3,9 +3,16 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button, Modal, Prose } from '@uzh-bf/design-system'
 import { add, format, parseISO } from 'date-fns'
 import { useState } from 'react'
+import { getApplicationAttachmentUrl } from 'src/lib/applicationAttachmentUrl'
 import { ApplicationDetails } from 'src/types/app'
 
-function ApplicationDetailsModal({ row }: { row: ApplicationDetails }) {
+function ApplicationDetailsModal({
+  row,
+  proposalId,
+}: {
+  row: ApplicationDetails
+  proposalId: string
+}) {
   const FileTypeIconMap: Record<string, IconDefinition> = {
     'application/pdf': faFilePdf,
   }
@@ -57,7 +64,7 @@ function ApplicationDetailsModal({ row }: { row: ApplicationDetails }) {
             {row?.attachments?.map((attachment: any) => (
               <div key={attachment.id}>
                 <a
-                  href={attachment.href}
+                  href={getApplicationAttachmentUrl(proposalId, attachment.id)}
                   target="_blank"
                   className="hover:text-orange-700"
                   rel="noreferrer"

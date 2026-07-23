@@ -10,6 +10,7 @@ import { Form, Formik } from 'formik'
 import { useState } from 'react'
 import Dropzone from 'react-dropzone'
 import toast, { Toaster } from 'react-hot-toast'
+import type { ApplicationUploadDocumentType } from 'src/lib/applicationUploadBlobName'
 import { uploadFileToBlob } from 'src/lib/blobUpload'
 import useLocalStorage from 'src/lib/hooks/useLocalStorage'
 import { trpc } from 'src/lib/trpc'
@@ -18,10 +19,12 @@ import * as Yup from 'yup'
 interface ApplicationFormProps {
   proposalName: string
   proposalId: string
+  onSubmitted?: () => void
 }
 export default function ApplicationForm({
   proposalName,
   proposalId,
+  onSubmitted,
 }: ApplicationFormProps) {
   const [cv, setCv] = useState<any[]>([])
   const [transcript, setTranscript] = useState<any[]>([])
@@ -33,10 +36,14 @@ export default function ApplicationForm({
   const [submitted, setLocalStorage] = useLocalStorage<boolean>(proposalId)
 
   const handleFileFieldChange =
-    (fieldKey: string, fileName: string, formikProps: any) =>
+    (
+      fieldKey: string,
+      documentType: ApplicationUploadDocumentType,
+      formikProps: any
+    ) =>
     async (files: any[]) => {
       const file = files[0]
-      const requestedFileName = `${formikProps.values.uzhemail}-${fileName}.pdf`
+      const requestedFileName = `${formikProps.values.uzhemail}-${documentType}.pdf`
       const { blobName, uploadUrl } = await mutation.mutateAsync({
         requestedFileName,
         contentType: 'application/pdf',
@@ -56,6 +63,8 @@ export default function ApplicationForm({
       }
       formikProps.setFieldValue(fieldKey, blobName)
     }
+
+  const isUploadEnabled = (email: string) => email.endsWith('uzh.ch')
 
   const SignupSchema = Yup.object().shape({
     uzhemail: Yup.string()
@@ -123,6 +132,7 @@ export default function ApplicationForm({
         setCv([])
         setTranscript([])
         toast.success('Application submitted successfully!') // not showing anymore
+        onSubmitted?.()
       }}
     >
       {(formikProps) => (
@@ -188,7 +198,7 @@ export default function ApplicationForm({
             onDrop={handleFileFieldChange('cvFile', 'cv', formikProps)}
             multiple={false}
             accept={{ 'application/pdf': ['.pdf'] }}
-            disabled={!formikProps.values.uzhemail.endsWith('uzh.ch')}
+            disabled={!isUploadEnabled(formikProps.values.uzhemail)}
           >
             {({ getRootProps, getInputProps }) => (
               <section>
@@ -198,7 +208,7 @@ export default function ApplicationForm({
                 >
                   <input type="file" {...getInputProps()} />
                   <p className="p-2 text-base">
-                    {!formikProps.values.uzhemail.endsWith('uzh.ch')
+                    {!isUploadEnabled(formikProps.values.uzhemail)
                       ? 'Enter your UZH Email before uploading files ⚠️'
                       : cv.length > 0
                         ? `Attached File 📄: '${cv[0].name}'`
@@ -220,7 +230,7 @@ export default function ApplicationForm({
             )}
             multiple={false}
             accept={{ 'application/pdf': ['.pdf'] }}
-            disabled={!formikProps.values.uzhemail.endsWith('uzh.ch')}
+            disabled={!isUploadEnabled(formikProps.values.uzhemail)}
           >
             {({ getRootProps, getInputProps }) => (
               <section>
@@ -230,7 +240,7 @@ export default function ApplicationForm({
                 >
                   <input type="file" {...getInputProps()} />
                   <p className="p-2 text-base">
-                    {!formikProps.values.uzhemail.endsWith('uzh.ch')
+                    {!isUploadEnabled(formikProps.values.uzhemail)
                       ? 'Enter your UZH Email before uploading files ⚠️'
                       : transcript.length > 0
                         ? `Attached File 📄: '${transcript[0].name}'`

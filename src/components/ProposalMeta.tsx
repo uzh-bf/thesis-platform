@@ -173,8 +173,10 @@ export default function ProposalMeta({ proposalDetails }: ProposalMetaProps) {
   return (
     <div className="p-6">
       <div className="border-b border-[#E9E9E9] pb-6">
-        <div className="mb-3 inline-flex rounded-full bg-[#F5F5FB] px-3 py-1 text-xs font-semibold uppercase tracking-[0.04em] text-[#0028A5]">
-          {proposalDetails.typeKey.toLowerCase()} proposal
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <div className="inline-flex rounded-full bg-[#F5F5FB] px-3 py-1 text-xs font-semibold uppercase tracking-[0.04em] text-[#0028A5]">
+            {proposalDetails.typeKey.toLowerCase()} proposal
+          </div>
         </div>
         <h1 className="text-[26px] font-semibold leading-tight text-[#121212]">
           {proposalDetails.title}

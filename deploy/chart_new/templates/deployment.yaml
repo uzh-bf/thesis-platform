@@ -31,19 +31,15 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
-          {{- if or .Values.appUrl .Values.env .Values.stagingSafety.grantAllAdmins .Values.azureAd.clientId .Values.azureAd.tenantId }}
+          {{- if or .Values.appUrl .Values.env .Values.azureAd.clientId .Values.azureAd.tenantId .Values.adminAllowedIpRanges }}
           env:
             {{- if .Values.env }}
-            - name: DOPPLER_CONFIG
+            - name: THESIS_PLATFORM_ENV
               value: {{ .Values.env | quote }}
             {{- end }}
             {{- if .Values.appUrl }}
             - name: NEXTAUTH_URL
               value: {{ .Values.appUrl | quote }}
-            {{- end }}
-            {{- if .Values.stagingSafety.grantAllAdmins }}
-            - name: STAGING_GRANT_ALL_ADMINS
-              value: {{ .Values.stagingSafety.grantAllAdmins | quote }}
             {{- end }}
             {{- if .Values.azureAd.clientId }}
             - name: AZURE_AD_CLIENT_ID
@@ -54,6 +50,10 @@ spec:
               value: {{ .Values.azureAd.tenantId | quote }}
             - name: NEXT_PUBLIC_AZURE_AD_TENANT_ID
               value: {{ .Values.azureAd.tenantId | quote }}
+            {{- end }}
+            {{- if .Values.adminAllowedIpRanges }}
+            - name: ADMIN_ALLOWED_IP_RANGES
+              value: {{ .Values.adminAllowedIpRanges | quote }}
             {{- end }}
           {{- end }}
           envFrom:

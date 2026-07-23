@@ -18,6 +18,12 @@ import { TRPCError } from '@trpc/server'
 import axios from 'axios'
 import 'cross-fetch/polyfill'
 import dayjs from 'dayjs'
+import {
+  CleverReachConfigError,
+  createThesisProposalCleverReachDraft,
+  parseProposalLanguages,
+  type ThesisProposalDraftPayload,
+} from 'src/lib/cleverreach/thesisProposal'
 import type { Context } from 'src/server/context'
 import { prisma } from 'src/server/prisma'
 import {
@@ -78,6 +84,29 @@ type ProposalDetailsRecord = Prisma.ProposalGetPayload<{
 }>
 
 const STUDENT_PROPOSAL_REMINDER_INTERVAL_DAYS = 8 * 7
+const CLEVERREACH_PROPOSAL_LOOKUP_ATTEMPTS = 12
+const CLEVERREACH_PROPOSAL_LOOKUP_DELAY_MS = 5000
+
+const proposalPublishInputSchema = z.object({
+  responder: z.string().email(),
+  proposalTitle: z.string(),
+  proposalSummary: z.string(),
+  fieldOfResearch: z.string(),
+  supervisor: z.string().email(),
+  personResponsibleEmail: z.string().email(),
+  bachelorOrMasterLevel: z.string(),
+  proposalLanguage: z.string(),
+  timeFrame: z.string(),
+  researchProposalPDF: z.string().nullable(),
+  furtherAttachments: z.string().nullable(),
+})
+
+type ProposalPublishInput = z.infer<typeof proposalPublishInputSchema>
+type ProposalForCleverReach = Prisma.ProposalGetPayload<{
+  include: {
+    topicArea: true
+  }
+}>
 
 function getNextStudentProposalReminderAt(updatedAt: Date) {
   const nextReminderAt = new Date(updatedAt)
@@ -130,12 +159,14 @@ const hasNotificationStateChanged = (oldState: unknown, newState: unknown) =>
   formatNotificationState(oldState) !== formatNotificationState(newState)
 
 const getNotificationEnvironment = (): NotificationEnvironment => {
-  const dopplerConfig = (process.env.DOPPLER_CONFIG ?? '').toLowerCase()
+  const thesisPlatformEnv = (
+    process.env.THESIS_PLATFORM_ENV ?? ''
+  ).toLowerCase()
 
-  if (dopplerConfig === 'prd_ibw') return 'PRD_IBW'
-  if (dopplerConfig === 'prd') return 'PROD'
-  if (dopplerConfig === 'stg') return 'STG'
-  if (dopplerConfig === 'dev') return 'DEV'
+  if (thesisPlatformEnv === 'prd_ibw') return 'PRD_IBW'
+  if (thesisPlatformEnv === 'prd') return 'PROD'
+  if (thesisPlatformEnv === 'stg') return 'STG'
+  if (thesisPlatformEnv === 'dev') return 'DEV'
 
   if (process.env.NODE_ENV === 'production') {
     const department = (
@@ -148,55 +179,170 @@ const getNotificationEnvironment = (): NotificationEnvironment => {
   return 'DEV'
 }
 
-const isEnabled = (value: string | undefined) =>
-  ['1', 'true', 'yes'].includes((value ?? '').trim().toLowerCase())
-
-const splitEmailList = (value: string | undefined) =>
-  (value ?? '')
-    .split(',')
-    .map((email) => email.trim())
-    .filter(Boolean)
-
-const isStagingEnvironment = () => getNotificationEnvironment() === 'STG'
-
-const areExternalFlowsEnabled = () =>
-  !isStagingEnvironment() ||
-  isEnabled(process.env.STAGING_ENABLE_EXTERNAL_FLOWS)
-
-const getStagingEmailRecipients = () =>
-  isStagingEnvironment()
-    ? splitEmailList(process.env.STAGING_EMAIL_REDIRECT_TO)
-    : []
-
 const getAdminChangeNotificationRecipients = (
   environment: NotificationEnvironment
-) => {
-  const stagingRecipients = getStagingEmailRecipients()
+) => [ADMIN_CHANGE_NOTIFICATION_RECIPIENTS[environment]]
 
-  if (environment === 'STG') {
-    if (stagingRecipients.length > 0) {
-      return stagingRecipients
-    }
+const getAppBaseUrl = () => {
+  const nextAuthUrl = process.env.NEXTAUTH_URL?.trim()
 
-    if (!areExternalFlowsEnabled()) {
-      return []
-    }
+  if (nextAuthUrl) {
+    return nextAuthUrl.replace(/\/+$/g, '')
   }
 
-  return [ADMIN_CHANGE_NOTIFICATION_RECIPIENTS[environment]]
+  const publicAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim()
+
+  if (publicAppUrl) {
+    const url = publicAppUrl.startsWith('http')
+      ? publicAppUrl
+      : `https://${publicAppUrl}`
+    return url.replace(/\/+$/g, '')
+  }
+
+  return 'http://localhost:3000'
 }
 
-const getBlockedStagingFlowResponse = (flowName: string, data?: unknown) => {
-  console.warn(
-    `${flowName} blocked in staging. Set STAGING_ENABLE_EXTERNAL_FLOWS=true to allow external flow calls.`
-  )
+const wait = (durationMs: number) =>
+  new Promise((resolve) => setTimeout(resolve, durationMs))
+
+const normalizeFlowTopicAreaSlug = (value: string) =>
+  value.toLowerCase().replace(/ /g, '_').replace(/,/g, '').replace(/&/g, 'and')
+
+async function findPublishedProposalForCleverReach(
+  input: ProposalPublishInput,
+  submittedAt: Date
+): Promise<ProposalForCleverReach | null> {
+  return prisma.proposal.findFirst({
+    where: {
+      title: input.proposalTitle,
+      description: input.proposalSummary,
+      language: input.proposalLanguage,
+      studyLevel: input.bachelorOrMasterLevel,
+      topicAreaSlug: normalizeFlowTopicAreaSlug(input.fieldOfResearch),
+      timeFrame: input.timeFrame,
+      ownedByUserEmail: input.responder,
+      typeKey: ProposalType.SUPERVISOR,
+      statusKey: ProposalStatus.OPEN,
+      department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+      createdAt: {
+        gte: new Date(submittedAt.getTime() - 5 * 60 * 1000),
+      },
+    },
+    include: {
+      topicArea: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  })
+}
+
+async function waitForPublishedProposalForCleverReach(
+  input: ProposalPublishInput,
+  submittedAt: Date
+): Promise<ProposalForCleverReach | null> {
+  for (
+    let attempt = 1;
+    attempt <= CLEVERREACH_PROPOSAL_LOOKUP_ATTEMPTS;
+    attempt++
+  ) {
+    const proposal = await findPublishedProposalForCleverReach(
+      input,
+      submittedAt
+    )
+
+    if (proposal) {
+      return proposal
+    }
+
+    if (attempt < CLEVERREACH_PROPOSAL_LOOKUP_ATTEMPTS) {
+      await wait(CLEVERREACH_PROPOSAL_LOOKUP_DELAY_MS)
+    }
+  }
+
+  return null
+}
+
+async function buildThesisProposalDraftPayload(
+  input: ProposalPublishInput,
+  proposal: ProposalForCleverReach
+): Promise<ThesisProposalDraftPayload> {
+  const [supervisor, responsible] = await Promise.all([
+    prisma.user.findUnique({
+      where: { email: input.supervisor },
+      select: { name: true },
+    }),
+    prisma.responsible.findUnique({
+      where: { email: input.personResponsibleEmail },
+      select: { name: true },
+    }),
+  ])
 
   return {
-    success: true,
-    skipped: true,
-    message: `${flowName} blocked in staging`,
-    data,
+    proposalId: proposal.id,
+    title: input.proposalTitle,
+    summary: input.proposalSummary,
+    studyLevel: input.bachelorOrMasterLevel,
+    languages: parseProposalLanguages(input.proposalLanguage),
+    timeFrame: input.timeFrame,
+    topicAreaName: proposal.topicArea.name,
+    supervisorEmail: input.supervisor,
+    supervisorName: supervisor?.name,
+    responsibleEmail: input.personResponsibleEmail,
+    responsibleName: responsible?.name,
+    departmentName:
+      process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME ??
+      process.env.NEXT_PUBLIC_DEPARTMENT_NAME ??
+      'Department of Finance',
+    proposalUrl: `${getAppBaseUrl()}/${proposal.id}`,
   }
+}
+
+function triggerThesisProposalCleverReachDraft(
+  input: ProposalPublishInput,
+  submittedAt: Date
+) {
+  void (async () => {
+    let proposalId: string | undefined
+
+    try {
+      const proposal = await waitForPublishedProposalForCleverReach(
+        input,
+        submittedAt
+      )
+
+      if (!proposal) {
+        console.warn(
+          'CleverReach thesis proposal draft skipped because the published proposal could not be found after flow submission.',
+          { proposalTitle: input.proposalTitle }
+        )
+        return
+      }
+
+      proposalId = proposal.id
+      const draftPayload = await buildThesisProposalDraftPayload(
+        input,
+        proposal
+      )
+      await createThesisProposalCleverReachDraft(draftPayload)
+    } catch (error) {
+      if (error instanceof CleverReachConfigError) {
+        console.warn(
+          'CleverReach thesis proposal settings incomplete. Skipping draft.',
+          {
+            missing: error.missing,
+            proposalId,
+          }
+        )
+        return
+      }
+
+      console.error('CleverReach thesis proposal draft failed:', {
+        proposalId,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    }
+  })()
 }
 
 const escapeHtml = (value: unknown): string =>
@@ -963,24 +1109,16 @@ export const appRouter = router({
         reason: z.string().optional(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
-      if (!areExternalFlowsEnabled()) {
-        return getBlockedStagingFlowResponse('PROPOSAL_FEEDBACK_URL', input)
-      }
-
-      const res = await axios.post(
-        process.env.PROPOSAL_FEEDBACK_URL as string,
-        input,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            secretkey: process.env.FLOW_SECRET as string,
-          },
-        }
-      )
+    .mutation(async ({ input }) => {
+      await axios.post(process.env.PROPOSAL_FEEDBACK_URL as string, input, {
+        headers: {
+          'Content-Type': 'application/json',
+          secretkey: process.env.FLOW_SECRET as string,
+        },
+      })
     }),
 
-  submitProposalApplication: publicProcedure
+  submitProposalApplication: optionalAuthedProcedure
     .input(
       z.object({
         proposalTitle: z.string(),
@@ -996,7 +1134,7 @@ export const appRouter = router({
         allowPublication: z.boolean(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       try {
         console.log('Submitting application to Power Automate...')
         console.log('APPLICATION_URL:', process.env.APPLICATION_URL)
@@ -1008,14 +1146,6 @@ export const appRouter = router({
             2
           )
         )
-
-        if (!areExternalFlowsEnabled()) {
-          return getBlockedStagingFlowResponse('APPLICATION_URL', {
-            ...input,
-            cvFile: '[file]',
-            transcriptFile: '[file]',
-          })
-        }
 
         const res = await axios.post(
           process.env.APPLICATION_URL as string,
@@ -1045,24 +1175,11 @@ export const appRouter = router({
       }
     }),
 
-  submitProposalPublish: publicProcedure
-    .input(
-      z.object({
-        responder: z.string().email(),
-        proposalTitle: z.string(),
-        proposalSummary: z.string(),
-        fieldOfResearch: z.string(),
-        supervisor: z.string().email(),
-        personResponsibleEmail: z.string().email(),
-        bachelorOrMasterLevel: z.string(),
-        proposalLanguage: z.string(),
-        timeFrame: z.string(),
-        researchProposalPDF: z.string().nullable(),
-        furtherAttachments: z.string().nullable(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const submitDate = new Date().toISOString()
+  submitProposalPublish: optionalAuthedProcedure
+    .input(proposalPublishInputSchema)
+    .mutation(async ({ input }) => {
+      const submittedAt = new Date()
+      const submitDate = submittedAt.toISOString()
 
       const payload = {
         responder: input.responder,
@@ -1092,10 +1209,6 @@ export const appRouter = router({
         console.log('URL:', process.env.PROPOSAL_PUBLISH_URL)
         console.log('Payload:', JSON.stringify(payload, null, 2))
 
-        if (!areExternalFlowsEnabled()) {
-          return getBlockedStagingFlowResponse('PROPOSAL_PUBLISH_URL', payload)
-        }
-
         const res = await axios.post(
           process.env.PROPOSAL_PUBLISH_URL,
           payload,
@@ -1108,6 +1221,7 @@ export const appRouter = router({
         )
 
         console.log('Successfully submitted proposal')
+        triggerThesisProposalCleverReachDraft(input, submittedAt)
         return res.data
       } catch (error: any) {
         console.error('Error submitting proposal:', error)
@@ -1132,7 +1246,7 @@ export const appRouter = router({
       }
     }),
 
-  acceptProposalApplication: publicProcedure
+  acceptProposalApplication: optionalAuthedProcedure
     .input(
       z.object({
         proposalId: z.string(),
@@ -1140,14 +1254,7 @@ export const appRouter = router({
         applicantEmail: z.string().email(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
-      if (!areExternalFlowsEnabled()) {
-        return getBlockedStagingFlowResponse(
-          'APPLICATION_ACCEPTANCE_URL',
-          input
-        )
-      }
-
+    .mutation(async ({ input }) => {
       const res = await axios.post(
         process.env.APPLICATION_ACCEPTANCE_URL as string,
         input,
@@ -1192,7 +1299,7 @@ export const appRouter = router({
         })
       }
 
-      // Verify the user is either a supervisor or a responsible person for this proposal
+      // Verify the user is either a supervisor or a responsible person for this proposal.
       const isAuthorized = proposal.supervisedBy.some(
         (supervision) =>
           supervision.supervisorEmail === ctx.user.email ||
@@ -1221,15 +1328,6 @@ export const appRouter = router({
 
       // Send the email notification
       try {
-        if (!areExternalFlowsEnabled()) {
-          return { success: true }
-        }
-
-        const stagingRecipients = getStagingEmailRecipients()
-        const recipients =
-          stagingRecipients.length > 0
-            ? stagingRecipients
-            : [input.applicantEmail]
         const escapedComment = escapeHtml(input.comment).replace(/\n/g, '<br>')
         const feedbackContent = escapedComment
           ? `<p><strong>Feedback:</strong><br>${escapedComment}</p>`
@@ -1238,7 +1336,7 @@ export const appRouter = router({
         await axios.post(
           process.env.EMAIL_NOTIFICATION_URL as string,
           {
-            recipients,
+            recipients: [input.applicantEmail],
             subject: `${process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME} - Application Declined`,
             content: `<p>Your application for the proposal "${escapeHtml(proposal.title)}" has been declined.</p>${feedbackContent}`,
           },
@@ -3743,7 +3841,7 @@ export const appRouter = router({
     .input(
       z.object({
         userId: z.string(),
-        role: z.enum(['UNSET', 'SUPERVISOR']),
+        role: z.enum(['UNSET', 'SUPERVISOR', 'DEVELOPER']),
       })
     )
     .output(z.object({ success: z.boolean() }))

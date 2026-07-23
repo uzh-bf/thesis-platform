@@ -1,13 +1,10 @@
 image:
-  tag: 'latest-arm-b7225d42725c6c0ec3293e2102b14a2599d1371b'
+  tag: 'latest-arm-245f87e66c47b2bb9900144363262ba1effd256a'
   runtime: node-runner
   pullPolicy: IfNotPresent
 
 env: stg
 appUrl: 'https://theses.stg.df-app.ch'
-
-stagingSafety:
-  grantAllAdmins: 'true'
 
 azureAd:
   clientId: ''

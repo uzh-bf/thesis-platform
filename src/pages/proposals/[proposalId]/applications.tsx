@@ -17,6 +17,7 @@ import { useRouter } from 'next/router'
 import { Dispatch, SetStateAction, useMemo, useState } from 'react'
 import ConfirmationModal from 'src/components/ConfirmationModal'
 import EmptyState from 'src/components/EmptyState'
+import { getApplicationAttachmentUrl } from 'src/lib/applicationAttachmentUrl'
 import { trpc } from 'src/lib/trpc'
 import {
   ProposalApplicationsOverviewEntry,
@@ -97,8 +98,10 @@ function StatusBadge({ statusKey }: { statusKey: string }) {
 
 function AttachmentLinks({
   attachments,
+  proposalId,
 }: {
   attachments: ProposalApplicationsOverviewEntry['attachments']
+  proposalId: string
 }) {
   if (attachments.length === 0) {
     return <span className="text-sm text-[#666666]">-</span>
@@ -109,7 +112,7 @@ function AttachmentLinks({
       {attachments.map((attachment) => (
         <a
           key={attachment.id}
-          href={attachment.href}
+          href={getApplicationAttachmentUrl(proposalId, attachment.id)}
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center gap-2 text-sm font-semibold text-[#365DD5] hover:text-[#0028A5]"
@@ -610,7 +613,10 @@ function ApplicationRow({
           </button>
         </td>
         <td className="px-4 py-4">
-          <AttachmentLinks attachments={application.attachments} />
+          <AttachmentLinks
+            attachments={application.attachments}
+            proposalId={proposal.id}
+          />
         </td>
         <td className="px-4 py-4">
           <ConfirmationModal
@@ -641,7 +647,10 @@ function ApplicationRow({
                     Documents
                   </div>
                   <div className="mt-2">
-                    <AttachmentLinks attachments={application.attachments} />
+                    <AttachmentLinks
+                      attachments={application.attachments}
+                      proposalId={proposal.id}
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

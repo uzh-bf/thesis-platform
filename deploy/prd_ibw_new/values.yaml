@@ -1,12 +1,14 @@
 image:
   repository: ghcr.io/uzh-bf/thesis-platform-ibw
-  tag: 'stable-arm-fc8de3d0660093c37b658a2825c8dbb08bc225f1'
+  tag: 'stable-arm-872b43455ccfb5ff8e33dee0a9aca6667875ca77'
 
 env: prd_ibw
 appUrl: 'https://theses.business.uzh.ch'
 
-stagingSafety:
-  grantAllAdmins: 'true'
+# Admin area is only reachable from the UZH network / VPN:
+# 130.60.0.0/16 = institute and server networks
+# 89.206.64.0/18 = WLAN, VPN, public network workstations
+adminAllowedIpRanges: '130.60.0.0/16,89.206.64.0/18'
 
 azureAd:
   clientId: ''
