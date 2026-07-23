@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/uzh-bf/thesis-platform-ibw
-  tag: 'stable-arm-fcbc08c5bb80d4e4eb8aebdfe9d4a30d40591d04'
+  tag: 'stable-arm-872b43455ccfb5ff8e33dee0a9aca6667875ca77'
 
 env: prd_ibw
 appUrl: 'https://theses.business.uzh.ch'
