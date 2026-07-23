@@ -7,11 +7,10 @@ import AzureADProvider from 'next-auth/providers/azure-ad'
 
 import prisma from '../server/prisma'
 import { UserRole } from './constants'
+const isStagingEnvironment = () =>
+  (process.env.THESIS_PLATFORM_ENV ?? '').trim().toLowerCase() === 'stg'
 
 const LOCAL_OIDC_PROVIDER_ID = 'local-oidc'
-
-const isEnabled = (value: string | undefined) =>
-  ['1', 'true', 'yes'].includes((value ?? '').trim().toLowerCase())
 
 const hasValue = (value: string | undefined) =>
   typeof value === 'string' && value.trim() !== ''
@@ -21,19 +20,6 @@ const isLocalOidcEnabled = () =>
   hasValue(process.env.LOCAL_OIDC_ISSUER) &&
   hasValue(process.env.LOCAL_OIDC_CLIENT_ID) &&
   hasValue(process.env.LOCAL_OIDC_CLIENT_SECRET)
-
-const getStagingAuthDefaults = () => {
-  const dopplerConfig = (process.env.DOPPLER_CONFIG ?? '').toLowerCase()
-
-  if (
-    dopplerConfig !== 'stg' ||
-    !isEnabled(process.env.STAGING_GRANT_ALL_ADMINS)
-  ) {
-    return null
-  }
-
-  return getDeveloperAdminDefaults()
-}
 
 const getDeveloperAdminDefaults = () => {
   return {
@@ -55,8 +41,7 @@ const getSessionUser = async (userId: string, provider?: string) => {
   const dbUser = await prisma.user.findUnique({
     where: { id: userId },
   })
-  const authDefaults =
-    getLocalAuthDefaults(provider) ?? getStagingAuthDefaults()
+  const authDefaults = getLocalAuthDefaults(provider)
 
   if (!dbUser || !authDefaults) {
     return dbUser
@@ -75,6 +60,15 @@ const getSessionUser = async (userId: string, provider?: string) => {
     data: authDefaults,
   })
 }
+
+// The platform can be embedded in an iframe on other (sub-)domains. For the
+// session to work in a cross-site iframe the auth cookies need
+// SameSite=None, which browsers only accept together with Secure. Cookie
+// names stay identical to the NextAuth defaults so existing sessions
+// remain valid; on plain HTTP (local dev) the defaults are kept as-is.
+const useSecureCookies = (process.env.NEXTAUTH_URL ?? '').startsWith('https://')
+const cookiePrefix = useSecureCookies ? '__Secure-' : ''
+const cookieSameSite = useSecureCookies ? 'none' : 'lax'
 
 const getLocalOidcProvider = () =>
   ({
@@ -121,7 +115,8 @@ export const authOptions: NextAuthOptions = {
     //   from: process.env.EMAIL_FROM,
     // }),
     ...(isLocalOidcEnabled() ? [getLocalOidcProvider()] : []),
-    ...(typeof process.env.AZURE_AD_CLIENT_ID === 'string' &&
+    ...(!isStagingEnvironment() &&
+    typeof process.env.AZURE_AD_CLIENT_ID === 'string' &&
     process.env.AZURE_AD_CLIENT_ID !== ''
       ? [
           AzureADProvider({
@@ -159,15 +154,70 @@ export const authOptions: NextAuthOptions = {
     encode,
     decode,
   },
+  cookies: {
+    sessionToken: {
+      name: `${cookiePrefix}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: cookieSameSite,
+        path: '/',
+        secure: useSecureCookies,
+      },
+    },
+    callbackUrl: {
+      name: `${cookiePrefix}next-auth.callback-url`,
+      options: {
+        sameSite: cookieSameSite,
+        path: '/',
+        secure: useSecureCookies,
+      },
+    },
+    csrfToken: {
+      name: `${useSecureCookies ? '__Host-' : ''}next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: cookieSameSite,
+        path: '/',
+        secure: useSecureCookies,
+      },
+    },
+    pkceCodeVerifier: {
+      name: `${cookiePrefix}next-auth.pkce.code_verifier`,
+      options: {
+        httpOnly: true,
+        sameSite: cookieSameSite,
+        path: '/',
+        secure: useSecureCookies,
+        maxAge: 60 * 15,
+      },
+    },
+    state: {
+      name: `${cookiePrefix}next-auth.state`,
+      options: {
+        httpOnly: true,
+        sameSite: cookieSameSite,
+        path: '/',
+        secure: useSecureCookies,
+        maxAge: 60 * 15,
+      },
+    },
+    nonce: {
+      name: `${cookiePrefix}next-auth.nonce`,
+      options: {
+        httpOnly: true,
+        sameSite: cookieSameSite,
+        path: '/',
+        secure: useSecureCookies,
+      },
+    },
+  },
   // Add events to handle user creation
   events: {
     async createUser({ user }) {
       // Update the newly created user with department from environment variable
-      const stagingDefaults = getStagingAuthDefaults()
-
       await prisma.user.update({
         where: { id: user.id },
-        data: stagingDefaults ?? {
+        data: {
           department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as any, // Cast as any since department is an enum
         },
       })

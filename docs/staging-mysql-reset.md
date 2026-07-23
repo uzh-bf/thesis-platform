@@ -1,19 +1,16 @@
 # Staging MySQL Reset
 
-Purpose: reset the staging MySQL database to safe dummy data for workflow testing without sending mail to real recipients.
+Purpose: reset the staging database to dummy data for end-to-end testing through the same application paths used in production.
 
-## Email Safety
+## Production parity
 
-Staging external flow calls are blocked by default when `DOPPLER_CONFIG=stg`.
+Staging does not bypass Power Automate, CleverReach, email notifications, authentication roles, or application validation. It differs from production only through its environment-specific database, Blob Storage account, flow endpoints, SharePoint targets, credentials, and other secrets.
 
-Set these only when deliberately testing flows:
+Configure staging integrations with staging-safe destinations. Testing an action in staging can invoke its configured external flow and send notifications.
 
-- `STAGING_ENABLE_EXTERNAL_FLOWS=true`: allows Power Automate flow calls in staging.
-- `STAGING_EMAIL_REDIRECT_TO=address@example.com`: redirects app-originated notification emails to test recipients.
-- `STAGING_GRANT_ALL_ADMINS=true`: with `DOPPLER_CONFIG=stg`, upgrades every staging login to `DEVELOPER` with `ADMIN` rights.
-- `STAGING_REAL_LOGIN_EMAILS=user@uzh.ch`: optional comma-separated real login users to pre-create as staging admins during a reset.
+- `STAGING_REAL_LOGIN_EMAILS=user@uzh.ch`: optional comma-separated real login users to pre-create during a reset.
 
-Only staging values set `STAGING_GRANT_ALL_ADMINS=true`; production values leave it empty. Dummy workflow data uses reserved `example.com` recipients. Real login emails are only allowed in `User.email`, not in workflow recipient fields. Reset tooling also refuses targets whose database URL host or database name looks production-like (`prod` or `prd`).
+Pre-created real users receive the normal `UNSET` user and admin roles. Assign roles through the same administration process used in production. Dummy workflow data uses reserved `example.com` recipients. Real login emails are only allowed in `User.email`, not in workflow recipient fields. Reset tooling also refuses targets whose database URL host or database name looks production-like (`prod` or `prd`).
 
 ## Commands
 

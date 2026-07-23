@@ -192,6 +192,7 @@ export default function ProposalApplication({
             key={proposalDetails.id}
             proposalName={proposalDetails.title}
             proposalId={proposalDetails.id}
+            onSubmitted={refetch}
           />
         )}
         {canManageApplications ? (
@@ -262,7 +263,10 @@ export default function ProposalApplication({
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <ApplicationDetailsModal row={application} />
+                        <ApplicationDetailsModal
+                          row={application}
+                          proposalId={proposalDetails.id}
+                        />
                         <ConfirmationModal
                           row={application}
                           acceptApplication={acceptApplication}

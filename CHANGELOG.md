@@ -2,6 +2,97 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.19.0](https://github.com/uzh-bf/thesis-platform/compare/v1.18.4...v1.19.0) (2026-07-23)
+
+
+### Features
+
+* Restrict admin area to UZH network / VPN via IP allowlist middleware ([#172](https://github.com/uzh-bf/thesis-platform/issues/172)) ([7d83361](https://github.com/uzh-bf/thesis-platform/commit/7d83361f524b246bf8e7d919afa9487acc98ddaa))
+
+### [1.18.4](https://github.com/uzh-bf/thesis-platform/compare/v1.18.3...v1.18.4) (2026-07-22)
+
+
+### Documentation
+
+* design removal of developer test mode ([0ce2ebb](https://github.com/uzh-bf/thesis-platform/commit/0ce2ebbbbcb89916fb3aee5ee8b9e94b7a5590ef))
+
+
+### Refactors
+
+* remove developer test mode ([#170](https://github.com/uzh-bf/thesis-platform/issues/170)) ([11bf54c](https://github.com/uzh-bf/thesis-platform/commit/11bf54c59c6699f9a00ddba8a6a2e00aea7f120b))
+
+### [1.18.3](https://github.com/uzh-bf/thesis-platform/compare/v1.18.2...v1.18.3) (2026-07-21)
+
+
+### Documentation
+
+* design unique application upload names ([7678801](https://github.com/uzh-bf/thesis-platform/commit/76788018155c0b94b8f0d04ab9da2644bda28767))
+
+### [1.18.2](https://github.com/uzh-bf/thesis-platform/compare/v1.18.1...v1.18.2) (2026-07-21)
+
+### [1.18.1](https://github.com/uzh-bf/thesis-platform/compare/v1.18.0...v1.18.1) (2026-07-21)
+
+
+### Bug Fixes
+
+* show only Auth0 on staging ([#166](https://github.com/uzh-bf/thesis-platform/issues/166)) ([5fca9c2](https://github.com/uzh-bf/thesis-platform/commit/5fca9c23728021ab0e0fe402d81861b6490e813b))
+
+## [1.18.0](https://github.com/uzh-bf/thesis-platform/compare/v1.17.1...v1.18.0) (2026-07-21)
+
+
+### Features
+
+* add one-click test supervisor proposal with self-application for developers ([#165](https://github.com/uzh-bf/thesis-platform/issues/165)) ([7480830](https://github.com/uzh-bf/thesis-platform/commit/7480830945622d6563b37a82857c5c4b427ba8ea))
+
+
+### Documentation
+
+* design staging Auth0-only login ([de6a693](https://github.com/uzh-bf/thesis-platform/commit/de6a69303e6409bba4f083771b1725a62d1cdffa))
+
+### [1.17.1](https://github.com/uzh-bf/thesis-platform/compare/v1.17.0...v1.17.1) (2026-07-21)
+
+
+### Documentation
+
+* design automated deployment flow ([53924a8](https://github.com/uzh-bf/thesis-platform/commit/53924a81f3ee485b272591a7b915c00369117d1d))
+
+
+### Build and CI
+
+* authenticate production deploy push ([#164](https://github.com/uzh-bf/thesis-platform/issues/164)) ([35f05f1](https://github.com/uzh-bf/thesis-platform/commit/35f05f1615681360836c970177e8425ac2cb80d9))
+* automate staging and production deployments ([6612eca](https://github.com/uzh-bf/thesis-platform/commit/6612ecaf76208fb136ef9d29985883f53e1dcfd2))
+
+## [1.17.0](https://github.com/uzh-bf/thesis-platform/compare/v1.16.0...v1.17.0) (2026-07-20)
+
+
+### Features
+
+* **developer:** production-safe test mode for the DEVELOPER role ([#154](https://github.com/uzh-bf/thesis-platform/issues/154)) ([cc51a29](https://github.com/uzh-bf/thesis-platform/commit/cc51a2989d43d716f32c419c1694d2909326aec9))
+
+
+### Bug Fixes
+
+* **ci:** make deploy-image update jobs robust against stale branch ([#152](https://github.com/uzh-bf/thesis-platform/issues/152)) ([bb282dc](https://github.com/uzh-bf/thesis-platform/commit/bb282dc7f56176859bd138205b487b3df6b7d171))
+
+
+### Build and CI
+
+* add ARM-only production release workflows ([#162](https://github.com/uzh-bf/thesis-platform/issues/162)) ([70eea0e](https://github.com/uzh-bf/thesis-platform/commit/70eea0eb0b85a16e1a9154607873623826df3631))
+* optimize staging ARM image build ([#156](https://github.com/uzh-bf/thesis-platform/issues/156)) ([49599b3](https://github.com/uzh-bf/thesis-platform/commit/49599b3bf91b118b56411ae26186e761bb4be10a))
+* stop exporting staging ARM build cache ([#158](https://github.com/uzh-bf/thesis-platform/issues/158)) ([7803618](https://github.com/uzh-bf/thesis-platform/commit/7803618d6373a40126d49429217b21509b792960))
+
+## [1.16.0](///compare/v1.15.0...v1.16.0) (2026-07-06)
+
+
+### Features
+
+* **cleverreach:** app-side thesis proposal drafts + Infisical deploy cleanup 298e170
+
+
+### Enhancements
+
+* **analytics:** add DF webstats tracking ([#146](undefined/undefined/undefined/issues/146)) b65cd32
+
 ## [1.15.0](https://github.com/uzh-bf/thesis-platform/compare/v1.14.2...v1.15.0) (2026-06-25)
 
 

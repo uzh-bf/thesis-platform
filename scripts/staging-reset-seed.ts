@@ -143,11 +143,13 @@ const getCurrentDbInfo = async (client: PrismaClient) => {
 }
 
 const assertStagingTarget = async (client: PrismaClient) => {
-  const dopplerConfig = normalizeEnv(process.env.DOPPLER_CONFIG).toLowerCase()
+  const thesisPlatformEnv = normalizeEnv(
+    process.env.THESIS_PLATFORM_ENV
+  ).toLowerCase()
 
-  if (dopplerConfig !== 'stg') {
+  if (thesisPlatformEnv !== 'stg') {
     throw new Error(
-      `Refusing to continue: DOPPLER_CONFIG must be stg, got '${dopplerConfig || 'unset'}'.`
+      `Refusing to continue: THESIS_PLATFORM_ENV must be stg, got '${thesisPlatformEnv || 'unset'}'.`
     )
   }
 
@@ -268,7 +270,7 @@ const seedLoginUsers = async (
 ) => {
   if (loginEmails.length === 0) {
     console.warn(
-      'No USER_EMAIL or STAGING_REAL_LOGIN_EMAILS found. Seeded data will be fake-only, but no real admin login user will be pre-created.'
+      'No USER_EMAIL or STAGING_REAL_LOGIN_EMAILS found. Seeded data will be fake-only, and no real login user will be pre-created.'
     )
     return
   }
@@ -282,14 +284,14 @@ const seedLoginUsers = async (
         email,
         name:
           normalizeEnv(process.env.USER_NAME) ||
-          `Staging Admin ${index + 1}`,
-        role: UserRole.DEVELOPER,
-        adminRole: AdminRole.ADMIN,
+          `Staging User ${index + 1}`,
+        role: 'UNSET',
+        adminRole: AdminRole.UNSET,
         department,
       },
       update: {
-        role: UserRole.DEVELOPER,
-        adminRole: AdminRole.ADMIN,
+        role: 'UNSET',
+        adminRole: AdminRole.UNSET,
         department,
       },
     })
@@ -760,7 +762,7 @@ const main = async () => {
     console.log('  1. Preserve lookup tables and _prisma_migrations.')
     console.log(`  2. Delete mutable table rows: ${mutableTables.join(', ')}.`)
     console.log('  3. Seed 8 proposals, 9 applications, 2 admin rows, fake supervisors, fake responsibles.')
-    console.log('  4. Pre-create real staging login users only from STAGING_REAL_LOGIN_EMAILS or USER_EMAIL.')
+    console.log('  4. Pre-create real staging login users with UNSET roles only from STAGING_REAL_LOGIN_EMAILS or USER_EMAIL.')
     console.log('  5. Fail if workflow recipient fields contain non-test emails.')
     console.log('')
     console.log('Run again with --execute to wipe and seed staging.')
