@@ -29,6 +29,9 @@ ARG NEXT_PUBLIC_FAQ_URL_STUDENT
 ARG NEXT_PUBLIC_FAQ_URL_SUPERVISOR
 ARG NEXT_PUBLIC_APP_VERSION
 ARG ENABLE_DF_WEBSTATS
+# CSP source list of origins allowed to embed the platform in an iframe
+# (baked into the standalone build, see docs/iframe-embedding.md)
+ARG FRAME_ANCESTORS
 
 ENV NEXT_TELEMETRY_DISABLED=1
 

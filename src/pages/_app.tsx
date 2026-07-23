@@ -10,6 +10,7 @@ import { trpc } from '../lib/trpc'
 
 import Footer from 'src/components/Footer'
 import Header from 'src/components/Header'
+import IframeHeightReporter from 'src/components/IframeHeightReporter'
 import MatomoTracking from 'src/components/MatomoTracking'
 import '../globals.css'
 
@@ -40,6 +41,8 @@ function App({
         <Toaster />
 
         <MatomoTracking />
+
+        <IframeHeightReporter />
 
         <style jsx global>{`
           :root {

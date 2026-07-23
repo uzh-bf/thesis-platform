@@ -1,6 +1,8 @@
 import Image from 'next/image'
+import useIsEmbedded from 'src/lib/hooks/useIsEmbedded'
 
 function Footer() {
+  const isEmbedded = useIsEmbedded()
   const departmentName =
     process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME?.trim() ?? ''
   const departmentShortName = process.env.NEXT_PUBLIC_DEPARTMENT_NAME?.trim()
@@ -19,6 +21,45 @@ function Footer() {
   const faqUrl =
     process.env.NEXT_PUBLIC_FAQ_URL_STUDENT ??
     process.env.NEXT_PUBLIC_FAQ_URL_SUPERVISOR
+
+  // Embedded pages live inside a host page with its own footer, so only a
+  // slim bar with the essential links is shown
+  if (isEmbedded) {
+    return (
+      <footer className="flex-none border-t border-[#E9E9E9] bg-white print:hidden">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-2 px-4 py-4 text-sm text-[#4C4C4C] md:flex-row md:items-center md:justify-between md:px-10 xl:px-10">
+          <p className="m-0">
+            &copy; {new Date().getFullYear()} {copyright}
+          </p>
+          <nav className="flex flex-wrap gap-x-6 gap-y-2">
+            <a
+              href={`mailto:${contactEmail}`}
+              className="font-semibold text-[#365DD5] hover:text-[#0028A5]"
+            >
+              {contactEmail}
+            </a>
+            {faqUrl && (
+              <a
+                href={faqUrl}
+                className="hover:text-[#0028A5]"
+                target="_blank"
+                rel="noreferrer"
+              >
+                FAQ
+              </a>
+            )}
+            <a
+              href="https://www.df.uzh.ch/de/impressum.html"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Impressum
+            </a>
+          </nav>
+        </div>
+      </footer>
+    )
+  }
 
   return (
     <footer className="flex-none border-t border-[#E9E9E9] bg-white print:hidden">

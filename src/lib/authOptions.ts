@@ -10,6 +10,17 @@ import { UserRole } from './constants'
 const isStagingEnvironment = () =>
   (process.env.THESIS_PLATFORM_ENV ?? '').trim().toLowerCase() === 'stg'
 
+// The platform can be embedded in an iframe on other (sub-)domains. For the
+// session to work in a cross-site iframe the auth cookies need
+// SameSite=None, which browsers only accept together with Secure. Cookie
+// names stay identical to the NextAuth defaults so existing sessions
+// remain valid; on plain HTTP (local dev) the defaults are kept as-is.
+const useSecureCookies = (process.env.NEXTAUTH_URL ?? '').startsWith(
+  'https://'
+)
+const cookiePrefix = useSecureCookies ? '__Secure-' : ''
+const cookieSameSite = useSecureCookies ? 'none' : 'lax'
+
 const getSessionUser = (userId: string) =>
   prisma.user.findUnique({
     where: { id: userId },
@@ -61,6 +72,63 @@ export const authOptions: NextAuthOptions = {
   jwt: {
     encode,
     decode,
+  },
+  cookies: {
+    sessionToken: {
+      name: `${cookiePrefix}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: cookieSameSite,
+        path: '/',
+        secure: useSecureCookies,
+      },
+    },
+    callbackUrl: {
+      name: `${cookiePrefix}next-auth.callback-url`,
+      options: {
+        sameSite: cookieSameSite,
+        path: '/',
+        secure: useSecureCookies,
+      },
+    },
+    csrfToken: {
+      name: `${useSecureCookies ? '__Host-' : ''}next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: cookieSameSite,
+        path: '/',
+        secure: useSecureCookies,
+      },
+    },
+    pkceCodeVerifier: {
+      name: `${cookiePrefix}next-auth.pkce.code_verifier`,
+      options: {
+        httpOnly: true,
+        sameSite: cookieSameSite,
+        path: '/',
+        secure: useSecureCookies,
+        maxAge: 60 * 15,
+      },
+    },
+    state: {
+      name: `${cookiePrefix}next-auth.state`,
+      options: {
+        httpOnly: true,
+        sameSite: cookieSameSite,
+        path: '/',
+        secure: useSecureCookies,
+        maxAge: 60 * 15,
+      },
+    },
+    nonce: {
+      name: `${cookiePrefix}next-auth.nonce`,
+      options: {
+        httpOnly: true,
+        sameSite: cookieSameSite,
+        path: '/',
+        secure: useSecureCookies,
+      },
+    },
   },
   // Add events to handle user creation
   events: {
