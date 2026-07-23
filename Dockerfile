@@ -65,6 +65,10 @@ COPY --from=builder --chown=65532:65532 /app/public ./public
 COPY --from=builder --chown=65532:65532 /app/.next/standalone ./
 COPY --from=builder --chown=65532:65532 /app/.next/static ./.next/static
 
+# The distroless :nonroot base already defaults to this UID; state it
+# explicitly so the non-root runtime is verifiable from the Dockerfile.
+USER 65532:65532
+
 EXPOSE 3000
 
 CMD ["server.js"]
