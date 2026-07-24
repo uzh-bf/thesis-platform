@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.20.2](https://github.com/uzh-bf/thesis-platform/compare/v1.20.1...v1.20.2) (2026-07-24)
+
+
+### Bug Fixes
+
+* disable service account token automounting in deployment pod spec ([#178](https://github.com/uzh-bf/thesis-platform/issues/178)) ([837a648](https://github.com/uzh-bf/thesis-platform/commit/837a64803111bbc4f3d005753928db42f96e7d91))
+
+
+### Build and CI
+
+* record production deployments from automated release job ([#179](https://github.com/uzh-bf/thesis-platform/issues/179)) ([d5a2ee4](https://github.com/uzh-bf/thesis-platform/commit/d5a2ee4c4c49e1fa60f41db68f8484026af59882))
+
 ### [1.20.1](https://github.com/uzh-bf/thesis-platform/compare/v1.20.0...v1.20.1) (2026-07-24)
 
 
