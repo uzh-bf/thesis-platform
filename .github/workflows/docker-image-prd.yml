@@ -167,6 +167,9 @@ jobs:
       - build-prd-arm
       - build-prd-ibw-arm
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://theses.df.uzh.ch
     permissions:
       contents: read
     steps:
