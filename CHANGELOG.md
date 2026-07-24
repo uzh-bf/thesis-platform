@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.21.0](https://github.com/uzh-bf/thesis-platform/compare/v1.20.2...v1.21.0) (2026-07-24)
+
+
+### Features
+
+* add Better Stack uptime monitoring support and status page link ([#180](https://github.com/uzh-bf/thesis-platform/issues/180)) ([9bff05b](https://github.com/uzh-bf/thesis-platform/commit/9bff05b698e3c0eefdc72a9d12f7c274b1974d21))
+
 ### [1.20.2](https://github.com/uzh-bf/thesis-platform/compare/v1.20.1...v1.20.2) (2026-07-24)
 
 
