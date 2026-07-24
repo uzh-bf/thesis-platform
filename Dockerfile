@@ -1,17 +1,29 @@
-# Install dependencies and build the application
-FROM node:22.18.0-alpine AS builder
+FROM node:24.18.0-bookworm-slim AS base
 
 WORKDIR /app
 
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates openssl \
+  && rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
+# Install dependencies only when needed
+FROM base AS deps
 
-# Install dependencies based on the preferred package manager
-COPY package.json pnpm-lock.yaml ./
+RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
+
+# Install dependencies based on the preferred package manager. Lifecycle
+# scripts are skipped: prisma generate runs explicitly during the build, and
+# Prisma 7 / sharp / esbuild ship their binaries as platform packages, so no
+# install script is required (verified: generate, next build, migrate deploy).
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm i --frozen-lockfile --ignore-scripts
 
+# Rebuild the source code only when needed
+FROM base AS builder
+
+RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
+
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ARG NODE_ENV=production
@@ -41,35 +53,65 @@ RUN pnpm run build
 # RUN npm run build
 
 # Production image, copy all the files and run next
-FROM node:22.18.0-alpine AS runner
-WORKDIR /app
+FROM gcr.io/distroless/nodejs24-debian13:nonroot AS runner
 
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
+WORKDIR /app
 
 ARG NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
+COPY --from=builder --chown=65532:65532 /app/public ./public
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder --chown=65532:65532 /app/.next/standalone ./
+COPY --from=builder --chown=65532:65532 /app/.next/static ./.next/static
+
+# The distroless :nonroot base already defaults to this UID; state it
+# explicitly so the non-root runtime is verifiable from the Dockerfile.
+USER 65532:65532
+
+EXPOSE 3000
+
+CMD ["server.js"]
+
+FROM base AS node-runner
+
+ARG NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV PATH=/app/node_modules/.bin:$PATH
+
+RUN groupadd --system --gid 1001 nodejs \
+  && useradd --system --uid 1001 --gid nodejs nextjs
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Prisma CLI, schema and migrations so the deploy migration job can run
-# "prisma migrate deploy" with this image (version must match package.json);
-# owned by root so they stay read-only for the runtime user
-RUN npm install -g prisma@6.15.0
-COPY --from=builder /app/prisma ./prisma
+COPY prisma.config.ts ./prisma.config.ts
+COPY prisma ./prisma
 
 USER nextjs
 
 EXPOSE 3000
 
-ENV PORT=3000
-
 CMD ["node", "server.js"]
+
+FROM base AS migration-runner
+
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN groupadd --system --gid 1001 nodejs \
+  && useradd --system --uid 1001 --gid nodejs nextjs
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY prisma.config.ts ./prisma.config.ts
+COPY prisma ./prisma
+
+USER nextjs
+
+CMD ["/app/node_modules/.bin/prisma", "migrate", "deploy"]
+
+FROM runner AS app

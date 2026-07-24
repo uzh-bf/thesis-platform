@@ -1,6 +1,12 @@
 // import { ClientSecretCredential } from '@azure/identity'
 import type { Prisma } from '@prisma/client'
-import { ProposalStatus, ApplicationStatus, ProposalType, UserRole, Department } from 'src/lib/constants'
+import {
+  ApplicationStatus,
+  Department,
+  ProposalStatus,
+  ProposalType,
+  UserRole,
+} from 'src/lib/constants'
 // import { Client } from '@microsoft/microsoft-graph-client'
 // import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials'
 import {
@@ -12,6 +18,12 @@ import { TRPCError } from '@trpc/server'
 import axios from 'axios'
 import 'cross-fetch/polyfill'
 import dayjs from 'dayjs'
+import {
+  CleverReachConfigError,
+  createThesisProposalCleverReachDraft,
+  parseProposalLanguages,
+  type ThesisProposalDraftPayload,
+} from 'src/lib/cleverreach/thesisProposal'
 import type { Context } from 'src/server/context'
 import { prisma } from 'src/server/prisma'
 import {
@@ -23,14 +35,8 @@ import {
   router,
 } from 'src/server/trpc'
 import { ProposalStatusFilter } from 'src/types/app'
-import { z } from 'zod'
 import { v4 as uuidv4 } from 'uuid'
-import {
-  CleverReachConfigError,
-  createThesisProposalCleverReachDraft,
-  parseProposalLanguages,
-  type ThesisProposalDraftPayload,
-} from 'src/lib/cleverreach/thesisProposal'
+import { z } from 'zod'
 
 const ADMIN_CHANGE_NOTIFICATION_RECIPIENTS = {
   DEV: 'ibf-srv-powplatf@d.uzh.ch',
@@ -39,8 +45,7 @@ const ADMIN_CHANGE_NOTIFICATION_RECIPIENTS = {
   PRD_IBW: 'theses@business.uzh.ch',
 } as const
 
-type NotificationEnvironment =
-  keyof typeof ADMIN_CHANGE_NOTIFICATION_RECIPIENTS
+type NotificationEnvironment = keyof typeof ADMIN_CHANGE_NOTIFICATION_RECIPIENTS
 
 type ProcedureUser = NonNullable<NonNullable<Context['session']>['user']>
 type ProposalFiltersInput = {
@@ -154,7 +159,9 @@ const hasNotificationStateChanged = (oldState: unknown, newState: unknown) =>
   formatNotificationState(oldState) !== formatNotificationState(newState)
 
 const getNotificationEnvironment = (): NotificationEnvironment => {
-  const thesisPlatformEnv = (process.env.THESIS_PLATFORM_ENV ?? '').toLowerCase()
+  const thesisPlatformEnv = (
+    process.env.THESIS_PLATFORM_ENV ?? ''
+  ).toLowerCase()
 
   if (thesisPlatformEnv === 'prd_ibw') return 'PRD_IBW'
   if (thesisPlatformEnv === 'prd') return 'PROD'
@@ -162,7 +169,9 @@ const getNotificationEnvironment = (): NotificationEnvironment => {
   if (thesisPlatformEnv === 'dev') return 'DEV'
 
   if (process.env.NODE_ENV === 'production') {
-    const department = (process.env.NEXT_PUBLIC_DEPARTMENT_NAME ?? '').toUpperCase()
+    const department = (
+      process.env.NEXT_PUBLIC_DEPARTMENT_NAME ?? ''
+    ).toUpperCase()
     if (department === 'IBW') return 'PRD_IBW'
     return 'PROD'
   }
@@ -197,11 +206,7 @@ const wait = (durationMs: number) =>
   new Promise((resolve) => setTimeout(resolve, durationMs))
 
 const normalizeFlowTopicAreaSlug = (value: string) =>
-  value
-    .toLowerCase()
-    .replace(/ /g, '_')
-    .replace(/,/g, '')
-    .replace(/&/g, 'and')
+  value.toLowerCase().replace(/ /g, '_').replace(/,/g, '').replace(/&/g, 'and')
 
 async function findPublishedProposalForCleverReach(
   input: ProposalPublishInput,
@@ -241,7 +246,10 @@ async function waitForPublishedProposalForCleverReach(
     attempt <= CLEVERREACH_PROPOSAL_LOOKUP_ATTEMPTS;
     attempt++
   ) {
-    const proposal = await findPublishedProposalForCleverReach(input, submittedAt)
+    const proposal = await findPublishedProposalForCleverReach(
+      input,
+      submittedAt
+    )
 
     if (proposal) {
       return proposal
@@ -312,14 +320,20 @@ function triggerThesisProposalCleverReachDraft(
       }
 
       proposalId = proposal.id
-      const draftPayload = await buildThesisProposalDraftPayload(input, proposal)
+      const draftPayload = await buildThesisProposalDraftPayload(
+        input,
+        proposal
+      )
       await createThesisProposalCleverReachDraft(draftPayload)
     } catch (error) {
       if (error instanceof CleverReachConfigError) {
-        console.warn('CleverReach thesis proposal settings incomplete. Skipping draft.', {
-          missing: error.missing,
-          proposalId,
-        })
+        console.warn(
+          'CleverReach thesis proposal settings incomplete. Skipping draft.',
+          {
+            missing: error.missing,
+            proposalId,
+          }
+        )
         return
       }
 
@@ -770,29 +784,29 @@ async function getSupervisorProposals({
   }
 
   if (filters.status === ProposalStatusFilter.ACTIVE_PROPOSALS) {
-    const sixMonthsAgo = dayjs().subtract(6, 'month').toDate();
-    
+    const sixMonthsAgo = dayjs().subtract(6, 'month').toDate()
+
     where = {
       ...where,
       OR: [
-        { 
+        {
           statusKey: ProposalStatus.MATCHED,
           updatedAt: {
-            gte: sixMonthsAgo
+            gte: sixMonthsAgo,
           },
           supervisedBy: {
             some: {
-              supervisorEmail: currentUserEmail
-            }
-          }
+              supervisorEmail: currentUserEmail,
+            },
+          },
         },
         {
           supervisedBy: {
             some: {
               supervisorEmail: currentUserEmail,
               createdAt: {
-                gte: sixMonthsAgo
-              }
+                gte: sixMonthsAgo,
+              },
             },
           },
         },
@@ -844,31 +858,115 @@ async function getSupervisorProposals({
   return proposals as ProposalDetailsRecord[]
 }
 
+const getBlobServiceClientUrl = (serviceUrl: string, containerName: string) => {
+  const queryIndex = serviceUrl.search(/[?#]/)
+  const baseUrl =
+    queryIndex === -1 ? serviceUrl : serviceUrl.slice(0, queryIndex)
+  const queryString = queryIndex === -1 ? '' : serviceUrl.slice(queryIndex)
+  const baseWithoutTrailingSlash = baseUrl.endsWith('/')
+    ? baseUrl.slice(0, -1)
+    : baseUrl
+  const containerSuffix = `/${containerName}`
+
+  if (baseWithoutTrailingSlash.endsWith(containerSuffix)) {
+    return `${baseWithoutTrailingSlash.slice(
+      0,
+      -containerSuffix.length
+    )}${queryString}`
+  }
+
+  return serviceUrl
+}
+
+const uploadPurposeSchema = z.enum([
+  'application-cv',
+  'application-transcript',
+  'proposal-file',
+  'proposal-attachment',
+])
+
+const sanitizeUploadFileName = (fileName: string) => {
+  const normalizedName = fileName
+    .split(/[\\/]/)
+    .pop()
+    ?.normalize('NFKD')
+    .replace(/[^\w.-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+  const safeName = normalizedName || 'upload.pdf'
+  return safeName.toLowerCase().endsWith('.pdf') ? safeName : `${safeName}.pdf`
+}
+
+const buildBlobUploadUrl = ({
+  serviceUrl,
+  containerName,
+  blobName,
+  sasString,
+}: {
+  serviceUrl: string
+  containerName: string
+  blobName: string
+  sasString: string
+}) => {
+  const baseUrl = serviceUrl.replace(/[?&]$/, '').replace(/\/$/, '')
+  return `${baseUrl}/${containerName}/${encodeURIComponent(blobName)}?${sasString}`
+}
 
 export const appRouter = router({
-  generateSasQueryToken: optionalAuthedProcedure.mutation(() => {
-    const sharedKeyCredential = new StorageSharedKeyCredential(
-      process.env.NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME!,
-      process.env.AZURE_STORAGE_ACCOUNT_ACCESS_KEY!
+  generateSasQueryToken: publicProcedure
+    .input(
+      z.object({
+        requestedFileName: z.string().trim().min(1).max(180),
+        contentType: z.literal('application/pdf'),
+        size: z
+          .number()
+          .int()
+          .positive()
+          .max(25 * 1024 * 1024),
+        purpose: uploadPurposeSchema,
+      })
     )
-    const permissions = BlobSASPermissions.parse('w')
-    const startDate = new Date()
-    const expiryDate = new Date(startDate)
-    expiryDate.setMinutes(startDate.getMinutes() + 100)
-    const queryParams = generateBlobSASQueryParameters(
-      {
-        containerName: process.env.NEXT_PUBLIC_CONTAINER_NAME!,
-        permissions: permissions,
-        expiresOn: expiryDate,
-      },
-      sharedKeyCredential
-    )
-    return {
-      SAS_STRING: queryParams.toString(),
-      CONTAINER_NAME: process.env.NEXT_PUBLIC_CONTAINER_NAME!,
-      URL: process.env.NEXT_PUBLIC_AZURE_STORAGE_URL,
-    }
-  }),
+    .mutation(({ input }) => {
+      const containerName = process.env.NEXT_PUBLIC_CONTAINER_NAME!
+      const serviceUrl = getBlobServiceClientUrl(
+        process.env.NEXT_PUBLIC_BLOBSERVICECLIENT_URL!,
+        containerName
+      )
+      const sharedKeyCredential = new StorageSharedKeyCredential(
+        process.env.NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME!,
+        process.env.AZURE_STORAGE_ACCOUNT_ACCESS_KEY!
+      )
+      const blobName = `${uuidv4()}-${sanitizeUploadFileName(
+        input.requestedFileName
+      )}`
+      const permissions = BlobSASPermissions.parse('cw')
+      const startDate = new Date()
+      startDate.setMinutes(startDate.getMinutes() - 5)
+      const expiryDate = new Date(startDate)
+      expiryDate.setMinutes(expiryDate.getMinutes() + 10)
+      const queryParams = generateBlobSASQueryParameters(
+        {
+          containerName,
+          blobName,
+          permissions: permissions,
+          startsOn: startDate,
+          expiresOn: expiryDate,
+        },
+        sharedKeyCredential
+      )
+      const sasString = queryParams.toString()
+
+      return {
+        blobName,
+        uploadUrl: buildBlobUploadUrl({
+          serviceUrl,
+          containerName,
+          blobName,
+          sasString,
+        }),
+        expiresAt: expiryDate.toISOString(),
+      }
+    }),
 
   healthcheck: publicProcedure
     .meta({
@@ -1012,16 +1110,12 @@ export const appRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      await axios.post(
-        process.env.PROPOSAL_FEEDBACK_URL as string,
-        input,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            secretkey: process.env.FLOW_SECRET as string,
-          },
-        }
-      )
+      await axios.post(process.env.PROPOSAL_FEEDBACK_URL as string, input, {
+        headers: {
+          'Content-Type': 'application/json',
+          secretkey: process.env.FLOW_SECRET as string,
+        },
+      })
     }),
 
   submitProposalApplication: optionalAuthedProcedure
@@ -1044,7 +1138,14 @@ export const appRouter = router({
       try {
         console.log('Submitting application to Power Automate...')
         console.log('APPLICATION_URL:', process.env.APPLICATION_URL)
-        console.log('Payload:', JSON.stringify({ ...input, cvFile: '[file]', transcriptFile: '[file]' }, null, 2))
+        console.log(
+          'Payload:',
+          JSON.stringify(
+            { ...input, cvFile: '[file]', transcriptFile: '[file]' },
+            null,
+            2
+          )
+        )
 
         const res = await axios.post(
           process.env.APPLICATION_URL as string,
@@ -1057,7 +1158,7 @@ export const appRouter = router({
             timeout: 10000,
           }
         )
-        
+
         console.log('Power Automate response:', res.status, res.statusText)
         return { success: true, data: res.data }
       } catch (error: any) {
@@ -1099,7 +1200,7 @@ export const appRouter = router({
         return {
           success: true,
           message: 'Development mode: PROPOSAL_PUBLISH_URL not configured',
-          data: payload
+          data: payload,
         }
       }
 
@@ -1118,25 +1219,26 @@ export const appRouter = router({
             },
           }
         )
-        
+
         console.log('Successfully submitted proposal')
         triggerThesisProposalCleverReachDraft(input, submittedAt)
         return res.data
       } catch (error: any) {
         console.error('Error submitting proposal:', error)
-        
+
         if (error.response) {
           console.error('Response status:', error.response.status)
           console.error('Response data:', error.response.data)
-          
+
           if (error.response.status === 401) {
             throw new TRPCError({
               code: 'UNAUTHORIZED',
-              message: 'Authentication failed with Power Automate flow. Check FLOW_SECRET environment variable.',
+              message:
+                'Authentication failed with Power Automate flow. Check FLOW_SECRET environment variable.',
             })
           }
         }
-        
+
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: `Failed to submit proposal: ${error.message || 'Unknown error'}`,
@@ -1184,8 +1286,8 @@ export const appRouter = router({
           supervisedBy: {
             include: {
               supervisor: true,
-              responsible: true
-            }
+              responsible: true,
+            },
           },
         },
       })
@@ -1199,15 +1301,16 @@ export const appRouter = router({
 
       // Verify the user is either a supervisor or a responsible person for this proposal.
       const isAuthorized = proposal.supervisedBy.some(
-          supervision =>
-            supervision.supervisorEmail === ctx.user.email ||
-            supervision.responsible?.email === ctx.user.email
-        )
+        (supervision) =>
+          supervision.supervisorEmail === ctx.user.email ||
+          supervision.responsible?.email === ctx.user.email
+      )
 
       if (!isAuthorized) {
         throw new TRPCError({
           code: 'FORBIDDEN',
-          message: 'You are not authorized to decline applications for this proposal',
+          message:
+            'You are not authorized to decline applications for this proposal',
         })
       }
 
@@ -1222,8 +1325,8 @@ export const appRouter = router({
           statusKey: 'DECLINED',
         },
       })
-      
-      // Send the email notification.
+
+      // Send the email notification
       try {
         const escapedComment = escapeHtml(input.comment).replace(/\n/g, '<br>')
         const feedbackContent = escapedComment
@@ -1236,21 +1339,21 @@ export const appRouter = router({
             recipients: [input.applicantEmail],
             subject: `${process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME} - Application Declined`,
             content: `<p>Your application for the proposal "${escapeHtml(proposal.title)}" has been declined.</p>${feedbackContent}`,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            secretkey: process.env.FLOW_SECRET as string,
           },
-          timeout: 8000,
-        }
-      )
-      return { success: true }
-    } catch (error) {
-      console.error('Error sending email notification:', error)
-      return { success: false }
-    }
-  }),
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              secretkey: process.env.FLOW_SECRET as string,
+            },
+            timeout: 8000,
+          }
+        )
+        return { success: true }
+      } catch (error) {
+        console.error('Error sending email notification:', error)
+        return { success: false }
+      }
+    }),
 
   persistProposalSubmission: publicProcedure
     .meta({
@@ -1321,7 +1424,8 @@ export const appRouter = router({
                   input.proposal.additionalStudentComment,
                 typeKey: 'STUDENT',
                 statusKey: 'OPEN',
-                department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+                department: process.env
+                  .NEXT_PUBLIC_DEPARTMENT_NAME as Department,
               },
             }),
             prisma.proposalApplication.create({
@@ -1638,7 +1742,7 @@ export const appRouter = router({
       }
     }),
 
-    getOpenStudentProposalsOlderThan8Weeks: publicProcedure
+  getOpenStudentProposalsOlderThan8Weeks: publicProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -1646,17 +1750,25 @@ export const appRouter = router({
       },
     })
     .input(z.object({ flowSecret: z.string() })) // No input required
-    .output(z.array(z.object({ id: z.string(), email: z.string(), proposalTitle: z.string() }))) // Expect an array of objects with id, email, and proposalTitle
+    .output(
+      z.array(
+        z.object({
+          id: z.string(),
+          email: z.string(),
+          proposalTitle: z.string(),
+        })
+      )
+    ) // Expect an array of objects with id, email, and proposalTitle
     .query(async ({ input }) => {
       if (input.flowSecret !== process.env.FLOW_SECRET) {
         throw new TRPCError({ code: 'UNAUTHORIZED' })
       }
       // Calculate the date 8 weeks ago
-      const eightWeeksAgo = new Date();
+      const eightWeeksAgo = new Date()
       eightWeeksAgo.setDate(
         eightWeeksAgo.getDate() - STUDENT_PROPOSAL_REMINDER_INTERVAL_DAYS
-      ); // 8 x 7 Days = 56 days
-  
+      ) // 8 x 7 Days = 56 days
+
       try {
         // Fetch data from Prisma
         const result = await prisma.proposalApplication.findMany({
@@ -1679,334 +1791,365 @@ export const appRouter = router({
               },
             },
           },
-        });
+        })
 
         // Map the result to restructure it
         const transformedResult = result.map((application) => ({
           id: application.id,
           email: application.email,
           proposalTitle: application.proposal.title, // Extract title from the nested proposal object
-        }));
+        }))
 
-        return transformedResult;
+        return transformedResult
       } catch (error) {
-        console.error("Error fetching proposals:", error);
-        throw new Error("Failed to fetch proposals");
+        console.error('Error fetching proposals:', error)
+        throw new Error('Failed to fetch proposals')
       }
     }),
 
-    updateProposalUpdatedAt: publicProcedure
-  .meta({
-    openapi: {
-      method: 'GET', // GET request to handle URL parameter
-      path: '/updateProposalUpdatedAt/{id}', // Accept id in the URL
-    },
-  })
-  .input(z.object({
-    id: z.string(), // Extract id from the URL
-  }))
-  .output(z.object({
-    response: z.string(),
-    proposalTitle: z.string().nullable(),
-    nextReminderAt: z.string().nullable(),
-  }))
-  .query(async ({ input }) => {
-    try {
-      const confirmedAt = new Date()
-      const existingProposal = await prisma.proposal.findUnique({
-        where: {
-          id: input.id,
-        },
-        select: {
-          title: true,
-          statusKey: true,
-          updatedAt: true,
+  updateProposalUpdatedAt: publicProcedure
+    .meta({
+      openapi: {
+        method: 'GET', // GET request to handle URL parameter
+        path: '/updateProposalUpdatedAt/{id}', // Accept id in the URL
+      },
+    })
+    .input(
+      z.object({
+        id: z.string(), // Extract id from the URL
+      })
+    )
+    .output(
+      z.object({
+        response: z.string(),
+        proposalTitle: z.string().nullable(),
+        nextReminderAt: z.string().nullable(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const confirmedAt = new Date()
+        const existingProposal = await prisma.proposal.findUnique({
+          where: {
+            id: input.id,
+          },
+          select: {
+            title: true,
+            statusKey: true,
+            updatedAt: true,
+          },
+        })
+
+        if (!existingProposal) {
+          return {
+            response: 'No proposal was found for this confirmation link.',
+            proposalTitle: null,
+            nextReminderAt: null,
+          }
+        }
+
+        // Update the `updatedAt` field for the proposal with the provided `id`
+        const proposal = await prisma.proposal.updateMany({
+          where: {
+            id: input.id, // Use the `id` from the URL path parameter
+            statusKey: 'WAITING_FOR_STUDENT', // Only update if the status is 'WAITING_FOR_STUDENT'
+          },
+          data: {
+            statusKey: 'OPEN',
+            updatedAt: confirmedAt, // Set `updatedAt` to the current date/time
+          },
+        })
+
+        if (proposal.count === 0) {
+          if (existingProposal.statusKey === 'OPEN') {
+            const nextReminderAt = getNextStudentProposalReminderAt(
+              existingProposal.updatedAt
+            )
+
+            return {
+              response: `Your proposal "${existingProposal.title}" is already active and confirmed. The next reminder will be sent on or after ${formatDateForStudentMessage(
+                nextReminderAt
+              )} if the proposal is still open.`,
+              proposalTitle: existingProposal.title,
+              nextReminderAt: nextReminderAt.toISOString(),
+            }
+          }
+
+          return {
+            response: `Your proposal "${existingProposal.title}" could not be confirmed because it is currently ${existingProposal.statusKey.replace(
+              /_/g,
+              ' '
+            )}.`,
+            proposalTitle: existingProposal.title,
+            nextReminderAt: null,
+          }
+        }
+
+        const nextReminderAt = getNextStudentProposalReminderAt(confirmedAt)
+
+        return {
+          response: `Your proposal "${existingProposal.title}" was confirmed successfully. The next reminder will be sent on or after ${formatDateForStudentMessage(
+            nextReminderAt
+          )} if the proposal is still open.`,
+          proposalTitle: existingProposal.title,
+          nextReminderAt: nextReminderAt.toISOString(),
+        }
+      } catch (error) {
+        console.error('Error updating proposal:', error)
+        throw new Error('Failed to update proposal')
+      }
+    }),
+
+  updateProposalStatus: publicProcedure
+    .meta({
+      openapi: {
+        method: 'POST', // GET request to handle URL parameter
+        path: '/updateProposalStatus/{id}', // Accept id in the URL
+      },
+    })
+    .input(
+      z.object({
+        flowSecret: z.string(),
+        id: z.string(), // Extract id from the URL
+      })
+    )
+    .output(
+      z.object({
+        response: z.string(),
+      })
+    )
+    .query(async ({ input }) => {
+      if (input.flowSecret !== process.env.FLOW_SECRET) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' })
+      }
+      try {
+        // Update the `statusKey` and `updatedAt` fields for the proposal with the provided `id`
+        await prisma.proposal.update({
+          where: { id: input.id }, // Use the `id` from the URL path parameter
+          data: {
+            statusKey: 'WAITING_FOR_STUDENT', // Update the statusKey
+          },
+        })
+        return {
+          response: `The Proposal with the id: '${input.id}' was updated successfully! ✌️😊`,
+        }
+      } catch (error) {
+        console.error('Error updating proposal:', error)
+        throw new Error('Failed to update proposal')
+      }
+    }),
+
+  updateWaitingForStudentProposalsOlderThan1Week: publicProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/updateWaitingForStudentProposalsOlderThan1Week',
+      },
+    })
+    .input(z.object({ flowSecret: z.string() })) // flowSecret as input
+    .output(z.object({ withdrawn_proposal_ids: z.array(z.string()) })) // Return updated proposal IDs
+    .query(async ({ input }) => {
+      // Calculate the date 9 weeks ago
+      const oneWeeksAgo = new Date()
+      oneWeeksAgo.setDate(oneWeeksAgo.getDate() - 7) // 7 Days
+      if (input.flowSecret !== process.env.FLOW_SECRET) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' })
+      }
+      try {
+        // Find proposals to update
+        const proposalsToUpdate = await prisma.proposal.findMany({
+          where: {
+            statusKey: 'WAITING_FOR_STUDENT',
+            updatedAt: {
+              lt: oneWeeksAgo,
+            },
+            ownedByUserEmail: null,
+            department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+          },
+          select: {
+            id: true,
+          },
+        })
+
+        const updatedIds = proposalsToUpdate.map((proposal) => proposal.id)
+
+        // Update the statusKey to "WITHDRAWN"
+        await prisma.proposal.updateMany({
+          where: {
+            id: { in: updatedIds },
+          },
+          data: {
+            statusKey: 'WITHDRAWN',
+          },
+        })
+
+        return {
+          withdrawn_proposal_ids: updatedIds, // Return the IDs of updated proposals
+        }
+      } catch (error) {
+        console.error('Error updating proposals:', error)
+        throw new Error('Failed to update proposals')
+      }
+    }),
+
+  processProposalAcceptance: publicProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/processProposalAcceptance',
+      },
+    })
+    .input(
+      z.object({
+        flowSecret: z.string(),
+        proposalId: z.string(),
+        proposalApplicationId: z.string(),
+        applicantEmail: z.string(),
+      })
+    )
+    .output(
+      z.object({
+        proposal: z.object({
+          proposal_title: z.string(),
+          supervisor_email: z.string().nullable(),
+        }),
+        accepted_user: z.object({
+          accepted_email: z.string(),
+          accepted_fullName: z.string(),
+        }),
+        declined_users: z.array(
+          z.object({
+            declined_email: z.string(),
+            declined_fullName: z.string(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ input }) => {
+      if (input.flowSecret !== process.env.FLOW_SECRET) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' })
+      }
+      // Step 1: Get Proposal Info
+      const proposal = await prisma.proposal.findUnique({
+        where: { id: input.proposalId },
+        include: {
+          supervisedBy: {
+            include: {
+              supervisor: true,
+            },
+          },
         },
       })
 
-      if (!existingProposal) {
-        return {
-          response: 'No proposal was found for this confirmation link.',
-          proposalTitle: null,
-          nextReminderAt: null,
-        }
+      if (!proposal) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Proposal not found',
+        })
       }
 
-      // Update the `updatedAt` field for the proposal with the provided `id`
-      const proposal = await prisma.proposal.updateMany({
-        where: {
-          id: input.id, // Use the `id` from the URL path parameter
-          statusKey: 'WAITING_FOR_STUDENT', // Only update if the status is 'WAITING_FOR_STUDENT'
-        },
-        data: {
-          statusKey: "OPEN",
-          updatedAt: confirmedAt, // Set `updatedAt` to the current date/time
-        },
-      });
-
-      if (proposal.count === 0) {
-        if (existingProposal.statusKey === 'OPEN') {
-          const nextReminderAt = getNextStudentProposalReminderAt(
-            existingProposal.updatedAt
-          )
-
-          return {
-            response: `Your proposal "${existingProposal.title}" is already active and confirmed. The next reminder will be sent on or after ${formatDateForStudentMessage(
-              nextReminderAt
-            )} if the proposal is still open.`,
-            proposalTitle: existingProposal.title,
-            nextReminderAt: nextReminderAt.toISOString(),
-          };
-        }
-
-        return {
-          response: `Your proposal "${existingProposal.title}" could not be confirmed because it is currently ${existingProposal.statusKey.replace(
-            /_/g,
-            ' '
-          )}.`,
-          proposalTitle: existingProposal.title,
-          nextReminderAt: null,
-        };
-      }
-
-      const nextReminderAt = getNextStudentProposalReminderAt(confirmedAt)
-
-      return {
-        response: `Your proposal "${existingProposal.title}" was confirmed successfully. The next reminder will be sent on or after ${formatDateForStudentMessage(
-          nextReminderAt
-        )} if the proposal is still open.`,
-        proposalTitle: existingProposal.title,
-        nextReminderAt: nextReminderAt.toISOString(),
-      };
-    } catch (error) {
-      console.error("Error updating proposal:", error);
-      throw new Error("Failed to update proposal");
-    }
-  }),
-
-updateProposalStatus: publicProcedure
-  .meta({
-    openapi: {
-      method: 'POST', // GET request to handle URL parameter
-      path: '/updateProposalStatus/{id}', // Accept id in the URL
-    },
-  })
-  .input(z.object({
-    flowSecret: z.string(),
-    id: z.string(), // Extract id from the URL
-  }))
-  .output(z.object({
-    response: z.string(),
-  }))
-  .query(async ({ input }) => {
-    if (input.flowSecret !== process.env.FLOW_SECRET) {
-      throw new TRPCError({ code: 'UNAUTHORIZED' })
-    }
-    try {
-      // Update the `statusKey` and `updatedAt` fields for the proposal with the provided `id`
+      // Step 2: Update Proposal Matched
       await prisma.proposal.update({
-        where: { id: input.id }, // Use the `id` from the URL path parameter
+        where: { id: input.proposalId },
         data: {
-          statusKey: "WAITING_FOR_STUDENT", // Update the statusKey
+          statusKey: ProposalStatus.MATCHED,
+          updatedAt: new Date(),
         },
-      });
-      return {
-        response: `The Proposal with the id: '${input.id}' was updated successfully! ✌️😊`,
-      };
-    } catch (error) {
-      console.error("Error updating proposal:", error);
-      throw new Error("Failed to update proposal");
-    }
-  }),
+      })
 
-  updateWaitingForStudentProposalsOlderThan1Week: publicProcedure
-  .meta({
-    openapi: {
-      method: 'POST',
-      path: '/updateWaitingForStudentProposalsOlderThan1Week',
-    },
-  })
-  .input(z.object({ flowSecret: z.string() })) // flowSecret as input
-  .output(z.object({ withdrawn_proposal_ids: z.array(z.string()) })) // Return updated proposal IDs
-  .query(async ({ input }) => {
+      // Step 3: Get User Proposal Supervision Info
+      const supervisionInfo = proposal.supervisedBy[0]
+      if (!supervisionInfo) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Supervision information not found',
+        })
+      }
 
-    // Calculate the date 9 weeks ago
-    const oneWeeksAgo = new Date();
-    oneWeeksAgo.setDate(oneWeeksAgo.getDate() - 7); // 7 Days
-    if (input.flowSecret !== process.env.FLOW_SECRET) {
-      throw new TRPCError({ code: 'UNAUTHORIZED' })
-    }
-    try {
-      // Find proposals to update
-      const proposalsToUpdate = await prisma.proposal.findMany({
+      // Step 4: Update User Proposal Supervision Student Email
+      await prisma.userProposalSupervision.update({
+        where: { id: supervisionInfo.id },
+        data: {
+          studentEmail: input.applicantEmail,
+          updatedAt: new Date(),
+        },
+      })
+
+      // Step 5: Get Proposal Application Info
+      const application = await prisma.proposalApplication.findFirst({
         where: {
-          statusKey: 'WAITING_FOR_STUDENT',
-          updatedAt: {
-            lt: oneWeeksAgo,
-          },
-          ownedByUserEmail: null,
+          id: input.proposalApplicationId,
+          email: input.applicantEmail,
+        },
+      })
+
+      if (!application) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Application not found',
+        })
+      }
+
+      // Step 6: Update Proposal Application Accepted
+      await prisma.proposalApplication.update({
+        where: { id: application.id },
+        data: {
+          statusKey: ApplicationStatus.ACCEPTED,
+          supervisionId: supervisionInfo.id,
+          updatedAt: new Date(),
+        },
+      })
+
+      // Step 7: Create Admin Table Entry
+      await prisma.adminInfo.create({
+        data: {
+          id: uuidv4(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          proposalId: input.proposalId,
+          status: ProposalStatus.OPEN,
           department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
         },
-        select: {
-          id: true,
-        },
-      });
+      })
 
-      const updatedIds = proposalsToUpdate.map(proposal => proposal.id);
-
-      // Update the statusKey to "WITHDRAWN"
-      await prisma.proposal.updateMany({
+      // Step 8: Get Proposal Applications to Decline
+      const applicationsToDecline = await prisma.proposalApplication.findMany({
         where: {
-          id: { in: updatedIds },
+          proposalId: input.proposalId,
+          email: { not: input.applicantEmail },
         },
-        data: {
-          statusKey: 'WITHDRAWN',
-        },
-      });
+      })
 
-      return {
-        withdrawn_proposal_ids: updatedIds, // Return the IDs of updated proposals
-      };
-    } catch (error) {
-      console.error("Error updating proposals:", error);
-      throw new Error("Failed to update proposals");
-    }
-  }),
-
-  processProposalAcceptance: publicProcedure
-  .meta({
-    openapi: {
-      method: 'POST',
-      path: '/processProposalAcceptance',
-    },
-  })
-  .input(
-    z.object({
-      flowSecret: z.string(),
-      proposalId: z.string(),
-      proposalApplicationId: z.string(),
-      applicantEmail: z.string(),
-    })
-  )
-  .output(
-    z.object({
-      proposal: z.object({ proposal_title: z.string(), supervisor_email: z.string().nullable() }),
-      accepted_user: z.object({ accepted_email: z.string(), accepted_fullName: z.string() }),
-      declined_users: z.array(z.object({ declined_email: z.string(), declined_fullName: z.string() })),
-    })
-  )
-  .mutation(async ({ input }) => {
-    if (input.flowSecret !== process.env.FLOW_SECRET) {
-      throw new TRPCError({ code: 'UNAUTHORIZED' })
-    }
-    // Step 1: Get Proposal Info
-    const proposal = await prisma.proposal.findUnique({
-      where: { id: input.proposalId },
-      include: {
-        supervisedBy: {
-          include: {
-            supervisor: true,
+      // Update status of other applications to declined
+      if (applicationsToDecline.length > 0) {
+        await prisma.proposalApplication.updateMany({
+          where: {
+            id: { in: applicationsToDecline.map((app) => app.id) },
           },
+          data: {
+            statusKey: ApplicationStatus.DECLINED,
+            updatedAt: new Date(),
+            supervisionId: null,
+          },
+        })
+      }
+
+      // return all user information of proposals that have been declined as well as the one that has been accepted with the info from above (no new prisma call needed)
+      return {
+        proposal: {
+          proposal_title: proposal.title,
+          supervisor_email: supervisionInfo.supervisorEmail,
         },
-      },
-    });
-
-    if (!proposal) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'Proposal not found',
-      });
-    }
-
-    // Step 2: Update Proposal Matched
-    await prisma.proposal.update({
-      where: { id: input.proposalId },
-      data: {
-        statusKey: ProposalStatus.MATCHED,
-        updatedAt: new Date(),
-      },
-    });
-
-    // Step 3: Get User Proposal Supervision Info
-    const supervisionInfo = proposal.supervisedBy[0];
-    if (!supervisionInfo) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'Supervision information not found',
-      });
-    }
-
-    // Step 4: Update User Proposal Supervision Student Email
-    await prisma.userProposalSupervision.update({
-      where: { id: supervisionInfo.id },
-      data: {
-        studentEmail: input.applicantEmail,
-        updatedAt: new Date(),
-      },
-    });
-
-    // Step 5: Get Proposal Application Info
-    const application = await prisma.proposalApplication.findFirst({
-      where: {
-        id: input.proposalApplicationId,
-        email: input.applicantEmail,
-      },
-    });
-
-    if (!application) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'Application not found',
-      });
-    }
-
-    // Step 6: Update Proposal Application Accepted
-    await prisma.proposalApplication.update({
-      where: { id: application.id },
-      data: {
-        statusKey: ApplicationStatus.ACCEPTED,
-        supervisionId: supervisionInfo.id,
-        updatedAt: new Date(),
-      },
-    });
-
-    // Step 7: Create Admin Table Entry
-    await prisma.adminInfo.create({
-      data: {
-        id: uuidv4(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        proposalId: input.proposalId,
-        status: ProposalStatus.OPEN,
-        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
-      },
-    });
-
-    // Step 8: Get Proposal Applications to Decline
-    const applicationsToDecline = await prisma.proposalApplication.findMany({
-      where: {
-        proposalId: input.proposalId,
-        email: { not: input.applicantEmail },
-      },
-    });
-
-    // Update status of other applications to declined
-    if (applicationsToDecline.length > 0) {
-      await prisma.proposalApplication.updateMany({
-        where: {
-          id: { in: applicationsToDecline.map(app => app.id) },
+        accepted_user: {
+          accepted_email: application.email,
+          accepted_fullName: application.fullName,
         },
-        data: {
-          statusKey: ApplicationStatus.DECLINED,
-          updatedAt: new Date(),
-          supervisionId: null,
-        },
-      });
-    }
-
-    // return all user information of proposals that have been declined as well as the one that has been accepted with the info from above (no new prisma call needed)
-    return { proposal: { proposal_title: proposal.title, supervisor_email: supervisionInfo.supervisorEmail }, accepted_user: {accepted_email: application.email, accepted_fullName: application.fullName }, declined_users: applicationsToDecline.map(app => ({declined_email: app.email, declined_fullName: app.fullName })) }
-  }),
+        declined_users: applicationsToDecline.map((app) => ({
+          declined_email: app.email,
+          declined_fullName: app.fullName,
+        })),
+      }
+    }),
 
   createProposalApplication: publicProcedure
     .meta({
@@ -2036,7 +2179,10 @@ updateProposalStatus: publicProcedure
     )
     .output(
       z.object({
-        proposal: z.object({ title: z.string(), ownedByUserEmail: z.string().nullable() }),
+        proposal: z.object({
+          title: z.string(),
+          ownedByUserEmail: z.string().nullable(),
+        }),
         supervisor: z.object({ email: z.string().nullable() }),
       })
     )
@@ -2057,13 +2203,13 @@ updateProposalStatus: publicProcedure
             },
           },
         },
-      });
+      })
 
       if (!proposal) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Proposal not found',
-        });
+        })
       }
 
       // Create the application with attachments in a transaction
@@ -2071,7 +2217,7 @@ updateProposalStatus: publicProcedure
         // Create the main application
         const application = await tx.proposalApplication.create({
           data: {
-            statusKey: "OPEN",
+            statusKey: 'OPEN',
             email: input.proposalApplication.email,
             matriculationNumber: input.proposalApplication.matriculationNumber,
             fullName: input.proposalApplication.fullName,
@@ -2083,7 +2229,7 @@ updateProposalStatus: publicProcedure
             allowPublication: input.proposalApplication.allowPublication,
             allowUsage: input.proposalApplication.allowUsage,
           },
-        });
+        })
 
         // Create CV attachment
         await tx.applicationAttachment.create({
@@ -2095,7 +2241,7 @@ updateProposalStatus: publicProcedure
             createdAt: new Date(),
             updatedAt: new Date(),
           },
-        });
+        })
 
         // Create transcript attachment
         await tx.applicationAttachment.create({
@@ -2107,8 +2253,8 @@ updateProposalStatus: publicProcedure
             createdAt: new Date(),
             updatedAt: new Date(),
           },
-        });
-      });
+        })
+      })
 
       return {
         proposal: {
@@ -2118,10 +2264,10 @@ updateProposalStatus: publicProcedure
         supervisor: {
           email: proposal.supervisedBy[0]?.supervisorEmail ?? null,
         },
-      };
+      }
     }),
 
-    getProposalAndProposalApplication: publicProcedure
+  getProposalAndProposalApplication: publicProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -2150,7 +2296,7 @@ updateProposalStatus: publicProcedure
           ownedByUserEmail: z.string().nullable(),
           ownedByStudent: z.string().nullable(),
           createdAt: z.date(),
-          updatedAt: z.date()
+          updatedAt: z.date(),
         }),
         proposalApplication: z.object({
           id: z.string(),
@@ -2164,8 +2310,8 @@ updateProposalStatus: publicProcedure
           allowPublication: z.boolean().nullable(),
           allowUsage: z.boolean().nullable(),
           createdAt: z.date(),
-          updatedAt: z.date()
-        })
+          updatedAt: z.date(),
+        }),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -2177,7 +2323,7 @@ updateProposalStatus: publicProcedure
           message: 'Flow secret not configured',
         })
       }
-      
+
       if (input.flowSecret !== expectedSecret) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -2211,7 +2357,7 @@ updateProposalStatus: publicProcedure
       }
     }),
 
-    getAcceptedSupervisor: publicProcedure
+  getAcceptedSupervisor: publicProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -2226,9 +2372,11 @@ updateProposalStatus: publicProcedure
     )
     .output(
       z.object({
-        supervisor: z.object({
-          email: z.string().nullable(),
-        }).nullable()
+        supervisor: z
+          .object({
+            email: z.string().nullable(),
+          })
+          .nullable(),
       })
     )
     .mutation(async ({ input }) => {
@@ -2240,7 +2388,7 @@ updateProposalStatus: publicProcedure
           message: 'Flow secret not configured',
         })
       }
-      
+
       if (input.flowSecret !== expectedSecret) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -2253,8 +2401,8 @@ updateProposalStatus: publicProcedure
           proposalId: input.proposalId,
         },
         select: {
-          supervisorEmail: true
-        }
+          supervisorEmail: true,
+        },
       })
 
       if (!supervision) {
@@ -2263,12 +2411,12 @@ updateProposalStatus: publicProcedure
 
       return {
         supervisor: {
-          email: supervision.supervisorEmail
-        }
+          email: supervision.supervisorEmail,
+        },
       }
     }),
 
-    getProvidedFeedbackEntries: publicProcedure
+  getProvidedFeedbackEntries: publicProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -2283,9 +2431,11 @@ updateProposalStatus: publicProcedure
       })
     )
     .output(
-      z.object({
-        userEmail: z.string().email()
-      }).nullable()
+      z
+        .object({
+          userEmail: z.string().email(),
+        })
+        .nullable()
     )
     .mutation(async ({ input }) => {
       // Validate flow secret
@@ -2296,7 +2446,7 @@ updateProposalStatus: publicProcedure
           message: 'Flow secret not configured',
         })
       }
-      
+
       if (input.flowSecret !== expectedSecret) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -2307,21 +2457,21 @@ updateProposalStatus: publicProcedure
       const feedbackEntries = await prisma.userProposalFeedback.findFirst({
         where: {
           proposalId: input.proposalId,
-          userEmail: input.supervisorEmail
+          userEmail: input.supervisorEmail,
         },
         select: {
-          userEmail: true
-        }
+          userEmail: true,
+        },
       })
       if (!feedbackEntries) {
         return null
       }
       return {
-        userEmail: feedbackEntries.userEmail
+        userEmail: feedbackEntries.userEmail,
       }
     }),
 
-    checkUserExists: publicProcedure
+  checkUserExists: publicProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -2336,7 +2486,7 @@ updateProposalStatus: publicProcedure
     )
     .output(
       z.object({
-        exists: z.boolean()
+        exists: z.boolean(),
       })
     )
     .mutation(async ({ input }) => {
@@ -2348,7 +2498,7 @@ updateProposalStatus: publicProcedure
           message: 'Flow secret not configured',
         })
       }
-      
+
       if (input.flowSecret !== expectedSecret) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -2360,19 +2510,19 @@ updateProposalStatus: publicProcedure
         where: {
           email: input.email,
           department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
-        }
+        },
       })
       if (!user) {
         return {
-          exists: false
+          exists: false,
         }
       }
       return {
-        exists: true
+        exists: true,
       }
     }),
 
-    addNewUser: publicProcedure
+  addNewUser: publicProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -2388,8 +2538,8 @@ updateProposalStatus: publicProcedure
     )
     .output(
       z.object({
-        success: z.boolean()
-        })
+        success: z.boolean(),
+      })
     )
     .mutation(async ({ input }) => {
       // Validate flow secret
@@ -2400,7 +2550,7 @@ updateProposalStatus: publicProcedure
           message: 'Flow secret not configured',
         })
       }
-      
+
       if (input.flowSecret !== expectedSecret) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -2414,7 +2564,7 @@ updateProposalStatus: publicProcedure
             id: uuidv4(),
             name: input.name,
             email: input.email,
-            role: "SUPERVISOR",
+            role: 'SUPERVISOR',
             department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -2432,8 +2582,8 @@ updateProposalStatus: publicProcedure
         })
       }
     }),
-    
-    addAttachment: publicProcedure
+
+  addAttachment: publicProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -2451,7 +2601,7 @@ updateProposalStatus: publicProcedure
     )
     .output(
       z.object({
-        success: z.boolean()
+        success: z.boolean(),
       })
     )
     .mutation(async ({ input }) => {
@@ -2463,7 +2613,7 @@ updateProposalStatus: publicProcedure
           message: 'Flow secret not configured',
         })
       }
-      
+
       if (input.flowSecret !== expectedSecret) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -2481,11 +2631,11 @@ updateProposalStatus: publicProcedure
             proposalId: input.proposalId,
             createdAt: new Date(),
             updatedAt: new Date(),
-          }
+          },
         })
 
         return {
-          success: true
+          success: true,
         }
       } catch (error) {
         console.error('Error creating attachment:', error)
@@ -2495,170 +2645,174 @@ updateProposalStatus: publicProcedure
         })
       }
     }),
-    
-    addProposal: publicProcedure
+
+  addProposal: publicProcedure
     .meta({
       openapi: {
         method: 'POST',
         path: '/addProposal',
       },
     })
-      .input(
-        z.object({
-          flowSecret: z.string(),
-          id: z.string().uuid(),
-          title: z.string(),
-          description: z.string(),
-          language: z.string(),
-          studyLevel: z.string(),
-          topicAreaSlug: z.string(),
-          timeFrame: z.string(),
-          ownedByUserEmail: z.string().email(),
-        })
-      )
-      .output(z.object({
-        success: z.boolean()
-      }))
-      .mutation(async ({ input }) => {
-        // Validate flow secret
-        const expectedSecret = process.env.FLOW_SECRET
-        if (!expectedSecret) {
-          throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: 'Flow secret not configured',
-          })
-        }
-        
-        if (input.flowSecret !== expectedSecret) {
-          throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'Invalid flow secret',
-          })
-        }
-        try {
-          await prisma.proposal.create({
-            data: {
-              id: input.id,
-              title: input.title,
-              description: input.description,
-              language: input.language,
-              studyLevel: input.studyLevel,
-              topicAreaSlug: input.topicAreaSlug,
-              typeKey: ProposalType.SUPERVISOR,
-              statusKey: ProposalStatus.OPEN,
-              timeFrame: input.timeFrame,
-              ownedByUserEmail: input.ownedByUserEmail,
-              department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-          })
-
-          return { success: true }
-        } catch (error) {
-          throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: 'Failed to create proposal',
-          })
-        }
-      }),
-    
-    getResponsibleIdAndAddProposalSupervision: publicProcedure
-      .meta({
-        openapi: {
-          method: 'POST',
-          path: '/getResponsibleIdAndAddProposalSupervision',
-        },
+    .input(
+      z.object({
+        flowSecret: z.string(),
+        id: z.string().uuid(),
+        title: z.string(),
+        description: z.string(),
+        language: z.string(),
+        studyLevel: z.string(),
+        topicAreaSlug: z.string(),
+        timeFrame: z.string(),
+        ownedByUserEmail: z.string().email(),
       })
-      .input(
-        z.object({
-          flowSecret: z.string(),
-          proposalId: z.string().uuid(),
-          supervisorEmail: z.string().email(),
-          studyLevel: z.string(),
-          responsibleEmail: z.string(),
-        })
-      )
-      .output(z.object({
-        success: z.boolean()
-      }))
-      .mutation(async ({input }) => {
-        // Validate flow secret
-        const expectedSecret = process.env.FLOW_SECRET
-        if (!expectedSecret) {
-          throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: 'Flow secret not configured',
-          })
-        }
-        
-        if (input.flowSecret !== expectedSecret) {
-          throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'Invalid flow secret',
-          })
-        }
-        try {
-          const responsible = await prisma.responsible.findFirst({
-            where: {
-              email: input.responsibleEmail,
-              department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
-            }
-          })
-
-          if (!responsible) {
-            throw new TRPCError({
-              code: 'NOT_FOUND',
-              message: 'Responsible person not found',
-            })
-          }
-
-          await prisma.userProposalSupervision.create({
-            data: {
-              id: uuidv4(),
-              proposalId: input.proposalId,
-              supervisorEmail: input.supervisorEmail,
-              studyLevel: input.studyLevel,
-              responsibleId: responsible.id,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-          })
-
-          return { success: true }
-        } catch (error) {
-          throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: 'Failed to get responsible person or create proposal supervision',
-          })
-        }
-      }),
-    
-  getTopicAreas: publicProcedure
-    .query(async () => {
-      try {
-        const topicAreas = await prisma.topicArea.findMany({
-          select: {
-            id: true,
-            slug: true,
-            name: true,
-          },
-          where: {
-            department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
-          },
-          orderBy: {
-            name: 'asc',
-          },
-        })
-        return topicAreas
-      } catch (error) {
-        console.error('Error fetching topic areas:', error)
+    )
+    .output(
+      z.object({
+        success: z.boolean(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Validate flow secret
+      const expectedSecret = process.env.FLOW_SECRET
+      if (!expectedSecret) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to fetch topic areas',
+          message: 'Flow secret not configured',
+        })
+      }
+
+      if (input.flowSecret !== expectedSecret) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Invalid flow secret',
+        })
+      }
+      try {
+        await prisma.proposal.create({
+          data: {
+            id: input.id,
+            title: input.title,
+            description: input.description,
+            language: input.language,
+            studyLevel: input.studyLevel,
+            topicAreaSlug: input.topicAreaSlug,
+            typeKey: ProposalType.SUPERVISOR,
+            statusKey: ProposalStatus.OPEN,
+            timeFrame: input.timeFrame,
+            ownedByUserEmail: input.ownedByUserEmail,
+            department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        })
+
+        return { success: true }
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create proposal',
         })
       }
     }),
+
+  getResponsibleIdAndAddProposalSupervision: publicProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/getResponsibleIdAndAddProposalSupervision',
+      },
+    })
+    .input(
+      z.object({
+        flowSecret: z.string(),
+        proposalId: z.string().uuid(),
+        supervisorEmail: z.string().email(),
+        studyLevel: z.string(),
+        responsibleEmail: z.string(),
+      })
+    )
+    .output(
+      z.object({
+        success: z.boolean(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Validate flow secret
+      const expectedSecret = process.env.FLOW_SECRET
+      if (!expectedSecret) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Flow secret not configured',
+        })
+      }
+
+      if (input.flowSecret !== expectedSecret) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Invalid flow secret',
+        })
+      }
+      try {
+        const responsible = await prisma.responsible.findFirst({
+          where: {
+            email: input.responsibleEmail,
+            department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+          },
+        })
+
+        if (!responsible) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Responsible person not found',
+          })
+        }
+
+        await prisma.userProposalSupervision.create({
+          data: {
+            id: uuidv4(),
+            proposalId: input.proposalId,
+            supervisorEmail: input.supervisorEmail,
+            studyLevel: input.studyLevel,
+            responsibleId: responsible.id,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        })
+
+        return { success: true }
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message:
+            'Failed to get responsible person or create proposal supervision',
+        })
+      }
+    }),
+
+  getTopicAreas: publicProcedure.query(async () => {
+    try {
+      const topicAreas = await prisma.topicArea.findMany({
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+        },
+        where: {
+          department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      })
+      return topicAreas
+    } catch (error) {
+      console.error('Error fetching topic areas:', error)
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to fetch topic areas',
+      })
+    }
+  }),
 
   // Admin routes
   adminGetResponsiblesOverview: adminProcedure.query(async () => {
@@ -2776,10 +2930,14 @@ updateProposalStatus: publicProcedure
       })
 
       if (!adminInfo) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'AdminInfo entry not found' })
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'AdminInfo entry not found',
+        })
       }
 
-      const envDepartment = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+      const envDepartment = process.env
+        .NEXT_PUBLIC_DEPARTMENT_NAME as Department
       if (adminInfo.department && adminInfo.department !== envDepartment) {
         throw new TRPCError({ code: 'FORBIDDEN' })
       }
@@ -2806,7 +2964,10 @@ updateProposalStatus: publicProcedure
         if (value === null || value === '') return null
         const date = new Date(value)
         if (Number.isNaN(date.getTime())) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: `Invalid date: ${value}` })
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Invalid date: ${value}`,
+          })
         }
         return date
       }
@@ -2828,7 +2989,8 @@ updateProposalStatus: publicProcedure
 
       const hasCurrentOlatCapturedDate = adminInfo.olatCapturedDate !== null
       const hasCurrentSubmissionDate = adminInfo.submissionDate !== null
-      const hasCurrentGrade = adminInfo.grade !== null && adminInfo.grade !== undefined
+      const hasCurrentGrade =
+        adminInfo.grade !== null && adminInfo.grade !== undefined
 
       let fieldStepRank = 0
       if (hasCurrentGrade) {
@@ -2839,7 +3001,10 @@ updateProposalStatus: publicProcedure
         fieldStepRank = 1
       }
 
-      const workflowStepRank = Math.max(getStatusStepRank(adminInfo.status), fieldStepRank)
+      const workflowStepRank = Math.max(
+        getStatusStepRank(adminInfo.status),
+        fieldStepRank
+      )
       const currentWorkflowStep =
         workflowStepRank >= 3
           ? 'COMPLETED'
@@ -2862,18 +3027,22 @@ updateProposalStatus: publicProcedure
           ? parseDate(input.submissionDate)
           : adminInfo.submissionDate
       const nextOlatGradeDate =
-        'olatGradeDate' in input
-          ? parseDate(input.olatGradeDate)
-          : undefined
+        'olatGradeDate' in input ? parseDate(input.olatGradeDate) : undefined
       const nextGrade = 'grade' in input ? input.grade : adminInfo.grade
 
       const hasOlatCapturedDate =
         nextOlatCapturedDate !== null && nextOlatCapturedDate !== undefined
-      const hasSubmissionDate = nextSubmissionDate !== null && nextSubmissionDate !== undefined
-      const hasOlatGradeDate = nextOlatGradeDate !== null && nextOlatGradeDate !== undefined
+      const hasSubmissionDate =
+        nextSubmissionDate !== null && nextSubmissionDate !== undefined
+      const hasOlatGradeDate =
+        nextOlatGradeDate !== null && nextOlatGradeDate !== undefined
       const hasGrade = nextGrade !== null && nextGrade !== undefined
 
-      if ('capturedOnZora' in input && input.capturedOnZora !== null && !hasGrade) {
+      if (
+        'capturedOnZora' in input &&
+        input.capturedOnZora !== null &&
+        !hasGrade
+      ) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'Captured on Zora can only be set after Grade is provided.',
@@ -2881,12 +3050,14 @@ updateProposalStatus: publicProcedure
       }
 
       if (
-        (currentWorkflowStep === 'OPEN' || currentWorkflowStep === 'IN_PROGRESS') &&
+        (currentWorkflowStep === 'OPEN' ||
+          currentWorkflowStep === 'IN_PROGRESS') &&
         hasOlatGradeDate
       ) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'OLAT Grade Date can only be set after Submission Date is saved.',
+          message:
+            'OLAT Grade Date can only be set after Submission Date is saved.',
         })
       }
 
@@ -2901,7 +3072,8 @@ updateProposalStatus: publicProcedure
         if (hasSubmissionDate || hasGrade) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
-            message: 'Submission Date and Grade are locked until step 1 is completed.',
+            message:
+              'Submission Date and Grade are locked until step 1 is completed.',
           })
         }
       }
@@ -2942,14 +3114,17 @@ updateProposalStatus: publicProcedure
         if (!hasOlatCapturedDate || !hasSubmissionDate || !hasGrade) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
-            message: 'Completed entries must keep all required workflow fields filled.',
+            message:
+              'Completed entries must keep all required workflow fields filled.',
           })
         }
       }
 
       const data: any = {}
-      if ('olatCapturedDate' in input) data.olatCapturedDate = nextOlatCapturedDate
-      if ('latestSubmissionDate' in input) data.latestSubmissionDate = nextLatestSubmissionDate
+      if ('olatCapturedDate' in input)
+        data.olatCapturedDate = nextOlatCapturedDate
+      if ('latestSubmissionDate' in input)
+        data.latestSubmissionDate = nextLatestSubmissionDate
       if ('submissionDate' in input) data.submissionDate = nextSubmissionDate
       if ('olatGradeDate' in input) data.olatGradeDate = nextOlatGradeDate
       if ('grade' in input) data.grade = input.grade
@@ -2993,7 +3168,8 @@ updateProposalStatus: publicProcedure
     )
     .output(z.object({ success: z.boolean(), proposalId: z.string() }))
     .mutation(async ({ input }) => {
-      const envDepartment = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+      const envDepartment = process.env
+        .NEXT_PUBLIC_DEPARTMENT_NAME as Department
 
       const [responsible, supervisor, topicArea] = await Promise.all([
         prisma.responsible.findFirst({
@@ -3021,15 +3197,24 @@ updateProposalStatus: publicProcedure
       ])
 
       if (!responsible) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Responsible not found' })
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Responsible not found',
+        })
       }
 
       if (!supervisor) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Supervisor not found' })
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Supervisor not found',
+        })
       }
 
       if (!topicArea) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Topic area not found' })
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Topic area not found',
+        })
       }
 
       const proposalId = uuidv4()
@@ -3106,7 +3291,8 @@ updateProposalStatus: publicProcedure
     )
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
-      const envDepartment = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+      const envDepartment = process.env
+        .NEXT_PUBLIC_DEPARTMENT_NAME as Department
 
       const [proposal, supervisor, responsible] = await Promise.all([
         prisma.proposal.findFirst({
@@ -3160,13 +3346,17 @@ updateProposalStatus: publicProcedure
       ])
 
       if (!proposal) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Proposal not found' })
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Proposal not found',
+        })
       }
 
       if (proposal.typeKey !== ProposalType.STUDENT) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Supervisor and responsible can only be adjusted for student proposals',
+          message:
+            'Supervisor and responsible can only be adjusted for student proposals',
         })
       }
 
@@ -3185,11 +3375,17 @@ updateProposalStatus: publicProcedure
       }
 
       if (!supervisor) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Supervisor not found' })
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Supervisor not found',
+        })
       }
 
       if (!responsible) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Responsible person not found' })
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Responsible person not found',
+        })
       }
 
       const previousSupervision = proposal.supervisedBy?.[0] ?? null
@@ -3348,7 +3544,8 @@ updateProposalStatus: publicProcedure
   adminGetSupervisionStats: adminOnlyProcedure
     .input(z.object({ year: z.number().int().optional() }).optional())
     .query(async ({ input }) => {
-      const envDepartment = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+      const envDepartment = process.env
+        .NEXT_PUBLIC_DEPARTMENT_NAME as Department
 
       const supervisionDates = await prisma.userProposalSupervision.findMany({
         where: {
@@ -3379,7 +3576,8 @@ updateProposalStatus: publicProcedure
       const years = Array.from(
         new Set(
           supervisionDates.flatMap((supervision) => {
-            const capturedDate = supervision.proposal.AdminInfo?.olatCapturedDate
+            const capturedDate =
+              supervision.proposal.AdminInfo?.olatCapturedDate
             return capturedDate ? [capturedDate.getFullYear()] : []
           })
         )
@@ -3746,20 +3944,22 @@ updateProposalStatus: publicProcedure
       z.object({
         flowSecret: z.string(),
         name: z.string(),
-        email: z.string().email()
+        email: z.string().email(),
       })
     )
     .output(
       z.object({
         success: z.boolean(),
         message: z.string(),
-        user: z.object({
-          id: z.string(),
-          name: z.string(),
-          email: z.string(),
-          role: z.string(),
-          department: z.string().nullable(),
-        }).optional(),
+        user: z
+          .object({
+            id: z.string(),
+            name: z.string(),
+            email: z.string(),
+            role: z.string(),
+            department: z.string().nullable(),
+          })
+          .optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -3775,22 +3975,22 @@ updateProposalStatus: publicProcedure
         })
 
         if (existingUser) {
-            const updatedUser = await prisma.user.update({
-              where: { email: input.email },
-              data: { name: input.name, role: UserRole.SUPERVISOR },
-            })
+          const updatedUser = await prisma.user.update({
+            where: { email: input.email },
+            data: { name: input.name, role: UserRole.SUPERVISOR },
+          })
 
-            return {
-              success: true,
-              message: 'User already exists. Name has been updated.',
-              user: {
-                id: updatedUser.id,
-                name: updatedUser.name,
-                email: updatedUser.email,
-                role: updatedUser.role,
-                department: updatedUser.department,
-              },
-            }
+          return {
+            success: true,
+            message: 'User already exists. Name has been updated.',
+            user: {
+              id: updatedUser.id,
+              name: updatedUser.name,
+              email: updatedUser.email,
+              role: updatedUser.role,
+              department: updatedUser.department,
+            },
+          }
         } else {
           // Create new user with SUPERVISOR role
           const newUser = await prisma.user.create({
@@ -3822,6 +4022,6 @@ updateProposalStatus: publicProcedure
         }
       }
     }),
-});
+})
 
 export type AppRouter = typeof appRouter

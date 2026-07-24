@@ -1,5 +1,7 @@
 image:
   tag: 'latest-arm-245f87e66c47b2bb9900144363262ba1effd256a'
+  runtime: node-runner
+  pullPolicy: IfNotPresent
 
 env: stg
 appUrl: 'https://theses.stg.df-app.ch'

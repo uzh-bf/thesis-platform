@@ -82,6 +82,20 @@ jobs:
             NEXT_PUBLIC_FAQ_URL_SUPERVISOR=https://www.df.uzh.ch/de/intranet/phd/thesis-supervision.html
             NEXT_PUBLIC_APP_VERSION=latest-arm-${{ github.sha }}
 
+      - name: Build and push migration image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: .
+          file: Dockerfile
+          target: migration-runner
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository }}:migration-main-arm
+            ${{ env.REGISTRY }}/${{ github.repository }}:migration-latest-arm
+            ${{ env.REGISTRY }}/${{ github.repository }}:migration-latest-arm-${{ github.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
+
       - name: Restore build-time env file swap
         shell: bash
         run: git restore .env.production .env.stg
@@ -97,6 +111,7 @@ jobs:
         shell: bash
         env:
           STAGING_IMAGE_TAG: latest-arm-${{ github.sha }}
+          STAGING_MIGRATION_IMAGE_TAG: migration-latest-arm-${{ github.sha }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -104,6 +119,16 @@ jobs:
           git fetch origin main
           git checkout -B main origin/main
           perl -0pi -e 's/tag: '\''latest-arm(?:-[0-9a-f]+)?'\''/tag: '\''$ENV{STAGING_IMAGE_TAG}'\''/' deploy/stg_new/values.yaml
+          perl -0pi -e 's/(image:\n(?:  repository: [^\n]+\n)?  tag: '\''[^'\'']+'\''\n)(?:  runtime: [^\n]+\n)?/${1}  runtime: distroless\n/' deploy/stg_new/values.yaml
+          grep -q "runtime: distroless" deploy/stg_new/values.yaml
+          if grep -q "tag: 'migration-" deploy/stg_new/values.yaml; then
+            perl -0pi -e 's/(migration:\n  image:\n(?:    repository: [^\n]+\n)?    tag: )'\''[^'\'']+'\''/${1}'\''$ENV{STAGING_MIGRATION_IMAGE_TAG}'\''/' deploy/stg_new/values.yaml
+            grep -q "tag: '${STAGING_MIGRATION_IMAGE_TAG}'" deploy/stg_new/values.yaml
+          elif grep -q '^migration:' deploy/stg_new/values.yaml; then
+            perl -0pi -e 's/(migration:\n)/${1}  image:\n    tag: '\''$ENV{STAGING_MIGRATION_IMAGE_TAG}'\''\n/' deploy/stg_new/values.yaml
+          else
+            printf "\nmigration:\n  image:\n    tag: '%s'\n" "$STAGING_MIGRATION_IMAGE_TAG" >> deploy/stg_new/values.yaml
+          fi
           git add deploy/stg_new/values.yaml
           if git diff --cached --quiet; then
             echo "No ArgoCD image tag change."

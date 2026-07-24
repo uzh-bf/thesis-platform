@@ -1,4 +1,6 @@
+import { PrismaMariaDb } from '@prisma/adapter-mariadb'
 import { PrismaClient as PostgresPrismaClient } from '@prisma/client'
+import { createPrismaPgAdapter } from '../src/server/prismaAdapter'
 
 const { PrismaClient: MySqlPrismaClient } = require('../node_modules/.prisma/mysql-client')
 
@@ -357,11 +359,11 @@ async function main() {
   }
 
   const mysql = new MySqlPrismaClient({
-    datasources: { db: { url: mysqlUrl } },
+    adapter: new PrismaMariaDb(mysqlUrl),
     log: ['error'],
   })
   const postgres = new PostgresPrismaClient({
-    datasources: { db: { url: targetUrl } },
+    adapter: createPrismaPgAdapter(targetUrl),
     log: ['error'],
   })
 

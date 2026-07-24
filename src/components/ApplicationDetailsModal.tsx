@@ -50,12 +50,12 @@ function ApplicationDetailsModal({
           <p className="pb-2 text-base">{row?.statusKey}</p>
           <h1 className="text-base font-bold">Working Period:</h1>
           <p className="pb-2 text-base">
-            {format(parseISO(row.plannedStartAt), 'dd.MM.Y')} -{' '}
+            {format(parseISO(row.plannedStartAt), 'dd.MM.yyyy')} -{' '}
             {format(
               add(parseISO(row.plannedStartAt), {
                 months: 6,
               }),
-              'dd.MM.Y'
+              'dd.MM.yyyy'
             )}
           </p>
 

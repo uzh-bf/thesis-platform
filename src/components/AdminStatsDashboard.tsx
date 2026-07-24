@@ -8,7 +8,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Select, TabContent, Tabs } from '@uzh-bf/design-system'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { trpc } from 'src/lib/trpc'
 
 type StatsView = 'supervisors' | 'responsibles'
@@ -62,7 +62,7 @@ export default function AdminStatsDashboard() {
   const yearItems = useMemo(() => {
     const years = data?.years?.length ? data.years : [selectedYear]
     return years.map((y) => ({ value: String(y), label: String(y) }))
-  }, [data?.years, selectedYear])
+  }, [data, selectedYear])
 
   const normalizedSearch = search.trim().toLowerCase()
 
@@ -150,10 +150,6 @@ export default function AdminStatsDashboard() {
     rowsPerPage === 'all' ? 1 : Math.max(1, Math.ceil(sortedRows.length / rowsPerPage))
 
   const effectiveCurrentPage = Math.min(currentPage, totalPages)
-
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [view, search, year])
 
   const paginatedRows =
     rowsPerPage === 'all'
@@ -256,7 +252,10 @@ export default function AdminStatsDashboard() {
             </label>
             <Select
               value={String(selectedYear)}
-              onChange={(value) => setYear(Number(value))}
+              onChange={(value) => {
+                setYear(Number(value))
+                setCurrentPage(1)
+              }}
               items={yearItems}
               className={{ root: 'w-full' }}
             />
@@ -269,7 +268,10 @@ export default function AdminStatsDashboard() {
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setCurrentPage(1)
+              }}
               placeholder="Search name or email…"
               className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
@@ -288,7 +290,10 @@ export default function AdminStatsDashboard() {
           <Tabs
             defaultValue="supervisors"
             value={view}
-            onValueChange={(value) => setView(value as StatsView)}
+            onValueChange={(value) => {
+              setView(value as StatsView)
+              setCurrentPage(1)
+            }}
             tabs={[
               {
                 id: 'admin-stats-supervisors',

@@ -1,5 +1,7 @@
 image:
   tag: 'stable-arm-872b43455ccfb5ff8e33dee0a9aca6667875ca77'
+  runtime: node-runner
+  pullPolicy: IfNotPresent
 
 env: prd
 appUrl: 'https://theses.df.uzh.ch'

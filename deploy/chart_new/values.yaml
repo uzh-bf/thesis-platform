@@ -16,6 +16,7 @@ azureAd:
 image:
   repository: ghcr.io/uzh-bf/thesis-platform
   tag: dev
+  runtime: node-runner
   pullPolicy: Always
 
 service:
@@ -46,6 +47,10 @@ resources:
     cpu: 200m
 
 migration:
+  image:
+    repository: ""
+    tag: ""
+    pullPolicy: ""
   resources:
     requests:
       memory: 256Mi

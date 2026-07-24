@@ -1,40 +1,89 @@
 services:
-  mysql:
-    image: docker.io/library/mysql:8.0
+  postgres:
+    image: docker.io/library/postgres:16
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD for local compose}
-      MYSQL_DATABASE: thesis
-      MYSQL_USER: thesis
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD for local compose}
+      POSTGRES_DB: thesis
+      POSTGRES_USER: thesis
+      # Local development only: the database is bound to 127.0.0.1 and holds
+      # no real data, so passwordless trust auth avoids checked-in credentials.
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - 3306:3306
+      - 127.0.0.1:15432:5432
     networks:
       - thesis-platform
     volumes:
-      - mysql-data:/var/lib/mysql
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U thesis -d thesis']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:3.35.0
+    command: azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
+    ports:
+      - 127.0.0.1:11000:10000
+    networks:
+      - thesis-platform
+    volumes:
+      - azurite-data:/data
+
+  oidc:
+    image: ghcr.io/navikt/mock-oauth2-server:2.1.11
+    environment:
+      SERVER_PORT: '4011'
+      JSON_CONFIG: >-
+        {
+          "interactiveLogin": false,
+          "tokenCallbacks": [
+            {
+              "issuerId": "default",
+              "requestMappings": [
+                {
+                  "requestParam": "grant_type",
+                  "match": "*",
+                  "claims": {
+                    "sub": "dev-admin",
+                    "email": "admin@example.com",
+                    "name": "Dev Admin",
+                    "email_verified": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+    ports:
+      - 127.0.0.1:4011:4011
+    networks:
+      - thesis-platform
 
   next:
     profiles:
       - app
     build: .
     environment:
-      NEXTAUTH_SECRET: 'abcdabcd'
+      NEXTAUTH_SECRET: local-development-secret-change-me
       EMAIL_FROM: theses-signin@bf-app.ch
       EMAIL_SERVER_HOST: sendria
       EMAIL_SERVER_PORT: 1025
       EMAIL_SERVER_USER:
       EMAIL_SERVER_PASSWORD:
-      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL for local compose}
+      DATABASE_URL: postgresql://thesis@postgres:5432/thesis?sslmode=disable
     ports:
-      - 3000:3000
+      - 127.0.0.1:3000:3000
     networks:
       - thesis-platform
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   mailhog:
     image: docker.io/mailhog/mailhog:latest
     ports:
-      - 1025:1025
-      - 8025:8025
+      - 127.0.0.1:1025:1025
+      - 127.0.0.1:8025:8025
     networks:
       - thesis-platform
 
@@ -42,4 +91,5 @@ networks:
   thesis-platform:
 
 volumes:
-  mysql-data:
+  postgres-data:
+  azurite-data:

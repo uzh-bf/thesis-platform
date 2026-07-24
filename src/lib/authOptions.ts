@@ -10,21 +10,95 @@ import { UserRole } from './constants'
 const isStagingEnvironment = () =>
   (process.env.THESIS_PLATFORM_ENV ?? '').trim().toLowerCase() === 'stg'
 
+const LOCAL_OIDC_PROVIDER_ID = 'local-oidc'
+
+const hasValue = (value: string | undefined) =>
+  typeof value === 'string' && value.trim() !== ''
+
+const isLocalOidcEnabled = () =>
+  process.env.NODE_ENV !== 'production' &&
+  hasValue(process.env.LOCAL_OIDC_ISSUER) &&
+  hasValue(process.env.LOCAL_OIDC_CLIENT_ID) &&
+  hasValue(process.env.LOCAL_OIDC_CLIENT_SECRET)
+
+const getDeveloperAdminDefaults = () => {
+  return {
+    role: UserRole.DEVELOPER,
+    adminRole: 'ADMIN' as const,
+    department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as any,
+  }
+}
+
+const getLocalAuthDefaults = (provider?: string) => {
+  if (provider !== LOCAL_OIDC_PROVIDER_ID) {
+    return null
+  }
+
+  return getDeveloperAdminDefaults()
+}
+
+const getSessionUser = async (userId: string, provider?: string) => {
+  const dbUser = await prisma.user.findUnique({
+    where: { id: userId },
+  })
+  const authDefaults = getLocalAuthDefaults(provider)
+
+  if (!dbUser || !authDefaults) {
+    return dbUser
+  }
+
+  if (
+    dbUser.role === authDefaults.role &&
+    dbUser.adminRole === authDefaults.adminRole &&
+    dbUser.department === authDefaults.department
+  ) {
+    return dbUser
+  }
+
+  return prisma.user.update({
+    where: { id: userId },
+    data: authDefaults,
+  })
+}
+
 // The platform can be embedded in an iframe on other (sub-)domains. For the
 // session to work in a cross-site iframe the auth cookies need
 // SameSite=None, which browsers only accept together with Secure. Cookie
 // names stay identical to the NextAuth defaults so existing sessions
 // remain valid; on plain HTTP (local dev) the defaults are kept as-is.
-const useSecureCookies = (process.env.NEXTAUTH_URL ?? '').startsWith(
-  'https://'
-)
+const useSecureCookies = (process.env.NEXTAUTH_URL ?? '').startsWith('https://')
 const cookiePrefix = useSecureCookies ? '__Secure-' : ''
 const cookieSameSite = useSecureCookies ? 'none' : 'lax'
 
-const getSessionUser = (userId: string) =>
-  prisma.user.findUnique({
-    where: { id: userId },
-  })
+const getLocalOidcProvider = () =>
+  ({
+    id: LOCAL_OIDC_PROVIDER_ID,
+    name: 'Local OIDC',
+    type: 'oauth',
+    wellKnown: `${process.env.LOCAL_OIDC_ISSUER}/.well-known/openid-configuration`,
+    clientId: process.env.LOCAL_OIDC_CLIENT_ID,
+    clientSecret: process.env.LOCAL_OIDC_CLIENT_SECRET,
+    idToken: true,
+    authorization: {
+      params: {
+        scope: 'openid profile email',
+      },
+    },
+    allowDangerousEmailAccountLinking: true,
+    profile(profile: {
+      sub?: string
+      email?: string
+      name?: string
+      picture?: string
+    }) {
+      return {
+        id: profile.sub ?? profile.email ?? 'local-oidc-user',
+        email: profile.email,
+        name: profile.name ?? profile.email ?? 'Local OIDC User',
+        image: profile.picture ?? null,
+      }
+    },
+  }) as NonNullable<NextAuthOptions['providers']>[number]
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -40,31 +114,38 @@ export const authOptions: NextAuthOptions = {
     //   },
     //   from: process.env.EMAIL_FROM,
     // }),
-    !isStagingEnvironment() &&
-      typeof process.env.AZURE_AD_CLIENT_ID === 'string' &&
-      process.env.AZURE_AD_CLIENT_ID !== '' &&
-      AzureADProvider({
-        clientId: process.env.AZURE_AD_CLIENT_ID as string,
-        clientSecret: process.env.AZURE_AD_CLIENT_SECRET as string,
-        tenantId: process.env.AZURE_AD_TENANT_ID as string,
-        authorization: {
-          params: {
-            prompt: 'login', // Force users to re-enter credentials on each login
-            scope: 'openid profile email',
-          },
-        },
-        // Allow linking OAuth account to existing user with same email
-        allowDangerousEmailAccountLinking: true,
-      }),
-    typeof process.env.AUTH0_CLIENT_ID === 'string' &&
-      process.env.AUTH0_CLIENT_ID !== '' &&
-      (Auth0Provider({
-        clientId: process.env.AUTH0_CLIENT_ID as string,
-        clientSecret: process.env.AUTH0_CLIENT_SECRET as string,
-        issuer: process.env.AUTH0_ISSUER as string,
-        // Allow linking OAuth account to existing user with same email
-        allowDangerousEmailAccountLinking: true,
-      }) as any),
+    ...(isLocalOidcEnabled() ? [getLocalOidcProvider()] : []),
+    ...(!isStagingEnvironment() &&
+    typeof process.env.AZURE_AD_CLIENT_ID === 'string' &&
+    process.env.AZURE_AD_CLIENT_ID !== ''
+      ? [
+          AzureADProvider({
+            clientId: process.env.AZURE_AD_CLIENT_ID as string,
+            clientSecret: process.env.AZURE_AD_CLIENT_SECRET as string,
+            tenantId: process.env.AZURE_AD_TENANT_ID as string,
+            authorization: {
+              params: {
+                prompt: 'login', // Force users to re-enter credentials on each login
+                scope: 'openid profile email',
+              },
+            },
+            // Allow linking OAuth account to existing user with same email
+            allowDangerousEmailAccountLinking: true,
+          }),
+        ]
+      : []),
+    ...(typeof process.env.AUTH0_CLIENT_ID === 'string' &&
+    process.env.AUTH0_CLIENT_ID !== ''
+      ? [
+          Auth0Provider({
+            clientId: process.env.AUTH0_CLIENT_ID as string,
+            clientSecret: process.env.AUTH0_CLIENT_SECRET as string,
+            issuer: process.env.AUTH0_ISSUER as string,
+            // Allow linking OAuth account to existing user with same email
+            allowDangerousEmailAccountLinking: true,
+          }) as any,
+        ]
+      : []),
   ],
   session: {
     strategy: 'jwt',
@@ -139,30 +220,34 @@ export const authOptions: NextAuthOptions = {
         data: {
           department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as any, // Cast as any since department is an enum
         },
-      });
+      })
     },
     async signOut({ token }) {
       // This event is called when the user signs out
       // The session will be cleared automatically by NextAuth
-      console.log('User signed out:', token.sub);
+      console.log('User signed out:', token.sub)
     },
   },
   callbacks: {
     async jwt({ token, user, account, profile, trigger }) {
       if (account && user) {
         // Fetch the full user with role from database
-        const dbUser = await getSessionUser(user.id)
-        
+        const dbUser = await getSessionUser(user.id, account.provider)
+
         token.sub = user.id
         token.role = dbUser?.role || 'UNSET'
         token.adminRole = dbUser?.adminRole ?? 'UNSET'
         token.isAdmin = token.adminRole !== 'UNSET'
-      } else if (trigger === 'update' || token.adminRole === undefined || token.adminRole !== 'ADMIN') {
+      } else if (
+        trigger === 'update' ||
+        token.adminRole === undefined ||
+        token.adminRole !== 'ADMIN'
+      ) {
         // Refresh user data from database on session update or if user is not admin
         // This allows immediate reflection when admin access is granted (just refresh the page)
         // Once user becomes admin, we stop checking the database on every request
         const dbUser = await getSessionUser(token.sub as string)
-        
+
         if (dbUser) {
           token.role = dbUser.role
           token.adminRole = dbUser.adminRole

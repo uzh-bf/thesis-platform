@@ -1,3 +1,10 @@
+{{- $imageRuntime := default "node-runner" .Values.image.runtime }}
+{{- if not (or (eq $imageRuntime "node-runner") (eq $imageRuntime "distroless")) }}
+{{- fail "image.runtime must be either node-runner or distroless" }}
+{{- end }}
+{{- if and (eq $imageRuntime "distroless") (not .Values.migration.image.tag) }}
+{{- fail "migration.image.tag is required when image.runtime is distroless" }}
+{{- end }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -20,9 +27,11 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: migrate
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: "{{ .Values.migration.image.repository | default .Values.image.repository }}:{{ .Values.migration.image.tag | default (.Values.image.tag | default .Chart.AppVersion) }}"
+          imagePullPolicy: {{ .Values.migration.image.pullPolicy | default .Values.image.pullPolicy }}
+          {{- if not .Values.migration.image.tag }}
           command: ['prisma', 'migrate', 'deploy']
+          {{- end }}
           envFrom:
             - secretRef:
                 name: {{ include "thesis-platform.secretName" . }}

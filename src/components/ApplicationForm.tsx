@@ -1,4 +1,3 @@
-import { BlobServiceClient } from '@azure/storage-blob'
 import {
   Button,
   FormikDatePicker,
@@ -11,8 +10,8 @@ import { Form, Formik } from 'formik'
 import { useState } from 'react'
 import Dropzone from 'react-dropzone'
 import toast, { Toaster } from 'react-hot-toast'
-import { createApplicationUploadBlobName } from 'src/lib/applicationUploadBlobName'
 import type { ApplicationUploadDocumentType } from 'src/lib/applicationUploadBlobName'
+import { uploadFileToBlob } from 'src/lib/blobUpload'
 import useLocalStorage from 'src/lib/hooks/useLocalStorage'
 import { trpc } from 'src/lib/trpc'
 import * as Yup from 'yup'
@@ -29,6 +28,7 @@ export default function ApplicationForm({
 }: ApplicationFormProps) {
   const [cv, setCv] = useState<any[]>([])
   const [transcript, setTranscript] = useState<any[]>([])
+  const [startingDate] = useState(() => dayjs().format('YYYY-MM-DD'))
 
   const mutation = trpc.generateSasQueryToken.useMutation()
   const submitApplication = trpc.submitProposalApplication.useMutation()
@@ -43,26 +43,25 @@ export default function ApplicationForm({
     ) =>
     async (files: any[]) => {
       const file = files[0]
-      const { SAS_STRING } = await mutation.mutateAsync()
-      console.log('MUTATION RESULT: ', SAS_STRING)
-      const blobServiceClient = new BlobServiceClient(
-        `${process.env.NEXT_PUBLIC_BLOBSERVICECLIENT_URL}${SAS_STRING}`
-      )
-      const containerClient = blobServiceClient.getContainerClient(
-        process.env.NEXT_PUBLIC_CONTAINER_NAME!
-      )
-      const name = createApplicationUploadBlobName(proposalId, documentType)
-      const blobClient = containerClient.getBlobClient(name)
-      const blockBlobClient = blobClient.getBlockBlobClient()
-      const result = await blockBlobClient.uploadData(file, {
-        blockSize: 4 * 1024 * 1024, // 4MB block size
+      const requestedFileName = `${formikProps.values.uzhemail}-${documentType}.pdf`
+      const { blobName, uploadUrl } = await mutation.mutateAsync({
+        requestedFileName,
+        contentType: 'application/pdf',
+        size: file.size,
+        purpose:
+          fieldKey === 'cvFile' ? 'application-cv' : 'application-transcript',
+      })
+
+      await uploadFileToBlob({
+        file,
+        uploadUrl,
       })
       if (fieldKey === 'cvFile') {
         setCv([file])
       } else {
         setTranscript([file])
       }
-      formikProps.setFieldValue(fieldKey, name)
+      formikProps.setFieldValue(fieldKey, blobName)
     }
 
   const isUploadEnabled = (email: string) => email.endsWith('uzh.ch')
@@ -117,7 +116,7 @@ export default function ApplicationForm({
         uzhemail: '',
         matriculationNumber: '',
         fullName: '',
-        startingDate: dayjs(Date.now()).format('YYYY-MM-DD'),
+        startingDate,
         motivation: '',
         proposalId: proposalId,
         cvFile: null,
@@ -212,8 +211,8 @@ export default function ApplicationForm({
                     {!isUploadEnabled(formikProps.values.uzhemail)
                       ? 'Enter your UZH Email before uploading files ⚠️'
                       : cv.length > 0
-                      ? `Attached File 📄: '${cv[0].name}'`
-                      : 'Drag and drop your file 🗃️ here, or click to select the file'}
+                        ? `Attached File 📄: '${cv[0].name}'`
+                        : 'Drag and drop your file 🗃️ here, or click to select the file'}
                   </p>
                 </div>
               </section>
@@ -244,8 +243,8 @@ export default function ApplicationForm({
                     {!isUploadEnabled(formikProps.values.uzhemail)
                       ? 'Enter your UZH Email before uploading files ⚠️'
                       : transcript.length > 0
-                      ? `Attached File 📄: '${transcript[0].name}'`
-                      : 'Drag and drop your file 🗃️ here, or click to select the file'}
+                        ? `Attached File 📄: '${transcript[0].name}'`
+                        : 'Drag and drop your file 🗃️ here, or click to select the file'}
                   </p>
                 </div>
               </section>

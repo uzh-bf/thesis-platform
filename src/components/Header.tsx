@@ -7,8 +7,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button } from '@uzh-bf/design-system'
-import Image from 'next/image'
 import { signIn, signOut, useSession } from 'next-auth/react'
+import Image from 'next/image'
 import { useRouter } from 'next/router'
 import { UserRole } from 'src/lib/constants'
 import { openAuthPopup, watchAuthPopup } from 'src/lib/embedding'
@@ -113,7 +113,7 @@ export default function Header() {
       // The /auth/signout page will handle clearing the local NextAuth session
       window.location.href = logoutUrl
     } else {
-      // Simple logout for Auth0Provider (dev mode)
+      // Simple logout for non-Azure providers.
       await signOut({ callbackUrl: '/' })
     }
   }
