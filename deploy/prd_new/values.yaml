@@ -1,6 +1,6 @@
 image:
-  tag: 'stable-arm-872b43455ccfb5ff8e33dee0a9aca6667875ca77'
-  runtime: node-runner
+  tag: 'stable-arm-0b61b232c28e06e683a2242d31ee45a3e9f75f41'
+  runtime: distroless
   pullPolicy: IfNotPresent
 
 env: prd
@@ -37,3 +37,7 @@ ingress:
         - theses.prd.df-app.ch
         - theses.bf.uzh.ch
         - theses.df.uzh.ch
+
+migration:
+  image:
+    tag: 'migration-stable-arm-0b61b232c28e06e683a2242d31ee45a3e9f75f41'
