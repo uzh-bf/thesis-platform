@@ -21,6 +21,7 @@ function Footer() {
   const faqUrl =
     process.env.NEXT_PUBLIC_FAQ_URL_STUDENT ??
     process.env.NEXT_PUBLIC_FAQ_URL_SUPERVISOR
+  const statusPageUrl = process.env.NEXT_PUBLIC_STATUS_PAGE_URL?.trim()
 
   // Embedded pages live inside a host page with its own footer, so only a
   // slim bar with the essential links is shown
@@ -46,6 +47,16 @@ function Footer() {
                 rel="noreferrer"
               >
                 FAQ
+              </a>
+            )}
+            {statusPageUrl && (
+              <a
+                href={statusPageUrl}
+                className="hover:text-[#0028A5]"
+                target="_blank"
+                rel="noreferrer"
+              >
+                System Status
               </a>
             )}
             <a
@@ -111,6 +122,16 @@ function Footer() {
             {faqUrl && (
               <a href={faqUrl} className="hover:text-[#0028A5]" target="_blank">
                 FAQ / Documentation
+              </a>
+            )}
+            {statusPageUrl && (
+              <a
+                href={statusPageUrl}
+                className="hover:text-[#0028A5]"
+                target="_blank"
+                rel="noreferrer"
+              >
+                System Status
               </a>
             )}
             {process.env.NEXT_PUBLIC_APP_VERSION && (

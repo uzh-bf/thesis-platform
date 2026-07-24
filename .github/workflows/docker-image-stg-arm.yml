@@ -80,6 +80,7 @@ jobs:
             NEXT_PUBLIC_DEPARTMENT_LONG_NAME=Department of Finance
             NEXT_PUBLIC_FAQ_URL_STUDENT=https://www.df.uzh.ch/en/studies/bachelor-master/thesis/faq.html
             NEXT_PUBLIC_FAQ_URL_SUPERVISOR=https://www.df.uzh.ch/de/intranet/phd/thesis-supervision.html
+            NEXT_PUBLIC_STATUS_PAGE_URL=https://thesis-platform.betteruptime.com
             NEXT_PUBLIC_APP_VERSION=latest-arm-${{ github.sha }}
 
       - name: Build and push migration image
