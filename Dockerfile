@@ -17,6 +17,10 @@ RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 # install script is required (verified: generate, next build, migrate deploy).
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm i --frozen-lockfile --ignore-scripts
+# The schema engine must be fetched at build time: `prisma migrate deploy` in
+# the migration image runs as a non-root user with root-owned node_modules, so
+# the on-demand download would fail with a permission error.
+RUN pnpm rebuild @prisma/engines
 
 # Rebuild the source code only when needed
 FROM base AS builder
