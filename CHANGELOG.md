@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.20.1](https://github.com/uzh-bf/thesis-platform/compare/v1.20.0...v1.20.1) (2026-07-24)
+
+
+### Bug Fixes
+
+* **deps:** update vulnerable dependencies flagged by Dependabot ([#177](https://github.com/uzh-bf/thesis-platform/issues/177)) ([e93fec3](https://github.com/uzh-bf/thesis-platform/commit/e93fec3b6e675fe8e7ac8819142b16036d00f2fd))
+
 ## [1.20.0](https://github.com/uzh-bf/thesis-platform/compare/v1.19.0...v1.20.0) (2026-07-24)
 
 
