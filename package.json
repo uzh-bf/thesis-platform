@@ -8,7 +8,8 @@
     "pnpm": ">=11.9.0 <12"
   },
   "maintainers": [
-    "Roland Schlaefli <roland.schlaefli@df.uzh.ch>"
+    "Roland Schlaefli <roland.schlaefli@df.uzh.ch>",
+    "Maximilian Weber <maximilian.weber@df.uzh.ch>"
   ],
   "contributors": [
     "Maximilian Weber <maximilian.weber@df.uzh.ch>"
