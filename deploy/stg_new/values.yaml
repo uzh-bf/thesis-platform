@@ -1,6 +1,6 @@
 image:
-  tag: 'latest-arm-245f87e66c47b2bb9900144363262ba1effd256a'
-  runtime: node-runner
+  tag: 'latest-arm-78d8f42703d7ceba1743635ae3bafd6c187f424a'
+  runtime: distroless
   pullPolicy: IfNotPresent
 
 env: stg
@@ -22,3 +22,7 @@ ingress:
     - secretName: thesis-platform-stage-tls
       hosts:
         - theses.stg.df-app.ch
+
+migration:
+  image:
+    tag: 'migration-latest-arm-78d8f42703d7ceba1743635ae3bafd6c187f424a'
