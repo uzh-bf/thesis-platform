@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.20.0](https://github.com/uzh-bf/thesis-platform/compare/v1.19.0...v1.20.0) (2026-07-24)
+
+
+### Features
+
+* make the platform iframe-ready ([#171](https://github.com/uzh-bf/thesis-platform/issues/171)) ([245f87e](https://github.com/uzh-bf/thesis-platform/commit/245f87e66c47b2bb9900144363262ba1effd256a))
+
+
+### Bug Fixes
+
+* fetch Prisma schema engine at image build time ([#176](https://github.com/uzh-bf/thesis-platform/issues/176)) ([cae0097](https://github.com/uzh-bf/thesis-platform/commit/cae0097c9ac074fb9e311f3eb90fb45bd851f0f7))
+
 ## [1.19.0](https://github.com/uzh-bf/thesis-platform/compare/v1.18.4...v1.19.0) (2026-07-23)
 
 
