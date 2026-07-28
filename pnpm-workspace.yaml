@@ -30,6 +30,7 @@ overrides:
   sharp@<0.35.0: 0.35.3
   shell-quote@<=1.8.4: 1.10.0
   svgo@>=4.0.0 <4.0.2: 4.0.2
+  valibot@<1.4.2: 1.4.2
   yaml@>=2.0.0 <2.8.3: 2.9.0
 peerDependencyRules:
   allowedVersions:
