@@ -3101,13 +3101,6 @@ export const appRouter = router({
             message: 'Previous workflow fields must stay filled.',
           })
         }
-
-        if (!hasGrade) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Grade is required before saving this step.',
-          })
-        }
       }
 
       if (currentWorkflowStep === 'COMPLETED') {
@@ -3138,7 +3131,11 @@ export const appRouter = router({
             ? hasSubmissionDate
               ? 'GRADING'
               : 'IN_PROGRESS'
-            : 'COMPLETED'
+            : currentWorkflowStep === 'GRADING'
+              ? hasGrade
+                ? 'COMPLETED'
+                : 'GRADING'
+              : 'COMPLETED'
 
       await prisma.adminInfo.update({
         where: { id: input.adminInfoId },

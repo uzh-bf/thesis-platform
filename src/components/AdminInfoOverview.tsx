@@ -460,11 +460,6 @@ export default function AdminInfoOverview() {
         alert('Previous workflow fields must stay filled.')
         return
       }
-
-      if (!hasGrade) {
-        alert('Step 3 requires Grade.')
-        return
-      }
     }
 
     if (workflowState === 'COMPLETED') {
@@ -1634,8 +1629,7 @@ export default function AdminInfoOverview() {
                 parsedGradeValue !== null && !isGradeValueInvalid
               const isOlatCapturedDateRequired = true
               const isSubmissionDateRequired = workflowState !== 'OPEN'
-              const isGradeRequired =
-                workflowState === 'GRADING' || workflowState === 'COMPLETED'
+              const isGradeRequired = workflowState === 'COMPLETED'
               const submissionDateLockMessage =
                 'Locked until OLAT Captured Date is saved.'
               const olatGradeDateLockMessage =
@@ -1648,7 +1642,7 @@ export default function AdminInfoOverview() {
                   : workflowState === 'IN_PROGRESS'
                     ? 'Step 2: Submission Date is unlocked. Latest Submission Date can be saved now; set Submission Date to move to GRADING.'
                     : workflowState === 'GRADING'
-                      ? 'Step 3: Grade is required. OLAT Grade Date is optional.'
+                      ? 'Step 3: Dates can still be adjusted. Set Grade to complete the workflow. OLAT Grade Date is optional.'
                       : 'Workflow completed.'
               const acceptedApp = proposal?.applications?.find(
                 (app: any) => app.statusKey === 'ACCEPTED'
