@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.22.0](https://github.com/uzh-bf/thesis-platform/compare/v1.21.1...v1.22.0) (2026-07-28)
+
+
+### Features
+
+* **admin:** extend table search to thesis title, supervisor, and professor names ([#186](https://github.com/uzh-bf/thesis-platform/issues/186)) ([c092713](https://github.com/uzh-bf/thesis-platform/commit/c092713636098c1c9bd3a7902d185e23df662bc3))
+
+
+### Bug Fixes
+
+* **deps:** force brace-expansion to 5.0.8 everywhere to resolve OOM DoS advisory ([#184](https://github.com/uzh-bf/thesis-platform/issues/184)) ([77a60de](https://github.com/uzh-bf/thesis-platform/commit/77a60de58bba984f2fd79e32f22029b1dd9c21c9))
+* **docker:** copy patches directory before pnpm install in deps stage ([#185](https://github.com/uzh-bf/thesis-platform/issues/185)) ([5cf7773](https://github.com/uzh-bf/thesis-platform/commit/5cf77732c148de23ab7bb29c6c419c8eadf35795))
+
 ### [1.21.1](https://github.com/uzh-bf/thesis-platform/compare/v1.21.0...v1.21.1) (2026-07-28)
 
 
