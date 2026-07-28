@@ -16,6 +16,8 @@ RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 # Prisma 7 / sharp / esbuild ship their binaries as platform packages, so no
 # install script is required (verified: generate, next build, migrate deploy).
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# patchedDependencies in pnpm-workspace.yaml reference files in patches/
+COPY patches ./patches
 RUN pnpm i --frozen-lockfile --ignore-scripts
 # The schema engine must be fetched at build time: `prisma migrate deploy` in
 # the migration image runs as a non-root user with root-owned node_modules, so
