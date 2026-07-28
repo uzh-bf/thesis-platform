@@ -215,7 +215,7 @@ export default function AdminInfoOverview() {
   >([])
   const [hasLoadedPersistedFilters, setHasLoadedPersistedFilters] =
     useState(false)
-  const [studentSearch, setStudentSearch] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false)
   const statusDropdownRef = useRef<HTMLDivElement>(null)
   const statusButtonRef = useRef<HTMLButtonElement>(null)
@@ -761,7 +761,7 @@ export default function AdminInfoOverview() {
   }, [createEntryProfessors, sortedProfessors])
 
   const displayedSupervisions = useMemo(() => {
-    const normalizedStudentFilter = studentSearch.trim().toLowerCase()
+    const normalizedSearchQuery = searchQuery.trim().toLowerCase()
 
     const selectedProfessorIds =
       selectedResponsibleIds === null ? null : new Set(selectedResponsibleIds)
@@ -771,7 +771,7 @@ export default function AdminInfoOverview() {
         ? sortedProfessors
         : sortedProfessors.filter((r: any) => selectedProfessorIds.has(r.id))
 
-    const matches = (supervision: any) => {
+    const matches = (supervision: any, professor: any) => {
       const proposal = supervision?.proposal
       const adminInfo = proposal?.AdminInfo
       const proposalStatus = adminInfo?.status
@@ -786,12 +786,20 @@ export default function AdminInfoOverview() {
         }
       }
 
-      if (normalizedStudentFilter) {
+      if (normalizedSearchQuery) {
         const acceptedApp = proposal?.applications?.find(
           (app: any) => app.statusKey === 'ACCEPTED'
         )
-        const studentName = (acceptedApp?.fullName || '').toLowerCase()
-        if (!studentName.includes(normalizedStudentFilter)) return false
+        const searchableValues = [
+          acceptedApp?.fullName,
+          proposal?.title,
+          supervision?.supervisor?.name,
+          professor?.name,
+        ]
+        const anyMatch = searchableValues.some((value) =>
+          (value || '').toLowerCase().includes(normalizedSearchQuery)
+        )
+        if (!anyMatch) return false
       }
 
       return true
@@ -799,7 +807,7 @@ export default function AdminInfoOverview() {
 
     const rows = base.flatMap((professor: any) =>
       professor.supervisions
-        .filter(matches)
+        .filter((supervision: any) => matches(supervision, professor))
         .map((supervision: any) => ({ professor, supervision }))
     )
 
@@ -915,7 +923,7 @@ export default function AdminInfoOverview() {
     sortedProfessors,
     selectedResponsibleIds,
     selectedStatuses,
-    studentSearch,
+    searchQuery,
     sortColumn,
     sortDirection,
   ])
@@ -1139,16 +1147,16 @@ export default function AdminInfoOverview() {
 
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-0.5">
-                Student
+                Search
               </label>
               <input
                 type="text"
-                value={studentSearch}
+                value={searchQuery}
                 onChange={(e) => {
-                  setStudentSearch(e.target.value)
+                  setSearchQuery(e.target.value)
                   setCurrentPage(1)
                 }}
-                placeholder="Filter by student name…"
+                placeholder="Filter by student, thesis, supervisor, or professor…"
                 className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
