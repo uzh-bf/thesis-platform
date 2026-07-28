@@ -3124,18 +3124,19 @@ export const appRouter = router({
       if ('comment' in input) data.comment = input.comment
       if ('capturedOnZora' in input) data.capturedOnZora = input.capturedOnZora
 
-      data.status =
-        currentWorkflowStep === 'OPEN'
-          ? 'IN_PROGRESS'
-          : currentWorkflowStep === 'IN_PROGRESS'
-            ? hasSubmissionDate
-              ? 'GRADING'
-              : 'IN_PROGRESS'
-            : currentWorkflowStep === 'GRADING'
-              ? hasGrade
-                ? 'COMPLETED'
-                : 'GRADING'
-              : 'COMPLETED'
+      switch (currentWorkflowStep) {
+        case 'OPEN':
+          data.status = 'IN_PROGRESS'
+          break
+        case 'IN_PROGRESS':
+          data.status = hasSubmissionDate ? 'GRADING' : 'IN_PROGRESS'
+          break
+        case 'GRADING':
+          data.status = hasGrade ? 'COMPLETED' : 'GRADING'
+          break
+        default:
+          data.status = 'COMPLETED'
+      }
 
       await prisma.adminInfo.update({
         where: { id: input.adminInfoId },
