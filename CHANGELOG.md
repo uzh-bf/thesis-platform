@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.21.1](https://github.com/uzh-bf/thesis-platform/compare/v1.21.0...v1.21.1) (2026-07-28)
+
+
+### Bug Fixes
+
+* Allow updating admin info dates in GRADING step without a grade ([#181](https://github.com/uzh-bf/thesis-platform/issues/181)) ([408d775](https://github.com/uzh-bf/thesis-platform/commit/408d775a57abc3832d8458851614ec8ca829e987))
+* **deps:** override brace-expansion to 5.0.8 to fix OOM DoS advisory ([#183](https://github.com/uzh-bf/thesis-platform/issues/183)) ([4de18a1](https://github.com/uzh-bf/thesis-platform/commit/4de18a18b8a9f27874035f604ab7bad2d8e86768))
+* **deps:** override valibot to 1.4.2 to fix flatten() TypeError advisory ([#182](https://github.com/uzh-bf/thesis-platform/issues/182)) ([727c8fb](https://github.com/uzh-bf/thesis-platform/commit/727c8fb5c5b786b731c8d40466716868e5af2111))
+
 ## [1.21.0](https://github.com/uzh-bf/thesis-platform/compare/v1.20.2...v1.21.0) (2026-07-24)
 
 
