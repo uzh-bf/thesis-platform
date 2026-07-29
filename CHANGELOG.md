@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.22.1](https://github.com/uzh-bf/thesis-platform/compare/v1.22.0...v1.22.1) (2026-07-29)
+
+
+### Bug Fixes
+
+* **analytics:** correct Matomo site ID and use matomo.* tracker endpoints ([#187](https://github.com/uzh-bf/thesis-platform/issues/187)) ([1a20585](https://github.com/uzh-bf/thesis-platform/commit/1a20585103ffd501d892adfa98a405a42afbf114))
+
 ## [1.22.0](https://github.com/uzh-bf/thesis-platform/compare/v1.21.1...v1.22.0) (2026-07-28)
 
 
