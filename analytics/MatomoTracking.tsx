@@ -5,7 +5,7 @@ import { useEffect } from 'react'
 const MATOMO_ALLOWED_HOST = 'theses.df.uzh.ch'
 const MATOMO_BASE_URL = 'https://webstats.uzh.ch/'
 const MATOMO_SCRIPT_BASE_URL = '//webstats.uzh.ch/'
-const MATOMO_SITE_ID = '601'
+const MATOMO_SITE_ID = '600'
 
 type MatomoCommand = Array<string | number | boolean>
 
@@ -50,7 +50,7 @@ function MatomoTracking() {
           globalThis._paq.push(['enableLinkTracking']);
 
           var u='${MATOMO_SCRIPT_BASE_URL}';
-          globalThis._paq.push(['setTrackerUrl', u+'piwik.php']);
+          globalThis._paq.push(['setTrackerUrl', u+'matomo.php']);
           globalThis._paq.push(['setSiteId', '${MATOMO_SITE_ID}']);
 
           var d=globalThis.document;
@@ -59,7 +59,7 @@ function MatomoTracking() {
           g.type='text/javascript';
           g.async=true;
           g.defer=true;
-          g.src=u+'piwik.js';
+          g.src=u+'matomo.js';
           s.parentNode.insertBefore(g,s);
         })();
       `}
