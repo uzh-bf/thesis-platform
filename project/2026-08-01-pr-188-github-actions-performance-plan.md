@@ -1,9 +1,10 @@
-# GitHub Actions Performance and Feedback Plan
+# GitHub Actions Performance and Feedback Plan (PR #188)
 
 Date: 2026-08-01
 Status: Slices 1–2 and 4 implemented; Bake benchmark complete and rejected by the adoption gate; static checks pass; native Docker proof, representative PR validation, and hosted staging validation pending; SOL high plan review complete
 Branch: `rs/github-actions-performance-plan`
 Target branch: `main`
+PR: https://github.com/uzh-bf/thesis-platform/pull/188
 Base checked: `origin/main` at `09ab3bff6abd1a5e411e697dc3b898ad68a6d894`
 
 ## Goal
