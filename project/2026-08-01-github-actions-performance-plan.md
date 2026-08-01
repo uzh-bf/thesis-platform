@@ -1,7 +1,7 @@
 # GitHub Actions Performance and Feedback Plan
 
 Date: 2026-08-01
-Status: Draft for independent review; no workflow behaviour has changed
+Status: Draft; first SOL high review incorporated, final re-review pending; no workflow behaviour has changed
 Branch: `rs/github-actions-performance-plan`
 Target branch: `main`
 Base checked: `origin/main` at `09ab3bff6abd1a5e411e697dc3b898ad68a6d894`
@@ -62,8 +62,8 @@ app/migration Buildx build.
 
 | Decision | Recommendation | Why it needs a ruling | Default in this plan |
 | --- | --- | --- | --- |
-| Cancel an in-progress staging build when a newer eligible `main` push arrives | Approve `cancel-in-progress: true` for staging only. | A superseded run can stop before it updates desired state; the next eligible run becomes the deployment candidate. This favors newest-state convergence over building every intermediate commit. | Planned, but do not merge this slice without explicit approval. |
-| Replace the two sequential Buildx calls with Bake | Benchmark first; adopt only when the critical path improves by at least 20% without increasing billed runner time by more than 10%. | It adds a build definition and changes an already fast, working image path. | Experimental slice; omit from the delivery branch if the threshold is not met. |
+| Cancel an in-progress staging build when a newer eligible `main` push arrives | Approve `cancel-in-progress: true` for staging only, with an API-backed freshness guard before the deployment-values commit and push. | Cancellation alone is cooperative: an older run can otherwise win a late push. The guard makes a stale run exit without changing desired state. | Planned, but do not merge this slice without explicit approval. |
+| Replace the two sequential DF Buildx calls with Bake | Benchmark first; adopt only when the median critical path improves by at least 20% without increasing median runner time by more than 10%. | It adds a build definition and changes an already fast, working image path. The existing IBW job remains independent and parallel. | Experimental slice; omit from the delivery branch if the threshold is not met. |
 | Required PR checks | Require lint, application build, and non-pushing native-ARM Docker target checks after they are green on representative PRs. | Branch protection changes forge policy and can block contributors. | Implement the workflow; change branch protection only with explicit approval. |
 | E2E in CI | Keep out of the required PR gate for now. | The current Playwright suite needs a browser plus local Postgres, Azurite, and OIDC services; its runtime and reliability have not been measured in Actions. | Record a separately scoped follow-up only. |
 
@@ -79,9 +79,9 @@ step time, conclusion, and whether a deployment-values commit was made.
 
 | Measure | Baseline | Acceptance rule |
 | --- | --- | --- |
-| Staging stale work | Running builds are not cancelled; a burst can wait behind an obsolete build. | A newer eligible push cancels the prior staging run, and the eventual deployment tag is the newest eligible SHA. |
+| Staging stale work | Running builds are not cancelled; a burst can wait behind an obsolete build. | A newer eligible push cancels the prior staging run. After the burst is quiescent, the values file and mutable app/migration aliases resolve to the newest eligible SHA; a stale run exits before its desired-state push. |
 | Staging build critical path | 2m34 in the latest verified successful run. | No more than 10% slower after the safe context/concurrency changes. |
-| Buildx shared-target experiment | DF release path: 2m12 app + 1m57 migration serially. | Adopt only if the median critical path is at least 20% lower over three comparable native-ARM runs, with no image or migration regression. |
+| Buildx shared-target experiment | DF release path: 2m12 app + 1m57 migration serially. | Adopt only if three paired, same-input native-ARM comparisons show a median critical-path reduction of at least 20%, no more than 10% median runner-time increase, and no image or migration regression. |
 | PR feedback | No checked-in `pull_request` quality workflow. | A PR receives independent lint, app-build, and non-pushing ARM image validation results without registry or deployment credentials. |
 
 Use at least five normal staging runs after merge for the staging metrics. Do not
@@ -125,48 +125,88 @@ Files:
 
 Do:
 
-- Change only the staging workflow-level concurrency setting to
-  `cancel-in-progress: true`.
+- Change the staging workflow-level concurrency setting to
+  `cancel-in-progress: true` and retain its current branch-scoped group.
 - Keep the existing group `build-staging-arm-${{ github.ref }}` so cancellation
   is scoped to one staging branch, not to production, release, PR validation,
   or unrelated workflows.
+- Add `actions: read` to this job's existing least-privilege permissions so its
+  own `GITHUB_TOKEN` can query the staging workflow's push runs. Keep
+  `contents: read` and `packages: write`; use `DEPLOY_PUSH_TOKEN` only for the
+  existing authenticated deployment-values push.
+- Add an inline freshness helper in the deployment-values step, with the
+  source-selection portion exercised locally against recorded API JSON fixtures.
+  It must identify the newest *eligible* staging source SHA from this workflow's
+  `push` runs on `main` (not `workflow_dispatch`, and excluding the existing
+  `chore(release)` / `chore(deploy)` job-skip cases). The query is the authority
+  for the current trigger and path-ignore policy; it must be bounded, retry on
+  transient API lag, and fail closed without a values-file push if it cannot
+  establish freshness.
+- Before modifying `deploy/stg_new/values.yaml`, compare that eligible SHA with
+  `github.sha`. If they differ, log a clear `stale source` message and exit
+  successfully without making a deployment commit. Do not delete any immutable
+  image tag already published by the cancelled or stale build.
+- Start each deployment attempt from a freshly fetched `origin/main`, regenerate
+  the values-file change there, re-check freshness immediately before `git
+  push`, and use only a normal fast-forward push. That push is the optimistic
+  compare-and-swap: never force-push a deployment commit.
+- If another main commit makes the push non-fast-forward, fetch again and retry
+  the whole freshness check and values-file generation only while `github.sha`
+  remains the newest eligible source SHA. Otherwise exit as stale. Cap retries
+  and surface an actionable error rather than silently looping.
 - Preserve the current `main` guard, path exclusions, native ARM runner,
   `linux/arm64` output, image tags, registry permissions, and deployment-values
-  update code.
-- Add a concise comment explaining that the group implements latest-wins staging
-  deployment and intentionally does not apply to production.
+  semantics. Add a concise comment explaining the staging-only latest-wins
+  policy and the pre-push freshness guard.
 
 Why this is safe:
 
-- Cancellation is cooperative. A run may leave an immutable image tag published
-  and a `git push` already in progress can win a race with cancellation; the
-  plan therefore promises eventual convergence to the newest eligible SHA after
-  the commit burst, not an impossible guarantee that no stale tag is ever
-  written transiently.
-- The newer eligible run publishes a SHA-specific image and updates desired
-  state. Deployment is therefore eventually directed at the latest eligible
-  source, not at an older queued source.
+- Cancellation is cooperative, so it is an efficiency mechanism rather than the
+  correctness mechanism. A run may still finish publishing immutable SHA tags.
+  The freshness check plus fast-forward-only push prevents a run known to be
+  stale from changing desired state, and a rejected push is recomputed only for
+  the still-current source SHA.
+- A source push that arrives between the final freshness check and a successful
+  push can transiently leave an older desired-state commit. Its newer eligible
+  run is then the only run permitted to converge desired state. The acceptance
+  criterion is therefore measured after all affected runs are terminal, not
+  during a cancellation signal race.
 - Existing deploy commits remain excluded by the job condition, preventing a
   workflow loop.
 
 Verification:
 
 - Parse the changed workflow and inspect its rendered `concurrency` block.
-- Create two qualifying non-release commits only after the user approves staging
-  resource use. Confirm the earlier run is `cancelled`, the final run succeeds,
-  and `deploy/stg_new/values.yaml` points to the later SHA-specific image tag.
+- Exercise the source-selection portion against recorded API fixtures for:
+  current source, newer eligible source, a manual run, excluded release/deploy
+  commits, transient API delay, and a push conflict. Run `shellcheck` if
+  available.
+- Create a burst of at least three qualifying non-release commits only after the
+  user approves staging resource use. Confirm older runs are cancelled or exit
+  stale, the final eligible run succeeds, and after all runs are terminal
+  `deploy/stg_new/values.yaml` points to the newest SHA-specific app and
+  migration tags.
+- Inspect `main-arm`, `latest-arm`, `migration-main-arm`, and
+  `migration-latest-arm` with `docker buildx imagetools inspect`; after the same
+  quiescent burst, each mutable alias must resolve to the newest eligible SHA's
+  ARM manifest. Record any transient stale immutable tag as expected evidence,
+  not a deployment failure.
+- Exercise a non-fast-forward retry with a harmless concurrent main update in an
+  approved staging validation window. Confirm the older run either regenerates
+  against current `main` while still fresh or exits stale; it must never
+  force-push or overwrite a newer main commit.
 - Confirm a release workflow remains unaffected and retains
   `release-production` with `cancel-in-progress: false`.
 
 Rollback:
 
-- Revert the one concurrency setting if every qualifying commit must finish or
-  cancellation exposes an Actions race. No registry or deployment cleanup is
-  required; SHA tags are immutable build artifacts.
+- Revert the concurrency and freshness-helper change together if it blocks a
+  valid staging deployment. No registry or deployment cleanup is required; SHA
+  tags are immutable build artifacts.
 
 Commit:
 
-- `ci(staging): cancel superseded ARM image builds`
+- `ci(staging): converge ARM deploys on newest source`
 
 ## Slice 2 — Reduce Docker Build Context Safely
 
@@ -207,7 +247,13 @@ Commit:
 
 ## Slice 3 — Prove or Reject a Shared Buildx Bake Path
 
-Files, only if the benchmark passes:
+Benchmark-only files (disposable; never part of the delivery PR):
+
+- a branch-local diagnostic workflow under `.github/workflows/`, removed after
+  its three paired rounds; or an equivalent manually dispatched job in a
+  disposable benchmark branch
+
+Files, only if the benchmark passes and Bake is adopted:
 
 - `docker-bake.hcl` (new)
 - `.github/workflows/docker-image-stg-arm.yml`
@@ -223,35 +269,62 @@ measured rather than assumed.
 
 Experiment design:
 
-- Define a minimal `docker-bake.hcl` with a common target and separate targets
-  for DF app, DF migration, and IBW app. Parameters must cover image repository,
-  immutable tags, target name, platform, and the existing public build arguments.
-- Invoke the targets with one normal native-ARM Buildx builder per workflow run.
-  Preserve the existing `linux/arm64`, push behavior, Docker labels, image
-  repositories, SHA-specific tags, and migration target.
-- Do not use Docker GitHub Builder, self-hosted runners, `cache-to`, or
-  `cache-from` in this experiment. Those are different architecture decisions.
+- Scope Bake to the existing `build-prd-arm` DF job and the equivalent staging
+  job only: one Bake invocation may build the DF app and DF migration targets
+  that currently run sequentially on the same ARM runner. Do **not** combine
+  them with IBW. `build-prd-ibw-arm` remains a separate native-ARM job with its
+  existing independent failure boundary and production parallelism.
+- Define a minimal `docker-bake.hcl` with a common DF target and separate
+  `df-app` and `df-migration` targets. Parameters cover the image repository,
+  immutable and mutable tags, Docker target, platform, labels, and existing
+  public build arguments. Keep target names explicitly mapped to the current
+  Dockerfile (`app` and `migration-runner`).
+- Preserve the current production job IDs, `needs` graph, `linux/arm64`, push
+  behavior, Docker labels, image repositories, and SHA-specific tag calculation.
+  Bake replaces only the two serial DF invocations inside their existing job;
+  it does not create a cross-runner builder or alter the production deploy and
+  GitHub-release jobs.
+- Create a disposable, non-pushing diagnostic workflow or branch-only job for
+  the benchmark. It runs `mode: sequential` and `mode: bake` in separate clean
+  `ubuntu-24.04-arm` jobs against the same commit, Dockerfile, target pair,
+  platform, public build arguments, Buildx driver, and output mode. Disable
+  external BuildKit cache import/export in both modes; neither mode logs in or
+  publishes an image.
+- Before manually dispatching any benchmark round, state its expected hosted
+  ARM-runner use in chat and obtain approval. It has no registry, deployment,
+  or production side effect, but it still consumes CI capacity.
+- Run three paired benchmark rounds. For each round record (1) critical-path
+  seconds from the first DF build invocation to the final app-or-migration
+  completion, (2) whole-job runner seconds from job start to completion, and
+  (3) the sum of individual build-step seconds. Compare medians only between
+  the paired modes; do not compare a non-pushing diagnostic build with a
+  historical pushed release.
 - Use `docker buildx bake --check` to validate the definition before running it.
-- Compare at least three equivalent non-production builds to the Slice 0
-  baseline. A non-pushing PR-only build is preferred; no release is created only
-  for this experiment.
+- Do not use Docker Build Cloud, self-hosted runners, `cache-to`, or
+  `cache-from` in this experiment. Those are separate architecture decisions.
 
 Adoption gate:
 
-- Keep Bake only if it improves the median critical path by at least 20%, does
-  not increase runner time by more than 10%, produces the same image manifests,
-  and does not complicate rollback or tag calculation.
-- If the result is neutral or worse, remove the experimental files and retain
-  the two explicit build steps. Document the measured result in this plan.
+- Keep Bake only if its paired median critical path is at least 20% lower and
+  paired median whole-job runner time is no more than 10% higher. The benchmark
+  must also show both targets complete, preserve the required build arguments,
+  and leave a simple rollback to the two explicit calls.
+- If the result is neutral or worse, remove the disposable diagnostic workflow
+  or branch and retain the two explicit build steps. Document the measured
+  result in this plan; do not leave an experimental workflow in the delivery
+  branch or PR.
 
 Verification when adopted:
 
 - `docker buildx bake --check`
-- Native-ARM non-pushing builds of `app` and `migration-runner`
-- `docker buildx imagetools inspect` for the published DF, DF migration, and
-  IBW SHA-specific ARM tags on the next normal release
-- Confirm the production deployment job waits for both image targets and no
-  longer than before.
+- Paired native-ARM non-pushing builds of the DF `app` and `migration-runner`
+  targets with the recorded benchmark measures
+- On the next ordinary staging run and next ordinary release after adoption,
+  use `docker buildx imagetools inspect` for published DF and DF migration
+  SHA-specific ARM tags; inspect IBW's existing SHA-specific tag on the ordinary
+  release as a non-regression check.
+- Confirm the production deployment and GitHub-release jobs still wait for the
+  unchanged two build jobs and that IBW remains parallel to the DF build job.
 
 Commit, only when adopted:
 
@@ -269,10 +342,12 @@ Do:
   repeatable diagnostics. It must use a per-PR latest-wins concurrency group:
   `${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}`
   with `cancel-in-progress: true`.
-- Grant only `contents: read`; do not log into GHCR, request package write
-  permission, read deployment secrets, or update deployment values.
+- Use only `pull_request`, never `pull_request_target`. Grant only
+  `contents: read`; do not log into GHCR, request package write permission,
+  read deployment secrets, or update deployment values.
 - Add a `quality` job on `ubuntu-24.04` that:
-  1. checks out with the repository's pinned `actions/checkout` revision;
+  1. checks out with the repository's pinned `actions/checkout` revision and
+     `persist-credentials: false`;
   2. sets up pnpm `11.9.0` with a pinned `pnpm/action-setup` revision before
      requesting the pnpm store cache;
   3. installs Node `24.18.0` and uses `actions/setup-node`'s pnpm store cache
@@ -281,8 +356,9 @@ Do:
   4. runs `pnpm install --frozen-lockfile`, `pnpm lint`, and `pnpm build`.
 - Add a parallel `image-targets` job on `ubuntu-24.04-arm` that builds the
   `app` and `migration-runner` targets without `push: true` and without public
-  staging/production build arguments. It validates the actual native image
-  path while remaining side-effect-free.
+  staging/production build arguments. Its checkout also sets
+  `persist-credentials: false`. It validates the actual native image path while
+  remaining side-effect-free.
 - If Slice 3 is adopted, use the same Bake definition in the image job; if not,
   keep the job's Docker commands explicit and small.
 - Do not add E2E to this workflow. Create a follow-up proposal after measuring
@@ -294,14 +370,22 @@ Why this cache differs from the rejected Docker cache:
 - The Docker cache experiment stored a large BuildKit layer remotely and was
   empirically slower than a native cold install. The two caches have different
   data, ownership, and performance characteristics.
+- A fork can restore a cache scoped for PR use, so treat every restored package
+  artifact as untrusted input. Cache only the pnpm store; never cache
+  `node_modules`, credentials, Docker state, or generated deployment material.
+  The unprivileged `pull_request` token and disabled persisted checkout
+  credential ensure fork code cannot write back through this workflow.
 
 Verification:
 
 - YAML parse and workflow syntax review.
 - A same-repository PR and a fork PR both run without secrets and complete the
-  two jobs.
+  two jobs. Verify the repository's fork-workflow approval policy and record
+  any maintainer approval required by GitHub as an external policy gate, not a
+  workflow failure.
 - Confirm the cache key changes when `pnpm-lock.yaml` changes and restores only
-  the pnpm store, not `node_modules`.
+  the pnpm store, not `node_modules`; inspect the Actions cache restore/save
+  log to confirm no privileged cache is reused.
 - Intentionally introduce one lint error and one Docker-context/target error in
   disposable commits to show that each job fails for the intended reason.
 - After several green PRs, obtain explicit approval before configuring either
@@ -315,11 +399,24 @@ Commit:
 
 Do:
 
-- Merge in dependency order: Slice 1, Slice 2, optional Slice 3, then Slice 4.
-  Keep each slice independently green and reviewable; do not merge an optional
-  Bake experiment that misses its gate.
+- Execute and commit the implementation slices in dependency order on one
+  implementation branch: Slice 1, Slice 2, optional accepted Slice 3, then
+  Slice 4. Before implementation begins, refresh the branch from current
+  `main` and carry this plan forward on that same branch. Keep each commit
+  independently green and reviewable, but open only one PR containing this plan
+  and all approved implementation changes. The current plan-review commit is a
+  review artifact, not a plan-only PR. Do not publish a plan-only or per-slice
+  PR, and do not merge a partial delivery.
+- Run the Bake diagnostic only in its disposable benchmark branch. If it meets
+  the adoption gate, recreate the accepted Bake changes on the implementation
+  branch and include them in the one delivery PR. If it misses the gate, remove
+  the diagnostic workflow/branch and record its evidence in this plan without
+  including experimental workflow or Docker changes in the PR.
 - Before any staging run that publishes images or updates desired state, state
   the expected resource and deployment effect in chat and obtain approval.
+- Before triggering a non-pushing hosted-ARM benchmark or validation run, state
+  its CI-capacity effect in chat and obtain approval; static workflow review and
+  local validation remain safe without it.
 - Observe at least five normal staging runs after Slice 1/2. Record timing,
   cancellation behavior, SHA tag, and desired-state result in this plan's
   `Progress` section.
@@ -331,8 +428,10 @@ Do:
 Finish criteria:
 
 - Native ARM runners remain in all ARM build jobs.
-- After a quiescent commit burst, staging converges to the latest eligible SHA;
-  any cancellation race is observable and explicitly assessed rather than hidden.
+- After a quiescent commit burst, staging values and all four mutable DF image
+  aliases resolve to the latest eligible SHA. A stale run has an observable
+  pre-push exit or a bounded retry; any unavoidable transient publishing race is
+  recorded and assessed rather than hidden.
 - Docker context excludes only verified non-build inputs.
 - PRs receive safe quality and image-target feedback before merge.
 - No production release/deployment behavior, secrets, or runner ownership was
@@ -344,15 +443,18 @@ Finish criteria:
 
 | Change | Local/static proof | GitHub Actions proof | Live approval required |
 | --- | --- | --- | --- |
-| Staging cancellation | YAML/diff review; group is staging-only | Two qualifying staging runs show cancellation then newest successful tag | Yes: image publication and staging desired-state update |
+| Staging cancellation and freshness | YAML/diff review; source-selection fixtures; group is staging-only; no force-push path | A three-commit burst shows cancellation/stale exits then newest values and four mutable aliases | Yes: image publication and staging desired-state update |
 | `.dockerignore` | Reference inventory; native target builds; context-size comparison | Next normal staging build | Yes for the normal staging deployment, not for local target builds |
-| Bake experiment | `docker buildx bake --check`; non-pushing target build | Three comparable native-ARM PR/diagnostic runs | No for non-pushing PR diagnostics; yes before any staging publish |
-| PR validation | Workflow YAML and least-privilege review | Same-repo and fork PR runs | No; branch-protection activation needs separate approval |
+| Bake experiment | `docker buildx bake --check`; paired same-input non-pushing target builds | Three paired native-ARM diagnostic rounds; normal staging/release only after adoption | Yes: hosted ARM benchmark capacity; yes before any staging publish |
+| PR validation | Workflow YAML, `persist-credentials: false`, and least-privilege/cache review | Same-repo and fork PR runs | Yes before hosted ARM validation runs; branch-protection activation needs separate approval |
 | Production regression check | Workflow diff confirms no release-concurrency/runner/tag change | Next ordinary release succeeds | Do not create a synthetic release |
 
 ## Progress
 
 - 2026-08-01: Plan drafted from live `origin/main` at `09ab3bf` after a runner,
   cache, timing, concurrency, Dockerfile, and workflow-trigger audit.
-- Pending: independent SOL high review and user rulings on staging cancellation,
-  Bake adoption threshold, and eventual branch-protection enforcement.
+- 2026-08-01: First SOL high review tightened stale-run convergence, Bake scope
+  and comparison design, fork-safe checkout/caching, and the single-PR delivery
+  path. Final SOL re-review is pending.
+- Pending: user rulings on staging cancellation with the freshness guard, Bake
+  adoption threshold, and eventual branch-protection enforcement.
