@@ -22,19 +22,25 @@ env:
   REGISTRY: ghcr.io
 
 concurrency:
-  group: build-staging-arm-${{ github.ref }}
-  cancel-in-progress: false
+  # Only eligible pushes share the latest-wins group. Excluded pushes and
+  # manual diagnostics get a unique group so they cannot cancel staging work.
+  group: build-staging-arm-${{ github.ref }}-${{ (github.event_name == 'push' && !startsWith(github.event.head_commit.message || '', 'chore(release)') && !startsWith(github.event.head_commit.message || '', 'chore(deploy)')) && 'eligible' || github.run_id }}
+  # Staging is latest-wins; production remains deliberately non-cancellable.
+  cancel-in-progress: true
 
 jobs:
   build-stg-arm:
     if: ${{ github.ref == 'refs/heads/main' && !startsWith(github.event.head_commit.message, 'chore(release)') && !startsWith(github.event.head_commit.message, 'chore(deploy)') }}
     runs-on: ubuntu-24.04-arm
     permissions:
+      actions: read
       contents: read
       packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+        with:
+          persist-credentials: false
 
       - name: Log into registry ${{ env.REGISTRY }}
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
@@ -105,35 +111,112 @@ jobs:
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
         with:
           fetch-depth: 0
+          persist-credentials: true
           token: ${{ secrets.DEPLOY_PUSH_TOKEN }}
 
       - name: Update ArgoCD staging image tag
         if: ${{ github.ref == 'refs/heads/main' }}
         shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ github.sha }}
           STAGING_IMAGE_TAG: latest-arm-${{ github.sha }}
           STAGING_MIGRATION_IMAGE_TAG: migration-latest-arm-${{ github.sha }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git checkout -B main origin/main
-          perl -0pi -e 's/tag: '\''latest-arm(?:-[0-9a-f]+)?'\''/tag: '\''$ENV{STAGING_IMAGE_TAG}'\''/' deploy/stg_new/values.yaml
-          perl -0pi -e 's/(image:\n(?:  repository: [^\n]+\n)?  tag: '\''[^'\'']+'\''\n)(?:  runtime: [^\n]+\n)?/${1}  runtime: distroless\n/' deploy/stg_new/values.yaml
-          grep -q "runtime: distroless" deploy/stg_new/values.yaml
-          if grep -q "tag: 'migration-" deploy/stg_new/values.yaml; then
-            perl -0pi -e 's/(migration:\n  image:\n(?:    repository: [^\n]+\n)?    tag: )'\''[^'\'']+'\''/${1}'\''$ENV{STAGING_MIGRATION_IMAGE_TAG}'\''/' deploy/stg_new/values.yaml
-            grep -q "tag: '${STAGING_MIGRATION_IMAGE_TAG}'" deploy/stg_new/values.yaml
-          elif grep -q '^migration:' deploy/stg_new/values.yaml; then
-            perl -0pi -e 's/(migration:\n)/${1}  image:\n    tag: '\''$ENV{STAGING_MIGRATION_IMAGE_TAG}'\''\n/' deploy/stg_new/values.yaml
-          else
-            printf "\nmigration:\n  image:\n    tag: '%s'\n" "$STAGING_MIGRATION_IMAGE_TAG" >> deploy/stg_new/values.yaml
-          fi
-          git add deploy/stg_new/values.yaml
-          if git diff --cached --quiet; then
-            echo "No ArgoCD image tag change."
-            exit 0
-          fi
-          git commit -m "chore(deploy): update staging image tag [skip ci]"
-          git push origin HEAD:main
+
+          latest_eligible_sha() {
+            local latest_sha=''
+            local attempt
+
+            for attempt in 1 2 3 4 5; do
+              if latest_sha="$(
+                gh api \
+                  --header 'Accept: application/vnd.github+json' \
+                  "repos/${GITHUB_REPOSITORY}/actions/workflows/docker-image-stg-arm.yml/runs?event=push&branch=main&per_page=100" \
+                  --jq '[.workflow_runs[]
+                    | select(.event == "push")
+                    | select(.head_branch == "main")
+                    | select((.conclusion // "") != "cancelled")
+                    | select((.head_commit.message // "") | startswith("chore(release)") | not)
+                    | select((.head_commit.message // "") | startswith("chore(deploy)") | not)
+                    | .head_sha] | .[0] // empty'
+              )" && [[ -n "$latest_sha" ]]; then
+                printf '%s\n' "$latest_sha"
+                return 0
+              fi
+
+              if [[ "$attempt" -lt 5 ]]; then
+                sleep 2
+              fi
+            done
+
+            echo "Unable to resolve the latest eligible staging source SHA." >&2
+            return 1
+          }
+
+          update_staging_values() {
+            perl -0pi -e 's/tag: '\''latest-arm(?:-[0-9a-f]+)?'\''/tag: '\''$ENV{STAGING_IMAGE_TAG}'\''/' deploy/stg_new/values.yaml
+            grep -q "tag: '${STAGING_IMAGE_TAG}'" deploy/stg_new/values.yaml
+            perl -0pi -e 's/(image:\n(?:  repository: [^\n]+\n)?  tag: '\''[^'\'']+'\''\n)(?:  runtime: [^\n]+\n)?/${1}  runtime: distroless\n/' deploy/stg_new/values.yaml
+            grep -q "runtime: distroless" deploy/stg_new/values.yaml
+            if grep -q "tag: 'migration-" deploy/stg_new/values.yaml; then
+              perl -0pi -e 's/(migration:\n  image:\n(?:    repository: [^\n]+\n)?    tag: )'\''[^'\'']+'\''/${1}'\''$ENV{STAGING_MIGRATION_IMAGE_TAG}'\''/' deploy/stg_new/values.yaml
+              grep -q "tag: '${STAGING_MIGRATION_IMAGE_TAG}'" deploy/stg_new/values.yaml
+            elif grep -q '^migration:' deploy/stg_new/values.yaml; then
+              perl -0pi -e 's/(migration:\n)/${1}  image:\n    tag: '\''$ENV{STAGING_MIGRATION_IMAGE_TAG}'\''\n/' deploy/stg_new/values.yaml
+            else
+              printf "\nmigration:\n  image:\n    tag: '%s'\n" "$STAGING_MIGRATION_IMAGE_TAG" >> deploy/stg_new/values.yaml
+            fi
+          }
+
+          for attempt in 1 2 3; do
+            latest_sha="$(latest_eligible_sha)" || {
+              echo "Freshness lookup failed; refusing to update staging desired state." >&2
+              exit 1
+            }
+            if [[ "$latest_sha" != "$SOURCE_SHA" ]]; then
+              echo "Stale source $SOURCE_SHA; skipping staging desired-state update."
+              exit 0
+            fi
+
+            git fetch origin main
+            git checkout -B main origin/main
+
+            latest_sha="$(latest_eligible_sha)" || {
+              echo "Freshness lookup failed after fetching main; refusing to update staging desired state." >&2
+              exit 1
+            }
+            if [[ "$latest_sha" != "$SOURCE_SHA" ]]; then
+              echo "Source $SOURCE_SHA was superseded while fetching main; skipping update."
+              exit 0
+            fi
+
+            update_staging_values
+            git add deploy/stg_new/values.yaml
+            if git diff --cached --quiet; then
+              echo "No ArgoCD image tag change."
+              exit 0
+            fi
+
+            latest_sha="$(latest_eligible_sha)" || {
+              echo "Freshness lookup failed before the deployment push; refusing to update staging desired state." >&2
+              exit 1
+            }
+            if [[ "$latest_sha" != "$SOURCE_SHA" ]]; then
+              echo "Source $SOURCE_SHA was superseded before the deployment push; skipping update."
+              exit 0
+            fi
+
+            if git commit -m "chore(deploy): update staging image tag [skip ci]" && git push origin HEAD:main; then
+              echo "Staging desired state now points to $SOURCE_SHA."
+              exit 0
+            fi
+
+            echo "Staging push raced with another main update; retrying freshness check ($attempt/3)." >&2
+          done
+
+          echo "Staging desired-state push did not converge after three attempts." >&2
+          exit 1
