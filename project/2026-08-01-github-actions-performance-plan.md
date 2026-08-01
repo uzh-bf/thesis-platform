@@ -1,7 +1,7 @@
 # GitHub Actions Performance and Feedback Plan
 
 Date: 2026-08-01
-Status: Slices 1–2 implemented; static checks pass; native Docker proof and hosted staging validation pending approval; SOL high plan review complete
+Status: Slices 1–2 implemented; Bake benchmark complete and rejected by the adoption gate; PR validation slice in progress; native Docker proof and hosted staging validation pending; SOL high plan review complete
 Branch: `rs/github-actions-performance-plan`
 Target branch: `main`
 Base checked: `origin/main` at `09ab3bff6abd1a5e411e697dc3b898ad68a6d894`
@@ -100,6 +100,24 @@ instead.
   OrbStack socket, so ARM image builds and Docker context measurements require
   the hosted workflow path. No image or deployment was published from this
   checkout.
+- 2026-08-01 disposable Bake proof: `docker buildx bake --check` and
+  `docker buildx bake --print` passed locally after granting the host-only
+  `/private/tmp` diagnostic entitlement; the actual native target build stayed
+  on the hosted ARM path. Three qualifying paired hosted rounds completed with
+  the same commit, public build arguments, targets, platform, Buildx driver,
+  and cache-only output:
+
+  | Round | Sequential critical path / job seconds | Bake critical path / job seconds |
+  | --- | --- | --- |
+  | 1 (`30697024935`) | 68 / 83 (`91361534388`) | 63 / 77 (`91361534425`) |
+  | 2 (`30697113606`) | 68 / 82 (`91361745882`) | 63 / 76 (`91361745868`) |
+  | 3 (`30697177421`) | 63 / 77 (`91361913593`) | 63 / 84 (`91361913637`) |
+  | Median | **68 / 82** | **63 / 77** |
+
+  Bake therefore reduced median critical path by 7.4% and median runner time by
+  6.1%, below the required 20% critical-path improvement; both targets did
+  complete successfully. Bake is rejected for this delivery and the diagnostic
+  branch/workflow will be removed.
 
 ## Slice 0 — Establish a Reproducible Baseline
 
@@ -492,5 +510,12 @@ Finish criteria:
 - 2026-08-01: Slice 3 in progress: prepare a disposable native-ARM benchmark
   that compares explicit sequential DF builds with shared-target Bake using the
   same commit, arguments, builder, platform, and non-pushing output.
-- Pending: staging publish approval, hosted ARM benchmark approval, and eventual
-  branch-protection enforcement.
+- 2026-08-01: Slice 3 complete: three paired native `ubuntu-24.04-arm` rounds
+  passed for both targets, but Bake's median critical-path improvement was
+  7.4% (63s versus 68s), below the 20% adoption gate; median whole-job time was
+  77s versus 82s. The diagnostic branch/workflow is being removed and the
+  explicit DF build steps remain the production recommendation.
+- 2026-08-01: Slice 4 in progress: add the fork-safe, pnpm-store-cached PR
+  quality job and parallel native-ARM `app`/`migration-runner` validation job.
+- Pending: staging publish approval, representative same-repository/fork PR
+  validation, and eventual branch-protection enforcement.
