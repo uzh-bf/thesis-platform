@@ -472,5 +472,7 @@ Finish criteria:
 - 2026-08-01: Slice 0 baseline captured; implementation starts with the
   staging freshness/concurrency slice. Local build limitation remains recorded
   above, and hosted ARM validation is still required.
+- 2026-08-01: Slice 1 in progress: latest-wins staging cancellation plus a
+  bounded Actions-run freshness check and fast-forward-only desired-state push.
 - Pending: staging publish approval, hosted ARM benchmark approval, and eventual
   branch-protection enforcement.
