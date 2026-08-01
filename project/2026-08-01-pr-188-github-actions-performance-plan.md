@@ -1,7 +1,7 @@
 # GitHub Actions Performance and Feedback Plan (PR #188)
 
 Date: 2026-08-01
-Status: Slices 1–2 and 4 implemented; Bake benchmark complete and rejected by the adoption gate; static checks pass; native Docker proof, representative PR validation, and hosted staging validation pending; SOL high plan review complete
+Status: Slices 1–2 and 4 implemented; Bake benchmark complete and rejected by the adoption gate; static checks pass; the first PR Sonar run prompted a lifecycle-script hardening fix; hosted PR validation and staging validation remain pending; SOL high plan review complete
 Branch: `rs/github-actions-performance-plan`
 Target branch: `main`
 PR: https://github.com/uzh-bf/thesis-platform/pull/188
@@ -394,7 +394,10 @@ Do:
   3. installs Node `24.18.0` and uses `actions/setup-node`'s pnpm store cache
      keyed by `pnpm-lock.yaml`, matching the committed `packageManager` and
      `engines` contract;
-  4. runs `pnpm install --frozen-lockfile`, `pnpm lint`, and `pnpm build`.
+  4. runs `pnpm install --frozen-lockfile --ignore-scripts`, `pnpm lint`, and
+     `pnpm build`. Disabling package lifecycle scripts keeps untrusted PR code
+     from executing during dependency installation; the build remains the
+     explicit verification step for generated tooling it needs.
 - Add a parallel `image-targets` job on `ubuntu-24.04-arm` that builds the
   `app` and `migration-runner` targets without `push: true` and without public
   staging/production build arguments. Its checkout also sets
@@ -531,6 +534,9 @@ Finish criteria:
   app-tag rewrite. The workflow now asserts the expected app tag immediately
   after substitution, before it can stage or push desired state; final security
   and maintainability re-reviews cover this fix.
+- 2026-08-01: The first PR Sonar run flagged dependency lifecycle scripts in
+  the new quality job. The install command now uses `--ignore-scripts`; the
+  fix is locally verified and the replacement PR run is pending.
 - 2026-08-01: Captured the staging shell interpolation and fail-closed
   freshness lesson in `docs/solutions/logic/staging-latest-wins-freshness-guard.md`.
 - Pending: staging publish approval, representative same-repository/fork PR
