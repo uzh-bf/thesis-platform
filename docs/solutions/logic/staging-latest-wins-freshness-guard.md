@@ -44,7 +44,7 @@ deployment boundary:
 ## Solution
 
 The workflow now combines staging-only latest-wins cancellation with a bounded
-freshness check and normal fast-forward pushes (`.github/workflows/docker-image-stg-arm.yml:24-27`, `:128-155`, and `:171-218`). It resolves the newest eligible push run, fails closed when the API cannot establish freshness, checks again after fetching `origin/main`, and checks once more immediately before committing and pushing. The migration fallback reads the exported tag through Perl's environment namespace (`.github/workflows/docker-image-stg-arm.yml:161-167`).
+freshness check and normal fast-forward pushes (`.github/workflows/docker-image-stg-arm.yml:24-27`, `:128-155`, and `:172-219`). It resolves the newest eligible push run, fails closed when the API cannot establish freshness, checks again after fetching `origin/main`, and checks once more immediately before committing and pushing. The migration fallback reads the exported tag through Perl's environment namespace (`.github/workflows/docker-image-stg-arm.yml:162-168`).
 
 ## Why This Works
 
