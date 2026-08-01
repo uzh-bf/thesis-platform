@@ -175,10 +175,14 @@ Files:
 Do:
 
 - Change the staging workflow-level concurrency setting to
-  `cancel-in-progress: true` and retain its current branch-scoped group.
-- Keep the existing group `build-staging-arm-${{ github.ref }}` so cancellation
-  is scoped to one staging branch, not to production, release, PR validation,
-  or unrelated workflows.
+  `cancel-in-progress: true` and keep cancellation scoped to the staging
+  workflow and branch.
+- Use `build-staging-arm-${{ github.ref }}` as the branch-scoped group prefix.
+  Only eligible `push` events share the `eligible` suffix; excluded
+  `chore(release)` / `chore(deploy)` pushes and `workflow_dispatch` runs use a
+  unique `github.run_id` suffix so they cannot cancel or queue behind eligible
+  staging work. Keep the group aligned with the job skip predicate and
+  freshness-query filters.
 - Add `actions: read` to this job's existing least-privilege permissions so its
   own `GITHUB_TOKEN` can query the staging workflow's push runs. Keep
   `contents: read` and `packages: write`; use `DEPLOY_PUSH_TOKEN` only for the
@@ -226,10 +230,10 @@ Why this is safe:
 Verification:
 
 - Parse the changed workflow and inspect its rendered `concurrency` block.
-- Exercise the source-selection portion against recorded API fixtures for:
-  current source, newer eligible source, a manual run, excluded release/deploy
-  commits, transient API delay, and a push conflict. Run `shellcheck` if
-  available.
+- Exercise the source-selection portion against recorded API fixtures and a
+  concurrency truth table for: current source, newer eligible source, a manual
+  run, excluded release/deploy commits, a completed `cancelled` run, transient
+  API delay, and a push conflict. Run `shellcheck` if available.
 - Create a burst of at least three qualifying non-release commits only after the
   user approves staging resource use. Confirm older runs are cancelled or exit
   stale, the final eligible run succeeds, and after all runs are terminal

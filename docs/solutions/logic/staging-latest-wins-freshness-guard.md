@@ -63,8 +63,8 @@ shares the latest-wins group only for eligible pushes. Its bounded freshness
 query ignores cancelled conclusions as well as excluded triggers, then fails
 closed when the API cannot establish freshness. The deployment checks freshness
 before editing, after fetching `origin/main`, and immediately before committing
-and pushing (`.github/workflows/docker-image-stg-arm.yml:24-29`, `:131-159`, and
-`:176-223`). The migration fallback reads the exported tag through Perl's
+and pushing (`.github/workflows/docker-image-stg-arm.yml:24-29`, `:130-158`, and
+`:175-222`). The migration fallback reads the exported tag through Perl's
 environment namespace (`.github/workflows/docker-image-stg-arm.yml:166-172`).
 
 ## Why This Works
