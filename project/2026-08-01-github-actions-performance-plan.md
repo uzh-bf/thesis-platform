@@ -88,6 +88,19 @@ Use at least five normal staging runs after merge for the staging metrics. Do no
 manufacture a release to collect production timing; inspect the next real release
 instead.
 
+## Current Evidence
+
+- 2026-08-01 baseline: `pnpm install --frozen-lockfile` completed with pnpm
+  11.9.0 and the lockfile's 1,168-entry supply-chain check passed.
+- 2026-08-01 baseline: `pnpm lint` exited 0 with eight existing React hook
+  warnings and no errors. The local `pnpm build` generated Prisma successfully
+  but was interrupted after more than five minutes without further output; it
+  is not treated as a passing build.
+- 2026-08-01 environment limit: the local Docker client cannot access the
+  OrbStack socket, so ARM image builds and Docker context measurements require
+  the hosted workflow path. No image or deployment was published from this
+  checkout.
+
 ## Slice 0 — Establish a Reproducible Baseline
 
 Purpose: turn the observed timing into a reviewable before/after record without
@@ -456,5 +469,8 @@ Finish criteria:
 - 2026-08-01: First SOL high review tightened stale-run convergence, Bake scope
   and comparison design, fork-safe checkout/caching, and the single-PR delivery
   path. The final SOL high re-review found no unresolved P0–P3 findings.
-- Pending: user rulings on staging cancellation with the freshness guard, Bake
-  adoption threshold, and eventual branch-protection enforcement.
+- 2026-08-01: Slice 0 baseline captured; implementation starts with the
+  staging freshness/concurrency slice. Local build limitation remains recorded
+  above, and hosted ARM validation is still required.
+- Pending: staging publish approval, hosted ARM benchmark approval, and eventual
+  branch-protection enforcement.
