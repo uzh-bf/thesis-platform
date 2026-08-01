@@ -1,7 +1,7 @@
 # GitHub Actions Performance and Feedback Plan (PR #188)
 
 Date: 2026-08-01
-Status: Slices 1–2 and 4 implemented; Bake benchmark complete and rejected by the adoption gate; static checks and current-head hosted PR validation pass; staging validation remains pending; SOL high plan review complete
+Status: Slices 1–2 and 4 implemented; Bake benchmark complete and rejected by the adoption gate; static checks and hosted PR validation pass for the implementation and evidence heads; staging validation remains pending; SOL high plan review complete
 Branch: `rs/github-actions-performance-plan`
 Target branch: `main`
 PR: https://github.com/uzh-bf/thesis-platform/pull/188
@@ -125,12 +125,15 @@ instead.
   and the quality and native-ARM image jobs have no dependency edge between
   them. Native target execution and same-repository/fork cache behavior remain
   hosted-PR checks.
-- 2026-08-01 hosted PR proof: run [30698429619](https://github.com/uzh-bf/thesis-platform/actions/runs/30698429619)
-  passed on the final head. The `Quality` job
-  ([91365121068](https://github.com/uzh-bf/thesis-platform/actions/runs/30698429619/job/91365121068))
+- 2026-08-01 hosted PR proof: the implementation head `d69ca43` passed run
+  [30698429619](https://github.com/uzh-bf/thesis-platform/actions/runs/30698429619),
+  and the docs-only evidence head `6490f0b` passed run
+  [30698714672](https://github.com/uzh-bf/thesis-platform/actions/runs/30698714672).
+  The latter's `Quality` job
+  ([91365844761](https://github.com/uzh-bf/thesis-platform/actions/runs/30698714672/job/91365844761))
   completed dependency installation with `--ignore-scripts`, lint, and the
   application build successfully. The independent `Native ARM image targets`
-  job ([91365121081](https://github.com/uzh-bf/thesis-platform/actions/runs/30698429619/job/91365121081))
+  job ([91365844719](https://github.com/uzh-bf/thesis-platform/actions/runs/30698714672/job/91365844719))
   built both `app` and `migration-runner` on `ubuntu-24.04-arm` without
   publishing. SonarCloud, Greptile, and GitGuardian checks also passed.
 
@@ -545,10 +548,10 @@ Finish criteria:
 - 2026-08-01: The first PR Sonar run flagged dependency lifecycle scripts in
   the new quality job. The install command now uses `--ignore-scripts`; the
   replacement PR run passed, including lint and application build.
-- 2026-08-01: The final-head hosted PR run passed both independent quality and
-  native ARM image-target jobs. The same-repository validation path is
-  therefore verified for this workflow; cache-restore details and fork
-  behavior remain external policy gates.
+- 2026-08-01: The implementation and docs-only evidence heads both passed the
+  independent quality and native ARM image-target jobs. The same-repository
+  validation path is therefore verified for this workflow; cache-restore
+  details and fork behavior remain external policy gates.
 - 2026-08-01: Captured the staging shell interpolation and fail-closed
   freshness lesson in `docs/solutions/logic/staging-latest-wins-freshness-guard.md`.
 - Pending: staging publish approval, fork PR/cache-policy validation, and
