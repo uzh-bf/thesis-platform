@@ -233,7 +233,8 @@ Do:
 - Add only paths already classified as non-runtime by the staging trigger and
   not consumed by the Dockerfile or Next build: `.agents/`, `.claude/`,
   `.vscode/`, `backups/`, `bruno/`, `docs/`, `project/`, `solutions/`, `LICENSE`,
-  and Markdown files outside runtime assets.
+  and the verified non-runtime root Markdown files `CHANGELOG.md`, `README.md`,
+  and `UPGRADE_NOTES.md`.
 - Do not exclude `.env.production`, `.env.stg`, `.env.stage`, `public/`,
   `prisma/`, `patches/`, build configuration, or any package-manager input. Keep
   the existing `Dockerfile` exclusion: the build action supplies that file
@@ -483,5 +484,10 @@ Finish criteria:
 - 2026-08-01: Slice 1 complete; next is verified Docker build-context reduction.
 - 2026-08-01: Slice 2 in progress: narrow `.dockerignore` additions are being
   checked against Dockerfile, Next.js, Prisma, and package-manager inputs.
+- 2026-08-01: Slice 2 review caught a blanket Markdown glob that could remove
+  runtime assets; it was replaced with three verified non-runtime root files.
+  Required runtime inputs remain unignored, and native Docker target/context
+  proof is still blocked by the local Docker socket.
+- 2026-08-01: Slice 2 complete; next is the disposable paired Bake benchmark.
 - Pending: staging publish approval, hosted ARM benchmark approval, and eventual
   branch-protection enforcement.

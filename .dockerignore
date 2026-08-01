@@ -2,6 +2,9 @@ Dockerfile
 .dockerignore
 node_modules
 npm-debug.log
+CHANGELOG.md
+README.md
+UPGRADE_NOTES.md
 .next
 .git
 .env
@@ -14,4 +17,3 @@ docs/
 project/
 solutions/
 LICENSE
-**/*.md
