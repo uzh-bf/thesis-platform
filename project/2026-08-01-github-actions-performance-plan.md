@@ -526,6 +526,10 @@ Finish criteria:
 - 2026-08-01: Slice 4 review and simplification both passed with no actionable
   findings. The workflow keeps quality and native-ARM image feedback in
   independent jobs, with no registry, deployment, or privileged cache path.
+- 2026-08-01: Final maintainability review found one drift case in the staging
+  app-tag rewrite. The workflow now asserts the expected app tag immediately
+  after substitution, before it can stage or push desired state; final security
+  and maintainability re-reviews cover this fix.
 - 2026-08-01: Captured the staging shell interpolation and fail-closed
   freshness lesson in `docs/solutions/logic/staging-latest-wins-freshness-guard.md`.
 - Pending: staging publish approval, representative same-repository/fork PR
