@@ -22,7 +22,9 @@ env:
   REGISTRY: ghcr.io
 
 concurrency:
-  group: build-staging-arm-${{ github.ref }}
+  # Only eligible pushes share the latest-wins group. Excluded pushes and
+  # manual diagnostics get a unique group so they cannot cancel staging work.
+  group: build-staging-arm-${{ github.ref }}-${{ (github.event_name == 'push' && !startsWith(github.event.head_commit.message || '', 'chore(release)') && !startsWith(github.event.head_commit.message || '', 'chore(deploy)')) && 'eligible' || github.run_id }}
   # Staging is latest-wins; production remains deliberately non-cancellable.
   cancel-in-progress: true
 
@@ -137,6 +139,7 @@ jobs:
                   --jq '[.workflow_runs[]
                     | select(.event == "push")
                     | select(.head_branch == "main")
+                    | select((.conclusion // "") != "cancelled")
                     | select((.head_commit.message // "") | startswith("chore(release)") | not)
                     | select((.head_commit.message // "") | startswith("chore(deploy)") | not)
                     | .head_sha] | .[0] // empty'

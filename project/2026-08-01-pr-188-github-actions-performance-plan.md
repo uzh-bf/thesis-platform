@@ -552,6 +552,11 @@ Finish criteria:
   independent quality and native ARM image-target jobs. The same-repository
   validation path is therefore verified for this workflow; cache-restore
   details and fork behavior remain external policy gates.
+- 2026-08-01: CodeRabbit's follow-up review found that skipped release/deploy
+  pushes could still cancel the staging concurrency group and that cancelled
+  workflow runs were not filtered from freshness selection. The workflow now
+  isolates excluded triggers with unique groups and filters cancelled
+  conclusions; static workflow and shell checks are being rerun before staging.
 - 2026-08-01: Captured the staging shell interpolation and fail-closed
   freshness lesson in `docs/solutions/logic/staging-latest-wins-freshness-guard.md`.
 - Pending: staging publish approval, fork PR/cache-policy validation, and
