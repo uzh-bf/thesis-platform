@@ -156,6 +156,7 @@ jobs:
 
           update_staging_values() {
             perl -0pi -e 's/tag: '\''latest-arm(?:-[0-9a-f]+)?'\''/tag: '\''$ENV{STAGING_IMAGE_TAG}'\''/' deploy/stg_new/values.yaml
+            grep -q "tag: '${STAGING_IMAGE_TAG}'" deploy/stg_new/values.yaml
             perl -0pi -e 's/(image:\n(?:  repository: [^\n]+\n)?  tag: '\''[^'\'']+'\''\n)(?:  runtime: [^\n]+\n)?/${1}  runtime: distroless\n/' deploy/stg_new/values.yaml
             grep -q "runtime: distroless" deploy/stg_new/values.yaml
             if grep -q "tag: 'migration-" deploy/stg_new/values.yaml; then
