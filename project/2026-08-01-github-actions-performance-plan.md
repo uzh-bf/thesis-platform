@@ -489,5 +489,8 @@ Finish criteria:
   Required runtime inputs remain unignored, and native Docker target/context
   proof is still blocked by the local Docker socket.
 - 2026-08-01: Slice 2 complete; next is the disposable paired Bake benchmark.
+- 2026-08-01: Slice 3 in progress: prepare a disposable native-ARM benchmark
+  that compares explicit sequential DF builds with shared-target Bake using the
+  same commit, arguments, builder, platform, and non-pushing output.
 - Pending: staging publish approval, hosted ARM benchmark approval, and eventual
   branch-protection enforcement.
