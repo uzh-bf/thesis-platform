@@ -118,7 +118,7 @@ instead.
   Bake therefore reduced median critical path by 7.4% and median runner time by
   6.1%, below the required 20% critical-path improvement; both targets did
   complete successfully. Bake is rejected for this delivery and the diagnostic
-  branch/workflow will be removed.
+  branch/workflow was removed.
 - 2026-08-01 Slice 4 static proof: `validate.yml` parses as YAML, its actions are
   pinned to 40-character commits, both jobs use only `contents: read`, both
   checkouts disable persisted credentials, the pnpm cache is lockfile-scoped,
@@ -538,7 +538,7 @@ Finish criteria:
 - 2026-08-01: Slice 3 complete: three paired native `ubuntu-24.04-arm` rounds
   passed for both targets, but Bake's median critical-path improvement was
   7.4% (63s versus 68s), below the 20% adoption gate; median whole-job time was
-  77s versus 82s. The diagnostic branch/workflow is being removed and the
+  77s versus 82s. The diagnostic branch/workflow was removed and the
   explicit DF build steps remain the production recommendation.
 - 2026-08-01: Slice 4 in progress: add the fork-safe, pnpm-store-cached PR
   quality job and parallel native-ARM `app`/`migration-runner` validation job.
