@@ -2,7 +2,16 @@ Dockerfile
 .dockerignore
 node_modules
 npm-debug.log
-README.md
 .next
 .git
 .env
+.agents/
+.claude/
+.vscode/
+backups/
+bruno/
+docs/
+project/
+solutions/
+LICENSE
+**/*.md

@@ -235,7 +235,9 @@ Do:
   `.vscode/`, `backups/`, `bruno/`, `docs/`, `project/`, `solutions/`, `LICENSE`,
   and Markdown files outside runtime assets.
 - Do not exclude `.env.production`, `.env.stg`, `.env.stage`, `public/`,
-  `prisma/`, `patches/`, build configuration, or any package-manager input.
+  `prisma/`, `patches/`, build configuration, or any package-manager input. Keep
+  the existing `Dockerfile` exclusion: the build action supplies that file
+  separately while it builds from the context.
 - Keep the current dependency-layer order in the Dockerfile unchanged. This
   slice is a context reduction, not a cache redesign.
 
@@ -479,5 +481,7 @@ Finish criteria:
   closed instead of being reported as stale success. Static YAML, Bash, and
   fixture checks pass; hosted staging burst validation remains gated.
 - 2026-08-01: Slice 1 complete; next is verified Docker build-context reduction.
+- 2026-08-01: Slice 2 in progress: narrow `.dockerignore` additions are being
+  checked against Dockerfile, Next.js, Prisma, and package-manager inputs.
 - Pending: staging publish approval, hosted ARM benchmark approval, and eventual
   branch-protection enforcement.
