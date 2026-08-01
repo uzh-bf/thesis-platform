@@ -1,7 +1,7 @@
 # GitHub Actions Performance and Feedback Plan (PR #188)
 
 Date: 2026-08-01
-Status: Slices 1–2 and 4 implemented; Bake benchmark complete and rejected by the adoption gate; static checks and hosted PR validation pass for the implementation and evidence heads; staging validation remains pending; SOL high plan review complete
+Status: Slices 1–2 and 4 implemented; Bake benchmark complete and rejected by the adoption gate; static checks and hosted PR validation pass; the approved staging latest-wins burst passed after merge; five-run observation, fork/cache policy validation, and branch-protection enforcement remain external follow-ups; SOL high plan review complete
 Branch: `rs/github-actions-performance-plan`
 Target branch: `main`
 PR: https://github.com/uzh-bf/thesis-platform/pull/188
@@ -561,8 +561,17 @@ Finish criteria:
   workflow runs were not filtered from freshness selection. The workflow now
   isolates excluded triggers with unique groups and filters cancelled
   conclusions. Static workflow, hosted PR, security, and maintainability checks
-  pass; live staging validation remains pending.
+  pass.
 - 2026-08-01: Captured the staging shell interpolation and fail-closed
   freshness lesson in `docs/solutions/logic/staging-latest-wins-freshness-guard.md`.
-- Pending: staging publish approval, fork PR/cache-policy validation, and
-  eventual branch-protection enforcement.
+- 2026-08-01: PR #188 merged as `43158f2`. The approved three-commit staging
+  burst behaved as latest-wins: runs `30701899306` (`43158f2`) and
+  `30701952198` (`ac30da2`) were cancelled, while run `30701960178`
+  (`5f64e7e`) completed successfully on `ubuntu-24.04-arm` in 3m38s. It
+  published the app and migration images, and the guarded follow-up commit
+  `f9861be` set `deploy/stg_new/values.yaml` to both corresponding SHA tags.
+  GHCR readback confirmed `main-arm`, `latest-arm`, `migration-main-arm`, and
+  `migration-latest-arm` all point to that newest eligible source. Production
+  was not touched; the two marker commits restored the merged tree.
+- Pending: five-run staging observation for timing metrics, fork PR/cache-policy
+  validation, and eventual branch-protection enforcement.
