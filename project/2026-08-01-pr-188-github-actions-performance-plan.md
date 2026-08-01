@@ -560,7 +560,8 @@ Finish criteria:
   pushes could still cancel the staging concurrency group and that cancelled
   workflow runs were not filtered from freshness selection. The workflow now
   isolates excluded triggers with unique groups and filters cancelled
-  conclusions; static workflow and shell checks are being rerun before staging.
+  conclusions. Static workflow, hosted PR, security, and maintainability checks
+  pass; live staging validation remains pending.
 - 2026-08-01: Captured the staging shell interpolation and fail-closed
   freshness lesson in `docs/solutions/logic/staging-latest-wins-freshness-guard.md`.
 - Pending: staging publish approval, fork PR/cache-policy validation, and
