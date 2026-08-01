@@ -1,7 +1,7 @@
 # GitHub Actions Performance and Feedback Plan
 
 Date: 2026-08-01
-Status: Slices 1–2 implemented; Bake benchmark complete and rejected by the adoption gate; PR validation slice in progress; native Docker proof and hosted staging validation pending; SOL high plan review complete
+Status: Slices 1–2 and 4 implemented; Bake benchmark complete and rejected by the adoption gate; static checks pass; native Docker proof, representative PR validation, and hosted staging validation pending; SOL high plan review complete
 Branch: `rs/github-actions-performance-plan`
 Target branch: `main`
 Base checked: `origin/main` at `09ab3bff6abd1a5e411e697dc3b898ad68a6d894`
@@ -118,6 +118,12 @@ instead.
   6.1%, below the required 20% critical-path improvement; both targets did
   complete successfully. Bake is rejected for this delivery and the diagnostic
   branch/workflow will be removed.
+- 2026-08-01 Slice 4 static proof: `validate.yml` parses as YAML, its actions are
+  pinned to 40-character commits, both jobs use only `contents: read`, both
+  checkouts disable persisted credentials, the pnpm cache is lockfile-scoped,
+  and the quality and native-ARM image jobs have no dependency edge between
+  them. Native target execution and same-repository/fork cache behavior remain
+  hosted-PR checks.
 
 ## Slice 0 — Establish a Reproducible Baseline
 
@@ -517,5 +523,10 @@ Finish criteria:
   explicit DF build steps remain the production recommendation.
 - 2026-08-01: Slice 4 in progress: add the fork-safe, pnpm-store-cached PR
   quality job and parallel native-ARM `app`/`migration-runner` validation job.
+- 2026-08-01: Slice 4 review and simplification both passed with no actionable
+  findings. The workflow keeps quality and native-ARM image feedback in
+  independent jobs, with no registry, deployment, or privileged cache path.
+- 2026-08-01: Captured the staging shell interpolation and fail-closed
+  freshness lesson in `docs/solutions/logic/staging-latest-wins-freshness-guard.md`.
 - Pending: staging publish approval, representative same-repository/fork PR
   validation, and eventual branch-protection enforcement.
