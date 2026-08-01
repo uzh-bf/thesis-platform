@@ -474,5 +474,10 @@ Finish criteria:
   above, and hosted ARM validation is still required.
 - 2026-08-01: Slice 1 in progress: latest-wins staging cancellation plus a
   bounded Actions-run freshness check and fast-forward-only desired-state push.
+- 2026-08-01: Slice 1 review found and fixed two shell defects: the migration
+  fallback now uses the exported tag, and freshness API failures now fail
+  closed instead of being reported as stale success. Static YAML, Bash, and
+  fixture checks pass; hosted staging burst validation remains gated.
+- 2026-08-01: Slice 1 complete; next is verified Docker build-context reduction.
 - Pending: staging publish approval, hosted ARM benchmark approval, and eventual
   branch-protection enforcement.

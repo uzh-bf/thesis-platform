@@ -162,14 +162,18 @@ jobs:
               perl -0pi -e 's/(migration:\n  image:\n(?:    repository: [^\n]+\n)?    tag: )'\''[^'\'']+'\''/${1}'\''$ENV{STAGING_MIGRATION_IMAGE_TAG}'\''/' deploy/stg_new/values.yaml
               grep -q "tag: '${STAGING_MIGRATION_IMAGE_TAG}'" deploy/stg_new/values.yaml
             elif grep -q '^migration:' deploy/stg_new/values.yaml; then
-              perl -0pi -e 's/(migration:\n)/${1}  image:\n    tag: '\''$STAGING_MIGRATION_IMAGE_TAG'\''\n/' deploy/stg_new/values.yaml
+              perl -0pi -e 's/(migration:\n)/${1}  image:\n    tag: '\''$ENV{STAGING_MIGRATION_IMAGE_TAG}'\''\n/' deploy/stg_new/values.yaml
             else
               printf "\nmigration:\n  image:\n    tag: '%s'\n" "$STAGING_MIGRATION_IMAGE_TAG" >> deploy/stg_new/values.yaml
             fi
           }
 
           for attempt in 1 2 3; do
-            if [[ "$(latest_eligible_sha)" != "$SOURCE_SHA" ]]; then
+            latest_sha="$(latest_eligible_sha)" || {
+              echo "Freshness lookup failed; refusing to update staging desired state." >&2
+              exit 1
+            }
+            if [[ "$latest_sha" != "$SOURCE_SHA" ]]; then
               echo "Stale source $SOURCE_SHA; skipping staging desired-state update."
               exit 0
             fi
@@ -177,7 +181,11 @@ jobs:
             git fetch origin main
             git checkout -B main origin/main
 
-            if [[ "$(latest_eligible_sha)" != "$SOURCE_SHA" ]]; then
+            latest_sha="$(latest_eligible_sha)" || {
+              echo "Freshness lookup failed after fetching main; refusing to update staging desired state." >&2
+              exit 1
+            }
+            if [[ "$latest_sha" != "$SOURCE_SHA" ]]; then
               echo "Source $SOURCE_SHA was superseded while fetching main; skipping update."
               exit 0
             fi
@@ -189,7 +197,11 @@ jobs:
               exit 0
             fi
 
-            if [[ "$(latest_eligible_sha)" != "$SOURCE_SHA" ]]; then
+            latest_sha="$(latest_eligible_sha)" || {
+              echo "Freshness lookup failed before the deployment push; refusing to update staging desired state." >&2
+              exit 1
+            }
+            if [[ "$latest_sha" != "$SOURCE_SHA" ]]; then
               echo "Source $SOURCE_SHA was superseded before the deployment push; skipping update."
               exit 0
             fi
