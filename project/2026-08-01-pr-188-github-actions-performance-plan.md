@@ -1,7 +1,7 @@
 # GitHub Actions Performance and Feedback Plan (PR #188)
 
 Date: 2026-08-01
-Status: Slices 1–2 and 4 implemented; Bake benchmark complete and rejected by the adoption gate; static checks pass; the first PR Sonar run prompted a lifecycle-script hardening fix; hosted PR validation and staging validation remain pending; SOL high plan review complete
+Status: Slices 1–2 and 4 implemented; Bake benchmark complete and rejected by the adoption gate; static checks and current-head hosted PR validation pass; staging validation remains pending; SOL high plan review complete
 Branch: `rs/github-actions-performance-plan`
 Target branch: `main`
 PR: https://github.com/uzh-bf/thesis-platform/pull/188
@@ -125,6 +125,14 @@ instead.
   and the quality and native-ARM image jobs have no dependency edge between
   them. Native target execution and same-repository/fork cache behavior remain
   hosted-PR checks.
+- 2026-08-01 hosted PR proof: run [30698429619](https://github.com/uzh-bf/thesis-platform/actions/runs/30698429619)
+  passed on the final head. The `Quality` job
+  ([91365121068](https://github.com/uzh-bf/thesis-platform/actions/runs/30698429619/job/91365121068))
+  completed dependency installation with `--ignore-scripts`, lint, and the
+  application build successfully. The independent `Native ARM image targets`
+  job ([91365121081](https://github.com/uzh-bf/thesis-platform/actions/runs/30698429619/job/91365121081))
+  built both `app` and `migration-runner` on `ubuntu-24.04-arm` without
+  publishing. SonarCloud, Greptile, and GitGuardian checks also passed.
 
 ## Slice 0 — Establish a Reproducible Baseline
 
@@ -536,8 +544,12 @@ Finish criteria:
   and maintainability re-reviews cover this fix.
 - 2026-08-01: The first PR Sonar run flagged dependency lifecycle scripts in
   the new quality job. The install command now uses `--ignore-scripts`; the
-  fix is locally verified and the replacement PR run is pending.
+  replacement PR run passed, including lint and application build.
+- 2026-08-01: The final-head hosted PR run passed both independent quality and
+  native ARM image-target jobs. The same-repository validation path is
+  therefore verified for this workflow; cache-restore details and fork
+  behavior remain external policy gates.
 - 2026-08-01: Captured the staging shell interpolation and fail-closed
   freshness lesson in `docs/solutions/logic/staging-latest-wins-freshness-guard.md`.
-- Pending: staging publish approval, representative same-repository/fork PR
-  validation, and eventual branch-protection enforcement.
+- Pending: staging publish approval, fork PR/cache-policy validation, and
+  eventual branch-protection enforcement.
