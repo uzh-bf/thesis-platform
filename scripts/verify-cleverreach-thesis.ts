@@ -2,6 +2,10 @@ import * as assert from 'node:assert/strict'
 
 import { createDraftMailing } from '../src/lib/cleverreach/client'
 import {
+  buildThesisProposalCleverReachReminderMail,
+  sendThesisProposalCleverReachReminder,
+} from '../src/lib/cleverreach/reminder'
+import {
   buildThesisProposalMailingParams,
   buildThesisProposalPreheader,
   createThesisProposalCleverReachDraft,
@@ -198,7 +202,9 @@ async function main() {
 
     const relayHeaders = relayRequest.init?.headers as Record<string, string>
     assert.equal(
-      Object.keys(relayHeaders).some((name) => name.toLowerCase().includes('secret')),
+      Object.keys(relayHeaders).some((name) =>
+        name.toLowerCase().includes('secret')
+      ),
       false
     )
 
@@ -283,7 +289,121 @@ async function main() {
     }
   }
 
-  console.log('CleverReach thesis proposal and mail relay checks passed.')
+  const reminderTitle = `O'Hara <Risk & Return> "Model"`
+  const reminderMail = buildThesisProposalCleverReachReminderMail({
+    title: reminderTitle,
+    recipients: ['management@example.test'],
+    env: {
+      NEXT_PUBLIC_DEPARTMENT_LONG_NAME: 'Department of Finance',
+      CLEVERREACH_ADMIN_URL: '  https://cleverreach.example.test/admin  ',
+    },
+  })
+
+  assert.deepEqual(reminderMail.to, ['management@example.test'])
+  assert.equal(
+    reminderMail.subject,
+    'Department of Finance Theses - CleverReach mailing ready for review'
+  )
+  assert.equal(reminderMail.importance, 'High')
+  assert.match(
+    reminderMail.bodyAsHtml,
+    /O&#39;Hara &lt;Risk &amp; Return&gt; &quot;Model&quot;/
+  )
+  assert.match(
+    reminderMail.bodyAsHtml,
+    /href="https:\/\/cleverreach\.example\.test\/admin"/
+  )
+
+  const defaultReminderMail = buildThesisProposalCleverReachReminderMail({
+    title: 'Untitled thesis',
+    recipients: [],
+    env: {},
+  })
+  assert.equal(
+    defaultReminderMail.subject,
+    'Thesis Platform Theses - CleverReach mailing ready for review'
+  )
+  assert.match(
+    defaultReminderMail.bodyAsHtml,
+    /href="https:\/\/eu2\.cleverreach\.com\/admin"/
+  )
+
+  const sentReminders: Array<Parameters<typeof sendMail>[0]> = []
+  await sendThesisProposalCleverReachReminder({
+    title: reminderTitle,
+    recipients: ['management@example.test'],
+    send: async (input) => {
+      sentReminders.push(input)
+    },
+  })
+  assert.equal(sentReminders.length, 1)
+  assert.equal(sentReminders[0].importance, 'High')
+
+  const originalDatabaseUrl = process.env.DATABASE_URL
+  process.env.DATABASE_URL =
+    originalDatabaseUrl || 'postgresql://localhost:5432/prisma?sslmode=disable'
+  const { createThesisProposalCleverReachDraftAndNotify } =
+    await import('../src/server/routers/_app')
+  if (originalDatabaseUrl === undefined) {
+    delete process.env.DATABASE_URL
+  } else {
+    process.env.DATABASE_URL = originalDatabaseUrl
+  }
+
+  let createdDrafts = 0
+  let sentAfterDraft = 0
+  await createThesisProposalCleverReachDraftAndNotify(
+    payload,
+    ['management@example.test'],
+    {
+      createDraft: async () => {
+        createdDrafts += 1
+        return { mailingId: 'mailing-id' }
+      },
+      sendReminder: async () => {
+        sentAfterDraft += 1
+      },
+    }
+  )
+  assert.equal(createdDrafts, 1)
+  assert.equal(sentAfterDraft, 1)
+
+  let reminderCallsAfterDraftFailure = 0
+  await assert.rejects(
+    () =>
+      createThesisProposalCleverReachDraftAndNotify(
+        payload,
+        ['management@example.test'],
+        {
+          createDraft: async () => {
+            throw new Error('draft failed')
+          },
+          sendReminder: async () => {
+            reminderCallsAfterDraftFailure += 1
+          },
+        }
+      ),
+    /draft failed/
+  )
+  assert.equal(reminderCallsAfterDraftFailure, 0)
+
+  let reminderFailureWasNonBlocking = false
+  await createThesisProposalCleverReachDraftAndNotify(
+    payload,
+    ['management@example.test'],
+    {
+      createDraft: async () => ({ mailingId: 'mailing-id' }),
+      sendReminder: async () => {
+        throw new Error('relay failed')
+      },
+    }
+  )
+  reminderFailureWasNonBlocking = true
+  assert.equal(reminderFailureWasNonBlocking, true)
+
+  console.log(
+    'CleverReach thesis proposal, reminder, and mail relay checks passed.'
+  )
 }
 
 void main()

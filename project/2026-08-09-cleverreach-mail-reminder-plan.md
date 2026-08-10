@@ -132,7 +132,7 @@
 - [x] User instructed creation of this full plan and a new-session execution handoff.
 - [x] Primary branch created from verified Thesis `main`.
 - [x] Slice 1: add and verify the generic mail relay helper.
-- [ ] Slice 2: send the reminder after successful draft creation.
+- [x] Slice 2: send the reminder after successful draft creation.
 - [ ] Slice 3: add the df-cloud `thesispf` secret mapping in an isolated worktree.
 - [ ] Slice 4: provision and smoke staging after explicit approval.
 - [ ] Slice 5: finish reviews, publish artifacts, and prepare production promotion.
@@ -143,9 +143,22 @@
   - `./node_modules/.bin/tsc --noEmit --incremental false --pretty false` passed.
   - `./node_modules/.bin/eslint .` passed with eight pre-existing warnings; `pnpm lint` was blocked before ESLint by Corepack cache permission `EPERM`.
   - `git diff --check` passed.
-  - Local staging is blocked because Git cannot create `.git/index.lock`; the escalated `git add` request was rejected by tenant policy.
-- Current slice: Slice 1 - local commit blocked by the runtime Git permission boundary.
-- Next action: stage and commit the verified Slice 1 files, then start Slice 2.
+  - Committed as `f1b11a8` (`feat(mail): add Outlook HTTP mail relay`).
+- Current slice: Slice 2 - notify staff after CleverReach draft success.
+- Slice 2 evidence:
+  - added `src/lib/cleverreach/reminder.ts` with escaped title copy, configured/default CleverReach admin link, management recipients, and `High` importance.
+  - renamed the existing admin-change recipient symbols to management-oriented names without changing recipient values.
+  - sequenced reminder delivery after successful draft creation; draft failure prevents reminder calls and reminder failure is logged without changing draft success.
+  - `./node_modules/.bin/tsx scripts/verify-cleverreach-thesis.ts` passed.
+  - `./node_modules/.bin/prettier --check ...` passed for the changed TypeScript and plan files.
+  - owned-file `./node_modules/.bin/eslint ...` passed.
+  - direct `DATABASE_URL=postgresql://localhost:5432/prisma?sslmode=disable ./node_modules/.bin/next build` passed.
+  - TypeScript passed with the ignored `trees/` worktree excluded; the exact repository command remains blocked by pre-existing duplicate declarations in `trees/argocd-autosync-inventory`.
+  - `pnpm lint` and `pnpm build` remain blocked before execution by Corepack cache `EPERM`.
+  - `git diff --check` passed.
+  - Local staging remains blocked because Git cannot create `.git/index.lock`; the standard escalation request was rejected by workspace policy.
+- Current slice: Slice 2 - local commit blocked by the runtime Git permission boundary.
+- Next action: stage and commit the verified Slice 2 files, then create the isolated df-cloud worktree from current `origin/stg` (`45bc8f0`).
 
 ## Slice 1 - Add the Outlook HTTP relay helper
 

@@ -18,6 +18,7 @@ import { TRPCError } from '@trpc/server'
 import axios from 'axios'
 import 'cross-fetch/polyfill'
 import dayjs from 'dayjs'
+import { sendThesisProposalCleverReachReminder } from 'src/lib/cleverreach/reminder'
 import {
   CleverReachConfigError,
   createThesisProposalCleverReachDraft,
@@ -38,14 +39,14 @@ import { ProposalStatusFilter } from 'src/types/app'
 import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
 
-const ADMIN_CHANGE_NOTIFICATION_RECIPIENTS = {
+const MANAGEMENT_NOTIFICATION_RECIPIENTS = {
   DEV: 'ibf-srv-powplatf@d.uzh.ch',
   STG: 'ibf-srv-powplatf@d.uzh.ch',
   PROD: 'theses@df.uzh.ch',
   PRD_IBW: 'theses@business.uzh.ch',
 } as const
 
-type NotificationEnvironment = keyof typeof ADMIN_CHANGE_NOTIFICATION_RECIPIENTS
+type NotificationEnvironment = keyof typeof MANAGEMENT_NOTIFICATION_RECIPIENTS
 
 type ProcedureUser = NonNullable<NonNullable<Context['session']>['user']>
 type ProposalFiltersInput = {
@@ -107,6 +108,32 @@ type ProposalForCleverReach = Prisma.ProposalGetPayload<{
     topicArea: true
   }
 }>
+
+export async function createThesisProposalCleverReachDraftAndNotify(
+  draftPayload: ThesisProposalDraftPayload,
+  recipients: string[],
+  {
+    createDraft = createThesisProposalCleverReachDraft,
+    sendReminder = sendThesisProposalCleverReachReminder,
+  }: {
+    createDraft?: typeof createThesisProposalCleverReachDraft
+    sendReminder?: typeof sendThesisProposalCleverReachReminder
+  } = {}
+): Promise<void> {
+  await createDraft(draftPayload)
+
+  try {
+    await sendReminder({
+      title: draftPayload.title,
+      recipients,
+    })
+  } catch (error) {
+    console.error('CleverReach thesis proposal reminder failed', {
+      proposalId: draftPayload.proposalId,
+      error: error instanceof Error ? error.message : String(error),
+    })
+  }
+}
 
 function getNextStudentProposalReminderAt(updatedAt: Date) {
   const nextReminderAt = new Date(updatedAt)
@@ -179,9 +206,9 @@ const getNotificationEnvironment = (): NotificationEnvironment => {
   return 'DEV'
 }
 
-const getAdminChangeNotificationRecipients = (
+const getManagementNotificationRecipients = (
   environment: NotificationEnvironment
-) => [ADMIN_CHANGE_NOTIFICATION_RECIPIENTS[environment]]
+) => [MANAGEMENT_NOTIFICATION_RECIPIENTS[environment]]
 
 const getAppBaseUrl = () => {
   const nextAuthUrl = process.env.NEXTAUTH_URL?.trim()
@@ -324,7 +351,10 @@ function triggerThesisProposalCleverReachDraft(
         input,
         proposal
       )
-      await createThesisProposalCleverReachDraft(draftPayload)
+      await createThesisProposalCleverReachDraftAndNotify(
+        draftPayload,
+        getManagementNotificationRecipients(getNotificationEnvironment())
+      )
     } catch (error) {
       if (error instanceof CleverReachConfigError) {
         console.warn(
@@ -459,7 +489,7 @@ async function sendAdminChangeNotification({
   }
 
   const environment = getNotificationEnvironment()
-  const recipients = getAdminChangeNotificationRecipients(environment)
+  const recipients = getManagementNotificationRecipients(environment)
 
   if (recipients.length === 0) {
     console.warn(
