@@ -2,12 +2,18 @@ import * as assert from 'node:assert/strict'
 
 import { createDraftMailing } from '../src/lib/cleverreach/client'
 import {
+  buildThesisProposalCleverReachReminderMail,
+  createThesisProposalCleverReachDraftAndNotify,
+  sendThesisProposalCleverReachReminder,
+} from '../src/lib/cleverreach/reminder'
+import {
   buildThesisProposalMailingParams,
   buildThesisProposalPreheader,
   createThesisProposalCleverReachDraft,
   parseProposalLanguages,
   type ThesisProposalDraftPayload,
 } from '../src/lib/cleverreach/thesisProposal'
+import { sendMail } from '../src/lib/mail/sendMail'
 
 const env = {
   CLEVERREACH_CLIENT_ID: 'client-id',
@@ -74,7 +80,7 @@ assert.ok(
   )
 )
 
-async function main() {
+async function verifyCleverReachDraftCreation() {
   const createDraftPayloads: {
     html: string
     filterId: string
@@ -148,8 +154,241 @@ async function main() {
   } finally {
     globalThis.fetch = originalFetch
   }
+}
 
-  console.log('CleverReach thesis proposal builder checks passed.')
+async function verifyMailRelayContract() {
+  const relayEnvironment = {
+    MAIL_SENDING_HTTP_URL: '  https://relay.example.test/send  ',
+    FLOW_SECRET: '  verifier-flow-secret  ',
+    MAIL_SENDING_FROM: '  sender@example.test  ',
+  }
+  const relayEnvironmentNames = Object.keys(relayEnvironment)
+  const originalRelayEnvironment = new Map(
+    relayEnvironmentNames.map((name) => [name, process.env[name]] as const)
+  )
+  const relayRequests: { url: string; init?: RequestInit }[] = []
+  let relayResponseStatus = 200
+  let relayResponseBody = '{"ok":true}'
+  const originalRelayFetch = globalThis.fetch
+
+  try {
+    for (const [name, value] of Object.entries(relayEnvironment)) {
+      process.env[name] = value
+    }
+
+    globalThis.fetch = (async (url, init) => {
+      relayRequests.push({ url: String(url), init })
+      return new Response(relayResponseBody, { status: relayResponseStatus })
+    }) as typeof fetch
+
+    const relayInput = {
+      to: ['management@example.test'],
+      subject: 'CleverReach mailing ready',
+      bodyAsHtml: '<p>Review this mailing.</p>',
+      cc: ['copy@example.test'],
+      bcc: ['audit@example.test'],
+      replyTo: 'no-reply@example.test',
+      sensitivity: 'Private' as const,
+      importance: 'High' as const,
+    }
+
+    await sendMail(relayInput)
+    assert.equal(relayRequests.length, 1)
+
+    const relayRequest = relayRequests[0]
+    assert.equal(relayRequest.url, 'https://relay.example.test/send')
+    assert.equal(relayRequest.init?.method, 'POST')
+    assert.deepEqual(relayRequest.init?.headers, {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    })
+
+    const relayHeaders = relayRequest.init?.headers as Record<string, string>
+    assert.equal(
+      Object.keys(relayHeaders).some((name) =>
+        name.toLowerCase().includes('secret')
+      ),
+      false
+    )
+
+    const relayBody = JSON.parse(String(relayRequest.init?.body)) as Record<
+      string,
+      unknown
+    >
+    assert.deepEqual(relayBody, {
+      from: 'sender@example.test',
+      to: ['management@example.test'],
+      subject: 'CleverReach mailing ready',
+      bodyAsHtml: '<p>Review this mailing.</p>',
+      secret: 'verifier-flow-secret',
+      cc: ['copy@example.test'],
+      bcc: ['audit@example.test'],
+      replyTo: 'no-reply@example.test',
+      sensitivity: 'Private',
+      importance: 'High',
+    })
+
+    for (const missingName of relayEnvironmentNames) {
+      for (const [name, value] of Object.entries(relayEnvironment)) {
+        process.env[name] = value
+      }
+      if (missingName === 'FLOW_SECRET') {
+        process.env[missingName] = '   '
+      } else {
+        delete process.env[missingName]
+      }
+
+      await sendMail(relayInput)
+      assert.equal(relayRequests.length, 1)
+    }
+
+    for (const [name, value] of Object.entries(relayEnvironment)) {
+      process.env[name] = value
+    }
+    await sendMail({ ...relayInput, to: [] })
+    assert.equal(relayRequests.length, 1)
+
+    relayResponseStatus = 502
+    relayResponseBody = 'relay unavailable'
+    await assert.rejects(
+      () =>
+        sendMail({
+          ...relayInput,
+          from: 'override@example.test',
+        }),
+      (error: unknown) => {
+        assert.ok(error instanceof Error)
+        assert.match(error.message, /status=502/)
+        assert.match(error.message, /body=relay unavailable/)
+        return true
+      }
+    )
+    assert.equal(relayRequests.length, 2)
+    const rejectedBody = JSON.parse(
+      String(relayRequests[1].init?.body)
+    ) as Record<string, unknown>
+    assert.equal(rejectedBody.from, 'override@example.test')
+  } finally {
+    globalThis.fetch = originalRelayFetch
+    for (const name of relayEnvironmentNames) {
+      const value = originalRelayEnvironment.get(name)
+      if (value === undefined) {
+        delete process.env[name]
+      } else {
+        process.env[name] = value
+      }
+    }
+  }
+}
+
+async function verifyReminderAndOrchestration() {
+  const reminderTitle = `O'Hara <Risk & Return> "Model"`
+  const reminderMail = buildThesisProposalCleverReachReminderMail({
+    title: reminderTitle,
+    recipients: ['management@example.test'],
+    env: {
+      NEXT_PUBLIC_DEPARTMENT_LONG_NAME: 'Department of Finance',
+      CLEVERREACH_ADMIN_URL: '  https://cleverreach.example.test/admin  ',
+    },
+  })
+
+  assert.deepEqual(reminderMail.to, ['management@example.test'])
+  assert.equal(
+    reminderMail.subject,
+    'Department of Finance Theses - CleverReach mailing ready for review'
+  )
+  assert.equal(reminderMail.importance, 'High')
+  assert.match(
+    reminderMail.bodyAsHtml,
+    /O&#39;Hara &lt;Risk &amp; Return&gt; &quot;Model&quot;/
+  )
+  assert.match(
+    reminderMail.bodyAsHtml,
+    /href="https:\/\/cleverreach\.example\.test\/admin"/
+  )
+
+  const defaultReminderMail = buildThesisProposalCleverReachReminderMail({
+    title: 'Untitled thesis',
+    recipients: [],
+    env: {},
+  })
+  assert.equal(
+    defaultReminderMail.subject,
+    'Thesis Platform Theses - CleverReach mailing ready for review'
+  )
+  assert.match(
+    defaultReminderMail.bodyAsHtml,
+    /href="https:\/\/eu2\.cleverreach\.com\/admin"/
+  )
+
+  const sentReminders: Array<Parameters<typeof sendMail>[0]> = []
+  await sendThesisProposalCleverReachReminder({
+    title: reminderTitle,
+    recipients: ['management@example.test'],
+    send: async (input) => {
+      sentReminders.push(input)
+    },
+  })
+  assert.equal(sentReminders.length, 1)
+  assert.equal(sentReminders[0].importance, 'High')
+
+  let createdDrafts = 0
+  let sentAfterDraft = 0
+  await createThesisProposalCleverReachDraftAndNotify(
+    payload,
+    ['management@example.test'],
+    {
+      createDraft: async () => {
+        createdDrafts += 1
+        return { mailingId: 'mailing-id' }
+      },
+      sendReminder: async () => {
+        sentAfterDraft += 1
+      },
+    }
+  )
+  assert.equal(createdDrafts, 1)
+  assert.equal(sentAfterDraft, 1)
+
+  let reminderCallsAfterDraftFailure = 0
+  await assert.rejects(
+    () =>
+      createThesisProposalCleverReachDraftAndNotify(
+        payload,
+        ['management@example.test'],
+        {
+          createDraft: async () => {
+            throw new Error('draft failed')
+          },
+          sendReminder: async () => {
+            reminderCallsAfterDraftFailure += 1
+          },
+        }
+      ),
+    /draft failed/
+  )
+  assert.equal(reminderCallsAfterDraftFailure, 0)
+
+  await createThesisProposalCleverReachDraftAndNotify(
+    payload,
+    ['management@example.test'],
+    {
+      createDraft: async () => ({ mailingId: 'mailing-id' }),
+      sendReminder: async () => {
+        throw new Error('relay failed')
+      },
+    }
+  )
+}
+
+async function main() {
+  await verifyCleverReachDraftCreation()
+  await verifyMailRelayContract()
+  await verifyReminderAndOrchestration()
+
+  console.log(
+    'CleverReach thesis proposal, reminder, and mail relay checks passed.'
+  )
 }
 
 void main()

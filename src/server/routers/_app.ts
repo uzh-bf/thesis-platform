@@ -18,9 +18,9 @@ import { TRPCError } from '@trpc/server'
 import axios from 'axios'
 import 'cross-fetch/polyfill'
 import dayjs from 'dayjs'
+import { createThesisProposalCleverReachDraftAndNotify } from 'src/lib/cleverreach/reminder'
 import {
   CleverReachConfigError,
-  createThesisProposalCleverReachDraft,
   parseProposalLanguages,
   type ThesisProposalDraftPayload,
 } from 'src/lib/cleverreach/thesisProposal'
@@ -38,14 +38,14 @@ import { ProposalStatusFilter } from 'src/types/app'
 import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
 
-const ADMIN_CHANGE_NOTIFICATION_RECIPIENTS = {
+const MANAGEMENT_NOTIFICATION_RECIPIENTS = {
   DEV: 'ibf-srv-powplatf@d.uzh.ch',
   STG: 'ibf-srv-powplatf@d.uzh.ch',
   PROD: 'theses@df.uzh.ch',
   PRD_IBW: 'theses@business.uzh.ch',
 } as const
 
-type NotificationEnvironment = keyof typeof ADMIN_CHANGE_NOTIFICATION_RECIPIENTS
+type NotificationEnvironment = keyof typeof MANAGEMENT_NOTIFICATION_RECIPIENTS
 
 type ProcedureUser = NonNullable<NonNullable<Context['session']>['user']>
 type ProposalFiltersInput = {
@@ -179,9 +179,9 @@ const getNotificationEnvironment = (): NotificationEnvironment => {
   return 'DEV'
 }
 
-const getAdminChangeNotificationRecipients = (
+const getManagementNotificationRecipients = (
   environment: NotificationEnvironment
-) => [ADMIN_CHANGE_NOTIFICATION_RECIPIENTS[environment]]
+) => [MANAGEMENT_NOTIFICATION_RECIPIENTS[environment]]
 
 const getAppBaseUrl = () => {
   const nextAuthUrl = process.env.NEXTAUTH_URL?.trim()
@@ -324,7 +324,10 @@ function triggerThesisProposalCleverReachDraft(
         input,
         proposal
       )
-      await createThesisProposalCleverReachDraft(draftPayload)
+      await createThesisProposalCleverReachDraftAndNotify(
+        draftPayload,
+        getManagementNotificationRecipients(getNotificationEnvironment())
+      )
     } catch (error) {
       if (error instanceof CleverReachConfigError) {
         console.warn(
@@ -459,7 +462,7 @@ async function sendAdminChangeNotification({
   }
 
   const environment = getNotificationEnvironment()
-  const recipients = getAdminChangeNotificationRecipients(environment)
+  const recipients = getManagementNotificationRecipients(environment)
 
   if (recipients.length === 0) {
     console.warn(
@@ -1175,9 +1178,20 @@ export const appRouter = router({
       }
     }),
 
-  submitProposalPublish: optionalAuthedProcedure
+  submitProposalPublish: authedProcedure
     .input(proposalPublishInputSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      if (
+        ctx.user.role !== UserRole.SUPERVISOR &&
+        ctx.user.role !== UserRole.DEVELOPER
+      ) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message:
+            'Supervisor or developer access is required to publish a supervisor proposal',
+        })
+      }
+
       const submittedAt = new Date()
       const submitDate = submittedAt.toISOString()
 
