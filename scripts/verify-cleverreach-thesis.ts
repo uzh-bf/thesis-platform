@@ -3,6 +3,7 @@ import * as assert from 'node:assert/strict'
 import { createDraftMailing } from '../src/lib/cleverreach/client'
 import {
   buildThesisProposalCleverReachReminderMail,
+  createThesisProposalCleverReachDraftAndNotify,
   sendThesisProposalCleverReachReminder,
 } from '../src/lib/cleverreach/reminder'
 import {
@@ -338,17 +339,6 @@ async function main() {
   })
   assert.equal(sentReminders.length, 1)
   assert.equal(sentReminders[0].importance, 'High')
-
-  const originalDatabaseUrl = process.env.DATABASE_URL
-  process.env.DATABASE_URL =
-    originalDatabaseUrl || 'postgresql://localhost:5432/prisma?sslmode=disable'
-  const { createThesisProposalCleverReachDraftAndNotify } =
-    await import('../src/server/routers/_app')
-  if (originalDatabaseUrl === undefined) {
-    delete process.env.DATABASE_URL
-  } else {
-    process.env.DATABASE_URL = originalDatabaseUrl
-  }
 
   let createdDrafts = 0
   let sentAfterDraft = 0

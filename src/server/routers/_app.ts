@@ -18,10 +18,9 @@ import { TRPCError } from '@trpc/server'
 import axios from 'axios'
 import 'cross-fetch/polyfill'
 import dayjs from 'dayjs'
-import { sendThesisProposalCleverReachReminder } from 'src/lib/cleverreach/reminder'
+import { createThesisProposalCleverReachDraftAndNotify } from 'src/lib/cleverreach/reminder'
 import {
   CleverReachConfigError,
-  createThesisProposalCleverReachDraft,
   parseProposalLanguages,
   type ThesisProposalDraftPayload,
 } from 'src/lib/cleverreach/thesisProposal'
@@ -108,32 +107,6 @@ type ProposalForCleverReach = Prisma.ProposalGetPayload<{
     topicArea: true
   }
 }>
-
-export async function createThesisProposalCleverReachDraftAndNotify(
-  draftPayload: ThesisProposalDraftPayload,
-  recipients: string[],
-  {
-    createDraft = createThesisProposalCleverReachDraft,
-    sendReminder = sendThesisProposalCleverReachReminder,
-  }: {
-    createDraft?: typeof createThesisProposalCleverReachDraft
-    sendReminder?: typeof sendThesisProposalCleverReachReminder
-  } = {}
-): Promise<void> {
-  await createDraft(draftPayload)
-
-  try {
-    await sendReminder({
-      title: draftPayload.title,
-      recipients,
-    })
-  } catch (error) {
-    console.error('CleverReach thesis proposal reminder failed', {
-      proposalId: draftPayload.proposalId,
-      error: error instanceof Error ? error.message : String(error),
-    })
-  }
-}
 
 function getNextStudentProposalReminderAt(updatedAt: Date) {
   const nextReminderAt = new Date(updatedAt)

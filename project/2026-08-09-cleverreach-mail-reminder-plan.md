@@ -156,9 +156,17 @@
   - TypeScript passed with the ignored `trees/` worktree excluded; the exact repository command remains blocked by pre-existing duplicate declarations in `trees/argocd-autosync-inventory`.
   - `pnpm lint` and `pnpm build` remain blocked before execution by Corepack cache `EPERM`.
   - `git diff --check` passed.
-  - Local staging remains blocked because Git cannot create `.git/index.lock`; the standard escalation request was rejected by workspace policy.
-- Current slice: Slice 2 - local commit blocked by the runtime Git permission boundary.
-- Next action: stage and commit the verified Slice 2 files, then create the isolated df-cloud worktree from current `origin/stg` (`45bc8f0`).
+  - Committed as `21fae96` (`feat(cleverreach): notify staff when a thesis draft is ready`).
+- Current slice: Slice 3 - isolated df-cloud worktree creation blocked by the runtime Git permission boundary.
+- Slice 3 evidence:
+  - created `/Users/rschlae/Git/df/df-cloud/trees/rs-thesispf-mail-relay-secrets` from current `origin/stg` (`45bc8f0`).
+  - committed the companion plan as `abf1dde5` (`docs(project): add thesis mail relay secret plan`).
+  - added `MAIL_SENDING_HTTP_URL` and `MAIL_SENDING_FROM` only to the `thesispf` CleverReach-only secret group; shared keys and `thesispf-ibw` remain unchanged.
+  - `git diff --check` and the static mapping-contract assertion passed.
+  - formatter and app TypeScript checks are unavailable in the fresh worktree because pnpm dependency setup hits `EPERM` and app dependencies are absent; no local Pulumi preview was run.
+  - mapping staging/commit is blocked because the shared df-cloud Git worktree index is not writable; escalation was rejected by workspace policy.
+- Current slice: Slice 3 - mapping commit blocked by the runtime Git permission boundary.
+- Next action: stage and commit `src/apps/thesispf/functions.ts` plus the companion-plan Progress update, then run the required intermediate review after CI preview authority/evidence is available.
 
 ## Slice 1 - Add the Outlook HTTP relay helper
 
@@ -354,4 +362,5 @@
 
 ## Next step
 
-- Start a new session in `/Users/rschlae/Git/df/thesis-platform`, read this plan, verify branch/base/status, and execute Slice 1 only before advancing the plan progress.
+- Commit the current primary-plan Progress update and complete the remaining local review artifacts.
+- Request separate publication authority before pushing either branch or triggering the df-cloud CI preview.

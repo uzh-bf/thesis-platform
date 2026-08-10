@@ -1,4 +1,8 @@
 import { sendMail } from 'src/lib/mail/sendMail'
+import {
+  createThesisProposalCleverReachDraft,
+  type ThesisProposalDraftPayload,
+} from './thesisProposal'
 
 const DEFAULT_CLEVERREACH_ADMIN_URL = 'https://eu2.cleverreach.com/admin'
 
@@ -57,4 +61,30 @@ export async function sendThesisProposalCleverReachReminder({
   ...options
 }: ThesisProposalCleverReachReminderOptions): Promise<void> {
   await send(buildThesisProposalCleverReachReminderMail(options))
+}
+
+export async function createThesisProposalCleverReachDraftAndNotify(
+  draftPayload: ThesisProposalDraftPayload,
+  recipients: string[],
+  {
+    createDraft = createThesisProposalCleverReachDraft,
+    sendReminder = sendThesisProposalCleverReachReminder,
+  }: {
+    createDraft?: typeof createThesisProposalCleverReachDraft
+    sendReminder?: typeof sendThesisProposalCleverReachReminder
+  } = {}
+): Promise<void> {
+  await createDraft(draftPayload)
+
+  try {
+    await sendReminder({
+      title: draftPayload.title,
+      recipients,
+    })
+  } catch (error) {
+    console.error('CleverReach thesis proposal reminder failed', {
+      proposalId: draftPayload.proposalId,
+      error: error instanceof Error ? error.message : String(error),
+    })
+  }
 }
