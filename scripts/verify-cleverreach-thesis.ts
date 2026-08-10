@@ -215,18 +215,6 @@ async function verifyMailRelayContract() {
       string,
       unknown
     >
-    assert.deepEqual(Object.keys(relayBody).sort(), [
-      'bcc',
-      'bodyAsHtml',
-      'cc',
-      'from',
-      'importance',
-      'replyTo',
-      'secret',
-      'sensitivity',
-      'subject',
-      'to',
-    ])
     assert.deepEqual(relayBody, {
       from: 'sender@example.test',
       to: ['management@example.test'],
@@ -381,7 +369,6 @@ async function verifyReminderAndOrchestration() {
   )
   assert.equal(reminderCallsAfterDraftFailure, 0)
 
-  let reminderFailureWasNonBlocking = false
   await createThesisProposalCleverReachDraftAndNotify(
     payload,
     ['management@example.test'],
@@ -392,8 +379,6 @@ async function verifyReminderAndOrchestration() {
       },
     }
   )
-  reminderFailureWasNonBlocking = true
-  assert.equal(reminderFailureWasNonBlocking, true)
 }
 
 async function main() {
