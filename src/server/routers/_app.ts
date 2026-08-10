@@ -1178,9 +1178,20 @@ export const appRouter = router({
       }
     }),
 
-  submitProposalPublish: optionalAuthedProcedure
+  submitProposalPublish: authedProcedure
     .input(proposalPublishInputSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      if (
+        ctx.user.role !== UserRole.SUPERVISOR &&
+        ctx.user.role !== UserRole.DEVELOPER
+      ) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message:
+            'Supervisor or developer access is required to publish a supervisor proposal',
+        })
+      }
+
       const submittedAt = new Date()
       const submitDate = submittedAt.toISOString()
 

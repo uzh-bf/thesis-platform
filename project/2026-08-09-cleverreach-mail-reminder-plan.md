@@ -56,6 +56,7 @@
 - Decision: preserve the legacy Thesis reminder's `High` importance.
 - Decision: reminder failure is non-blocking. It is caught and logged with proposal ID and safe error text after draft success.
 - Decision: missing relay configuration warns and skips. The caller must not log a false success when `sendMail` skips.
+- Decision: `submitProposalPublish` is restricted server-side to authenticated `SUPERVISOR` and `DEVELOPER` users. Anonymous student publishing remains on the separate external submission flow and does not call this mutation.
 - Decision: use one branch per repository because GitHub and GitLab cannot share one branch or MR. The two branches form one coordinated feature package, not a native stack.
 
 ## Planning-stage review
@@ -164,9 +165,15 @@
   - added `MAIL_SENDING_HTTP_URL` and `MAIL_SENDING_FROM` only to the `thesispf` CleverReach-only secret group; shared keys and `thesispf-ibw` remain unchanged.
   - `git diff --check` and the static mapping-contract assertion passed.
   - formatter and app TypeScript checks are unavailable in the fresh worktree because pnpm dependency setup hits `EPERM` and app dependencies are absent; no local Pulumi preview was run.
-  - mapping staging/commit is blocked because the shared df-cloud Git worktree index is not writable; escalation was rejected by workspace policy.
-- Current slice: Slice 3 - mapping commit blocked by the runtime Git permission boundary.
-- Next action: stage and commit `src/apps/thesispf/functions.ts` plus the companion-plan Progress update, then run the required intermediate review after CI preview authority/evidence is available.
+  - mapping and companion-plan Progress update committed as `6b3a5d6` (`docs(project): record thesis mail relay mapping verification`).
+- Supervisor publication authorization follow-up:
+  - changed `submitProposalPublish` from `optionalAuthedProcedure` to `authedProcedure`.
+  - added a server-side `SUPERVISOR`/`DEVELOPER` role check before Power Automate submission and the CleverReach trigger.
+  - confirmed the student external workflow has no CleverReach references and does not call this mutation.
+  - targeted TypeScript, owned-file ESLint, the deterministic CleverReach verifier, and `git diff --check` passed.
+  - final read-only reviewer passed the exact working-tree authorization diff with no findings; report is in `project/_local/reviews/2026-08-10-thesis-supervisor-publish-auth-final.md`.
+- Current slice: local finish and publication-readiness review.
+- Next action: commit the authorization follow-up and primary-plan update, then request separate publication authority before pushing either branch or triggering the df-cloud CI preview.
 
 ## Slice 1 - Add the Outlook HTTP relay helper
 
@@ -347,6 +354,7 @@
 - Draft failure prevents reminder delivery.
 - Reminder failure never fails proposal publication or deletes/changes the draft.
 - Missing mail configuration performs no network request and produces a warning without a false success log.
+- `submitProposalPublish` rejects anonymous and `STUDENT` callers before the Power Automate or CleverReach side effects; the anonymous student submission flow remains unchanged.
 - Existing `EMAIL_NOTIFICATION_URL` behavior is unchanged.
 - `thesispf-ibw` secret mapping and behavior are unchanged.
 - Deterministic verification performs no real CleverReach or email request.
