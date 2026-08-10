@@ -47,7 +47,7 @@
 
 - Decision: copy the Careers `sendMail` transport contract into Thesis, including environment-variable names and JSON field names.
 - Decision: keep the transport helper generic and place it at `src/lib/mail/sendMail.ts`.
-- Decision: place reminder copy and invocation in `src/lib/cleverreach/reminder.ts`; keep the router responsible only for sequencing draft success before reminder delivery.
+- Decision: place reminder copy and draft-then-best-effort-reminder orchestration in `src/lib/cleverreach/reminder.ts`; the router builds the proposal payload, supplies recipients, and invokes that combined use case.
 - Decision: reuse the existing Thesis environment-specific management recipients. Rename the internal recipient constant/function to management-oriented names if required for honest reuse; do not introduce a recipient secret.
 - Decision: use `MAIL_SENDING_FROM` for the current Thesis `Outlook From Address` value.
 - Decision: use the approved environment-specific Send Email HTTP relay URL for `MAIL_SENDING_HTTP_URL`. The request contract must match Careers exactly; do not assume a secret value or change the existing Thesis `FLOW_SECRET`.
@@ -226,7 +226,7 @@
 - Send to the existing environment-specific Thesis management recipients with `importance: 'High'`.
 - Keep copy generation testable without network I/O. Allow an injected mail function only as the narrow verification seam; production defaults to `sendMail`.
 - In `src/server/routers/_app.ts`, rename the existing admin-specific recipient constant/resolver to management-oriented names and update the existing admin-notification caller.
-- After `createThesisProposalCleverReachDraft(draftPayload)` succeeds, call the reminder in a separate `try/catch`.
+- Keep the draft-then-best-effort-reminder sequence in `src/lib/cleverreach/reminder.ts`; the router invokes it after finding the published supervisor proposal.
 - If draft creation fails or configuration is incomplete, return exactly as today and do not call the reminder.
 - If reminder delivery throws, log `CleverReach thesis proposal reminder failed` with proposal ID and safe error text; do not rethrow.
 - Do not log “sent” when the transport skipped because configuration was missing.

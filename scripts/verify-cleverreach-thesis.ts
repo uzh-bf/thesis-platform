@@ -80,7 +80,7 @@ assert.ok(
   )
 )
 
-async function main() {
+async function verifyCleverReachDraftCreation() {
   const createDraftPayloads: {
     html: string
     filterId: string
@@ -154,7 +154,9 @@ async function main() {
   } finally {
     globalThis.fetch = originalFetch
   }
+}
 
+async function verifyMailRelayContract() {
   const relayEnvironment = {
     MAIL_SENDING_HTTP_URL: '  https://relay.example.test/send  ',
     FLOW_SECRET: '  verifier-flow-secret  ',
@@ -289,7 +291,9 @@ async function main() {
       }
     }
   }
+}
 
+async function verifyReminderAndOrchestration() {
   const reminderTitle = `O'Hara <Risk & Return> "Model"`
   const reminderMail = buildThesisProposalCleverReachReminderMail({
     title: reminderTitle,
@@ -390,6 +394,12 @@ async function main() {
   )
   reminderFailureWasNonBlocking = true
   assert.equal(reminderFailureWasNonBlocking, true)
+}
+
+async function main() {
+  await verifyCleverReachDraftCreation()
+  await verifyMailRelayContract()
+  await verifyReminderAndOrchestration()
 
   console.log(
     'CleverReach thesis proposal, reminder, and mail relay checks passed.'
