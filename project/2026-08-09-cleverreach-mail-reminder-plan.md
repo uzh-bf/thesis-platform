@@ -131,13 +131,21 @@
 - [x] User selected the `MAIL_SENDING_HTTP_URL` Outlook relay approach.
 - [x] User instructed creation of this full plan and a new-session execution handoff.
 - [x] Primary branch created from verified Thesis `main`.
-- [ ] Slice 1: add and verify the generic mail relay helper.
+- [x] Slice 1: add and verify the generic mail relay helper.
 - [ ] Slice 2: send the reminder after successful draft creation.
 - [ ] Slice 3: add the df-cloud `thesispf` secret mapping in an isolated worktree.
 - [ ] Slice 4: provision and smoke staging after explicit approval.
 - [ ] Slice 5: finish reviews, publish artifacts, and prepare production promotion.
-- Current slice: plan commit and handoff.
-- Next action: in the new session, verify the branch and plan, then start Slice 1.
+- Slice 1 evidence:
+  - added `src/lib/mail/sendMail.ts` with the Careers `MAIL_SENDING_HTTP_URL` JSON contract.
+  - extended `scripts/verify-cleverreach-thesis.ts` with fake-fetch coverage for request shape, missing configuration, empty recipients, and non-2xx responses.
+  - `./node_modules/.bin/tsx scripts/verify-cleverreach-thesis.ts` passed.
+  - `./node_modules/.bin/tsc --noEmit --incremental false --pretty false` passed.
+  - `./node_modules/.bin/eslint .` passed with eight pre-existing warnings; `pnpm lint` was blocked before ESLint by Corepack cache permission `EPERM`.
+  - `git diff --check` passed.
+  - Local staging is blocked because Git cannot create `.git/index.lock`; the escalated `git add` request was rejected by tenant policy.
+- Current slice: Slice 1 - local commit blocked by the runtime Git permission boundary.
+- Next action: stage and commit the verified Slice 1 files, then start Slice 2.
 
 ## Slice 1 - Add the Outlook HTTP relay helper
 

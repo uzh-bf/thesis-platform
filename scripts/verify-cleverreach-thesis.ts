@@ -8,6 +8,7 @@ import {
   parseProposalLanguages,
   type ThesisProposalDraftPayload,
 } from '../src/lib/cleverreach/thesisProposal'
+import { sendMail } from '../src/lib/mail/sendMail'
 
 const env = {
   CLEVERREACH_CLIENT_ID: 'client-id',
@@ -149,7 +150,140 @@ async function main() {
     globalThis.fetch = originalFetch
   }
 
-  console.log('CleverReach thesis proposal builder checks passed.')
+  const relayEnvironment = {
+    MAIL_SENDING_HTTP_URL: '  https://relay.example.test/send  ',
+    FLOW_SECRET: '  verifier-flow-secret  ',
+    MAIL_SENDING_FROM: '  sender@example.test  ',
+  }
+  const relayEnvironmentNames = Object.keys(relayEnvironment)
+  const originalRelayEnvironment = new Map(
+    relayEnvironmentNames.map((name) => [name, process.env[name]] as const)
+  )
+  const relayRequests: { url: string; init?: RequestInit }[] = []
+  let relayResponseStatus = 200
+  let relayResponseBody = '{"ok":true}'
+  const originalRelayFetch = globalThis.fetch
+
+  try {
+    for (const [name, value] of Object.entries(relayEnvironment)) {
+      process.env[name] = value
+    }
+
+    globalThis.fetch = (async (url, init) => {
+      relayRequests.push({ url: String(url), init })
+      return new Response(relayResponseBody, { status: relayResponseStatus })
+    }) as typeof fetch
+
+    const relayInput = {
+      to: ['management@example.test'],
+      subject: 'CleverReach mailing ready',
+      bodyAsHtml: '<p>Review this mailing.</p>',
+      cc: ['copy@example.test'],
+      bcc: ['audit@example.test'],
+      replyTo: 'no-reply@example.test',
+      sensitivity: 'Private' as const,
+      importance: 'High' as const,
+    }
+
+    await sendMail(relayInput)
+    assert.equal(relayRequests.length, 1)
+
+    const relayRequest = relayRequests[0]
+    assert.equal(relayRequest.url, 'https://relay.example.test/send')
+    assert.equal(relayRequest.init?.method, 'POST')
+    assert.deepEqual(relayRequest.init?.headers, {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    })
+
+    const relayHeaders = relayRequest.init?.headers as Record<string, string>
+    assert.equal(
+      Object.keys(relayHeaders).some((name) => name.toLowerCase().includes('secret')),
+      false
+    )
+
+    const relayBody = JSON.parse(String(relayRequest.init?.body)) as Record<
+      string,
+      unknown
+    >
+    assert.deepEqual(Object.keys(relayBody).sort(), [
+      'bcc',
+      'bodyAsHtml',
+      'cc',
+      'from',
+      'importance',
+      'replyTo',
+      'secret',
+      'sensitivity',
+      'subject',
+      'to',
+    ])
+    assert.deepEqual(relayBody, {
+      from: 'sender@example.test',
+      to: ['management@example.test'],
+      subject: 'CleverReach mailing ready',
+      bodyAsHtml: '<p>Review this mailing.</p>',
+      secret: 'verifier-flow-secret',
+      cc: ['copy@example.test'],
+      bcc: ['audit@example.test'],
+      replyTo: 'no-reply@example.test',
+      sensitivity: 'Private',
+      importance: 'High',
+    })
+
+    for (const missingName of relayEnvironmentNames) {
+      for (const [name, value] of Object.entries(relayEnvironment)) {
+        process.env[name] = value
+      }
+      if (missingName === 'FLOW_SECRET') {
+        process.env[missingName] = '   '
+      } else {
+        delete process.env[missingName]
+      }
+
+      await sendMail(relayInput)
+      assert.equal(relayRequests.length, 1)
+    }
+
+    for (const [name, value] of Object.entries(relayEnvironment)) {
+      process.env[name] = value
+    }
+    await sendMail({ ...relayInput, to: [] })
+    assert.equal(relayRequests.length, 1)
+
+    relayResponseStatus = 502
+    relayResponseBody = 'relay unavailable'
+    await assert.rejects(
+      () =>
+        sendMail({
+          ...relayInput,
+          from: 'override@example.test',
+        }),
+      (error: unknown) => {
+        assert.ok(error instanceof Error)
+        assert.match(error.message, /status=502/)
+        assert.match(error.message, /body=relay unavailable/)
+        return true
+      }
+    )
+    assert.equal(relayRequests.length, 2)
+    const rejectedBody = JSON.parse(
+      String(relayRequests[1].init?.body)
+    ) as Record<string, unknown>
+    assert.equal(rejectedBody.from, 'override@example.test')
+  } finally {
+    globalThis.fetch = originalRelayFetch
+    for (const name of relayEnvironmentNames) {
+      const value = originalRelayEnvironment.get(name)
+      if (value === undefined) {
+        delete process.env[name]
+      } else {
+        process.env[name] = value
+      }
+    }
+  }
+
+  console.log('CleverReach thesis proposal and mail relay checks passed.')
 }
 
 void main()
