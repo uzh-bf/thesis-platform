@@ -58,6 +58,8 @@ spec:
             {{- end }}
           {{- end }}
           envFrom:
+            - configMapRef:
+                name: {{ include "thesis-platform.configName" . }}
             - secretRef:
                 name: {{ include "thesis-platform.secretName" . }}
           resources:

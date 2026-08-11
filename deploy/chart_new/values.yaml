@@ -3,6 +3,10 @@ replicaCount: 1
 env: ""
 appUrl: ""
 
+notificationRecipients:
+  adminChanges: 'ibf-srv-powplatf@d.uzh.ch'
+  cleverReachReminder: 'ibf-srv-powplatf@d.uzh.ch'
+
 # Comma-separated CIDR ranges allowed to access the admin area (/admin and
 # admin tRPC procedures). Empty = no network restriction.
 # UZH networks: 130.60.0.0/16 (institutes/servers), 89.206.64.0/18 (WLAN/VPN).
