@@ -39,13 +39,20 @@ import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
 
 const MANAGEMENT_NOTIFICATION_RECIPIENTS = {
-  DEV: ['ibf-srv-powplatf@d.uzh.ch'],
-  STG: ['roland.schlaefli@df.uzh.ch', 'maximilian.weber@df.uzh.ch'],
-  PROD: ['johanna.braun@df.uzh.ch', 'roland.schlaefli@df.uzh.ch'],
-  PRD_IBW: ['theses@business.uzh.ch'],
+  DEV: 'ibf-srv-powplatf@d.uzh.ch',
+  STG: 'ibf-srv-powplatf@d.uzh.ch',
+  PROD: 'theses@df.uzh.ch',
+  PRD_IBW: 'theses@business.uzh.ch',
 } as const
 
 type NotificationEnvironment = keyof typeof MANAGEMENT_NOTIFICATION_RECIPIENTS
+
+const CLEVERREACH_REMINDER_RECIPIENTS = {
+  DEV: [MANAGEMENT_NOTIFICATION_RECIPIENTS.DEV],
+  STG: ['roland.schlaefli@df.uzh.ch', 'maximilian.weber@df.uzh.ch'],
+  PROD: ['johanna.braun@df.uzh.ch', 'roland.schlaefli@df.uzh.ch'],
+  PRD_IBW: [MANAGEMENT_NOTIFICATION_RECIPIENTS.PRD_IBW],
+} as const
 
 type ProcedureUser = NonNullable<NonNullable<Context['session']>['user']>
 type ProposalFiltersInput = {
@@ -181,7 +188,11 @@ const getNotificationEnvironment = (): NotificationEnvironment => {
 
 const getManagementNotificationRecipients = (
   environment: NotificationEnvironment
-) => [...MANAGEMENT_NOTIFICATION_RECIPIENTS[environment]]
+) => [MANAGEMENT_NOTIFICATION_RECIPIENTS[environment]]
+
+const getCleverReachReminderRecipients = (
+  environment: NotificationEnvironment
+) => [...CLEVERREACH_REMINDER_RECIPIENTS[environment]]
 
 const getAppBaseUrl = () => {
   const nextAuthUrl = process.env.NEXTAUTH_URL?.trim()
@@ -326,7 +337,7 @@ function triggerThesisProposalCleverReachDraft(
       )
       await createThesisProposalCleverReachDraftAndNotify(
         draftPayload,
-        getManagementNotificationRecipients(getNotificationEnvironment())
+        getCleverReachReminderRecipients(getNotificationEnvironment())
       )
     } catch (error) {
       if (error instanceof CleverReachConfigError) {
