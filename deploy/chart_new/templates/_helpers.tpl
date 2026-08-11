@@ -31,6 +31,13 @@ Create the name of the Secret used for application environment variables.
 {{- end }}
 
 {{/*
+Create the name of the ConfigMap used for non-sensitive application configuration.
+*/}}
+{{- define "thesis-platform.configName" -}}
+{{- printf "%s-config" (include "thesis-platform.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "thesis-platform.chart" -}}

@@ -6,6 +6,10 @@ image:
 env: stg
 appUrl: 'https://theses.stg.df-app.ch'
 
+notificationRecipients:
+  adminChanges: 'ibf-srv-powplatf@d.uzh.ch'
+  cleverReachReminder: 'roland.schlaefli@df.uzh.ch,maximilian.weber@df.uzh.ch'
+
 azureAd:
   clientId: ''
   clientSecret: ''

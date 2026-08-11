@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "thesis-platform.configName" . }}
+  labels:
+    {{- include "thesis-platform.labels" . | nindent 4 }}
+data:
+  ADMIN_CHANGE_NOTIFICATION_RECIPIENTS: {{ .Values.notificationRecipients.adminChanges | quote }}
+  CLEVERREACH_REMINDER_RECIPIENTS: {{ .Values.notificationRecipients.cleverReachReminder | quote }}
