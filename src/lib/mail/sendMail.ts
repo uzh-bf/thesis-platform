@@ -55,7 +55,6 @@ export async function sendMail(input: SendMailInput): Promise<void> {
   })
 
   if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`sendMail status=${response.status} body=${errorText}`)
+    throw new Error(`sendMail status=${response.status}`)
   }
 }

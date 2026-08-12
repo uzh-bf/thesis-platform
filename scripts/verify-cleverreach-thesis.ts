@@ -1,4 +1,5 @@
 import * as assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 
 import { createDraftMailing } from '../src/lib/cleverreach/client'
 import {
@@ -14,6 +15,28 @@ import {
   type ThesisProposalDraftPayload,
 } from '../src/lib/cleverreach/thesisProposal'
 import { sendMail } from '../src/lib/mail/sendMail'
+
+const appRouterSource = readFileSync(
+  new URL('../src/server/routers/_app.ts', import.meta.url),
+  'utf8'
+)
+const proposalPublishStart = appRouterSource.indexOf(
+  '  submitProposalPublish: authedProcedure'
+)
+const proposalPublishEnd = appRouterSource.indexOf(
+  '  acceptProposalApplication:',
+  proposalPublishStart
+)
+assert.ok(proposalPublishStart >= 0)
+assert.ok(proposalPublishEnd > proposalPublishStart)
+const proposalPublishSource = appRouterSource.slice(
+  proposalPublishStart,
+  proposalPublishEnd
+)
+assert.doesNotMatch(proposalPublishSource, /console\.log\('URL:'/)
+assert.doesNotMatch(proposalPublishSource, /console\.log\('Payload:'/)
+assert.doesNotMatch(proposalPublishSource, /console\.error\('Response data:'/)
+assert.match(proposalPublishSource, /secretkey: process\.env\.FLOW_SECRET/)
 
 const env = {
   CLEVERREACH_CLIENT_ID: 'client-id',
@@ -264,8 +287,7 @@ async function verifyMailRelayContract() {
         }),
       (error: unknown) => {
         assert.ok(error instanceof Error)
-        assert.match(error.message, /status=502/)
-        assert.match(error.message, /body=relay unavailable/)
+        assert.equal(error.message, 'sendMail status=502')
         return true
       }
     )
