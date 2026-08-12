@@ -1,4 +1,5 @@
 import * as assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 
 import { createDraftMailing } from '../src/lib/cleverreach/client'
 import {
@@ -14,6 +15,28 @@ import {
   type ThesisProposalDraftPayload,
 } from '../src/lib/cleverreach/thesisProposal'
 import { sendMail } from '../src/lib/mail/sendMail'
+
+const appRouterSource = readFileSync(
+  new URL('../src/server/routers/_app.ts', import.meta.url),
+  'utf8'
+)
+const proposalPublishStart = appRouterSource.indexOf(
+  '  submitProposalPublish: authedProcedure'
+)
+const proposalPublishEnd = appRouterSource.indexOf(
+  '  acceptProposalApplication:',
+  proposalPublishStart
+)
+assert.ok(proposalPublishStart >= 0)
+assert.ok(proposalPublishEnd > proposalPublishStart)
+const proposalPublishSource = appRouterSource.slice(
+  proposalPublishStart,
+  proposalPublishEnd
+)
+assert.doesNotMatch(proposalPublishSource, /console\.log\('URL:'/)
+assert.doesNotMatch(proposalPublishSource, /console\.log\('Payload:'/)
+assert.doesNotMatch(proposalPublishSource, /console\.error\('Response data:'/)
+assert.match(proposalPublishSource, /secretkey: process\.env\.FLOW_SECRET/)
 
 const env = {
   CLEVERREACH_CLIENT_ID: 'client-id',
@@ -159,10 +182,16 @@ async function verifyCleverReachDraftCreation() {
 async function verifyMailRelayContract() {
   const relayEnvironment = {
     MAIL_SENDING_HTTP_URL: '  https://relay.example.test/send  ',
-    FLOW_SECRET: '  verifier-flow-secret  ',
+    MAIL_SENDING_FLOW_SECRET: '  verifier-flow-secret  ',
+    FLOW_SECRET: '  proposal-flow-secret  ',
     MAIL_SENDING_FROM: '  sender@example.test  ',
   }
   const relayEnvironmentNames = Object.keys(relayEnvironment)
+  const requiredRelayEnvironmentNames = [
+    'MAIL_SENDING_HTTP_URL',
+    'MAIL_SENDING_FLOW_SECRET',
+    'MAIL_SENDING_FROM',
+  ]
   const originalRelayEnvironment = new Map(
     relayEnvironmentNames.map((name) => [name, process.env[name]] as const)
   )
@@ -228,11 +257,11 @@ async function verifyMailRelayContract() {
       importance: 'High',
     })
 
-    for (const missingName of relayEnvironmentNames) {
+    for (const missingName of requiredRelayEnvironmentNames) {
       for (const [name, value] of Object.entries(relayEnvironment)) {
         process.env[name] = value
       }
-      if (missingName === 'FLOW_SECRET') {
+      if (missingName === 'MAIL_SENDING_FLOW_SECRET') {
         process.env[missingName] = '   '
       } else {
         delete process.env[missingName]
@@ -258,8 +287,7 @@ async function verifyMailRelayContract() {
         }),
       (error: unknown) => {
         assert.ok(error instanceof Error)
-        assert.match(error.message, /status=502/)
-        assert.match(error.message, /body=relay unavailable/)
+        assert.equal(error.message, 'sendMail status=502')
         return true
       }
     )

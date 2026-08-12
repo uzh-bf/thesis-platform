@@ -17,12 +17,12 @@ function readEnv(name: string): string | null {
 
 export async function sendMail(input: SendMailInput): Promise<void> {
   const triggerUrl = readEnv('MAIL_SENDING_HTTP_URL')
-  const secret = readEnv('FLOW_SECRET')
+  const secret = readEnv('MAIL_SENDING_FLOW_SECRET')
   const from = input.from ?? readEnv('MAIL_SENDING_FROM')
 
   if (!triggerUrl || !secret || !from) {
     console.warn(
-      'sendMail skipped: MAIL_SENDING_HTTP_URL, FLOW_SECRET, or MAIL_SENDING_FROM missing'
+      'sendMail skipped: MAIL_SENDING_HTTP_URL, MAIL_SENDING_FLOW_SECRET, or MAIL_SENDING_FROM missing'
     )
     return
   }
@@ -55,7 +55,6 @@ export async function sendMail(input: SendMailInput): Promise<void> {
   })
 
   if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`sendMail status=${response.status} body=${errorText}`)
+    throw new Error(`sendMail status=${response.status}`)
   }
 }
