@@ -66,5 +66,5 @@
 - [x] Reproduced the staging failure after the secret copy.
 - [x] Confirmed the callback/mail `FLOW_SECRET` collision.
 - [x] Created the Thesis and df-cloud follow-up branches.
-- [ ] Finish Slice 1 implementation and verification.
+- [x] Finished Slice 1 implementation and verification: the Thesis relay and authorization checks pass; the df-cloud ExternalSecret scope test passes with the pinned Node/pnpm runtime; formatting and diff checks pass. The df-cloud package typecheck remains unavailable because the checked-out `azure-helpers` submodule's generated declarations do not match the existing df-cloud type surface.
 - [ ] Recover secrets and complete Slice 2 staging verification.

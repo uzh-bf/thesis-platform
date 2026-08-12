@@ -1223,8 +1223,6 @@ export const appRouter = router({
 
       try {
         console.log('Submitting proposal to Power Automate flow...')
-        console.log('URL:', process.env.PROPOSAL_PUBLISH_URL)
-        console.log('Payload:', JSON.stringify(payload, null, 2))
 
         const res = await axios.post(
           process.env.PROPOSAL_PUBLISH_URL,
@@ -1240,25 +1238,26 @@ export const appRouter = router({
         console.log('Successfully submitted proposal')
         triggerThesisProposalCleverReachDraft(input, submittedAt)
         return res.data
-      } catch (error: any) {
-        console.error('Error submitting proposal:', error)
+      } catch (error: unknown) {
+        const responseStatus = axios.isAxiosError(error)
+          ? error.response?.status
+          : undefined
 
-        if (error.response) {
-          console.error('Response status:', error.response.status)
-          console.error('Response data:', error.response.data)
+        console.error('Error submitting proposal to Power Automate flow', {
+          status: responseStatus,
+        })
 
-          if (error.response.status === 401) {
-            throw new TRPCError({
-              code: 'UNAUTHORIZED',
-              message:
-                'Authentication failed with Power Automate flow. Check FLOW_SECRET environment variable.',
-            })
-          }
+        if (responseStatus === 401) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message:
+              'Authentication failed with Power Automate flow. Check FLOW_SECRET environment variable.',
+          })
         }
 
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: `Failed to submit proposal: ${error.message || 'Unknown error'}`,
+          message: 'Failed to submit proposal through Power Automate flow',
         })
       }
     }),

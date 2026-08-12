@@ -159,10 +159,16 @@ async function verifyCleverReachDraftCreation() {
 async function verifyMailRelayContract() {
   const relayEnvironment = {
     MAIL_SENDING_HTTP_URL: '  https://relay.example.test/send  ',
-    FLOW_SECRET: '  verifier-flow-secret  ',
+    MAIL_SENDING_FLOW_SECRET: '  verifier-flow-secret  ',
+    FLOW_SECRET: '  proposal-flow-secret  ',
     MAIL_SENDING_FROM: '  sender@example.test  ',
   }
   const relayEnvironmentNames = Object.keys(relayEnvironment)
+  const requiredRelayEnvironmentNames = [
+    'MAIL_SENDING_HTTP_URL',
+    'MAIL_SENDING_FLOW_SECRET',
+    'MAIL_SENDING_FROM',
+  ]
   const originalRelayEnvironment = new Map(
     relayEnvironmentNames.map((name) => [name, process.env[name]] as const)
   )
@@ -228,11 +234,11 @@ async function verifyMailRelayContract() {
       importance: 'High',
     })
 
-    for (const missingName of relayEnvironmentNames) {
+    for (const missingName of requiredRelayEnvironmentNames) {
       for (const [name, value] of Object.entries(relayEnvironment)) {
         process.env[name] = value
       }
-      if (missingName === 'FLOW_SECRET') {
+      if (missingName === 'MAIL_SENDING_FLOW_SECRET') {
         process.env[missingName] = '   '
       } else {
         delete process.env[missingName]
