@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.22.2](https://github.com/uzh-bf/thesis-platform/compare/v1.22.1...v1.22.2) (2026-08-13)
+
+
+### Bug Fixes
+
+* **mail:** isolate thesis relay secret ([#192](https://github.com/uzh-bf/thesis-platform/issues/192)) ([ab16b03](https://github.com/uzh-bf/thesis-platform/commit/ab16b03956080b9624fed68ca9f6adb55ada289a))
+
+
+### Build and CI
+
+* **github-actions:** optimize ARM feedback and staging convergence ([#188](https://github.com/uzh-bf/thesis-platform/issues/188)) ([43158f2](https://github.com/uzh-bf/thesis-platform/commit/43158f2f2f976ec3d78a412be5f5feac422e5035))
+
+
+### Other
+
+* **staging:** close latest-wins burst ([5f64e7e](https://github.com/uzh-bf/thesis-platform/commit/5f64e7e83a94412377d063fa19be63fc5ab4c034))
+* **staging:** collect timing sample five ([be75923](https://github.com/uzh-bf/thesis-platform/commit/be75923de80693ad007f96c06b28c0ff940ac46b))
+* **staging:** collect timing sample four ([ec82407](https://github.com/uzh-bf/thesis-platform/commit/ec82407db8104fbc140aba2b5fc26fe359984e88))
+* **staging:** collect timing sample one ([4f27784](https://github.com/uzh-bf/thesis-platform/commit/4f27784a68fbd11ef8c5a954c77ce28f9f5b0328))
+* **staging:** collect timing sample three ([8453df2](https://github.com/uzh-bf/thesis-platform/commit/8453df2960f413fd1ef745262cd5948941c04f79))
+* **staging:** collect timing sample two ([4caae5d](https://github.com/uzh-bf/thesis-platform/commit/4caae5d5ba285048c7e708cad6360ede299ec765))
+* **staging:** exercise latest-wins burst ([ac30da2](https://github.com/uzh-bf/thesis-platform/commit/ac30da2f8f923bb1cac947dec3466561e788637c))
+
+
+### Documentation
+
+* **project:** close CI follow-up evidence ([9c54feb](https://github.com/uzh-bf/thesis-platform/commit/9c54feb9130580a96ff9a3c7cd7da0a258d06540))
+* **project:** record staging burst validation ([264c45d](https://github.com/uzh-bf/thesis-platform/commit/264c45d01956ca4b390b14e5b1ef2e60c3431cf2))
+
+
+### Enhancements
+
+* **cleverreach:** notify staff when a thesis draft is ready ([#190](https://github.com/uzh-bf/thesis-platform/issues/190)) ([d9a0bb5](https://github.com/uzh-bf/thesis-platform/commit/d9a0bb5ada7940f5f312361fef1799d19322e9b6))
+
 ### [1.22.1](https://github.com/uzh-bf/thesis-platform/compare/v1.22.0...v1.22.1) (2026-07-29)
 
 
