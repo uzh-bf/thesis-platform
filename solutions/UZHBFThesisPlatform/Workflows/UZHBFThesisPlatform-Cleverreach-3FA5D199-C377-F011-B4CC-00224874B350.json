@@ -2,26 +2,26 @@
   "properties": {
     "connectionReferences": {
       "shared_office365": {
-        "runtimeSource": "embedded",
+        "api": {
+          "name": "shared_office365"
+        },
         "connection": {
           "connectionReferenceLogicalName": "uzhbf_thesisplatform_outlook365_ref"
         },
-        "api": {
-          "name": "shared_office365"
-        }
+        "runtimeSource": "embedded"
       }
     },
     "definition": {
       "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
       "contentVersion": "1.0.0.0",
       "parameters": {
-        "$connections": {
-          "defaultValue": {},
-          "type": "Object"
-        },
         "$authentication": {
           "defaultValue": {},
           "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
         },
         "Environment (uzhbf_thesisplatform_environment_env_var)": {
           "defaultValue": "DEV",
@@ -31,7 +31,7 @@
           }
         },
         "Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)": {
-          "defaultValue": "flow@bf.uzh.ch",
+          "defaultValue": "flow@df.uzh.ch",
           "type": "String",
           "metadata": {
             "schemaName": "uzhbf_thesisplatform_email_failure_env_var"
@@ -47,12 +47,10 @@
       },
       "triggers": {
         "manual": {
-          "metadata": {
-            "operationMetadataId": "363ee825-357b-4b72-9a96-0fa52ccbe4f6"
-          },
           "type": "Request",
           "kind": "Http",
           "inputs": {
+            "triggerAuthenticationType": "All",
             "schema": {
               "type": "object",
               "properties": {
@@ -99,17 +97,15 @@
                   "type": "string"
                 }
               }
-            },
-            "triggerAuthenticationType": "Tenant"
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "363ee825-357b-4b72-9a96-0fa52ccbe4f6"
           }
         }
       },
       "actions": {
         "Initialize_token_variable": {
-          "runAfter": {},
-          "metadata": {
-            "operationMetadataId": "e8bd90fd-fe3b-4464-b197-9ded0bc78c26"
-          },
           "type": "InitializeVariable",
           "inputs": {
             "variables": [
@@ -118,17 +114,13 @@
                 "type": "string"
               }
             ]
+          },
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "e8bd90fd-fe3b-4464-b197-9ded0bc78c26"
           }
         },
         "Initialize_html_variable": {
-          "runAfter": {
-            "Initialize_token_variable": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "7b026afa-7377-434f-98a9-06d3036caf9b"
-          },
           "type": "InitializeVariable",
           "inputs": {
             "variables": [
@@ -137,17 +129,17 @@
                 "type": "string"
               }
             ]
-          }
-        },
-        "Initialize_tempHtml_variable": {
+          },
           "runAfter": {
-            "Initialize_html_variable": [
+            "Initialize_token_variable": [
               "Succeeded"
             ]
           },
           "metadata": {
-            "operationMetadataId": "bc2b6fd0-7cf8-47b5-9b75-e5fde0f4ff30"
-          },
+            "operationMetadataId": "7b026afa-7377-434f-98a9-06d3036caf9b"
+          }
+        },
+        "Initialize_tempHtml_variable": {
           "type": "InitializeVariable",
           "inputs": {
             "variables": [
@@ -156,30 +148,30 @@
                 "type": "string"
               }
             ]
+          },
+          "runAfter": {
+            "Initialize_html_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "bc2b6fd0-7cf8-47b5-9b75-e5fde0f4ff30"
           }
         },
         "Catch": {
+          "type": "Scope",
           "actions": {
             "FilterForFailedOrTimedOutStatus": {
-              "runAfter": {},
-              "metadata": {
-                "operationMetadataId": "ca1bedd8-7555-4a99-a290-1c22c2e6e229"
-              },
               "type": "Query",
               "inputs": {
                 "from": "@result('Try')",
                 "where": "@or(equals(item()?['Status'], 'Failed'), equals(item()?['Status'], 'TimedOut'))"
+              },
+              "metadata": {
+                "operationMetadataId": "ca1bedd8-7555-4a99-a290-1c22c2e6e229"
               }
             },
             "CreateHtmlTable": {
-              "runAfter": {
-                "FilterForFailedOrTimedOutStatus": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "34b6a96f-64c6-43fd-89a3-fe7d5ef245ff"
-              },
               "type": "Table",
               "inputs": {
                 "from": "@body('FilterForFailedOrTimedOutStatus')",
@@ -190,9 +182,21 @@
                     "value": "@item()?['code']"
                   }
                 ]
+              },
+              "runAfter": {
+                "FilterForFailedOrTimedOutStatus": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "34b6a96f-64c6-43fd-89a3-fe7d5ef245ff"
               }
             },
             "Terminate": {
+              "type": "Terminate",
+              "inputs": {
+                "runStatus": "Cancelled"
+              },
               "runAfter": {
                 "Send_an_email_from_a_shared_mailbox_(V2)": [
                   "Succeeded"
@@ -200,28 +204,11 @@
               },
               "metadata": {
                 "operationMetadataId": "0f41eff7-41db-4eae-8e12-46f64d545e8b"
-              },
-              "type": "Terminate",
-              "inputs": {
-                "runStatus": "Cancelled"
               }
             },
             "Send_an_email_from_a_shared_mailbox_(V2)": {
-              "runAfter": {
-                "CreateHtmlTable": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "4dd4aece-8065-41ec-b00d-57f549919fda"
-              },
               "type": "OpenApiConnection",
               "inputs": {
-                "host": {
-                  "connectionName": "shared_office365",
-                  "operationId": "SharedMailboxSendEmailV2",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
-                },
                 "parameters": {
                   "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
                   "emailMessage/To": "@parameters('Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)')",
@@ -229,7 +216,19 @@
                   "emailMessage/Body": "<p>@{body('CreateHtmlTable')}</p>",
                   "emailMessage/Importance": "Normal"
                 },
-                "authentication": "@parameters('$authentication')"
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SharedMailboxSendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "CreateHtmlTable": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "4dd4aece-8065-41ec-b00d-57f549919fda"
               }
             }
           },
@@ -242,35 +241,26 @@
           },
           "metadata": {
             "operationMetadataId": "054f28a3-080c-4f8a-9529-1183121f12f9"
-          },
-          "type": "Scope"
+          }
         },
         "Try": {
+          "type": "Scope",
           "actions": {
             "POST_user_access_token": {
-              "runAfter": {},
-              "metadata": {
-                "operationMetadataId": "386e3f7a-1dc8-499c-972b-1304035aa5ab"
-              },
               "type": "Http",
               "inputs": {
-                "method": "POST",
                 "uri": "https://rest.cleverreach.com/oauth/token.php",
+                "method": "POST",
                 "headers": {
                   "Content-Type": "application/x-www-form-urlencoded"
                 },
                 "body": "grant_type=client_credentials&client_id=@{triggerBody()?['client_id']}&client_secret=@{triggerBody()?['client_secret']}"
+              },
+              "metadata": {
+                "operationMetadataId": "386e3f7a-1dc8-499c-972b-1304035aa5ab"
               }
             },
             "Parse_user_access_token": {
-              "runAfter": {
-                "POST_user_access_token": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "64a657c9-fd3d-471c-91a4-444acb9d4952"
-              },
               "type": "ParseJson",
               "inputs": {
                 "content": "@body('POST_user_access_token')",
@@ -291,9 +281,22 @@
                     }
                   }
                 }
+              },
+              "runAfter": {
+                "POST_user_access_token": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "64a657c9-fd3d-471c-91a4-444acb9d4952"
               }
             },
             "Set_access_token": {
+              "type": "SetVariable",
+              "inputs": {
+                "name": "token",
+                "value": "@body('Parse_user_access_token')?['access_token']"
+              },
               "runAfter": {
                 "Parse_user_access_token": [
                   "Succeeded"
@@ -301,14 +304,14 @@
               },
               "metadata": {
                 "operationMetadataId": "ac025fe7-1833-47f7-91eb-f2cd1052b683"
-              },
-              "type": "SetVariable",
-              "inputs": {
-                "name": "token",
-                "value": "@body('Parse_user_access_token')?['access_token']"
               }
             },
             "GET_all_user_templates": {
+              "type": "Http",
+              "inputs": {
+                "uri": "https://rest.cleverreach.com/v3/mailings/templates/user.json?token=@{variables('token')}",
+                "method": "GET"
+              },
               "runAfter": {
                 "Set_access_token": [
                   "Succeeded"
@@ -316,22 +319,9 @@
               },
               "metadata": {
                 "operationMetadataId": "5b647472-d83b-45d1-b6c4-876e49d523eb"
-              },
-              "type": "Http",
-              "inputs": {
-                "method": "GET",
-                "uri": "https://rest.cleverreach.com/v3/mailings/templates/user.json?token=@{variables('token')}"
               }
             },
             "Parse_all_user_templates": {
-              "runAfter": {
-                "GET_all_user_templates": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "bb0fc512-e57c-421f-8ad2-fdbbb534f8ff"
-              },
               "type": "ParseJson",
               "inputs": {
                 "content": "@body('GET_all_user_templates')",
@@ -394,9 +384,22 @@
                     }
                   }
                 }
+              },
+              "runAfter": {
+                "GET_all_user_templates": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "bb0fc512-e57c-421f-8ad2-fdbbb534f8ff"
               }
             },
             "Filter_all_user_templates_by_template_name": {
+              "type": "Query",
+              "inputs": {
+                "from": "@body('Parse_all_user_templates')?['templates']",
+                "where": "@equals(item()?['name'], triggerBody()?['template_name'])"
+              },
               "runAfter": {
                 "Parse_all_user_templates": [
                   "Succeeded"
@@ -404,14 +407,11 @@
               },
               "metadata": {
                 "operationMetadataId": "98368b9c-57ce-4699-9f10-b2db46e0fbbd"
-              },
-              "type": "Query",
-              "inputs": {
-                "from": "@body('Parse_all_user_templates')?['templates']",
-                "where": "@equals(item()?['name'], triggerBody()?['template_name'])"
               }
             },
             "Flatten_array": {
+              "type": "Compose",
+              "inputs": "@first(body('Filter_all_user_templates_by_template_name'))?['file']",
               "runAfter": {
                 "Filter_all_user_templates_by_template_name": [
                   "Succeeded"
@@ -419,11 +419,14 @@
               },
               "metadata": {
                 "operationMetadataId": "f42cfd39-8154-4581-a4fa-948ba5ccf2bf"
-              },
-              "type": "Compose",
-              "inputs": "@first(body('Filter_all_user_templates_by_template_name'))?['file']"
+              }
             },
             "GET_template_html_content": {
+              "type": "Http",
+              "inputs": {
+                "uri": "@{outputs('Flatten_array')}",
+                "method": "GET"
+              },
               "runAfter": {
                 "Flatten_array": [
                   "Succeeded"
@@ -431,14 +434,14 @@
               },
               "metadata": {
                 "operationMetadataId": "71b42517-8667-4067-821e-9772ff3c5280"
-              },
-              "type": "Http",
-              "inputs": {
-                "method": "GET",
-                "uri": "@{outputs('Flatten_array')}"
               }
             },
             "Set_html_variable": {
+              "type": "SetVariable",
+              "inputs": {
+                "name": "html",
+                "value": "@{body('GET_Template_HTML_Content')}"
+              },
               "runAfter": {
                 "GET_template_html_content": [
                   "Succeeded"
@@ -446,28 +449,28 @@
               },
               "metadata": {
                 "operationMetadataId": "81139605-845e-4695-a8cc-36df7dd93c6c"
-              },
-              "type": "SetVariable",
-              "inputs": {
-                "name": "html",
-                "value": "@{body('GET_Template_HTML_Content')}"
               }
             },
             "Apply_to_each": {
+              "type": "Foreach",
               "foreach": "@triggerBody()?['replacements']",
               "actions": {
                 "Set_tempHtml_variable": {
-                  "runAfter": {},
-                  "metadata": {
-                    "operationMetadataId": "f96fc888-d0e7-4b3b-a59a-a20d4df86504"
-                  },
                   "type": "SetVariable",
                   "inputs": {
                     "name": "tempHtml",
                     "value": "@{replace(variables('html'), item()?['placeholder'], item()?['replacement'])}"
+                  },
+                  "metadata": {
+                    "operationMetadataId": "f96fc888-d0e7-4b3b-a59a-a20d4df86504"
                   }
                 },
                 "Update_html_variable": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "html",
+                    "value": "@variables('tempHtml')"
+                  },
                   "runAfter": {
                     "Set_tempHtml_variable": [
                       "Succeeded"
@@ -475,11 +478,6 @@
                   },
                   "metadata": {
                     "operationMetadataId": "edeace1a-c00b-4fce-80ab-a26562e2834f"
-                  },
-                  "type": "SetVariable",
-                  "inputs": {
-                    "name": "html",
-                    "value": "@variables('tempHtml')"
                   }
                 }
               },
@@ -490,22 +488,13 @@
               },
               "metadata": {
                 "operationMetadataId": "e86d9890-15cb-41e2-bec6-034d0a37ca8a"
-              },
-              "type": "Foreach"
+              }
             },
             "HTTP_Post_to_Cleverreach_mailings.json": {
-              "runAfter": {
-                "Apply_to_each": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "80aae20f-d23c-46ab-ae3a-b121fe1658fb"
-              },
               "type": "Http",
               "inputs": {
-                "method": "POST",
                 "uri": "https://rest.cleverreach.com/v3/mailings.json?token=@{variables('token')}",
+                "method": "POST",
                 "body": {
                   "name": "@{triggerBody()?['mailing_name']}",
                   "subject": "@{triggerBody()?['subject']}",
@@ -513,7 +502,8 @@
                   "sender_email": "@{triggerBody()?['sender_email']}",
                   "content": {
                     "type": "html",
-                    "html": "@{variables('html')}"
+                    "html": "@{variables('html')}",
+                    "text": "A new thesis listing has just been posted on the DF Thesis Platform"
                   },
                   "receivers": {
                     "groups": [
@@ -521,17 +511,17 @@
                     ]
                   }
                 }
-              }
-            },
-            "Response": {
+              },
               "runAfter": {
-                "HTTP_Post_to_Cleverreach_mailings.json": [
+                "Apply_to_each": [
                   "Succeeded"
                 ]
               },
               "metadata": {
-                "operationMetadataId": "1090124d-fff3-488e-9b92-558facdbe162"
-              },
+                "operationMetadataId": "80aae20f-d23c-46ab-ae3a-b121fe1658fb"
+              }
+            },
+            "Response": {
               "type": "Response",
               "kind": "Http",
               "inputs": {
@@ -544,6 +534,14 @@
                     }
                   }
                 }
+              },
+              "runAfter": {
+                "HTTP_Post_to_Cleverreach_mailings.json": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "1090124d-fff3-488e-9b92-558facdbe162"
               }
             }
           },
@@ -554,12 +552,11 @@
           },
           "metadata": {
             "operationMetadataId": "de9b1424-0568-4014-8877-97facf341448"
-          },
-          "type": "Scope"
+          }
         }
       }
     },
-    "templateName": ""
+    "templateName": null
   },
   "schemaVersion": "1.0.0.0"
 }

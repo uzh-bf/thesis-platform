@@ -79,7 +79,7 @@
           }
         },
         "Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)": {
-          "defaultValue": "flow@bf.uzh.ch",
+          "defaultValue": "flow@df.uzh.ch",
           "type": "String",
           "metadata": {
             "schemaName": "uzhbf_thesisplatform_email_failure_env_var"
@@ -107,14 +107,14 @@
           }
         },
         "Root URL (uzhbf_thesisplatform_root_url_env_var)": {
-          "defaultValue": "https://mentally-ace-maggot.ngrok-free.app",
+          "defaultValue": "https://theses.stg.df-app.ch",
           "type": "String",
           "metadata": {
             "schemaName": "uzhbf_thesisplatform_root_url_env_var"
           }
         },
         "Blob Storage Endpoint (uzhbf_thesisplatform_blob_storage_endpoint_env_var)": {
-          "defaultValue": "thesisplatformdev",
+          "defaultValue": "stgthesisplatformbtv7s",
           "type": "String",
           "metadata": {
             "schemaName": "uzhbf_thesisplatform_blob_storage_endpoint_env_var"
@@ -239,7 +239,7 @@
               "inputs": {
                 "parameters": {
                   "dataset": "@parameters('Blob Storage Endpoint (uzhbf_thesisplatform_blob_storage_endpoint_env_var)')",
-                  "path": "/uploads/uploads/@{triggerBody()?['cvFile']}",
+                  "path": "/uploads/@{triggerBody()?['cvFile']}",
                   "inferContentType": true
                 },
                 "host": {
@@ -262,7 +262,7 @@
               "inputs": {
                 "parameters": {
                   "dataset": "@parameters('Blob Storage Endpoint (uzhbf_thesisplatform_blob_storage_endpoint_env_var)')",
-                  "path": "uploads/uploads/@{triggerBody()?['transcriptFile']}",
+                  "path": "uploads/@{triggerBody()?['transcriptFile']}",
                   "inferContentType": true
                 },
                 "host": {
@@ -343,7 +343,7 @@
               "inputs": {
                 "parameters": {
                   "dataset": "@parameters('Blob Storage Endpoint (uzhbf_thesisplatform_blob_storage_endpoint_env_var)')",
-                  "id": "/uploads/uploads/@{triggerBody()?['cvFile']}"
+                  "id": "/uploads/@{triggerBody()?['cvFile']}"
                 },
                 "host": {
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_azureblob",
@@ -365,7 +365,7 @@
               "inputs": {
                 "parameters": {
                   "dataset": "@parameters('Blob Storage Endpoint (uzhbf_thesisplatform_blob_storage_endpoint_env_var)')",
-                  "id": "/uploads/uploads/@{triggerBody()?['transcriptFile']}"
+                  "id": "/uploads/@{triggerBody()?['transcriptFile']}"
                 },
                 "host": {
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_azureblob",

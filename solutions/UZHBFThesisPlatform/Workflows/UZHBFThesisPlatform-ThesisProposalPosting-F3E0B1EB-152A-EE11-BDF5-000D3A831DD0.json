@@ -100,7 +100,7 @@
           }
         },
         "Root URL (uzhbf_thesisplatform_root_url_env_var)": {
-          "defaultValue": "https://mentally-ace-maggot.ngrok-free.app",
+          "defaultValue": "https://theses.stg.df-app.ch",
           "type": "String",
           "metadata": {
             "schemaName": "uzhbf_thesisplatform_root_url_env_var"
@@ -114,21 +114,21 @@
           }
         },
         "Cleverreach Client Id (uzhbf_thesisplatform_cleverreach_client_id_env_var)": {
-          "defaultValue": "mlilSLcYiw",
+          "defaultValue": "EMPTY",
           "type": "String",
           "metadata": {
             "schemaName": "uzhbf_thesisplatform_cleverreach_client_id_env_var"
           }
         },
         "Cleverreach Client Secret (uzhbf_thesisplatform_cleverreach_client_secret_env_var)": {
-          "defaultValue": "6wfMYQ7SRA3M1iBCMw2xGtsUumQ61A3t",
+          "defaultValue": "EMPTY",
           "type": "String",
           "metadata": {
             "schemaName": "uzhbf_thesisplatform_cleverreach_client_secret_env_var"
           }
         },
         "Blob Storage Endpoint (uzhbf_thesisplatform_blob_storage_endpoint_env_var)": {
-          "defaultValue": "thesisplatformdev",
+          "defaultValue": "stgthesisplatformbtv7s",
           "type": "String",
           "metadata": {
             "schemaName": "uzhbf_thesisplatform_blob_storage_endpoint_env_var"
@@ -319,7 +319,7 @@
                   "inputs": {
                     "parameters": {
                       "dataset": "@parameters('Blob Storage Endpoint (uzhbf_thesisplatform_blob_storage_endpoint_env_var)')",
-                      "path": "/uploads/uploads/@{triggerBody()?['researchProposalPDF']}",
+                      "path": "/uploads/@{triggerBody()?['researchProposalPDF']}",
                       "inferContentType": true
                     },
                     "host": {
@@ -334,7 +334,7 @@
                   "inputs": {
                     "parameters": {
                       "dataset": "@parameters('Blob Storage Endpoint (uzhbf_thesisplatform_blob_storage_endpoint_env_var)')",
-                      "id": "/uploads/uploads/@{triggerBody()?['researchProposalPDF']}"
+                      "id": "/uploads/@{triggerBody()?['researchProposalPDF']}"
                     },
                     "host": {
                       "apiId": "/providers/Microsoft.PowerApps/apis/shared_azureblob",
@@ -414,7 +414,7 @@
                   "inputs": {
                     "parameters": {
                       "dataset": "@parameters('Blob Storage Endpoint (uzhbf_thesisplatform_blob_storage_endpoint_env_var)')",
-                      "path": "/uploads/uploads/@{triggerBody()?['furtherAttachments']}",
+                      "path": "/uploads/@{triggerBody()?['furtherAttachments']}",
                       "inferContentType": true
                     },
                     "host": {
@@ -458,7 +458,7 @@
                   "inputs": {
                     "parameters": {
                       "dataset": "@parameters('Blob Storage Endpoint (uzhbf_thesisplatform_blob_storage_endpoint_env_var)')",
-                      "id": "/uploads/uploads/@{triggerBody()?['furtherAttachments']}"
+                      "id": "/uploads/@{triggerBody()?['furtherAttachments']}"
                     },
                     "host": {
                       "apiId": "/providers/Microsoft.PowerApps/apis/shared_azureblob",
@@ -625,7 +625,7 @@
                       "workflowReferenceName": "3fa5d199-c377-f011-b4cc-00224874b350"
                     },
                     "body": {
-                      "template_name": "THESIS_POSTING_TEST",
+                      "template_name": "THESIS_POSTING",
                       "replacements": [
                         {
                           "placeholder": "{{PROPOSAL_TITLE}}",
@@ -670,7 +670,7 @@
                       ],
                       "sender_email": "df-community@mailing.uzh.ch",
                       "sender_name": "DF Community",
-                      "subject": "New Thesis Available: @{triggerBody()?['proposalTitle']} ",
+                      "subject": "New Thesis Proposal published: @{triggerBody()?['proposalTitle']} ",
                       "receiver_group_id": "560174",
                       "mailing_name": "@concat('PROPOSAL_POSTING_', utcNow())",
                       "client_id": "@parameters('Cleverreach Client Id (uzhbf_thesisplatform_cleverreach_client_id_env_var)')",
