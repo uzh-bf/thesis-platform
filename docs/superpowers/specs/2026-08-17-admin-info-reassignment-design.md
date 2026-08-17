@@ -97,6 +97,9 @@ in the admin Proposals tab, while remaining local to the Entry Details modal.
 
 Saving sends assignment fields only for a full administrator. The existing
 Admin Information fields and assignment fields travel in one mutation request.
+If only the assignment changed, the client omits unchanged Admin Information
+fields so that correcting the assignment does not advance or rewrite workflow
+state.
 On success, the modal closes and `adminGetResponsiblesOverview` refetches. A
 Professor change therefore moves the row to the new Professor grouping and
 updates all filtering, sorting, statistics, and XLSX export data derived from
