@@ -2,6 +2,7 @@ import {
   faBan,
   faBoxArchive,
   faCheck,
+  faChevronDown,
   faChevronLeft,
   faChevronRight,
   faCircleQuestion,
@@ -16,6 +17,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button, Modal } from '@uzh-bf/design-system'
+import { useSession } from 'next-auth/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { writeRowsToXlsx } from 'src/lib/excelExport'
 import { trpc } from 'src/lib/trpc'
@@ -55,6 +57,10 @@ const ROWS_PER_PAGE_STORAGE_KEY = 'admin-info-overview:rowsPerPage'
 type AdminInfoEditState = {
   adminInfoId: string
   thesisTitle: string
+  responsibleId: string
+  supervisorEmail: string
+  originalResponsibleId: string
+  originalSupervisorEmail: string
   olatCapturedDate: string
   latestSubmissionDate: string
   submissionDate: string
@@ -65,9 +71,16 @@ type AdminInfoEditState = {
 }
 
 type DetailsModalState = {
+  professorId: string
   professorName: string
   professorEmail: string
   supervision: any
+}
+
+type AssignmentOption = {
+  value: string
+  name?: string | null
+  email: string
 }
 
 type CreateEntryFormState = {
@@ -193,7 +206,154 @@ function getAdminInfoWorkflowState(
   return 'OPEN'
 }
 
+function AssignmentSelect({
+  label,
+  value,
+  options,
+  isLoading,
+  disabled,
+  onChange,
+}: {
+  label: string
+  value: string
+  options: AssignmentOption[]
+  isLoading: boolean
+  disabled: boolean
+  onChange: (value: string) => void
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setIsOpen(false)
+        setSearch('')
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isOpen])
+
+  const selectedOption = options.find((option) => option.value === value)
+  const normalizedSearch = search.trim().toLowerCase()
+  const filteredOptions = options.filter((option) => {
+    if (!normalizedSearch) return true
+
+    return (
+      (option.name ?? '').toLowerCase().includes(normalizedSearch) ||
+      option.email.toLowerCase().includes(normalizedSearch)
+    )
+  })
+
+  return (
+    <div ref={containerRef}>
+      <div className="mb-1 text-xs font-medium uppercase text-gray-500">
+        {label}
+      </div>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setIsOpen((open) => !open)}
+          disabled={disabled}
+          className="flex w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-left focus:border-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
+          aria-label={`Select ${label}`}
+        >
+          <span className="min-w-0">
+            <span className="block truncate text-sm text-gray-900">
+              {selectedOption?.name ??
+                selectedOption?.email ??
+                'Choose an option'}
+            </span>
+            {selectedOption && selectedOption.name && (
+              <span className="block truncate text-xs text-gray-500">
+                {selectedOption.email}
+              </span>
+            )}
+          </span>
+          <FontAwesomeIcon
+            icon={faChevronDown}
+            className={`shrink-0 text-xs text-gray-500 transition-transform ${
+              isOpen ? 'rotate-180' : ''
+            }`}
+          />
+        </button>
+
+        {isOpen && (
+          <div className="absolute z-30 mt-1 w-full min-w-64 rounded-md border border-gray-300 bg-white shadow-lg">
+            <div className="border-b border-gray-200 p-2">
+              <input
+                type="text"
+                autoFocus
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') {
+                    setIsOpen(false)
+                    setSearch('')
+                  }
+                }}
+                placeholder={`Search ${label.toLowerCase()}…`}
+                className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700"
+                aria-label={`Search ${label}`}
+              />
+            </div>
+
+            <div className="max-h-56 overflow-y-auto py-1" role="listbox">
+              {isLoading ? (
+                <div className="px-3 py-2 text-xs text-gray-500">Loading…</div>
+              ) : filteredOptions.length === 0 ? (
+                <div className="px-3 py-2 text-xs text-gray-500">
+                  No options found
+                </div>
+              ) : (
+                filteredOptions.map((option) => {
+                  const isSelected = option.value === value
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
+                      onClick={() => {
+                        onChange(option.value)
+                        setIsOpen(false)
+                        setSearch('')
+                      }}
+                      className={`w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none ${
+                        isSelected ? 'bg-blue-50' : ''
+                      }`}
+                    >
+                      <span className="block truncate text-sm text-gray-900">
+                        {option.name ?? option.email}
+                      </span>
+                      {option.name && (
+                        <span className="block truncate text-xs text-gray-500">
+                          {option.email}
+                        </span>
+                      )}
+                    </button>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function AdminInfoOverview() {
+  const { data: session } = useSession()
+  const isAdminOnly = session?.user?.adminRole === 'ADMIN'
   const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
   const [rowsPerPage, setRowsPerPage] = useState<PageSizeOption>(20)
@@ -369,7 +529,8 @@ export default function AdminInfoOverview() {
     isLoading: createEntryProfessorsLoading,
   } = trpc.getAllPersonsResponsible.useQuery()
 
-  const { data: supervisors } = trpc.getAllSupervisors.useQuery()
+  const { data: supervisors, isLoading: supervisorsLoading } =
+    trpc.getAllSupervisors.useQuery()
 
   const { data: topicAreas } = trpc.getTopicAreas.useQuery()
 
@@ -411,6 +572,53 @@ export default function AdminInfoOverview() {
     }
 
     const currentAdminInfo = detailsState?.supervision?.proposal?.AdminInfo
+    const assignmentChanged =
+      isAdminOnly &&
+      (editState.responsibleId !== editState.originalResponsibleId ||
+        editState.supervisorEmail !== editState.originalSupervisorEmail)
+
+    if (assignmentChanged) {
+      const hasValidProfessor = createEntryProfessorOptions.some(
+        (professor: any) => professor.id === editState.responsibleId
+      )
+      const hasValidSupervisor = (supervisors ?? []).some(
+        (supervisor: any) => supervisor.email === editState.supervisorEmail
+      )
+
+      if (!hasValidProfessor || !hasValidSupervisor) {
+        alert('Select a valid Professor and Supervisor.')
+        return
+      }
+    }
+
+    const nextComment =
+      editState.comment.trim() === '' ? null : editState.comment
+    const nextCapturedOnZora =
+      editState.capturedOnZora === ''
+        ? null
+        : editState.capturedOnZora === 'true'
+    const currentGrade =
+      currentAdminInfo?.grade === null || currentAdminInfo?.grade === undefined
+        ? null
+        : Number(currentAdminInfo.grade)
+    const currentCapturedOnZora =
+      currentAdminInfo?.capturedOnZora === null ||
+      currentAdminInfo?.capturedOnZora === undefined
+        ? null
+        : Boolean(currentAdminInfo.capturedOnZora)
+    const hasAdminInfoDataChange =
+      editState.olatCapturedDate !==
+        toDateInputValue(currentAdminInfo?.olatCapturedDate) ||
+      editState.latestSubmissionDate !==
+        toDateInputValue(currentAdminInfo?.latestSubmissionDate) ||
+      editState.submissionDate !==
+        toDateInputValue(currentAdminInfo?.submissionDate) ||
+      editState.olatGradeDate !==
+        toDateInputValue(currentAdminInfo?.olatGradeDate) ||
+      gradeValue !== currentGrade ||
+      nextComment !== (currentAdminInfo?.comment ?? null) ||
+      nextCapturedOnZora !== currentCapturedOnZora
+
     const workflowState = getAdminInfoWorkflowState({
       status: currentAdminInfo?.status,
       olatCapturedDate: currentAdminInfo?.olatCapturedDate,
@@ -423,8 +631,9 @@ export default function AdminInfoOverview() {
     const hasSubmissionDate = editState.submissionDate.trim() !== ''
     const hasOlatGradeDate = editState.olatGradeDate.trim() !== ''
     const hasGrade = gradeValue !== null
+    const shouldValidateWorkflow = hasAdminInfoDataChange || !assignmentChanged
 
-    if (workflowState === 'OPEN') {
+    if (shouldValidateWorkflow && workflowState === 'OPEN') {
       if (!hasOlatCapturedDate) {
         alert('Step 1 requires OLAT Captured Date.')
         return
@@ -438,7 +647,7 @@ export default function AdminInfoOverview() {
       }
     }
 
-    if (workflowState === 'IN_PROGRESS') {
+    if (shouldValidateWorkflow && workflowState === 'IN_PROGRESS') {
       if (!hasOlatCapturedDate) {
         alert('OLAT Captured Date must stay filled.')
         return
@@ -455,14 +664,14 @@ export default function AdminInfoOverview() {
       }
     }
 
-    if (workflowState === 'GRADING') {
+    if (shouldValidateWorkflow && workflowState === 'GRADING') {
       if (!hasOlatCapturedDate || !hasSubmissionDate) {
         alert('Previous workflow fields must stay filled.')
         return
       }
     }
 
-    if (workflowState === 'COMPLETED') {
+    if (shouldValidateWorkflow && workflowState === 'COMPLETED') {
       if (!hasOlatCapturedDate || !hasSubmissionDate || !hasGrade) {
         alert(
           'Completed entries must keep all required workflow fields filled.'
@@ -473,16 +682,23 @@ export default function AdminInfoOverview() {
 
     updateAdminInfo.mutate({
       adminInfoId: editState.adminInfoId,
-      olatCapturedDate: editState.olatCapturedDate || null,
-      latestSubmissionDate: editState.latestSubmissionDate || null,
-      submissionDate: editState.submissionDate || null,
-      olatGradeDate: editState.olatGradeDate || null,
-      grade: gradeValue,
-      comment: editState.comment.trim() === '' ? null : editState.comment,
-      capturedOnZora:
-        editState.capturedOnZora === ''
-          ? null
-          : editState.capturedOnZora === 'true',
+      ...(hasAdminInfoDataChange || !assignmentChanged
+        ? {
+            olatCapturedDate: editState.olatCapturedDate || null,
+            latestSubmissionDate: editState.latestSubmissionDate || null,
+            submissionDate: editState.submissionDate || null,
+            olatGradeDate: editState.olatGradeDate || null,
+            grade: gradeValue,
+            comment: nextComment,
+            capturedOnZora: nextCapturedOnZora,
+          }
+        : {}),
+      ...(assignmentChanged
+        ? {
+            responsibleId: editState.responsibleId,
+            supervisorEmail: editState.supervisorEmail,
+          }
+        : {}),
     })
   }
 
@@ -646,6 +862,7 @@ export default function AdminInfoOverview() {
 
   const openDetailsModal = (professor: any, supervision: any) => {
     setDetailsState({
+      professorId: professor.id,
       professorName: professor.name,
       professorEmail: professor.email,
       supervision,
@@ -660,6 +877,10 @@ export default function AdminInfoOverview() {
     setEditState({
       adminInfoId: adminInfo.id,
       thesisTitle: supervision.proposal.title,
+      responsibleId: professor.id,
+      supervisorEmail: supervision.supervisorEmail ?? '',
+      originalResponsibleId: professor.id,
+      originalSupervisorEmail: supervision.supervisorEmail ?? '',
       olatCapturedDate: toDateInputValue(adminInfo.olatCapturedDate),
       latestSubmissionDate: toDateInputValue(adminInfo.latestSubmissionDate),
       submissionDate: toDateInputValue(adminInfo.submissionDate),
@@ -740,7 +961,7 @@ export default function AdminInfoOverview() {
     }
   }, [professorsOverview, selectedResponsibleIds])
 
-  const createEntryProfessorOptions = useMemo(() => {
+  const createEntryProfessorOptions = (() => {
     const source =
       createEntryProfessors && createEntryProfessors.length > 0
         ? createEntryProfessors
@@ -758,7 +979,7 @@ export default function AdminInfoOverview() {
       const bName = String(b.name ?? '')
       return aName.localeCompare(bName, undefined, { sensitivity: 'base' })
     })
-  }, [createEntryProfessors, sortedProfessors])
+  })()
 
   const displayedSupervisions = useMemo(() => {
     const normalizedSearchQuery = searchQuery.trim().toLowerCase()
@@ -1633,6 +1854,16 @@ export default function AdminInfoOverview() {
                 (Number.isNaN(parsedGradeValue) ||
                   parsedGradeValue < 1 ||
                   parsedGradeValue > 6)
+              const isAssignmentSelectionInvalid =
+                isAdminOnly &&
+                editState !== null &&
+                (!createEntryProfessorOptions.some(
+                  (professor: any) => professor.id === editState.responsibleId
+                ) ||
+                  !(supervisors ?? []).some(
+                    (supervisor: any) =>
+                      supervisor.email === editState.supervisorEmail
+                  ))
               const isCapturedOnZoraUnlocked =
                 parsedGradeValue !== null && !isGradeValueInvalid
               const isOlatCapturedDateRequired = true
@@ -1681,23 +1912,59 @@ export default function AdminInfoOverview() {
               return (
                 <>
                   <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
-                    <div>
-                      <div className="text-xs font-medium text-gray-500 uppercase">
-                        Professor
+                    {isAdminOnly && editState && !isWithdrawn ? (
+                      <AssignmentSelect
+                        label="Professor"
+                        value={editState.responsibleId}
+                        options={createEntryProfessorOptions.map(
+                          (professor: any) => ({
+                            value: professor.id,
+                            name: professor.name,
+                            email: professor.email,
+                          })
+                        )}
+                        isLoading={createEntryProfessorsLoading}
+                        disabled={updateAdminInfo.isPending}
+                        onChange={(responsibleId) =>
+                          setEditState({ ...editState, responsibleId })
+                        }
+                      />
+                    ) : (
+                      <div>
+                        <div className="text-xs font-medium uppercase text-gray-500">
+                          Professor
+                        </div>
+                        <div className="text-sm text-gray-900">
+                          {detailsState.professorEmail}
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-900">
-                        {detailsState.professorEmail}
-                      </div>
-                    </div>
+                    )}
 
-                    <div>
-                      <div className="text-xs font-medium text-gray-500 uppercase">
-                        Supervisor
+                    {isAdminOnly && editState && !isWithdrawn ? (
+                      <AssignmentSelect
+                        label="Supervisor"
+                        value={editState.supervisorEmail}
+                        options={(supervisors ?? []).map((supervisor: any) => ({
+                          value: supervisor.email,
+                          name: supervisor.name,
+                          email: supervisor.email,
+                        }))}
+                        isLoading={supervisorsLoading}
+                        disabled={updateAdminInfo.isPending}
+                        onChange={(supervisorEmail) =>
+                          setEditState({ ...editState, supervisorEmail })
+                        }
+                      />
+                    ) : (
+                      <div>
+                        <div className="text-xs font-medium uppercase text-gray-500">
+                          Supervisor
+                        </div>
+                        <div className="text-sm text-gray-900">
+                          {supervisorEmail}
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-900">
-                        {supervisorEmail}
-                      </div>
-                    </div>
+                    )}
 
                     <div>
                       <div className="text-xs font-medium text-gray-500 uppercase">
@@ -2049,7 +2316,9 @@ export default function AdminInfoOverview() {
                           onClick={handleSaveAdminInfo}
                           className={{ root: 'text-sm' }}
                           disabled={
-                            updateAdminInfo.isPending || isGradeValueInvalid
+                            updateAdminInfo.isPending ||
+                            isGradeValueInvalid ||
+                            isAssignmentSelectionInvalid
                           }
                         >
                           {updateAdminInfo.isPending ? 'Saving…' : 'Save'}

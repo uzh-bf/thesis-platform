@@ -18,6 +18,10 @@ import { TRPCError } from '@trpc/server'
 import axios from 'axios'
 import 'cross-fetch/polyfill'
 import dayjs from 'dayjs'
+import {
+  AdminInfoAssignmentPolicyError,
+  resolveAdminInfoAssignment,
+} from 'src/lib/adminInfoAssignment'
 import { createThesisProposalCleverReachDraftAndNotify } from 'src/lib/cleverreach/reminder'
 import {
   CleverReachConfigError,
@@ -120,7 +124,7 @@ function formatDateForStudentMessage(date: Date) {
 }
 
 type AdminChangeNotificationInput = {
-  tab: 'Proposals' | 'Users'
+  tab: 'Admin Info' | 'Proposals' | 'Users'
   action: string
   actor: {
     userId?: string
@@ -2927,10 +2931,30 @@ export const appRouter = router({
         markWithdrawn: z.boolean().optional(),
         comment: z.string().nullable().optional(),
         capturedOnZora: z.boolean().nullable().optional(),
+        responsibleId: z.string().trim().min(1).optional(),
+        supervisorEmail: z.string().trim().email().optional(),
       })
     )
     .output(z.object({ success: z.boolean() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      let requestedAssignment
+      try {
+        requestedAssignment = resolveAdminInfoAssignment({
+          adminRole: ctx.user.adminRole,
+          responsibleId: input.responsibleId,
+          supervisorEmail: input.supervisorEmail,
+        })
+      } catch (error) {
+        if (error instanceof AdminInfoAssignmentPolicyError) {
+          throw new TRPCError({
+            code: error.code,
+            message: error.message,
+          })
+        }
+
+        throw error
+      }
+
       const adminInfo = await prisma.adminInfo.findUnique({
         where: { id: input.adminInfoId },
         select: {
@@ -2941,7 +2965,38 @@ export const appRouter = router({
           olatCapturedDate: true,
           latestSubmissionDate: true,
           submissionDate: true,
+          olatGradeDate: true,
           grade: true,
+          comment: true,
+          capturedOnZora: true,
+          proposal: {
+            select: {
+              id: true,
+              title: true,
+              department: true,
+              supervisedBy: {
+                select: {
+                  id: true,
+                  responsibleId: true,
+                  supervisorEmail: true,
+                  responsible: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                    },
+                  },
+                  supervisor: {
+                    select: {
+                      name: true,
+                      email: true,
+                    },
+                  },
+                },
+                take: 1,
+              },
+            },
+          },
         },
       })
 
@@ -2954,8 +3009,18 @@ export const appRouter = router({
 
       const envDepartment = process.env
         .NEXT_PUBLIC_DEPARTMENT_NAME as Department
-      if (adminInfo.department && adminInfo.department !== envDepartment) {
+      if (
+        (adminInfo.department && adminInfo.department !== envDepartment) ||
+        adminInfo.proposal.department !== envDepartment
+      ) {
         throw new TRPCError({ code: 'FORBIDDEN' })
+      }
+
+      if (requestedAssignment && adminInfo.status === 'WITHDRAWN') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Withdrawn entries cannot be reassigned.',
+        })
       }
 
       if (input.markWithdrawn) {
@@ -3043,7 +3108,9 @@ export const appRouter = router({
           ? parseDate(input.submissionDate)
           : adminInfo.submissionDate
       const nextOlatGradeDate =
-        'olatGradeDate' in input ? parseDate(input.olatGradeDate) : undefined
+        'olatGradeDate' in input
+          ? parseDate(input.olatGradeDate)
+          : adminInfo.olatGradeDate
       const nextGrade = 'grade' in input ? input.grade : adminInfo.grade
 
       const hasOlatCapturedDate =
@@ -3054,112 +3121,264 @@ export const appRouter = router({
         nextOlatGradeDate !== null && nextOlatGradeDate !== undefined
       const hasGrade = nextGrade !== null && nextGrade !== undefined
 
-      if (
-        'capturedOnZora' in input &&
-        input.capturedOnZora !== null &&
-        !hasGrade
-      ) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Captured on Zora can only be set after Grade is provided.',
-        })
+      const datesEqual = (
+        left: Date | null | undefined,
+        right: Date | null | undefined
+      ) => {
+        if (left === null || left === undefined) {
+          return right === null || right === undefined
+        }
+        if (right === null || right === undefined) return false
+        return left.getTime() === right.getTime()
       }
 
-      if (
-        (currentWorkflowStep === 'OPEN' ||
-          currentWorkflowStep === 'IN_PROGRESS') &&
-        hasOlatGradeDate
-      ) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message:
-            'OLAT Grade Date can only be set after Submission Date is saved.',
-        })
-      }
+      const hasAdminInfoDataChange =
+        ('olatCapturedDate' in input &&
+          !datesEqual(nextOlatCapturedDate, adminInfo.olatCapturedDate)) ||
+        ('latestSubmissionDate' in input &&
+          !datesEqual(
+            nextLatestSubmissionDate,
+            adminInfo.latestSubmissionDate
+          )) ||
+        ('submissionDate' in input &&
+          !datesEqual(nextSubmissionDate, adminInfo.submissionDate)) ||
+        ('olatGradeDate' in input &&
+          !datesEqual(nextOlatGradeDate, adminInfo.olatGradeDate)) ||
+        ('grade' in input && input.grade !== adminInfo.grade) ||
+        ('comment' in input && input.comment !== adminInfo.comment) ||
+        ('capturedOnZora' in input &&
+          input.capturedOnZora !== adminInfo.capturedOnZora)
 
-      if (currentWorkflowStep === 'OPEN') {
-        if (!hasOlatCapturedDate) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'OLAT Captured Date is required.',
-          })
-        }
+      const data: Prisma.AdminInfoUpdateInput = {}
 
-        if (hasSubmissionDate || hasGrade) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message:
-              'Submission Date and Grade are locked until step 1 is completed.',
-          })
-        }
-      }
-
-      if (currentWorkflowStep === 'IN_PROGRESS') {
-        if (!hasOlatCapturedDate) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'OLAT Captured Date must stay filled.',
-          })
-        }
-
-        if (hasGrade) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Grade is locked until the grading step.',
-          })
-        }
-      }
-
-      if (currentWorkflowStep === 'GRADING') {
-        if (!hasOlatCapturedDate || !hasSubmissionDate) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Previous workflow fields must stay filled.',
-          })
-        }
-      }
-
-      if (currentWorkflowStep === 'COMPLETED') {
-        if (!hasOlatCapturedDate || !hasSubmissionDate || !hasGrade) {
+      if (hasAdminInfoDataChange) {
+        if (
+          'capturedOnZora' in input &&
+          input.capturedOnZora !== null &&
+          !hasGrade
+        ) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
             message:
-              'Completed entries must keep all required workflow fields filled.',
+              'Captured on Zora can only be set after Grade is provided.',
+          })
+        }
+
+        if (
+          (currentWorkflowStep === 'OPEN' ||
+            currentWorkflowStep === 'IN_PROGRESS') &&
+          hasOlatGradeDate
+        ) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message:
+              'OLAT Grade Date can only be set after Submission Date is saved.',
+          })
+        }
+
+        if (currentWorkflowStep === 'OPEN') {
+          if (!hasOlatCapturedDate) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'OLAT Captured Date is required.',
+            })
+          }
+
+          if (hasSubmissionDate || hasGrade) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message:
+                'Submission Date and Grade are locked until step 1 is completed.',
+            })
+          }
+        }
+
+        if (currentWorkflowStep === 'IN_PROGRESS') {
+          if (!hasOlatCapturedDate) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'OLAT Captured Date must stay filled.',
+            })
+          }
+
+          if (hasGrade) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'Grade is locked until the grading step.',
+            })
+          }
+        }
+
+        if (currentWorkflowStep === 'GRADING') {
+          if (!hasOlatCapturedDate || !hasSubmissionDate) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'Previous workflow fields must stay filled.',
+            })
+          }
+        }
+
+        if (currentWorkflowStep === 'COMPLETED') {
+          if (!hasOlatCapturedDate || !hasSubmissionDate || !hasGrade) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message:
+                'Completed entries must keep all required workflow fields filled.',
+            })
+          }
+        }
+
+        if ('olatCapturedDate' in input)
+          data.olatCapturedDate = nextOlatCapturedDate
+        if ('latestSubmissionDate' in input)
+          data.latestSubmissionDate = nextLatestSubmissionDate
+        if ('submissionDate' in input) data.submissionDate = nextSubmissionDate
+        if ('olatGradeDate' in input) data.olatGradeDate = nextOlatGradeDate
+        if ('grade' in input) data.grade = input.grade
+        if ('comment' in input) data.comment = input.comment
+        if ('capturedOnZora' in input)
+          data.capturedOnZora = input.capturedOnZora
+
+        switch (currentWorkflowStep) {
+          case 'OPEN':
+            data.status = 'IN_PROGRESS'
+            break
+          case 'IN_PROGRESS':
+            data.status = hasSubmissionDate ? 'GRADING' : 'IN_PROGRESS'
+            break
+          case 'GRADING':
+            data.status = hasGrade ? 'COMPLETED' : 'GRADING'
+            break
+          default:
+            data.status = 'COMPLETED'
+        }
+      }
+
+      const currentSupervision = adminInfo.proposal.supervisedBy[0] ?? null
+      let nextResponsible: {
+        id: string
+        name: string
+        email: string
+      } | null = null
+      let nextSupervisor: { name: string; email: string } | null = null
+
+      if (requestedAssignment) {
+        if (!currentSupervision) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Proposal supervision not found.',
+          })
+        }
+
+        ;[nextResponsible, nextSupervisor] = await Promise.all([
+          prisma.responsible.findFirst({
+            where: {
+              id: requestedAssignment.responsibleId,
+              department: envDepartment,
+            },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          }),
+          prisma.user.findFirst({
+            where: {
+              email: requestedAssignment.supervisorEmail,
+              department: envDepartment,
+              role: UserRole.SUPERVISOR,
+            },
+            select: {
+              name: true,
+              email: true,
+            },
+          }),
+        ])
+
+        if (!nextResponsible) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Professor not found in this department.',
+          })
+        }
+
+        if (!nextSupervisor) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Supervisor not found in this department.',
           })
         }
       }
 
-      const data: any = {}
-      if ('olatCapturedDate' in input)
-        data.olatCapturedDate = nextOlatCapturedDate
-      if ('latestSubmissionDate' in input)
-        data.latestSubmissionDate = nextLatestSubmissionDate
-      if ('submissionDate' in input) data.submissionDate = nextSubmissionDate
-      if ('olatGradeDate' in input) data.olatGradeDate = nextOlatGradeDate
-      if ('grade' in input) data.grade = input.grade
-      if ('comment' in input) data.comment = input.comment
-      if ('capturedOnZora' in input) data.capturedOnZora = input.capturedOnZora
+      const assignmentChanged =
+        requestedAssignment !== null &&
+        currentSupervision !== null &&
+        (currentSupervision.responsibleId !==
+          requestedAssignment.responsibleId ||
+          currentSupervision.supervisorEmail !==
+            requestedAssignment.supervisorEmail)
 
-      switch (currentWorkflowStep) {
-        case 'OPEN':
-          data.status = 'IN_PROGRESS'
-          break
-        case 'IN_PROGRESS':
-          data.status = hasSubmissionDate ? 'GRADING' : 'IN_PROGRESS'
-          break
-        case 'GRADING':
-          data.status = hasGrade ? 'COMPLETED' : 'GRADING'
-          break
-        default:
-          data.status = 'COMPLETED'
+      if (hasAdminInfoDataChange || assignmentChanged) {
+        await prisma.$transaction(async (tx) => {
+          if (hasAdminInfoDataChange) {
+            await tx.adminInfo.update({
+              where: { id: input.adminInfoId },
+              data,
+            })
+          }
+
+          if (assignmentChanged && requestedAssignment && currentSupervision) {
+            await tx.userProposalSupervision.update({
+              where: { id: currentSupervision.id },
+              data: {
+                responsibleId: requestedAssignment.responsibleId,
+                supervisorEmail: requestedAssignment.supervisorEmail,
+              },
+            })
+          }
+        })
       }
-
-      await prisma.adminInfo.update({
-        where: { id: input.adminInfoId },
-        data,
-      })
 
       await applyAdminInfoStatusAutomation(envDepartment)
+
+      if (
+        assignmentChanged &&
+        requestedAssignment &&
+        currentSupervision &&
+        nextResponsible &&
+        nextSupervisor
+      ) {
+        const oldState = {
+          professor: currentSupervision.responsible,
+          supervisor: currentSupervision.supervisor,
+        }
+        const newState = {
+          professor: nextResponsible,
+          supervisor: nextSupervisor,
+        }
+
+        if (hasNotificationStateChanged(oldState, newState)) {
+          await sendAdminChangeNotification({
+            tab: 'Admin Info',
+            action: 'Change thesis assignment',
+            actor: {
+              userId: ctx.user.sub,
+              name: ctx.user.name,
+              email: ctx.user.email,
+              role: ctx.user.role,
+              adminRole: ctx.user.adminRole,
+            },
+            entityId: input.adminInfoId,
+            details: [
+              `Proposal: ${adminInfo.proposal.title}`,
+              `Professor selected: ${nextResponsible.name} (${nextResponsible.email})`,
+              `Supervisor selected: ${nextSupervisor.name} (${nextSupervisor.email})`,
+            ].join('\n'),
+            oldState,
+            newState,
+          })
+        }
+      }
 
       return { success: true }
     }),
