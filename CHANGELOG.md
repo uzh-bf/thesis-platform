@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.22.3](https://github.com/uzh-bf/thesis-platform/compare/v1.22.2...v1.22.3) (2026-08-17)
+
 ### [1.22.2](https://github.com/uzh-bf/thesis-platform/compare/v1.22.1...v1.22.2) (2026-08-13)
 
 
