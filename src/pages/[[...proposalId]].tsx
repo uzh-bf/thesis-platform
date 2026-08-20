@@ -173,7 +173,7 @@ export default function Index() {
 
       <section
         id="proposals"
-        className="mx-auto w-full max-w-[1440px] px-4 py-10 md:px-10 xl:px-10"
+        className="mx-auto w-full max-w-[1440px] px-4 pb-10 pt-6 md:px-10 xl:px-10"
       >
         {isLoading ? (
           <LoadingSkeleton />

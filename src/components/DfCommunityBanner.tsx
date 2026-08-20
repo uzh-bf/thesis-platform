@@ -7,7 +7,7 @@ export default function DfCommunityBanner() {
   return (
     <section
       aria-labelledby="df-community-banner-heading"
-      className="mx-auto w-full max-w-[1440px] px-4 pt-0 md:px-10 xl:px-10"
+      className="mx-auto w-full max-w-[1440px] px-4 pt-4 md:px-10 xl:px-10"
     >
       <div className="relative overflow-hidden bg-[#0028A5] shadow-sm sm:rounded-lg">
         <div
