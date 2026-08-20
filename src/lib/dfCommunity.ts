@@ -15,7 +15,7 @@ export const DF_COMMUNITY_TOPICS = [
   },
   {
     value: 'df_jobs_events',
-    label: 'Events and jobs from the Department of Finance and WWF',
+    label: 'Events and jobs from the Department of Finance and WWF/UZH',
   },
   {
     value: 'ext_jobs_events',
