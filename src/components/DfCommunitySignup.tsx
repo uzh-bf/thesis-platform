@@ -34,14 +34,14 @@ export default function DfCommunitySignup() {
       className="mx-auto w-full max-w-[1440px] scroll-mt-6 px-4 pb-12 pt-2 md:px-10 xl:px-10"
     >
       <div className="rounded-lg border border-[#E9E9E9] bg-white p-6 shadow-sm md:p-8 lg:p-10">
-        <div className="max-w-3xl">
+        <div>
           <h2
             id="df-community-signup-heading"
-            className="text-2xl font-semibold leading-tight text-[#121212] md:text-[26px]"
+            className="max-w-3xl text-2xl font-semibold leading-tight text-[#121212] md:text-[26px]"
           >
             Join the DF Community
           </h2>
-          <p className="mt-2 text-pretty text-base leading-7 text-[#4C4C4C]">
+          <p className="mt-2 max-w-none text-pretty text-base leading-7 text-[#4C4C4C]">
             Welcome to the DF Community — your source for important information
             from the Department of Finance. Subscribe for updates about your
             studies, jobs and events, thesis topics, and opportunities to
@@ -51,7 +51,7 @@ export default function DfCommunitySignup() {
             href={DF_COMMUNITY_CAREERS_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 inline-flex items-center text-sm font-semibold text-[#365DD5] underline underline-offset-2 hover:text-[#0028A5] focus:outline-none focus:ring-2 focus:ring-[#0028A5] focus:ring-offset-2"
+            className="mt-4 inline-flex max-w-3xl items-center text-sm font-semibold text-[#365DD5] underline underline-offset-2 hover:text-[#0028A5] focus:outline-none focus:ring-2 focus:ring-[#0028A5] focus:ring-offset-2"
           >
             Explore current jobs and events on DF Careers
             <span aria-hidden="true" className="ml-1">
