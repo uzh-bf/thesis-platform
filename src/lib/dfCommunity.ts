@@ -11,23 +11,23 @@ export const DF_COMMUNITY_CAREERS_URL = 'https://careers.df.uzh.ch/en'
 export const DF_COMMUNITY_TOPICS = [
   {
     value: 'info',
-    label: 'General information from DF Community - Careers',
+    label: 'Current information about studies (e.g. seminars, tutorials)',
   },
   {
     value: 'df_jobs_events',
-    label: 'Jobs and events from the Department of Finance and WWF',
+    label: 'Events and jobs from the Department of Finance and WWF',
   },
   {
     value: 'ext_jobs_events',
-    label: 'Jobs and events from external partners',
+    label: 'Events and jobs from industry',
   },
   {
     value: 'thesen',
-    label: "Bachelor's and master's thesis opportunities",
+    label: 'Updates on thesis topics',
   },
   {
     value: 'lehrprojekte',
-    label: 'Teaching projects and academic opportunities',
+    label: 'Participate in teaching projects (e.g. surveys, testing)',
   },
 ] as const
 

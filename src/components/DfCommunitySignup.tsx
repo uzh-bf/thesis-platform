@@ -42,8 +42,10 @@ export default function DfCommunitySignup() {
             Join the DF Community
           </h2>
           <p className="mt-2 text-base leading-7 text-[#4C4C4C]">
-            Choose the updates that interest you and stay connected beyond your
-            thesis search. You can select one or more topics.
+            Welcome to the DF Community — your source for important information
+            from the Department of Finance. Subscribe for updates about your
+            studies, jobs and events, thesis topics, and opportunities to
+            participate in teaching projects.
           </p>
           <a
             href={DF_COMMUNITY_CAREERS_URL}
