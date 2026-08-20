@@ -484,8 +484,8 @@ Before calling the implementation PR-ready:
 
 ### Current boundary
 
-- Authorized now: the local uncommitted plan file in the task worktree and read-only verification.
-- Not authorized now: implementation edits, commits, pushes, PR creation, merge, release commit/tag, image publication, repository image-pin update, deployment, CleverReach configuration changes, or any live subscription.
+- Authorized now: implementation edits, local commits, repository-native checks, safe browser verification, and the local DF-enabled preview in this task worktree.
+- Not authorized now: pushes, PR creation or update, merge, release commit/tag, image publication, repository image-pin update outside this branch, deployment, CleverReach configuration changes, or any live subscription.
 
 ### Future publication and delivery gates
 
@@ -521,14 +521,24 @@ Re-check workflow triggers and remote revisions immediately before publication b
 - [x] Complete implementation plan written locally.
 - [ ] Product owner and controller approve exact copy, privacy applicability, frequency, unsubscribe, and double-opt-in wording.
 - [ ] Product owner confirms existing global Matomo behavior needs no special exclusion.
-- [ ] Slice 1 implemented, verified, reviewed, and committed under separate authority.
-- [ ] Slice 2 implemented, verified, reviewed, and committed under separate authority.
+- [x] Slice 1 implemented, verified, reviewed, and committed as `d0c43c7`; the fallback risk review findings were addressed in Slice 2.
+- [x] Slice 2 implemented, verified, reviewed, and committed as `deae006`; enabled local browser coverage passed for desktop, mobile, mobile detail, iframe, validation, and no-provider-submit states.
 - [ ] Newsletter owner reconfirms the provider action and five tag values without a live enrollment.
-- [ ] Slice 3 implemented, verified, reviewed, and committed under separate authority.
+- [x] Slice 3 implemented and locally verified: DF `app`, IBW-disabled `node-runner`, and `migration-runner` ARM64 Docker targets built successfully; workflow YAML formatting passed.
 - [ ] Integrated final review and PR-ready checks pass.
 - [ ] Branch publication and PR creation separately authorized.
 - [ ] Merge/staging delivery separately authorized and evidenced.
 - [ ] Production release and live proof separately authorized and evidenced.
+
+### Execution evidence (2026-08-20)
+
+- `pnpm lint` passed with only the repository's existing warnings; `pnpm exec tsc --noEmit --incremental false --pretty false` passed.
+- DF-enabled production build passed with `NEXT_PUBLIC_ENABLE_DF_COMMUNITY_SIGNUP=true`; the IBW-disabled production build passed with the flag false.
+- Focused enabled browser run passed with `3 passed, 1 skipped` against the local DF preview. The disabled IBW run passed with `1 passed, 3 skipped`.
+- The browser suite aborts every CleverReach-origin request and inspected only `student@example.invalid`; no valid provider request was sent.
+- ARM64 Docker builds passed locally for the DF `app`, IBW-disabled `node-runner`, and `migration-runner` targets. No image was pushed or loaded for publication.
+- Screenshots remain ignored under `project/_local/df-community-signup/`; they contain empty form fields and no personal data.
+- The local DF-enabled preview is intentionally left running at `http://localhost:3100` for feedback. The goal remains active; delivery and controller/provider gates are still open.
 
 ## Completion criteria
 
