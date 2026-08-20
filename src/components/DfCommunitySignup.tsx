@@ -30,6 +30,7 @@ export default function DfCommunitySignup() {
     <section
       id={DF_COMMUNITY_SIGNUP_ANCHOR}
       aria-labelledby="df-community-signup-heading"
+      tabIndex={-1}
       className="mx-auto w-full max-w-[1440px] scroll-mt-6 px-4 pb-12 pt-2 md:px-10 xl:px-10"
     >
       <div className="rounded-lg border border-[#E9E9E9] bg-white p-6 shadow-sm md:p-8 lg:p-10">
@@ -98,7 +99,7 @@ export default function DfCommunitySignup() {
                 name="email"
                 type="email"
                 required
-                className="w-full rounded-[4px] border border-[#E9E9E9] px-3 py-2.5 text-sm text-[#121212] transition-colors focus:border-[#0028A5] focus:outline-none focus:ring-2 focus:ring-[#0028A5]/20"
+                className="w-full rounded-[4px] border border-[#6B7280] px-3 py-2.5 text-sm text-[#121212] transition-colors focus:border-[#0028A5] focus:outline-none focus:ring-2 focus:ring-[#0028A5]/20"
               />
             </div>
 
@@ -115,7 +116,7 @@ export default function DfCommunitySignup() {
                 type="number"
                 inputMode="numeric"
                 placeholder="e.g. 2024"
-                className="w-full rounded-[4px] border border-[#E9E9E9] px-3 py-2.5 text-sm text-[#121212] transition-colors focus:border-[#0028A5] focus:outline-none focus:ring-2 focus:ring-[#0028A5]/20"
+                className="w-full rounded-[4px] border border-[#6B7280] px-3 py-2.5 text-sm text-[#121212] transition-colors focus:border-[#0028A5] focus:outline-none focus:ring-2 focus:ring-[#0028A5]/20"
               />
             </div>
           </div>
@@ -158,7 +159,7 @@ export default function DfCommunitySignup() {
                         setTopicError(false)
                       }
                     }}
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#C2C2C2] text-[#0028A5] focus:ring-2 focus:ring-[#0028A5]/30"
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#6B7280] text-[#0028A5] focus:ring-2 focus:ring-[#0028A5]/30"
                   />
                   <span>{topic.label}</span>
                 </label>

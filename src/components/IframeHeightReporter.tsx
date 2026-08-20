@@ -54,10 +54,18 @@ export default function IframeHeightReporter() {
     observer.observe(document.documentElement)
     observer.observe(document.body)
 
+    const mutationObserver = new MutationObserver(postHeight)
+    mutationObserver.observe(document.body, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    })
+
     window.addEventListener('load', postHeight)
 
     return () => {
       observer.disconnect()
+      mutationObserver.disconnect()
       window.removeEventListener('load', postHeight)
     }
   }, [])
