@@ -45,10 +45,6 @@ export default function DfCommunitySignup() {
             Choose the updates that interest you and stay connected beyond your
             thesis search. You can select one or more topics.
           </p>
-          <p className="mt-2 text-sm leading-6 text-[#4C4C4C]">
-            We send updates at most once a week. You can unsubscribe at any time
-            using the link in any email.
-          </p>
           <a
             href={DF_COMMUNITY_CAREERS_URL}
             target="_blank"
@@ -115,7 +111,7 @@ export default function DfCommunitySignup() {
                 name="global.studienstart"
                 type="number"
                 inputMode="numeric"
-                placeholder="e.g. 2024"
+                placeholder="2025"
                 className="w-full rounded-[4px] border border-[#6B7280] px-3 py-2.5 text-sm text-[#121212] transition-colors focus:border-[#0028A5] focus:outline-none focus:ring-2 focus:ring-[#0028A5]/20"
               />
             </div>
@@ -169,25 +165,22 @@ export default function DfCommunitySignup() {
 
           <div className="space-y-3 border-t border-[#E9E9E9] pt-5">
             <p className="max-w-4xl text-sm leading-6 text-[#4C4C4C]">
-              By subscribing, you agree that we may process your data to deliver
-              the selected DF Community updates. Details are available in the{' '}
+              By subscribing, you agree that we may process your data for
+              newsletter delivery. Details can be found in our{' '}
               <a
                 href={DF_COMMUNITY_PRIVACY_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#365DD5] underline underline-offset-2 hover:text-[#0028A5] focus:outline-none focus:ring-2 focus:ring-[#0028A5] focus:ring-offset-2"
               >
-                DF Careers privacy policy
+                privacy policy
               </a>
               .
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-1 text-xs leading-5 text-[#4C4C4C]">
                 <p>Fields marked with * are required.</p>
-                <p>
-                  The confirmation page opens in a new tab. Your subscription
-                  starts only after you confirm the email from CleverReach.
-                </p>
+                <p>The confirmation step opens in a new tab.</p>
               </div>
               <button
                 type="submit"

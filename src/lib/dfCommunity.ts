@@ -11,7 +11,7 @@ export const DF_COMMUNITY_CAREERS_URL = 'https://careers.df.uzh.ch/en'
 export const DF_COMMUNITY_TOPICS = [
   {
     value: 'info',
-    label: 'General information from the DF Community',
+    label: 'General information from DF Community - Careers',
   },
   {
     value: 'df_jobs_events',
