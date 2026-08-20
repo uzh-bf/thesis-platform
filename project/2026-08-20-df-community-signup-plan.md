@@ -537,6 +537,8 @@ Re-check workflow triggers and remote revisions immediately before publication b
 - Focused enabled browser run passed with `3 passed, 1 skipped` against the local DF preview. The disabled IBW run passed with `1 passed, 3 skipped`.
 - The browser suite aborts every CleverReach-origin request and inspected only `student@example.invalid`; no valid provider request was sent.
 - ARM64 Docker builds passed locally for the DF `app`, IBW-disabled `node-runner`, and `migration-runner` targets. No image was pushed or loaded for publication.
+- The complete existing Playwright suite was attempted against the final local preview with the repository test environment loaded; all three existing admin/auth tests timed out waiting for the local OIDC sign-in button. This is recorded as incomplete regression evidence, not as a signup defect.
+- The integrated final review completed with no verified code, accessibility, data-flow, or workflow defect. PR readiness remains open because the controller/provider approvals are not recorded and the complete regression suite lacks a passing run.
 - Screenshots remain ignored under `project/_local/df-community-signup/`; they contain empty form fields and no personal data.
 - The local DF-enabled preview is intentionally left running at `http://localhost:3100` for feedback. The goal remains active; delivery and controller/provider gates are still open.
 
