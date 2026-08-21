@@ -31,9 +31,11 @@ import {
 import type { Context } from 'src/server/context'
 import { prisma } from 'src/server/prisma'
 import {
+  adminOnlyOrDeveloperProcedure,
   adminOnlyProcedure,
   adminProcedure,
   authedProcedure,
+  developerProcedure,
   optionalAuthedProcedure,
   publicProcedure,
   router,
@@ -3724,7 +3726,7 @@ export const appRouter = router({
       return { success: true }
     }),
 
-  adminGetAllProposals: adminOnlyProcedure
+  adminGetAllProposals: adminOnlyOrDeveloperProcedure
     .input(
       z.object({
         search: z.string().optional(),
@@ -4011,6 +4013,141 @@ export const appRouter = router({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to withdraw proposal',
         })
+      }
+    }),
+
+  // Hard deletes a proposal and everything attached to it. Restricted to
+  // developers: withdrawing a proposal keeps it (invisible) in the database,
+  // this endpoint is the only way to remove leftovers such as test entries.
+  adminDeleteProposal: developerProcedure
+    .input(
+      z.object({
+        proposalId: z.string().min(1),
+        reason: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const envDepartment = process.env
+        .NEXT_PUBLIC_DEPARTMENT_NAME as Department
+
+      const proposal = await prisma.proposal.findUnique({
+        where: { id: input.proposalId },
+        select: {
+          id: true,
+          title: true,
+          typeKey: true,
+          statusKey: true,
+          department: true,
+          ownedByUserEmail: true,
+          ownedByStudent: true,
+          createdAt: true,
+          supervisedBy: {
+            select: {
+              id: true,
+              supervisorEmail: true,
+              responsibleId: true,
+            },
+          },
+          AdminInfo: {
+            select: {
+              id: true,
+            },
+          },
+          _count: {
+            select: {
+              applications: true,
+              attachments: true,
+              receivedFeedbacks: true,
+            },
+          },
+        },
+      })
+
+      if (!proposal) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Proposal not found',
+        })
+      }
+
+      if (proposal.department !== envDepartment) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Proposal belongs to a different department',
+        })
+      }
+
+      const supervisionIds = proposal.supervisedBy.map(
+        (supervision) => supervision.id
+      )
+
+      const oldState = {
+        proposalTitle: proposal.title,
+        typeKey: proposal.typeKey,
+        statusKey: proposal.statusKey,
+        department: proposal.department,
+        ownedByUserEmail: proposal.ownedByUserEmail,
+        ownedByStudent: proposal.ownedByStudent,
+        createdAt: proposal.createdAt,
+        supervisedBy: proposal.supervisedBy,
+        adminInfoId: proposal.AdminInfo?.id ?? null,
+        applications: proposal._count.applications,
+        attachments: proposal._count.attachments,
+        receivedFeedbacks: proposal._count.receivedFeedbacks,
+      }
+
+      try {
+        await prisma.$transaction([
+          // Applications reference their supervision without a cascade rule,
+          // so they are detached before the proposal cascade removes the
+          // supervision entries.
+          prisma.proposalApplication.updateMany({
+            where: {
+              supervisionId: {
+                in: supervisionIds,
+              },
+            },
+            data: {
+              supervisionId: null,
+            },
+          }),
+          prisma.proposal.delete({
+            where: { id: proposal.id },
+          }),
+        ])
+      } catch (error) {
+        console.error('Error deleting proposal:', error)
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to delete proposal',
+        })
+      }
+
+      await sendAdminChangeNotification({
+        tab: 'Proposals',
+        action: 'Delete proposal',
+        actor: {
+          userId: ctx.user.sub,
+          name: ctx.user.name,
+          email: ctx.user.email,
+          role: ctx.user.role,
+          adminRole: ctx.user.adminRole,
+        },
+        entityId: proposal.id,
+        details: [
+          `Proposal: ${proposal.title}`,
+          `Reason: ${input.reason?.trim() || 'No reason provided'}`,
+          `Status at deletion: ${proposal.statusKey}`,
+          `Deleted along with it: ${proposal._count.applications} application(s), ${proposal._count.attachments} attachment(s), ${proposal._count.receivedFeedbacks} feedback entry/entries, ${supervisionIds.length} supervision entry/entries, ${proposal.AdminInfo ? 1 : 0} admin info entry/entries`,
+          'Uploaded files remain in blob storage and are not removed by this action.',
+        ].join('\n'),
+        oldState,
+        newState: null,
+      })
+
+      return {
+        success: true,
+        message: 'Proposal deleted permanently',
       }
     }),
 

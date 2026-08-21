@@ -1,4 +1,5 @@
 import { initTRPC, TRPCError } from '@trpc/server'
+import { UserRole } from 'src/lib/constants'
 import { OpenApiMeta } from 'trpc-to-openapi'
 import { Context } from './context'
 
@@ -78,3 +79,47 @@ const isAdminOnly = middleware(({ next, ctx }) => {
 })
 
 export const adminOnlyProcedure = t.procedure.use(isAdminOnly)
+
+const isDeveloper = middleware(({ next, ctx }) => {
+  const user = ctx.session?.user
+
+  if (!user?.name) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  }
+
+  if (user.role !== UserRole.DEVELOPER) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Developer role required',
+    })
+  }
+
+  return next({
+    ctx: { user },
+  })
+})
+
+export const developerProcedure = t.procedure.use(isDeveloper)
+
+const isAdminOnlyOrDeveloper = middleware(({ next, ctx }) => {
+  const user = ctx.session?.user
+
+  if (!user?.name) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  }
+
+  if (user.adminRole !== 'ADMIN' && user.role !== UserRole.DEVELOPER) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Admin role or developer role required',
+    })
+  }
+
+  return next({
+    ctx: { user },
+  })
+})
+
+export const adminOnlyOrDeveloperProcedure = t.procedure.use(
+  isAdminOnlyOrDeveloper
+)

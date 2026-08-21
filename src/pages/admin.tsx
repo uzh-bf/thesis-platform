@@ -30,19 +30,45 @@ type PageSizeOption = 20 | 50 | 100 | 'all'
 
 const PAGE_SIZE_OPTIONS: PageSizeOption[] = [20, 50, 100, 'all']
 
+// Statuses that are relevant for the day-to-day administration of theses.
+// Everything else (e.g. withdrawn entries) is only shown to developers.
+const DEFAULT_VISIBLE_STATUSES: ProposalStatus[] = [
+  ProposalStatus.OPEN,
+  ProposalStatus.MATCHED,
+  ProposalStatus.MATCHED_TENTATIVE,
+]
+
+const STATUS_FILTER_ALL = 'ALL'
+
+const TABS_GRID_CLASSES: Record<number, string> = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-2',
+  3: 'grid-cols-3',
+  4: 'grid-cols-4',
+}
+
 export default function AdminPanel() {
   const router = useRouter()
   const { data: session, status } = useSession()
-  const { isAdmin } = useUserRole()
+  const { isAdmin, isDeveloper } = useUserRole()
   const isAdminOnly = session?.user?.adminRole === 'ADMIN'
   const canAccessUsersTab = session?.user?.isAdmin === true
+  // Developers maintain the platform and therefore see every proposal in the
+  // database (including withdrawn and other non-open entries) and may delete
+  // them permanently.
+  const canManageProposals = isAdminOnly || isDeveloper
+  const canSeeAllProposalStatuses = isDeveloper
   const [activeTab, setActiveTab] = useState('proposals')
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>(STATUS_FILTER_ALL)
   const [sortColumn, setSortColumn] = useState<SortColumn>('created')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [rowsPerPage, setRowsPerPage] = useState<PageSizeOption>(20)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedProposal, setSelectedProposal] = useState<any>(null)
+  const [proposalPendingDeletion, setProposalPendingDeletion] =
+    useState<any>(null)
+  const [deleteConfirmation, setDeleteConfirmation] = useState('')
   const [selectedSupervisorEmail, setSelectedSupervisorEmail] = useState('')
   const [isSupervisorDropdownOpen, setIsSupervisorDropdownOpen] = useState(false)
   const [supervisorDropdownSearch, setSupervisorDropdownSearch] = useState('')
@@ -55,7 +81,7 @@ export default function AdminPanel() {
   const { data: proposals, isLoading, refetch } = trpc.adminGetAllProposals.useQuery(
     {},
     {
-      enabled: isAdminOnly,
+      enabled: canManageProposals,
     }
   )
 
@@ -71,6 +97,18 @@ export default function AdminPanel() {
     onSuccess: () => {
       refetch()
       alert('Proposal withdrawn successfully')
+    },
+    onError: (error) => {
+      alert(`Error: ${error.message}`)
+    },
+  })
+
+  const deleteProposal = trpc.adminDeleteProposal.useMutation({
+    onSuccess: () => {
+      refetch()
+      setProposalPendingDeletion(null)
+      setDeleteConfirmation('')
+      alert('Proposal deleted permanently')
     },
     onError: (error) => {
       alert(`Error: ${error.message}`)
@@ -107,11 +145,11 @@ export default function AdminPanel() {
       return
     }
     
-    if (!isAdmin) {
+    if (!isAdmin && !isDeveloper) {
       router.push('/')
       alert('Admin access required')
     }
-  }, [session, isAdmin, router, status])
+  }, [session, isAdmin, isDeveloper, router, status])
 
   useEffect(() => {
     if (!router.isReady) return
@@ -125,10 +163,14 @@ export default function AdminPanel() {
   }, [router.isReady, router.query.tab, canAccessUsersTab, isAdminOnly])
 
   useEffect(() => {
-    if (!isAdminOnly && activeTab !== 'admininfo' && activeTab !== 'users') {
+    if (
+      !canManageProposals &&
+      activeTab !== 'admininfo' &&
+      activeTab !== 'users'
+    ) {
       setActiveTab('admininfo')
     }
-  }, [isAdminOnly, activeTab])
+  }, [canManageProposals, activeTab])
 
   useEffect(() => {
     setSelectedSupervisorEmail(
@@ -177,54 +219,64 @@ export default function AdminPanel() {
     }
   }, [isResponsibleDropdownOpen])
 
-  if (!session?.user || !isAdmin) {
+  if (!session?.user || (!isAdmin && !isDeveloper)) {
     return null
   }
 
-  const visibleTabs = isAdminOnly
-    ? [
-        {
-          id: 'admin-tabs-proposals',
-          value: 'proposals',
-          label: 'Proposals',
-        },
-        {
-          id: 'admin-tabs-admininfo',
-          value: 'admininfo',
-          label: 'Admin Info',
-        },
-        {
-          id: 'admin-tabs-users',
-          value: 'users',
-          label: 'Users',
-        },
-        {
-          id: 'admin-tabs-stats',
-          value: 'stats',
-          label: 'Statistics',
-        },
-      ]
-    : [
-        {
-          id: 'admin-tabs-admininfo',
-          value: 'admininfo',
-          label: 'Admin Info',
-        },
-        {
-          id: 'admin-tabs-users',
-          value: 'users',
-          label: 'Users',
-        },
-      ]
+  const visibleTabs = [
+    ...(canManageProposals
+      ? [
+          {
+            id: 'admin-tabs-proposals',
+            value: 'proposals',
+            label: 'Proposals',
+          },
+        ]
+      : []),
+    ...(isAdmin
+      ? [
+          {
+            id: 'admin-tabs-admininfo',
+            value: 'admininfo',
+            label: 'Admin Info',
+          },
+        ]
+      : []),
+    ...(canAccessUsersTab
+      ? [
+          {
+            id: 'admin-tabs-users',
+            value: 'users',
+            label: 'Users',
+          },
+        ]
+      : []),
+    ...(isAdminOnly
+      ? [
+          {
+            id: 'admin-tabs-stats',
+            value: 'stats',
+            label: 'Statistics',
+          },
+        ]
+      : []),
+  ]
 
   const resolvedActiveTab = visibleTabs.some((t) => t.value === activeTab)
     ? activeTab
-    : 'admininfo'
+    : (visibleTabs[0]?.value ?? 'admininfo')
 
   const handleWithdraw = (proposalId: string, title: string) => {
     if (confirm(`Are you sure you want to withdraw the proposal: "${title}"?`)) {
       withdrawProposal.mutate({ proposalId })
     }
+  }
+
+  const handleDelete = () => {
+    if (!proposalPendingDeletion) return
+    if (deleteConfirmation.trim() !== 'DELETE') return
+
+    deleteProposal.mutate({ proposalId: proposalPendingDeletion.id })
   }
 
   const handleAssignSupervisor = () => {
@@ -352,13 +404,11 @@ export default function AdminPanel() {
   const normalizedSearch = search.trim().toLowerCase()
 
   const filteredProposals = proposals?.filter((p) => {
-    const visibleStatuses = [
-      ProposalStatus.OPEN,
-      ProposalStatus.MATCHED,
-      ProposalStatus.MATCHED_TENTATIVE,
-    ]
-
-    if (!visibleStatuses.includes(p.statusKey as ProposalStatus)) {
+    if (canSeeAllProposalStatuses) {
+      if (statusFilter !== STATUS_FILTER_ALL && p.statusKey !== statusFilter) {
+        return false
+      }
+    } else if (!DEFAULT_VISIBLE_STATUSES.includes(p.statusKey as ProposalStatus)) {
       return false
     }
 
@@ -484,6 +534,7 @@ export default function AdminPanel() {
   const selectedProposalStatus = selectedProposal?.statusKey as ProposalStatus | undefined
 
   const canAdjustSupervisor =
+    isAdminOnly &&
     selectedProposalType === 'STUDENT' &&
     [
       ProposalStatus.OPEN,
@@ -495,29 +546,34 @@ export default function AdminPanel() {
     <main id="main-content" className="flex-1 bg-gray-50">
       <div className="mx-auto w-full max-w-[1440px] px-4 py-5 md:px-10 xl:px-10">
 
-        {visibleTabs.length > 1 ? (
+        {visibleTabs.length > 0 ? (
           <Tabs
-            defaultValue={isAdminOnly ? 'proposals' : 'admininfo'}
+            defaultValue={resolvedActiveTab}
             value={resolvedActiveTab}
             onValueChange={(newValue) => {
               setActiveTab(newValue)
               if (newValue !== 'proposals') {
                 setSelectedProposal(null)
+                setProposalPendingDeletion(null)
+                setDeleteConfirmation('')
               }
             }}
             tabs={visibleTabs}
             className={{
-              list: `grid h-10 ${visibleTabs.length === 4 ? 'grid-cols-4' : 'grid-cols-2'}`,
+              list: `grid h-10 ${TABS_GRID_CLASSES[visibleTabs.length] ?? 'grid-cols-2'}`,
               trigger: 'whitespace-nowrap text-sm',
             }}
           >
-          {isAdminOnly && (
+          {canManageProposals && (
             <TabContent value="proposals" className={{ root: 'pt-3' }}>
               <div className="bg-white rounded-lg shadow mb-4 p-4">
-                <div className="grid grid-cols-1">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
                   <div>
                     <div className="mb-0.5 flex items-center justify-between">
-                      <label className="block text-xs font-medium text-gray-700">
+                      <label
+                        htmlFor="admin-proposals-search"
+                        className="block text-xs font-medium text-gray-700"
+                      >
                         Search
                       </label>
                       <div className="text-xs text-gray-600">
@@ -525,6 +581,7 @@ export default function AdminPanel() {
                       </div>
                     </div>
                     <input
+                      id="admin-proposals-search"
                       type="text"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
@@ -532,6 +589,33 @@ export default function AdminPanel() {
                       className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
+
+                  {canSeeAllProposalStatuses && (
+                    <div className="sm:w-56">
+                      <label
+                        htmlFor="admin-proposals-status-filter"
+                        className="mb-0.5 block text-xs font-medium text-gray-700"
+                      >
+                        Status
+                      </label>
+                      <select
+                        id="admin-proposals-status-filter"
+                        value={statusFilter}
+                        onChange={(e) => {
+                          setStatusFilter(e.target.value)
+                          setCurrentPage(1)
+                        }}
+                        className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value={STATUS_FILTER_ALL}>All statuses</option>
+                        {Object.values(ProposalStatus).map((proposalStatus) => (
+                          <option key={proposalStatus} value={proposalStatus}>
+                            {proposalStatus.replace(/_/g, ' ')}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1159,19 +1243,36 @@ export default function AdminPanel() {
                     </div>
 
                     <div className="mt-6 flex items-center justify-between gap-2">
-                      <div>
-                        {selectedProposal.statusKey !== ProposalStatus.WITHDRAWN && (
+                      <div className="flex items-center gap-2">
+                        {isAdminOnly &&
+                          selectedProposal.statusKey !== ProposalStatus.WITHDRAWN && (
+                            <Button
+                              onClick={() => {
+                                handleWithdraw(selectedProposal.id, selectedProposal.title)
+                                setSelectedProposal(null)
+                              }}
+                              disabled={withdrawProposal.isPending || assignSupervisor.isPending}
+                              className={{
+                                root: 'text-sm bg-red-600 hover:bg-red-700 text-white',
+                              }}
+                            >
+                              Withdraw
+                            </Button>
+                          )}
+
+                        {isDeveloper && (
                           <Button
                             onClick={() => {
-                              handleWithdraw(selectedProposal.id, selectedProposal.title)
+                              setDeleteConfirmation('')
+                              setProposalPendingDeletion(selectedProposal)
                               setSelectedProposal(null)
                             }}
                             disabled={withdrawProposal.isPending || assignSupervisor.isPending}
                             className={{
-                              root: 'text-sm bg-red-600 hover:bg-red-700 text-white',
+                              root: 'text-sm border border-red-700 bg-white text-red-700 hover:bg-red-50',
                             }}
                           >
-                            Withdraw
+                            Delete permanently
                           </Button>
                         )}
                       </div>
@@ -1189,12 +1290,89 @@ export default function AdminPanel() {
                   </div>
                 </Modal>
               )}
+
+              {proposalPendingDeletion && (
+                <Modal
+                  open={true}
+                  onClose={() => {
+                    if (deleteProposal.isPending) return
+                    setProposalPendingDeletion(null)
+                    setDeleteConfirmation('')
+                  }}
+                  className={{ content: 'max-w-xl' }}
+                >
+                  <div className="relative -m-5 -mt-8 p-5 pt-8">
+                    <h2 className="text-lg font-bold text-gray-900">
+                      Delete proposal permanently
+                    </h2>
+
+                    <p className="mt-2 text-sm text-gray-700">
+                      &quot;{proposalPendingDeletion.title}&quot; and everything
+                      attached to it (applications, attachments, feedback,
+                      supervision and admin info entries) will be removed from
+                      the database. This cannot be undone.
+                    </p>
+
+                    <p className="mt-2 text-xs text-gray-600">
+                      Uploaded files stay in blob storage and have to be cleaned
+                      up separately. Use &quot;Withdraw&quot; instead if the
+                      thesis actually happened and should stay on record.
+                    </p>
+
+                    <div className="mt-4">
+                      <label
+                        htmlFor="admin-proposal-delete-confirmation"
+                        className="mb-0.5 block text-xs font-medium text-gray-700"
+                      >
+                        Type DELETE to confirm
+                      </label>
+                      <input
+                        id="admin-proposal-delete-confirmation"
+                        type="text"
+                        value={deleteConfirmation}
+                        onChange={(e) => setDeleteConfirmation(e.target.value)}
+                        autoComplete="off"
+                        className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      />
+                    </div>
+
+                    <div className="mt-6 flex items-center justify-end gap-2">
+                      <Button
+                        onClick={() => {
+                          setProposalPendingDeletion(null)
+                          setDeleteConfirmation('')
+                        }}
+                        disabled={deleteProposal.isPending}
+                        className={{ root: 'text-sm' }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleDelete}
+                        disabled={
+                          deleteProposal.isPending ||
+                          deleteConfirmation.trim() !== 'DELETE'
+                        }
+                        className={{
+                          root: 'text-sm bg-red-600 hover:bg-red-700 text-white disabled:opacity-50',
+                        }}
+                      >
+                        {deleteProposal.isPending
+                          ? 'Deleting...'
+                          : 'Delete permanently'}
+                      </Button>
+                    </div>
+                  </div>
+                </Modal>
+              )}
             </TabContent>
           )}
 
-          <TabContent value="admininfo" className={{ root: 'pt-3' }}>
-            <AdminInfoOverview />
-          </TabContent>
+          {isAdmin && (
+            <TabContent value="admininfo" className={{ root: 'pt-3' }}>
+              <AdminInfoOverview />
+            </TabContent>
+          )}
 
           {canAccessUsersTab && (
             <TabContent value="users" className={{ root: 'pt-3' }}>
