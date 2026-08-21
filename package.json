@@ -41,6 +41,8 @@
     "dev:e2e": "dotenv -e .env.local.template -- sh -c 'NEXTAUTH_URL=http://localhost:${PORT:-3100} NEXT_PUBLIC_APP_URL=localhost:${PORT:-3100} next dev -p ${PORT:-3100}'",
     "test:e2e:setup": "dotenv -e .env.local.template -- tsx scripts/setup-e2e.ts",
     "test:e2e": "pnpm run test:e2e:setup && dotenv -e .env.local.template -- playwright test",
+    "test:e2e:community": "pnpm run test:e2e:setup && E2E_DF_COMMUNITY_SIGNUP=true dotenv -e .env.local.template -- playwright test tests/e2e/df-community-signup.spec.ts",
+    "test:e2e:community:disabled": "pnpm run test:e2e:setup && E2E_DF_COMMUNITY_SIGNUP=false E2E_DF_COMMUNITY_DEPARTMENT=IBW PORT=3101 dotenv -e .env.local.template -- playwright test tests/e2e/df-community-signup.spec.ts",
     "staging:db:audit": "env THESIS_PLATFORM_ENV=stg ts-node --project tsconfig.tsnode.json scripts/staging-reset-seed.ts --audit-only",
     "staging:db:backup": "env THESIS_PLATFORM_ENV=stg bash scripts/staging-db-backup.sh",
     "staging:db:reset-seed": "env THESIS_PLATFORM_ENV=stg ts-node --project tsconfig.tsnode.json scripts/staging-reset-seed.ts",

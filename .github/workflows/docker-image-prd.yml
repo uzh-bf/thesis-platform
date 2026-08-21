@@ -77,6 +77,7 @@ jobs:
             NEXT_PUBLIC_FOOTER_COPYRIGHT=Department of Finance, University of Zurich. All rights reserved.
             NEXT_PUBLIC_DEPARTMENT_NAME=DF
             NEXT_PUBLIC_DEPARTMENT_LONG_NAME=Department of Finance
+            NEXT_PUBLIC_ENABLE_DF_COMMUNITY_SIGNUP=true
             NEXT_PUBLIC_FAQ_URL_STUDENT=https://www.df.uzh.ch/en/studies/bachelor-master/thesis/faq.html
             NEXT_PUBLIC_FAQ_URL_SUPERVISOR=https://www.df.uzh.ch/de/intranet/phd/thesis-supervision.html
             NEXT_PUBLIC_STATUS_PAGE_URL=https://thesis-platform.betteruptime.com
@@ -158,6 +159,7 @@ jobs:
             NEXT_PUBLIC_FOOTER_COPYRIGHT=Department of Business Administration, University of Zurich. All rights reserved.
             NEXT_PUBLIC_DEPARTMENT_NAME=IBW
             NEXT_PUBLIC_DEPARTMENT_LONG_NAME=Department of Business Administration
+            NEXT_PUBLIC_ENABLE_DF_COMMUNITY_SIGNUP=false
             NEXT_PUBLIC_FAQ_URL_STUDENT=https://www.business.uzh.ch/en/teaching/theses/faqs.html
             NEXT_PUBLIC_FAQ_URL_SUPERVISOR=https://www.business.uzh.ch/de/Intranet/Lehre/businessthesesmarket.html
             NEXT_PUBLIC_STATUS_PAGE_URL=https://thesis-platform.betteruptime.com

@@ -11,6 +11,8 @@ import {
   useRef,
   useState,
 } from 'react'
+import DfCommunityBanner from 'src/components/DfCommunityBanner'
+import DfCommunitySignup from 'src/components/DfCommunitySignup'
 import EmptyState from 'src/components/EmptyState'
 import LoadingSkeleton from 'src/components/LoadingSkeleton'
 import ProposalApplication from 'src/components/ProposalApplication'
@@ -19,6 +21,7 @@ import ProposalMeta from 'src/components/ProposalMeta'
 import ProposalStatusForm from 'src/components/ProposalStatusForm'
 import StudentProposals from 'src/components/StudentProposals'
 import SupervisorProposals from 'src/components/SupervisorProposals'
+import { isDfCommunitySignupEnabled } from 'src/lib/dfCommunity'
 import useUserRole from 'src/lib/hooks/useUserRole'
 import { trpc } from 'src/lib/trpc'
 import { ProposalDetails, ProposalStatusFilter } from 'src/types/app'
@@ -159,13 +162,19 @@ export default function Index() {
     mobileDetailsRef.current?.scrollTo({ top: 0 })
   }, [proposalId])
 
+  const isMobileProposalDetailsOpen =
+    !isDesktopViewport && Boolean(proposalDetails && isMobileDetailsOpen)
+  const showDfCommunitySignup =
+    isDfCommunitySignupEnabled() && !isMobileProposalDetailsOpen
+
   return (
     <main id="main-content" className="flex-1 bg-[#FAFAFA]">
+      {showDfCommunitySignup && <DfCommunityBanner />}
+
       <section
         id="proposals"
-        className="mx-auto w-full max-w-[1440px] px-4 py-10 md:px-10 xl:px-10"
+        className="mx-auto w-full max-w-[1440px] px-4 pb-10 pt-6 md:px-10 xl:px-10"
       >
-
         {isLoading ? (
           <LoadingSkeleton />
         ) : (
@@ -244,6 +253,8 @@ export default function Index() {
           </div>
         )}
       </section>
+
+      {showDfCommunitySignup && <DfCommunitySignup />}
 
       {proposalDetails && isMobileDetailsOpen && (
         <div

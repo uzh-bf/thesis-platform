@@ -37,6 +37,7 @@ export default function IframeHeightReporter() {
     if (!parentOrigin) return
 
     let lastHeight = 0
+    let mutationFrame: number | null = null
     const postHeight = () => {
       const height = Math.ceil(document.documentElement.scrollHeight)
       if (height !== lastHeight) {
@@ -48,16 +49,33 @@ export default function IframeHeightReporter() {
       }
     }
 
+    const scheduleMutationHeight = () => {
+      if (mutationFrame !== null) return
+      mutationFrame = window.requestAnimationFrame(() => {
+        mutationFrame = null
+        postHeight()
+      })
+    }
+
     postHeight()
 
     const observer = new ResizeObserver(postHeight)
     observer.observe(document.documentElement)
     observer.observe(document.body)
 
+    const mutationObserver = new MutationObserver(scheduleMutationHeight)
+    mutationObserver.observe(document.body, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    })
+
     window.addEventListener('load', postHeight)
 
     return () => {
       observer.disconnect()
+      mutationObserver.disconnect()
+      if (mutationFrame !== null) window.cancelAnimationFrame(mutationFrame)
       window.removeEventListener('load', postHeight)
     }
   }, [])
