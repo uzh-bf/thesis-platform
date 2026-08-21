@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.23.0](https://github.com/uzh-bf/thesis-platform/compare/v1.22.3...v1.23.0) (2026-08-21)
+
+
+### Features
+
+* **admin:** let developers see and delete every proposal ([#195](https://github.com/uzh-bf/thesis-platform/issues/195)) ([6c41d50](https://github.com/uzh-bf/thesis-platform/commit/6c41d50642c05d86b5c41aa097952d9580b9134b))
+
 ### [1.22.3](https://github.com/uzh-bf/thesis-platform/compare/v1.22.2...v1.22.3) (2026-08-17)
 
 ### [1.22.2](https://github.com/uzh-bf/thesis-platform/compare/v1.22.1...v1.22.2) (2026-08-13)
