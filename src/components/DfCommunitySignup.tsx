@@ -157,7 +157,7 @@ export default function DfCommunitySignup() {
                         setTopicError(false)
                       }
                     }}
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#6B7280] text-[#0028A5] focus:ring-2 focus:ring-[#0028A5]/30"
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded-[3px] border-[#6B7280] text-[#0028A5] focus:ring-2 focus:ring-[#0028A5]/30"
                   />
                   <span>{topic.label}</span>
                 </label>
