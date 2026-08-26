@@ -35,7 +35,7 @@
     "prisma:seed:local": "dotenv -e .env.local -- ts-node --project tsconfig.tsnode.json prisma/seed-df.ts",
     "prisma:seed:ibw": "ts-node --project tsconfig.tsnode.json prisma/seed-ibw.ts",
     "prisma:setup": "pnpm run prisma:reset && pnpm run prisma:push && pnpm run prisma:seed",
-    "prisma:setup:local": "pnpm run prisma:push:local && pnpm run prisma:seed:local && pnpm run azurite:setup:local",
+    "prisma:setup:local": "pnpm run prisma:generate && pnpm run prisma:push:local && pnpm run prisma:seed:local && pnpm run azurite:setup:local",
     "prisma:setup:ibw": "pnpm run prisma:reset && pnpm run prisma:push && pnpm run prisma:seed:ibw",
     "azurite:setup:local": "dotenv -e .env.local -- tsx scripts/setup-azurite.ts",
     "dev:e2e": "dotenv -e .env.local.template -- sh -c 'NEXTAUTH_URL=http://localhost:${PORT:-3100} NEXT_PUBLIC_APP_URL=localhost:${PORT:-3100} next dev -p ${PORT:-3100}'",
