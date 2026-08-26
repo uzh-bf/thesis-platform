@@ -58,8 +58,19 @@ jobs:
       - name: Set up Buildx
         uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c
 
-      - name: Build app target
-        run: docker buildx build --file Dockerfile --platform linux/arm64 --target app --progress plain .
+      - name: Build DF app target with community signup enabled
+        run: >-
+          docker buildx build --file Dockerfile --platform linux/arm64 --target app
+          --build-arg NEXT_PUBLIC_DEPARTMENT_NAME=DF
+          --build-arg NEXT_PUBLIC_ENABLE_DF_COMMUNITY_SIGNUP=true
+          --progress plain .
+
+      - name: Build IBW node-runner target with community signup disabled
+        run: >-
+          docker buildx build --file Dockerfile --platform linux/arm64 --target node-runner
+          --build-arg NEXT_PUBLIC_DEPARTMENT_NAME=IBW
+          --build-arg NEXT_PUBLIC_ENABLE_DF_COMMUNITY_SIGNUP=false
+          --progress plain .
 
       - name: Build migration target
         run: docker buildx build --file Dockerfile --platform linux/arm64 --target migration-runner --progress plain .
