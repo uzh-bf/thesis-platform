@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.23.2](https://github.com/uzh-bf/thesis-platform/compare/v1.23.1...v1.23.2) (2026-08-26)
+
+
+### Build and CI
+
+* **community:** enable DF Community signup in DF production image ([#198](https://github.com/uzh-bf/thesis-platform/issues/198)) ([139894e](https://github.com/uzh-bf/thesis-platform/commit/139894eacd02d5eea5d65642f4664756aec0236b))
+
 ### [1.23.1](https://github.com/uzh-bf/thesis-platform/compare/v1.23.0...v1.23.1) (2026-08-26)
 
 
