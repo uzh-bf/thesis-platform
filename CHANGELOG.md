@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.23.1](https://github.com/uzh-bf/thesis-platform/compare/v1.23.0...v1.23.1) (2026-08-26)
+
+
+### Bug Fixes
+
+* **prisma:** generate client in prisma:setup:local ([#197](https://github.com/uzh-bf/thesis-platform/issues/197)) ([b7174fb](https://github.com/uzh-bf/thesis-platform/commit/b7174fbfcf7a61f513c8846c56fa3265b8171b55))
+
+
+### Enhancements
+
+* add DF Community signup journey ([#194](https://github.com/uzh-bf/thesis-platform/issues/194)) ([c9358af](https://github.com/uzh-bf/thesis-platform/commit/c9358af87bc5b036d4f306c3321d14651f0fd031))
+
 ## [1.23.0](https://github.com/uzh-bf/thesis-platform/compare/v1.22.3...v1.23.0) (2026-08-21)
 
 
