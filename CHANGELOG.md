@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.23.3](https://github.com/uzh-bf/thesis-platform/compare/v1.23.2...v1.23.3) (2026-09-09)
+
+
+### Bug Fixes
+
+* **community:** update DF Community banner copy ([#199](https://github.com/uzh-bf/thesis-platform/issues/199)) ([0c10c70](https://github.com/uzh-bf/thesis-platform/commit/0c10c70fa213fced7314b07dc6cc8420cafa8544))
+
 ### [1.23.2](https://github.com/uzh-bf/thesis-platform/compare/v1.23.1...v1.23.2) (2026-08-26)
 
 
