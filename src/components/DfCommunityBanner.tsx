@@ -42,9 +42,10 @@ export default function DfCommunityBanner() {
               From your thesis to your next opportunity
             </h1>
             <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-white/85 md:text-base">
-              Join the DF Community for jobs, events, thesis opportunities,
-              teaching projects and academic opportunities from the Department
-              of Finance and selected partners.
+              Receive updates on new supervisor proposals, thesis topics, and
+              career opportunities related to Bachelor&apos;s and Master&apos;s
+              students. Subscribe to the DF Community and receive updates
+              tailored to your interests.
             </p>
             <div className="mt-3 flex flex-wrap gap-3">
               <a
