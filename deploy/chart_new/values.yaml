@@ -44,10 +44,12 @@ ingress:
 
 resources:
   requests:
-    memory: 128Mi
+    # Goldilocks VPA targets 2026-09-15: 272Mi (prd) / 297Mi (ibw) sat above
+    # the previous 256Mi limit.
+    memory: 320Mi
     cpu: 100m
   limits:
-    memory: 256Mi
+    memory: 512Mi
     cpu: 200m
 
 migration:
