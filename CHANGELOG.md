@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.25.0](https://github.com/uzh-bf/thesis-platform/compare/v1.24.0...v1.25.0) (2026-09-29)
+
+
+### Features
+
+* **admin:** add developer-only Professors tab to manage responsibles ([#202](https://github.com/uzh-bf/thesis-platform/issues/202)) ([1c5d1d0](https://github.com/uzh-bf/thesis-platform/commit/1c5d1d0a432f5e4f96c1c1b57ec5376e5f02abcb))
+
 ## [1.24.0](https://github.com/uzh-bf/thesis-platform/compare/v1.23.3...v1.24.0) (2026-09-29)
 
 
