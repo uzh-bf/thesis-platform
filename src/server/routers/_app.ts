@@ -3726,6 +3726,206 @@ export const appRouter = router({
       return { success: true }
     }),
 
+  // Undoes a (tentative) match of a student proposal: the supervision is
+  // removed and the proposal goes back to the thesis market as OPEN, so other
+  // supervisors can pick it up again. Used when supervisor and student agree
+  // to part ways and the supervisor cannot release it themselves.
+  adminReleaseStudentProposal: adminOnlyProcedure
+    .input(
+      z.object({
+        proposalId: z.string(),
+        reason: z.string().optional(),
+      })
+    )
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      const envDepartment = process.env
+        .NEXT_PUBLIC_DEPARTMENT_NAME as Department
+
+      const proposal = await prisma.proposal.findFirst({
+        where: {
+          id: input.proposalId,
+          department: envDepartment,
+        },
+        select: {
+          id: true,
+          title: true,
+          typeKey: true,
+          statusKey: true,
+          ownedByUserEmail: true,
+          supervisedBy: {
+            select: {
+              id: true,
+              supervisorEmail: true,
+              responsibleId: true,
+              responsible: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+          },
+          AdminInfo: {
+            select: {
+              id: true,
+              status: true,
+              olatCapturedDate: true,
+              latestSubmissionDate: true,
+              submissionDate: true,
+              grade: true,
+              olatGradeDate: true,
+            },
+          },
+        },
+      })
+
+      if (!proposal) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Proposal not found',
+        })
+      }
+
+      if (proposal.typeKey !== ProposalType.STUDENT) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Only student proposals can be released to the market',
+        })
+      }
+
+      const releasableStatuses = [
+        ProposalStatus.MATCHED,
+        ProposalStatus.MATCHED_TENTATIVE,
+      ]
+
+      if (!releasableStatuses.includes(proposal.statusKey as ProposalStatus)) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message:
+            'Only MATCHED or MATCHED_TENTATIVE student proposals can be released',
+        })
+      }
+
+      // A matched proposal gets an Admin Info entry. Once the thesis has
+      // actually progressed (captured in OLAT, submitted, graded) releasing it
+      // would silently drop that record, so it has to be withdrawn instead.
+      const adminInfo = proposal.AdminInfo
+      if (
+        adminInfo &&
+        (adminInfo.olatCapturedDate ||
+          adminInfo.latestSubmissionDate ||
+          adminInfo.submissionDate ||
+          adminInfo.grade !== null ||
+          adminInfo.olatGradeDate ||
+          (adminInfo.status && adminInfo.status !== 'OPEN'))
+      ) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message:
+            'This thesis already has progress recorded in Admin Info. Withdraw it instead.',
+        })
+      }
+
+      const previousSupervision = proposal.supervisedBy?.[0] ?? null
+      const supervisionIds = proposal.supervisedBy.map(
+        (supervision) => supervision.id
+      )
+      const oldState = {
+        proposalTitle: proposal.title,
+        statusKey: proposal.statusKey,
+        ownedByUserEmail: proposal.ownedByUserEmail,
+        supervisedBy: {
+          supervisorEmail: previousSupervision?.supervisorEmail ?? null,
+          responsibleId: previousSupervision?.responsibleId ?? null,
+          responsible: previousSupervision?.responsible ?? null,
+        },
+        adminInfoId: adminInfo?.id ?? null,
+      }
+
+      await prisma.$transaction([
+        // Applications reference their supervision without a cascade rule,
+        // so they are detached (and reopened) before it is deleted.
+        prisma.proposalApplication.updateMany({
+          where: {
+            proposalId: proposal.id,
+            statusKey: {
+              in: [
+                ApplicationStatus.ACCEPTED,
+                ApplicationStatus.ACCEPTED_TENTATIVE,
+              ],
+            },
+          },
+          data: {
+            statusKey: ApplicationStatus.OPEN,
+          },
+        }),
+        prisma.proposalApplication.updateMany({
+          where: {
+            OR: [
+              { proposalId: proposal.id },
+              { supervisionId: { in: supervisionIds } },
+            ],
+            supervisionId: { not: null },
+          },
+          data: {
+            supervisionId: null,
+          },
+        }),
+        prisma.userProposalSupervision.deleteMany({
+          where: { proposalId: proposal.id },
+        }),
+        prisma.adminInfo.deleteMany({
+          where: { proposalId: proposal.id },
+        }),
+        prisma.proposal.update({
+          where: { id: proposal.id },
+          data: {
+            statusKey: ProposalStatus.OPEN,
+            // Student proposals are unowned while on the market; the admin
+            // assignment sets the owner to the supervisor, so undo that too.
+            ownedByUserEmail: null,
+          },
+        }),
+      ])
+
+      const newState = {
+        proposalTitle: proposal.title,
+        statusKey: ProposalStatus.OPEN,
+        ownedByUserEmail: null,
+        supervisedBy: {
+          supervisorEmail: null,
+          responsibleId: null,
+          responsible: null,
+        },
+        adminInfoId: null,
+      }
+
+      await sendAdminChangeNotification({
+        tab: 'Proposals',
+        action: 'Release proposal to market',
+        actor: {
+          userId: ctx.user.sub,
+          name: ctx.user.name,
+          email: ctx.user.email,
+          role: ctx.user.role,
+          adminRole: ctx.user.adminRole,
+        },
+        entityId: proposal.id,
+        details: [
+          `Proposal: ${proposal.title}`,
+          `Removed supervisor: ${previousSupervision?.supervisorEmail ?? '-'}`,
+          `Reason: ${input.reason?.trim() || 'No reason provided'}`,
+          `Status transition: ${proposal.statusKey} -> ${ProposalStatus.OPEN}`,
+        ].join('\n'),
+        oldState,
+        newState,
+      })
+
+      return { success: true }
+    }),
+
   adminGetAllProposals: adminOnlyOrDeveloperProcedure
     .input(
       z.object({
