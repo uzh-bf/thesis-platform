@@ -33,6 +33,7 @@ import { prisma } from 'src/server/prisma'
 import {
   adminOnlyOrDeveloperProcedure,
   adminOnlyProcedure,
+  adminOrDeveloperProcedure,
   adminProcedure,
   authedProcedure,
   developerProcedure,
@@ -4549,9 +4550,9 @@ export const appRouter = router({
       return { success: true }
     }),
 
-  // Professors (Responsible entries) are maintained by developers only. The
-  // department is always the one of this webapp instance.
-  developerGetProfessors: developerProcedure.query(async () => {
+  // Professors (Responsible entries) are maintained by admins and developers.
+  // The department is always the one of this webapp instance.
+  adminGetProfessors: adminOrDeveloperProcedure.query(async () => {
     return prisma.responsible.findMany({
       where: {
         department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
@@ -4572,7 +4573,7 @@ export const appRouter = router({
     })
   }),
 
-  developerCreateProfessor: developerProcedure
+  adminCreateProfessor: adminOrDeveloperProcedure
     .input(
       z.object({
         name: z.string().trim().min(1),
@@ -4615,7 +4616,7 @@ export const appRouter = router({
       return { success: true, message: 'Professor created successfully' }
     }),
 
-  developerUpdateProfessor: developerProcedure
+  adminUpdateProfessor: adminOrDeveloperProcedure
     .input(
       z.object({
         id: z.string().min(1),
@@ -4677,7 +4678,7 @@ export const appRouter = router({
       return { success: true }
     }),
 
-  developerDeleteProfessor: developerProcedure
+  adminDeleteProfessor: adminOrDeveloperProcedure
     .input(z.object({ id: z.string().min(1) }))
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {

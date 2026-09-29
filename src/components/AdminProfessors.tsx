@@ -14,7 +14,8 @@ const INPUT_CLASSES =
   'w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
 
 export default function AdminProfessors() {
-  const { isDeveloper } = useUserRole()
+  const { isAdmin, isDeveloper } = useUserRole()
+  const canManageProfessors = isAdmin || isDeveloper
 
   const [search, setSearch] = useState('')
   const [showAdd, setShowAdd] = useState(false)
@@ -33,11 +34,11 @@ export default function AdminProfessors() {
     data: professors,
     isLoading,
     refetch,
-  } = trpc.developerGetProfessors.useQuery(undefined, {
-    enabled: isDeveloper,
+  } = trpc.adminGetProfessors.useQuery(undefined, {
+    enabled: canManageProfessors,
   })
 
-  const createProfessor = trpc.developerCreateProfessor.useMutation({
+  const createProfessor = trpc.adminCreateProfessor.useMutation({
     onSuccess: async () => {
       setNewName('')
       setNewEmail('')
@@ -50,7 +51,7 @@ export default function AdminProfessors() {
     },
   })
 
-  const updateProfessor = trpc.developerUpdateProfessor.useMutation({
+  const updateProfessor = trpc.adminUpdateProfessor.useMutation({
     onSuccess: async () => {
       setEditingId(null)
       setEditError(null)
@@ -61,7 +62,7 @@ export default function AdminProfessors() {
     },
   })
 
-  const deleteProfessor = trpc.developerDeleteProfessor.useMutation({
+  const deleteProfessor = trpc.adminDeleteProfessor.useMutation({
     onSuccess: async () => {
       await refetch()
     },
@@ -117,7 +118,7 @@ export default function AdminProfessors() {
     }
   }
 
-  if (!isDeveloper) return null
+  if (!canManageProfessors) return null
 
   let emptyMessage: string | null = null
   if (isLoading) {
