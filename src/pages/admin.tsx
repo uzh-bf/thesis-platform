@@ -12,6 +12,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
 import { useEffect, useRef, useState } from 'react'
 import AdminInfoOverview from 'src/components/AdminInfoOverview'
+import AdminProfessors from 'src/components/AdminProfessors'
 import AdminStatsDashboard from 'src/components/AdminStatsDashboard'
 import AdminUserRoles from 'src/components/AdminUserRoles'
 import { ProposalStatus } from 'src/lib/constants'
@@ -45,6 +46,7 @@ const TABS_GRID_CLASSES: Record<number, string> = {
   2: 'grid-cols-2',
   3: 'grid-cols-3',
   4: 'grid-cols-4',
+  5: 'grid-cols-5',
 }
 
 export default function AdminPanel() {
@@ -170,7 +172,16 @@ export default function AdminPanel() {
       setActiveTab('users')
     }
     if (router.query.tab === 'stats' && isAdminOnly) setActiveTab('stats')
-  }, [router.isReady, router.query.tab, canAccessUsersTab, isAdminOnly])
+    if (router.query.tab === 'professors' && isDeveloper) {
+      setActiveTab('professors')
+    }
+  }, [
+    router.isReady,
+    router.query.tab,
+    canAccessUsersTab,
+    isAdminOnly,
+    isDeveloper,
+  ])
 
   useEffect(() => {
     if (
@@ -267,6 +278,15 @@ export default function AdminPanel() {
             id: 'admin-tabs-stats',
             value: 'stats',
             label: 'Statistics',
+          },
+        ]
+      : []),
+    ...(isDeveloper
+      ? [
+          {
+            id: 'admin-tabs-professors',
+            value: 'professors',
+            label: 'Professors',
           },
         ]
       : []),
@@ -1427,6 +1447,12 @@ export default function AdminPanel() {
           {isAdminOnly && (
             <TabContent value="stats" className={{ root: 'pt-3' }}>
               <AdminStatsDashboard />
+            </TabContent>
+          )}
+
+          {isDeveloper && (
+            <TabContent value="professors" className={{ root: 'pt-3' }}>
+              <AdminProfessors />
             </TabContent>
           )}
           </Tabs>
