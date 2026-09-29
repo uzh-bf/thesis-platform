@@ -103,6 +103,16 @@ export default function AdminPanel() {
     },
   })
 
+  const releaseProposal = trpc.adminReleaseStudentProposal.useMutation({
+    onSuccess: () => {
+      refetch()
+      alert('Supervisor removed. The proposal is back on the thesis market.')
+    },
+    onError: (error) => {
+      alert(`Error: ${error.message}`)
+    },
+  })
+
   const deleteProposal = trpc.adminDeleteProposal.useMutation({
     onSuccess: () => {
       refetch()
@@ -266,9 +276,24 @@ export default function AdminPanel() {
     ? activeTab
     : (visibleTabs[0]?.value ?? 'admininfo')
 
+  const busy =
+    withdrawProposal.isPending ||
+    releaseProposal.isPending ||
+    assignSupervisor.isPending
+
   const handleWithdraw = (proposalId: string, title: string) => {
     if (confirm(`Are you sure you want to withdraw the proposal: "${title}"?`)) {
       withdrawProposal.mutate({ proposalId })
+    }
+  }
+
+  const handleRelease = (proposalId: string, title: string) => {
+    if (
+      confirm(
+        `Remove the supervisor from "${title}" and put the proposal back on the thesis market?`
+      )
+    ) {
+      releaseProposal.mutate({ proposalId })
     }
   }
 
@@ -1251,12 +1276,31 @@ export default function AdminPanel() {
                                 handleWithdraw(selectedProposal.id, selectedProposal.title)
                                 setSelectedProposal(null)
                               }}
-                              disabled={withdrawProposal.isPending || assignSupervisor.isPending}
+                              disabled={busy}
                               className={{
                                 root: 'text-sm bg-red-600 hover:bg-red-700 text-white',
                               }}
                             >
                               Withdraw
+                            </Button>
+                          )}
+
+                        {isAdminOnly &&
+                          selectedProposal.type.key === 'STUDENT' &&
+                          (selectedProposal.statusKey === ProposalStatus.MATCHED ||
+                            selectedProposal.statusKey ===
+                              ProposalStatus.MATCHED_TENTATIVE) && (
+                            <Button
+                              onClick={() => {
+                                handleRelease(selectedProposal.id, selectedProposal.title)
+                                setSelectedProposal(null)
+                              }}
+                              disabled={busy}
+                              className={{
+                                root: 'text-sm border border-gray-400 bg-white text-gray-800 hover:bg-gray-50',
+                              }}
+                            >
+                              Release to market
                             </Button>
                           )}
 
@@ -1267,7 +1311,7 @@ export default function AdminPanel() {
                               setProposalPendingDeletion(selectedProposal)
                               setSelectedProposal(null)
                             }}
-                            disabled={withdrawProposal.isPending || assignSupervisor.isPending}
+                            disabled={busy}
                             className={{
                               root: 'text-sm border border-red-700 bg-white text-red-700 hover:bg-red-50',
                             }}
@@ -1281,7 +1325,7 @@ export default function AdminPanel() {
                         <Button
                           onClick={() => setSelectedProposal(null)}
                           className={{ root: 'text-sm' }}
-                          disabled={withdrawProposal.isPending || assignSupervisor.isPending}
+                          disabled={busy}
                         >
                           Close
                         </Button>
