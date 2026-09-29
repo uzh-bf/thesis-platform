@@ -172,7 +172,7 @@ export default function AdminPanel() {
       setActiveTab('users')
     }
     if (router.query.tab === 'stats' && isAdminOnly) setActiveTab('stats')
-    if (router.query.tab === 'professors' && isDeveloper) {
+    if (router.query.tab === 'professors' && (isAdmin || isDeveloper)) {
       setActiveTab('professors')
     }
   }, [
@@ -180,6 +180,7 @@ export default function AdminPanel() {
     router.query.tab,
     canAccessUsersTab,
     isAdminOnly,
+    isAdmin,
     isDeveloper,
   ])
 
@@ -187,7 +188,8 @@ export default function AdminPanel() {
     if (
       !canManageProposals &&
       activeTab !== 'admininfo' &&
-      activeTab !== 'users'
+      activeTab !== 'users' &&
+      activeTab !== 'professors'
     ) {
       setActiveTab('admininfo')
     }
@@ -281,7 +283,7 @@ export default function AdminPanel() {
           },
         ]
       : []),
-    ...(isDeveloper
+    ...(isAdmin || isDeveloper
       ? [
           {
             id: 'admin-tabs-professors',
@@ -1450,7 +1452,7 @@ export default function AdminPanel() {
             </TabContent>
           )}
 
-          {isDeveloper && (
+          {(isAdmin || isDeveloper) && (
             <TabContent value="professors" className={{ root: 'pt-3' }}>
               <AdminProfessors />
             </TabContent>

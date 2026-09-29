@@ -123,3 +123,24 @@ const isAdminOnlyOrDeveloper = middleware(({ next, ctx }) => {
 export const adminOnlyOrDeveloperProcedure = t.procedure.use(
   isAdminOnlyOrDeveloper
 )
+
+const isAdminOrDeveloper = middleware(({ next, ctx }) => {
+  const user = ctx.session?.user
+
+  if (!user?.name) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  }
+
+  if (!user.isAdmin && user.role !== UserRole.DEVELOPER) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Admin access or developer role required',
+    })
+  }
+
+  return next({
+    ctx: { user },
+  })
+})
+
+export const adminOrDeveloperProcedure = t.procedure.use(isAdminOrDeveloper)
