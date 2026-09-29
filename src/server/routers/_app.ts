@@ -4634,7 +4634,7 @@ export const appRouter = router({
         select: { id: true, name: true, email: true, department: true },
       })
 
-      if (!existing || existing.department !== envDepartment) {
+      if (existing?.department !== envDepartment) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Professor not found in this department.',
@@ -4695,7 +4695,7 @@ export const appRouter = router({
         },
       })
 
-      if (!existing || existing.department !== envDepartment) {
+      if (existing?.department !== envDepartment) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Professor not found in this department.',

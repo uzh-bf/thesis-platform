@@ -119,6 +119,15 @@ export default function AdminProfessors() {
 
   if (!isDeveloper) return null
 
+  let emptyMessage: string | null = null
+  if (isLoading) {
+    emptyMessage = 'Loading professors...'
+  } else if (!professors || professors.length === 0) {
+    emptyMessage = 'No professors found.'
+  } else if (filteredProfessors.length === 0) {
+    emptyMessage = 'No results for the current search.'
+  }
+
   return (
     <div className="bg-white rounded-lg shadow p-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -136,10 +145,14 @@ export default function AdminProfessors() {
 
         <div className="flex items-end gap-2">
           <div className="w-full md:w-80">
-            <label className="block text-xs font-medium text-gray-700 mb-0.5">
+            <label
+              htmlFor="professor-search"
+              className="block text-xs font-medium text-gray-700 mb-0.5"
+            >
               Search
             </label>
             <input
+              id="professor-search"
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -222,12 +235,8 @@ export default function AdminProfessors() {
       )}
 
       <div className="mt-3">
-        {isLoading ? (
-          <p className="text-gray-600">Loading professors...</p>
-        ) : !professors || professors.length === 0 ? (
-          <p className="text-gray-600">No professors found.</p>
-        ) : filteredProfessors.length === 0 ? (
-          <p className="text-gray-600">No results for the current search.</p>
+        {emptyMessage ? (
+          <p className="text-gray-600">{emptyMessage}</p>
         ) : (
           <div className="max-h-[calc(100vh-25rem)] min-h-[18rem] overflow-auto border border-gray-400">
             <table className="min-w-[780px] w-full table-fixed divide-y divide-gray-200">
