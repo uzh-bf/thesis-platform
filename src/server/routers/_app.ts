@@ -126,7 +126,7 @@ function formatDateForStudentMessage(date: Date) {
 }
 
 type AdminChangeNotificationInput = {
-  tab: 'Admin Info' | 'Proposals' | 'Users'
+  tab: 'Admin Info' | 'Proposals' | 'Users' | 'Professors'
   action: string
   actor: {
     userId?: string
@@ -450,6 +450,52 @@ const buildAdminChangeNotificationHtmlContent = ({
   )}</pre>
 </div>
 `.trim()
+}
+
+// Email is unique across all departments; the name must be unique within the
+// department because the Power Automate flow looks professors up by name.
+async function assertProfessorIsUnique({
+  name,
+  email,
+  envDepartment,
+  excludeId,
+}: {
+  name: string
+  email: string
+  envDepartment: Department
+  excludeId?: string
+}) {
+  const [emailTaken, nameTaken] = await Promise.all([
+    prisma.responsible.findFirst({
+      where: {
+        email: { equals: email, mode: 'insensitive' },
+        ...(excludeId ? { NOT: { id: excludeId } } : {}),
+      },
+      select: { id: true },
+    }),
+    prisma.responsible.findFirst({
+      where: {
+        name,
+        department: envDepartment,
+        ...(excludeId ? { NOT: { id: excludeId } } : {}),
+      },
+      select: { id: true },
+    }),
+  ])
+
+  if (emailTaken) {
+    throw new TRPCError({
+      code: 'CONFLICT',
+      message: 'A professor with this email already exists',
+    })
+  }
+
+  if (nameTaken) {
+    throw new TRPCError({
+      code: 'CONFLICT',
+      message: 'A professor with this name already exists in this department',
+    })
+  }
 }
 
 async function sendAdminChangeNotification({
@@ -4499,6 +4545,193 @@ export const appRouter = router({
           newState,
         })
       }
+
+      return { success: true }
+    }),
+
+  // Professors (Responsible entries) are maintained by developers only. The
+  // department is always the one of this webapp instance.
+  developerGetProfessors: developerProcedure.query(async () => {
+    return prisma.responsible.findMany({
+      where: {
+        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        department: true,
+        createdAt: true,
+        _count: {
+          select: {
+            supervisions: true,
+          },
+        },
+      },
+      orderBy: [{ name: 'asc' }, { email: 'asc' }],
+    })
+  }),
+
+  developerCreateProfessor: developerProcedure
+    .input(
+      z.object({
+        name: z.string().trim().min(1),
+        email: z.string().trim().email(),
+      })
+    )
+    .output(z.object({ success: z.boolean(), message: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const envDepartment = process.env
+        .NEXT_PUBLIC_DEPARTMENT_NAME as Department
+      const email = input.email.toLowerCase()
+
+      await assertProfessorIsUnique({ name: input.name, email, envDepartment })
+
+      const created = await prisma.responsible.create({
+        data: {
+          name: input.name,
+          email,
+          department: envDepartment,
+        },
+        select: { id: true, name: true, email: true, department: true },
+      })
+
+      await sendAdminChangeNotification({
+        tab: 'Professors',
+        action: 'Create professor',
+        actor: {
+          userId: ctx.user.sub,
+          name: ctx.user.name,
+          email: ctx.user.email,
+          role: ctx.user.role,
+          adminRole: ctx.user.adminRole,
+        },
+        entityId: created.id,
+        details: `Professor: ${created.name} (${created.email})`,
+        oldState: null,
+        newState: created,
+      })
+
+      return { success: true, message: 'Professor created successfully' }
+    }),
+
+  developerUpdateProfessor: developerProcedure
+    .input(
+      z.object({
+        id: z.string().min(1),
+        name: z.string().trim().min(1),
+        email: z.string().trim().email(),
+      })
+    )
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      const envDepartment = process.env
+        .NEXT_PUBLIC_DEPARTMENT_NAME as Department
+      const email = input.email.toLowerCase()
+
+      const existing = await prisma.responsible.findUnique({
+        where: { id: input.id },
+        select: { id: true, name: true, email: true, department: true },
+      })
+
+      if (!existing || existing.department !== envDepartment) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Professor not found in this department.',
+        })
+      }
+
+      if (existing.name === input.name && existing.email === email) {
+        return { success: true }
+      }
+
+      await assertProfessorIsUnique({
+        name: input.name,
+        email,
+        envDepartment,
+        excludeId: existing.id,
+      })
+
+      const updated = await prisma.responsible.update({
+        where: { id: existing.id },
+        data: { name: input.name, email },
+        select: { id: true, name: true, email: true, department: true },
+      })
+
+      await sendAdminChangeNotification({
+        tab: 'Professors',
+        action: 'Update professor',
+        actor: {
+          userId: ctx.user.sub,
+          name: ctx.user.name,
+          email: ctx.user.email,
+          role: ctx.user.role,
+          adminRole: ctx.user.adminRole,
+        },
+        entityId: updated.id,
+        details: `Professor: ${updated.name} (${updated.email})`,
+        oldState: existing,
+        newState: updated,
+      })
+
+      return { success: true }
+    }),
+
+  developerDeleteProfessor: developerProcedure
+    .input(z.object({ id: z.string().min(1) }))
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      const envDepartment = process.env
+        .NEXT_PUBLIC_DEPARTMENT_NAME as Department
+
+      const existing = await prisma.responsible.findUnique({
+        where: { id: input.id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          department: true,
+          _count: { select: { supervisions: true } },
+        },
+      })
+
+      if (!existing || existing.department !== envDepartment) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Professor not found in this department.',
+        })
+      }
+
+      // Supervisions reference the professor without a cascade rule, so a
+      // professor with theses must be kept for the history to stay intact.
+      if (existing._count.supervisions > 0) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: `Cannot delete: ${existing.name} is linked to ${existing._count.supervisions} supervision(s).`,
+        })
+      }
+
+      await prisma.responsible.delete({ where: { id: existing.id } })
+
+      await sendAdminChangeNotification({
+        tab: 'Professors',
+        action: 'Delete professor',
+        actor: {
+          userId: ctx.user.sub,
+          name: ctx.user.name,
+          email: ctx.user.email,
+          role: ctx.user.role,
+          adminRole: ctx.user.adminRole,
+        },
+        entityId: existing.id,
+        details: `Professor: ${existing.name} (${existing.email})`,
+        oldState: {
+          name: existing.name,
+          email: existing.email,
+          department: existing.department,
+        },
+        newState: null,
+      })
 
       return { success: true }
     }),
