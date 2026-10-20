@@ -23,6 +23,7 @@
     "dev:local": "pnpm run prisma:generate && next dev",
     "format": "prettier --write .",
     "lint": "eslint .",
+    "test:unit": "tsx --test \"src/**/*.test.ts\"",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:generate": "DATABASE_URL=${DATABASE_URL:-postgresql://localhost:5432/prisma?sslmode=disable} prisma generate",
     "prisma:migrate": "prisma migrate dev",
