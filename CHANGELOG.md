@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.26.1](https://github.com/uzh-bf/thesis-platform/compare/v1.26.0...v1.26.1) (2026-10-20)
+
+
+### Bug Fixes
+
+* **proposals:** warn Safari users before opening the submission form ([#205](https://github.com/uzh-bf/thesis-platform/issues/205)) ([6fb9545](https://github.com/uzh-bf/thesis-platform/commit/6fb9545a2fe20069b6e4a2d12c20fe1c3fe0eabb))
+
 ## [1.26.0](https://github.com/uzh-bf/thesis-platform/compare/v1.25.0...v1.26.0) (2026-09-29)
 
 
