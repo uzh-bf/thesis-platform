@@ -63,8 +63,8 @@ function SelectedProposalDetails({
   if (!proposalDetails) {
     return (
       <EmptyState
-        title="No Proposal Selected"
-        description="Select a proposal from the list to get started."
+        title="Select a proposal"
+        description="Choose a proposal from the list to see its details."
       />
     )
   }
@@ -124,12 +124,6 @@ export default function Index() {
       mediaQuery.removeEventListener('change', updateViewport)
     }
   }, [])
-
-  useEffect(() => {
-    if (isDesktopViewport && !router.query.proposalId && data?.[0]?.id) {
-      setSelectedProposal(data[0].id)
-    }
-  }, [isDesktopViewport, setSelectedProposal, data, router.query.proposalId])
 
   const { proposalId, proposalDetails } = useMemo(() => {
     const currentProposalId = router.query.proposalId?.[0]
