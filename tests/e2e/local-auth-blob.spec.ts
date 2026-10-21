@@ -55,8 +55,8 @@ test('OpenAPI healthcheck, local OIDC admin UI, and browser PUT to Azurite work 
   const adminButton = page.getByRole('button', { name: 'Admin', exact: true })
   await expect(adminButton).toBeVisible()
 
-  // The overview auto-selects the first proposal after data loads, so direct
-  // navigation keeps this smoke stable while still proving the Admin entrypoint.
+  // Direct navigation keeps this smoke stable while still proving the Admin
+  // entrypoint.
   await page.goto('/admin')
   await expect(page).toHaveURL(/\/admin/)
   await expect(page.getByRole('tab', { name: 'Proposals' })).toBeVisible()
