@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.26.2](https://github.com/uzh-bf/thesis-platform/compare/v1.26.1...v1.26.2) (2026-10-21)
+
+
+### Bug Fixes
+
+* **proposals:** don't auto-select a proposal when opening the overview ([#206](https://github.com/uzh-bf/thesis-platform/issues/206)) ([7d9a00d](https://github.com/uzh-bf/thesis-platform/commit/7d9a00d40ac90b1300b64b862ede35f6fe1887c5))
+
 ### [1.26.1](https://github.com/uzh-bf/thesis-platform/compare/v1.26.0...v1.26.1) (2026-10-20)
 
 
