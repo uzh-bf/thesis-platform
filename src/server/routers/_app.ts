@@ -1528,28 +1528,46 @@ export const appRouter = router({
         })
       }
 
-      const applicationsToDecline = proposal.applications.filter(
-        (application) => application.statusKey === ApplicationStatus.OPEN
-      )
-
-      await prisma.$transaction([
-        prisma.proposalApplication.updateMany({
+      // Claiming the proposal first makes overlapping close requests wait for
+      // each other; only the request that closes it declines and notifies.
+      const applicationsToDecline = await prisma.$transaction(async (tx) => {
+        const claimed = await tx.proposal.updateMany({
           where: {
-            id: { in: applicationsToDecline.map((app) => app.id) },
+            id: proposal.id,
+            statusKey: { not: ProposalStatus.MATCHED },
+          },
+          data: {
+            statusKey: ProposalStatus.MATCHED,
+          },
+        })
+
+        if (claimed.count === 0) {
+          return []
+        }
+
+        const openApplications = await tx.proposalApplication.findMany({
+          where: {
+            proposalId: proposal.id,
             statusKey: ApplicationStatus.OPEN,
+          },
+          select: {
+            id: true,
+            email: true,
+          },
+        })
+
+        await tx.proposalApplication.updateMany({
+          where: {
+            id: { in: openApplications.map((app) => app.id) },
           },
           data: {
             statusKey: ApplicationStatus.DECLINED,
             supervisionId: null,
           },
-        }),
-        prisma.proposal.update({
-          where: { id: proposal.id },
-          data: {
-            statusKey: ProposalStatus.MATCHED,
-          },
-        }),
-      ])
+        })
+
+        return openApplications
+      })
 
       const notificationResults = await Promise.allSettled(
         applicationsToDecline.map((application) =>
@@ -2254,11 +2272,6 @@ export const appRouter = router({
         where: { id: input.proposalId },
         include: {
           supervisedBy: true,
-          AdminInfo: { select: { id: true } },
-          applications: {
-            where: { statusKey: ApplicationStatus.ACCEPTED },
-            select: { id: true },
-          },
         },
       })
 
@@ -2323,10 +2336,41 @@ export const appRouter = router({
 
       const now = new Date()
       const department = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
-      const isFirstAcceptance =
-        proposal.applications.length === 0 && !proposal.AdminInfo
 
       await prisma.$transaction(async (tx) => {
+        // Serialize acceptances per proposal so overlapping flow runs cannot
+        // both create an entry, then re-check the state under that lock.
+        await tx.$queryRaw`SELECT id FROM "Proposal" WHERE id = ${proposal.id} FOR UPDATE`
+
+        const currentApplication =
+          await tx.proposalApplication.findUniqueOrThrow({
+            where: { id: application.id },
+            select: { statusKey: true },
+          })
+        if (currentApplication.statusKey === ApplicationStatus.ACCEPTED) {
+          return
+        }
+        if (currentApplication.statusKey !== ApplicationStatus.OPEN) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Application cannot be accepted in status ${currentApplication.statusKey}`,
+          })
+        }
+
+        const [acceptedCount, existingAdminInfo] = await Promise.all([
+          tx.proposalApplication.count({
+            where: {
+              proposalId: proposal.id,
+              statusKey: ApplicationStatus.ACCEPTED,
+            },
+          }),
+          tx.adminInfo.findUnique({
+            where: { proposalId: proposal.id },
+            select: { id: true },
+          }),
+        ])
+        const isFirstAcceptance = acceptedCount === 0 && !existingAdminInfo
+
         if (isFirstAcceptance) {
           // The first accepted applicant keeps using the original proposal,
           // exactly like a single-applicant proposal always did.
