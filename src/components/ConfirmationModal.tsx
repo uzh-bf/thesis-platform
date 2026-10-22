@@ -178,8 +178,9 @@ export default function ConfirmationModal({
               </p>
               <p className="mt-1 text-sm leading-6 text-[#4C4C4C]">
                 This cannot be undone. The accepted student receives an
-                acceptance email. Other open applicants receive a declined
-                notification.
+                acceptance email. Other applications stay open, so you can
+                accept further students. Use &ldquo;Close proposal and decline
+                remaining&rdquo; once you are done.
               </p>
             </div>
           </div>

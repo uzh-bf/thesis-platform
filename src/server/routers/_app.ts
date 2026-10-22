@@ -89,6 +89,16 @@ type ProposalDetailsRecord = Prisma.ProposalGetPayload<{
   }
 }>
 
+const acceptedApplicationOverviewSelect = {
+  statusKey: true,
+  email: true,
+  fullName: true,
+  matriculationNumber: true,
+  allowPublication: true,
+  allowUsage: true,
+  supervisionId: true,
+} satisfies Prisma.ProposalApplicationSelect
+
 const STUDENT_PROPOSAL_REMINDER_INTERVAL_DAYS = 8 * 7
 const CLEVERREACH_PROPOSAL_LOOKUP_ATTEMPTS = 12
 const CLEVERREACH_PROPOSAL_LOOKUP_DELAY_MS = 5000
@@ -564,6 +574,37 @@ async function sendAdminChangeNotification({
   }
 }
 
+async function sendApplicationDeclinedEmail({
+  applicantEmail,
+  proposalTitle,
+  comment,
+}: {
+  applicantEmail: string
+  proposalTitle: string
+  comment: string
+}) {
+  const escapedComment = escapeHtml(comment).replace(/\n/g, '<br>')
+  const feedbackContent = escapedComment
+    ? `<p><strong>Feedback:</strong><br>${escapedComment}</p>`
+    : ''
+
+  await axios.post(
+    process.env.EMAIL_NOTIFICATION_URL as string,
+    {
+      recipients: [applicantEmail],
+      subject: `${process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME} - Application Declined`,
+      content: `<p>Your application for the proposal "${escapeHtml(proposalTitle)}" has been declined.</p>${feedbackContent}`,
+    },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        secretkey: process.env.FLOW_SECRET as string,
+      },
+      timeout: 8000,
+    }
+  )
+}
+
 async function applyAdminInfoStatusAutomation(department: Department) {
   const todayStart = dayjs().startOf('day').toDate()
   const oneMonthAgo = dayjs().subtract(1, 'month').startOf('day').toDate()
@@ -655,6 +696,7 @@ async function getStudentProposals({
       typeKey: ProposalType.SUPERVISOR,
       statusKey: ProposalStatus.OPEN,
       department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+      parentProposalId: null,
     },
     include: {
       attachments: true,
@@ -700,7 +742,9 @@ async function getSupervisorProposals({
   }
 
   const currentUserEmail = ctx.user?.email ?? ''
-  let where: Prisma.ProposalWhereInput = {}
+  // Linked copies created for additional accepted applicants are tracked in
+  // the admin overview; supervisors manage them through the original proposal.
+  let where: Prisma.ProposalWhereInput = { parentProposalId: null }
   let applications: ProposalApplicationsInclude = {
     take: 0,
     include: {
@@ -1397,30 +1441,138 @@ export const appRouter = router({
 
       // Send the email notification
       try {
-        const escapedComment = escapeHtml(input.comment).replace(/\n/g, '<br>')
-        const feedbackContent = escapedComment
-          ? `<p><strong>Feedback:</strong><br>${escapedComment}</p>`
-          : ''
-
-        await axios.post(
-          process.env.EMAIL_NOTIFICATION_URL as string,
-          {
-            recipients: [input.applicantEmail],
-            subject: `${process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME} - Application Declined`,
-            content: `<p>Your application for the proposal "${escapeHtml(proposal.title)}" has been declined.</p>${feedbackContent}`,
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              secretkey: process.env.FLOW_SECRET as string,
-            },
-            timeout: 8000,
-          }
-        )
+        await sendApplicationDeclinedEmail({
+          applicantEmail: input.applicantEmail,
+          proposalTitle: proposal.title,
+          comment: input.comment,
+        })
         return { success: true }
       } catch (error) {
         console.error('Error sending email notification:', error)
         return { success: false }
+      }
+    }),
+
+  // Closes a supervisor proposal for new applications once at least one
+  // applicant has been accepted, and declines every application still open.
+  closeProposalApplications: authedProcedure
+    .input(
+      z.object({
+        proposalId: z.string(),
+        comment: z.string().trim().max(2000).default(''),
+      })
+    )
+    .output(
+      z.object({
+        declinedCount: z.number(),
+        failedNotificationCount: z.number(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const proposal = await prisma.proposal.findFirst({
+        where: {
+          id: input.proposalId,
+          typeKey: ProposalType.SUPERVISOR,
+          department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+        },
+        include: {
+          supervisedBy: {
+            include: {
+              responsible: true,
+            },
+          },
+          applications: {
+            select: {
+              id: true,
+              email: true,
+              statusKey: true,
+            },
+          },
+        },
+      })
+
+      if (!proposal) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Proposal not found',
+        })
+      }
+
+      const userEmail = ctx.user.email?.toLowerCase()
+      const isAuthorized =
+        ctx.user.role === UserRole.DEVELOPER ||
+        (!!userEmail &&
+          (proposal.ownedByUserEmail?.toLowerCase() === userEmail ||
+            proposal.supervisedBy.some(
+              (supervision) =>
+                supervision.supervisorEmail?.toLowerCase() === userEmail ||
+                supervision.responsible?.email.toLowerCase() === userEmail
+            )))
+
+      if (!isAuthorized) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You are not authorized to close this proposal',
+        })
+      }
+
+      if (
+        !proposal.applications.some(
+          (application) => application.statusKey === ApplicationStatus.ACCEPTED
+        )
+      ) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message:
+            'Accept at least one application before closing the proposal',
+        })
+      }
+
+      const applicationsToDecline = proposal.applications.filter(
+        (application) => application.statusKey === ApplicationStatus.OPEN
+      )
+
+      await prisma.$transaction([
+        prisma.proposalApplication.updateMany({
+          where: {
+            id: { in: applicationsToDecline.map((app) => app.id) },
+            statusKey: ApplicationStatus.OPEN,
+          },
+          data: {
+            statusKey: ApplicationStatus.DECLINED,
+            supervisionId: null,
+          },
+        }),
+        prisma.proposal.update({
+          where: { id: proposal.id },
+          data: {
+            statusKey: ProposalStatus.MATCHED,
+          },
+        }),
+      ])
+
+      const notificationResults = await Promise.allSettled(
+        applicationsToDecline.map((application) =>
+          sendApplicationDeclinedEmail({
+            applicantEmail: application.email,
+            proposalTitle: proposal.title,
+            comment: input.comment,
+          })
+        )
+      )
+      const failedNotificationCount = notificationResults.filter(
+        (notificationResult) => notificationResult.status === 'rejected'
+      ).length
+
+      if (failedNotificationCount > 0) {
+        console.error(
+          `Failed to send ${failedNotificationCount} decline notification(s) for proposal ${proposal.id}`
+        )
+      }
+
+      return {
+        declinedCount: applicationsToDecline.length,
+        failedNotificationCount,
       }
     }),
 
@@ -2098,14 +2250,14 @@ export const appRouter = router({
       if (input.flowSecret !== process.env.FLOW_SECRET) {
         throw new TRPCError({ code: 'UNAUTHORIZED' })
       }
-      // Step 1: Get Proposal Info
       const proposal = await prisma.proposal.findUnique({
         where: { id: input.proposalId },
         include: {
-          supervisedBy: {
-            include: {
-              supervisor: true,
-            },
+          supervisedBy: true,
+          AdminInfo: { select: { id: true } },
+          applications: {
+            where: { statusKey: ApplicationStatus.ACCEPTED },
+            select: { id: true },
           },
         },
       })
@@ -2117,16 +2269,6 @@ export const appRouter = router({
         })
       }
 
-      // Step 2: Update Proposal Matched
-      await prisma.proposal.update({
-        where: { id: input.proposalId },
-        data: {
-          statusKey: ProposalStatus.MATCHED,
-          updatedAt: new Date(),
-        },
-      })
-
-      // Step 3: Get User Proposal Supervision Info
       const supervisionInfo = proposal.supervisedBy[0]
       if (!supervisionInfo) {
         throw new TRPCError({
@@ -2135,19 +2277,10 @@ export const appRouter = router({
         })
       }
 
-      // Step 4: Update User Proposal Supervision Student Email
-      await prisma.userProposalSupervision.update({
-        where: { id: supervisionInfo.id },
-        data: {
-          studentEmail: input.applicantEmail,
-          updatedAt: new Date(),
-        },
-      })
-
-      // Step 5: Get Proposal Application Info
       const application = await prisma.proposalApplication.findFirst({
         where: {
           id: input.proposalApplicationId,
+          proposalId: input.proposalId,
           email: input.applicantEmail,
         },
       })
@@ -2159,52 +2292,7 @@ export const appRouter = router({
         })
       }
 
-      // Step 6: Update Proposal Application Accepted
-      await prisma.proposalApplication.update({
-        where: { id: application.id },
-        data: {
-          statusKey: ApplicationStatus.ACCEPTED,
-          supervisionId: supervisionInfo.id,
-          updatedAt: new Date(),
-        },
-      })
-
-      // Step 7: Create Admin Table Entry
-      await prisma.adminInfo.create({
-        data: {
-          id: uuidv4(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          proposalId: input.proposalId,
-          status: ProposalStatus.OPEN,
-          department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
-        },
-      })
-
-      // Step 8: Get Proposal Applications to Decline
-      const applicationsToDecline = await prisma.proposalApplication.findMany({
-        where: {
-          proposalId: input.proposalId,
-          email: { not: input.applicantEmail },
-        },
-      })
-
-      // Update status of other applications to declined
-      if (applicationsToDecline.length > 0) {
-        await prisma.proposalApplication.updateMany({
-          where: {
-            id: { in: applicationsToDecline.map((app) => app.id) },
-          },
-          data: {
-            statusKey: ApplicationStatus.DECLINED,
-            updatedAt: new Date(),
-            supervisionId: null,
-          },
-        })
-      }
-
-      // return all user information of proposals that have been declined as well as the one that has been accepted with the info from above (no new prisma call needed)
-      return {
+      const result = {
         proposal: {
           proposal_title: proposal.title,
           supervisor_email: supervisionInfo.supervisorEmail,
@@ -2213,11 +2301,126 @@ export const appRouter = router({
           accepted_email: application.email,
           accepted_fullName: application.fullName,
         },
-        declined_users: applicationsToDecline.map((app) => ({
-          declined_email: app.email,
-          declined_fullName: app.fullName,
-        })),
+        // Accepting no longer declines the other applicants. The supervisor
+        // closes the proposal separately (closeProposalApplications).
+        declined_users: [] as {
+          declined_email: string
+          declined_fullName: string
+        }[],
       }
+
+      // A retried flow run must not create a second thesis entry.
+      if (application.statusKey === ApplicationStatus.ACCEPTED) {
+        return result
+      }
+
+      if (application.statusKey !== ApplicationStatus.OPEN) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Application cannot be accepted in status ${application.statusKey}`,
+        })
+      }
+
+      const now = new Date()
+      const department = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+      const isFirstAcceptance =
+        proposal.applications.length === 0 && !proposal.AdminInfo
+
+      await prisma.$transaction(async (tx) => {
+        if (isFirstAcceptance) {
+          // The first accepted applicant keeps using the original proposal,
+          // exactly like a single-applicant proposal always did.
+          await tx.userProposalSupervision.update({
+            where: { id: supervisionInfo.id },
+            data: {
+              studentEmail: application.email,
+              updatedAt: now,
+            },
+          })
+
+          await tx.proposalApplication.update({
+            where: { id: application.id },
+            data: {
+              statusKey: ApplicationStatus.ACCEPTED,
+              supervisionId: supervisionInfo.id,
+              updatedAt: now,
+            },
+          })
+
+          await tx.proposal.update({
+            where: { id: proposal.id },
+            data: { updatedAt: now },
+          })
+
+          await tx.adminInfo.create({
+            data: {
+              id: uuidv4(),
+              proposalId: proposal.id,
+              status: ProposalStatus.OPEN,
+              department,
+            },
+          })
+
+          return
+        }
+
+        // Every further accepted applicant gets a linked copy of the proposal
+        // with its own supervision and admin entry, so status, grade and
+        // submission dates are tracked per student. The application itself
+        // stays on the original proposal and points to the copy's supervision.
+        const childProposalId = uuidv4()
+        const childSupervisionId = uuidv4()
+
+        await tx.proposal.create({
+          data: {
+            id: childProposalId,
+            title: proposal.title,
+            description: proposal.description,
+            language: proposal.language,
+            studyLevel: proposal.studyLevel,
+            timeFrame: proposal.timeFrame,
+            additionalStudentComment: proposal.additionalStudentComment,
+            topicAreaSlug: proposal.topicAreaSlug,
+            department: proposal.department,
+            typeKey: proposal.typeKey,
+            statusKey: ProposalStatus.MATCHED,
+            ownedByUserEmail: proposal.ownedByUserEmail,
+            ownedByStudent: proposal.ownedByStudent,
+            parentProposalId: proposal.id,
+          },
+        })
+
+        await tx.userProposalSupervision.create({
+          data: {
+            id: childSupervisionId,
+            proposalId: childProposalId,
+            supervisorEmail: supervisionInfo.supervisorEmail,
+            responsibleId: supervisionInfo.responsibleId,
+            studyLevel: supervisionInfo.studyLevel,
+            studentEmail: application.email,
+          },
+        })
+
+        await tx.proposalApplication.update({
+          where: { id: application.id },
+          data: {
+            statusKey: ApplicationStatus.ACCEPTED,
+            supervisionId: childSupervisionId,
+            updatedAt: now,
+          },
+        })
+
+        await tx.adminInfo.create({
+          data: {
+            id: uuidv4(),
+            proposalId: childProposalId,
+            status: ProposalStatus.OPEN,
+            department,
+          },
+        })
+      })
+
+      return result
     }),
 
   createProposalApplication: publicProcedure
@@ -2889,7 +3092,7 @@ export const appRouter = router({
 
     await applyAdminInfoStatusAutomation(envDepartment)
 
-    return prisma.responsible.findMany({
+    const responsibles = await prisma.responsible.findMany({
       where: {
         department: envDepartment,
       },
@@ -2933,17 +3136,16 @@ export const appRouter = router({
                   where: {
                     statusKey: 'ACCEPTED',
                   },
-                  select: {
-                    statusKey: true,
-                    email: true,
-                    fullName: true,
-                    matriculationNumber: true,
-                    allowPublication: true,
-                    allowUsage: true,
-                  },
-                  take: 1,
+                  select: acceptedApplicationOverviewSelect,
                 },
               },
+            },
+            application: {
+              where: {
+                statusKey: 'ACCEPTED',
+              },
+              select: acceptedApplicationOverviewSelect,
+              take: 1,
             },
             supervisor: {
               select: {
@@ -2961,6 +3163,33 @@ export const appRouter = router({
         email: 'asc',
       },
     })
+
+    // A proposal with several accepted applicants has one supervision per
+    // student. Resolve each entry's student through the application linked to
+    // that supervision; older entries without a link fall back to the
+    // proposal's accepted application.
+    return responsibles.map((responsible) => ({
+      ...responsible,
+      supervisions: responsible.supervisions.map(
+        ({ application, ...supervision }) => {
+          const acceptedApplication =
+            application[0] ??
+            supervision.proposal.applications.find(
+              (proposalApplication) =>
+                !proposalApplication.supervisionId ||
+                proposalApplication.supervisionId === supervision.id
+            )
+
+          return {
+            ...supervision,
+            proposal: {
+              ...supervision.proposal,
+              applications: acceptedApplication ? [acceptedApplication] : [],
+            },
+          }
+        }
+      ),
+    }))
   }),
 
   adminUpdateAdminInfo: adminProcedure
@@ -4005,6 +4234,11 @@ export const appRouter = router({
           supervisedBy: {
             include: {
               supervisor: true,
+              application: {
+                include: {
+                  status: true,
+                },
+              },
             },
           },
           applications: {
@@ -4020,7 +4254,17 @@ export const appRouter = router({
         },
       })
 
-      return proposals
+      // Linked copies of a multi-applicant proposal have no applications of
+      // their own; surface the application linked to their supervision.
+      return proposals.map((proposal) => ({
+        ...proposal,
+        applications:
+          proposal.applications.length > 0
+            ? proposal.applications
+            : proposal.supervisedBy.flatMap(
+                (supervision) => supervision.application
+              ),
+      }))
     }),
 
   adminGetSupervisionStats: adminOnlyProcedure
@@ -4300,6 +4544,16 @@ export const appRouter = router({
               id: true,
             },
           },
+          childProposals: {
+            select: {
+              id: true,
+              supervisedBy: {
+                select: {
+                  id: true,
+                },
+              },
+            },
+          },
           _count: {
             select: {
               applications: true,
@@ -4324,9 +4578,13 @@ export const appRouter = router({
         })
       }
 
-      const supervisionIds = proposal.supervisedBy.map(
-        (supervision) => supervision.id
-      )
+      // Linked copies only exist because of this proposal's applications, so
+      // they are removed together with it.
+      const childProposalIds = proposal.childProposals.map((child) => child.id)
+      const supervisionIds = [
+        ...proposal.supervisedBy,
+        ...proposal.childProposals.flatMap((child) => child.supervisedBy),
+      ].map((supervision) => supervision.id)
 
       const oldState = {
         proposalTitle: proposal.title,
@@ -4341,6 +4599,7 @@ export const appRouter = router({
         applications: proposal._count.applications,
         attachments: proposal._count.attachments,
         receivedFeedbacks: proposal._count.receivedFeedbacks,
+        childProposalIds,
       }
 
       try {
@@ -4357,6 +4616,9 @@ export const appRouter = router({
             data: {
               supervisionId: null,
             },
+          }),
+          prisma.proposal.deleteMany({
+            where: { id: { in: childProposalIds } },
           }),
           prisma.proposal.delete({
             where: { id: proposal.id },
@@ -4385,7 +4647,7 @@ export const appRouter = router({
           `Proposal: ${proposal.title}`,
           `Reason: ${input.reason?.trim() || 'No reason provided'}`,
           `Status at deletion: ${proposal.statusKey}`,
-          `Deleted along with it: ${proposal._count.applications} application(s), ${proposal._count.attachments} attachment(s), ${proposal._count.receivedFeedbacks} feedback entry/entries, ${supervisionIds.length} supervision entry/entries, ${proposal.AdminInfo ? 1 : 0} admin info entry/entries`,
+          `Deleted along with it: ${proposal._count.applications} application(s), ${proposal._count.attachments} attachment(s), ${proposal._count.receivedFeedbacks} feedback entry/entries, ${supervisionIds.length} supervision entry/entries, ${proposal.AdminInfo ? 1 : 0} admin info entry/entries, ${childProposalIds.length} linked proposal copy/copies (with their admin info entries)`,
           'Uploaded files remain in blob storage and are not removed by this action.',
         ].join('\n'),
         oldState,

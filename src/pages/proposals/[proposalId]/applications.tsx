@@ -15,6 +15,7 @@ import { add, format } from 'date-fns'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { Dispatch, SetStateAction, useMemo, useState } from 'react'
+import CloseProposalButton from 'src/components/CloseProposalButton'
 import ConfirmationModal from 'src/components/ConfirmationModal'
 import EmptyState from 'src/components/EmptyState'
 import { getApplicationAttachmentUrl } from 'src/lib/applicationAttachmentUrl'
@@ -397,17 +398,23 @@ export default function ProposalApplicationsOverviewPage() {
                 </p>
               </div>
               {applications.length > 0 && (
-                <a
-                  href={`/api/proposals/${encodeURIComponent(
-                    proposal.id
-                  )}/applications/download`}
-                  className="shrink-0"
-                >
-                  <Button size="sm" title="Download application data as CSV">
-                    <Button.Icon icon={faDownload} />
-                    <Button.Label>Download CSV</Button.Label>
-                  </Button>
-                </a>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  <CloseProposalButton
+                    proposal={proposal}
+                    applications={applications}
+                    onClosed={refetch}
+                  />
+                  <a
+                    href={`/api/proposals/${encodeURIComponent(
+                      proposal.id
+                    )}/applications/download`}
+                  >
+                    <Button size="sm" title="Download application data as CSV">
+                      <Button.Icon icon={faDownload} />
+                      <Button.Label>Download CSV</Button.Label>
+                    </Button>
+                  </a>
+                </div>
               )}
             </div>
           </div>
