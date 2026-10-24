@@ -17,6 +17,7 @@ import {
 } from 'src/types/app'
 import ApplicationDetailsModal from './ApplicationDetailsModal'
 import ApplicationForm from './ApplicationForm'
+import CloseProposalButton from './CloseProposalButton'
 import ConfirmationModal from './ConfirmationModal'
 
 interface ProposalApplicationProps {
@@ -203,6 +204,11 @@ export default function ProposalApplication({
               </h2>
               {applications.length > 0 && (
                 <div className="flex flex-wrap gap-2">
+                  <CloseProposalButton
+                    proposal={proposalDetails}
+                    applications={applications}
+                    onClosed={refetch}
+                  />
                   <Link href={`/proposals/${proposalDetails.id}/applications`}>
                     <Button
                       size="sm"

@@ -161,8 +161,17 @@ model Proposal {
   receivedFeedbacks UserProposalFeedback[]
   AdminInfo         AdminInfo?
 
+  // Set when a proposal accepts more than one applicant: every additional
+  // accepted applicant gets a linked copy of the original proposal that
+  // carries their own supervision, status, grade and submission data.
+  parentProposal   Proposal?  @relation("ProposalCopies", fields: [parentProposalId], references: [id], onDelete: SetNull)
+  parentProposalId String?
+  childProposals   Proposal[] @relation("ProposalCopies")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([parentProposalId])
 }
 
 model ProposalApplication {
