@@ -19,6 +19,12 @@ shared submission is out of scope.
   least one accepted application, declines every application that is still
   open, sends each of them the existing declined email (with optional
   feedback) and sets the proposal to `MATCHED`.
+- The accept dialog offers the same close as an opt-in checkbox ("Also close
+  the proposal"), off by default. It runs after the acceptance flow has
+  responded, which only happens once the acceptance is stored. The close call
+  passes the accepted application's ID and is refused unless that application
+  is already `ACCEPTED`, so the student who was just accepted can never be
+  declined with the rest.
 
 ## Data Model
 

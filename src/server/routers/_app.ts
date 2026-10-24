@@ -1460,6 +1460,10 @@ export const appRouter = router({
       z.object({
         proposalId: z.string(),
         comment: z.string().trim().max(2000).default(''),
+        // Set when closing straight from the accept dialog: the close only
+        // goes ahead once that acceptance is recorded, so the applicant who
+        // was just accepted can never be declined with the rest.
+        acceptedApplicationId: z.string().optional(),
       })
     )
     .output(
@@ -1531,6 +1535,25 @@ export const appRouter = router({
       // Claiming the proposal first makes overlapping close requests wait for
       // each other; only the request that closes it declines and notifies.
       const applicationsToDecline = await prisma.$transaction(async (tx) => {
+        if (input.acceptedApplicationId) {
+          const acceptedApplication = await tx.proposalApplication.findFirst({
+            where: {
+              id: input.acceptedApplicationId,
+              proposalId: proposal.id,
+              statusKey: ApplicationStatus.ACCEPTED,
+            },
+            select: { id: true },
+          })
+
+          if (!acceptedApplication) {
+            throw new TRPCError({
+              code: 'CONFLICT',
+              message:
+                'The acceptance has not been recorded yet, so the proposal was not closed. Please close it again in a moment.',
+            })
+          }
+        }
+
         const claimed = await tx.proposal.updateMany({
           where: {
             id: proposal.id,
