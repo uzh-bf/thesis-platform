@@ -423,11 +423,21 @@ export default function AdminPanel() {
       proposal.type?.key === 'SUPERVISOR' &&
       proposal.statusKey === ProposalStatus.OPEN
 
+    const applications = proposal.applications ?? []
+
+    // An open supervisor proposal can already have accepted students, since
+    // it stays open until the supervisor closes it.
     if (isOpenSupervisorProposal) {
-      return null
+      const supervisionId = proposal.supervisedBy?.[0]?.id
+      return (
+        applications.find(
+          (app: any) =>
+            app.statusKey === 'ACCEPTED' &&
+            (!supervisionId || app.supervisionId === supervisionId)
+        ) ?? null
+      )
     }
 
-    const applications = proposal.applications ?? []
     if (!applications.length) return null
 
     const supervisionId = proposal.supervisedBy?.[0]?.id
