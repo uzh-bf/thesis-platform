@@ -589,21 +589,16 @@ async function sendApplicationDeclinedEmail({
     ? `<p><strong>Feedback:</strong><br>${escapedComment}</p>`
     : ''
 
-  await axios.post(
-    process.env.EMAIL_NOTIFICATION_URL as string,
-    {
-      recipients: [applicantEmail],
-      subject: `${process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME} - Application Declined`,
-      content: `<p>Your application for the proposal "${escapeHtml(proposalTitle)}" has been declined.</p>${feedbackContent}`,
-    },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        secretkey: process.env.FLOW_SECRET as string,
-      },
-      timeout: 8000,
-    }
-  )
+  const sent = await sendMail({
+    to: [applicantEmail],
+    subject: `${process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME} - Application Declined`,
+    bodyAsHtml: `<p>Your application for the proposal "${escapeHtml(proposalTitle)}" has been declined.</p>${feedbackContent}`,
+  })
+
+  // Callers count a rejected promise as a decline email that was not sent.
+  if (!sent) {
+    throw new Error('Declined email was not sent: mail relay not configured')
+  }
 }
 
 // Developers, the proposal owner and its supervisors or responsible persons

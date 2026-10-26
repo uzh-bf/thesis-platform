@@ -69,6 +69,10 @@ through `sendMail` (to the student, CC the management inbox and the
 supervisor, reply-to the supervisor). If the email cannot be sent, the
 acceptance still stands and the accept dialog tells the supervisor.
 
+Declined emails (single decline and closing the proposal) also go through
+`sendMail`. A decline that could not be emailed still stands; closing the
+proposal reports how many declined emails were not sent.
+
 The Power Automate acceptance flow and its `processProposalAcceptance`
 endpoint are no longer used.
 

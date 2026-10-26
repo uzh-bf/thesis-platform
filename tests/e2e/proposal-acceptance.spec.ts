@@ -147,8 +147,13 @@ test('supervisor accepts an applicant in-app and closes the proposal', async ({
   expect(adminInfo).not.toBeNull()
 
   // The local setup has no mail relay configured, so the dialog reports that
-  // the acceptance email was not sent while the acceptance still stands.
+  // neither the acceptance nor the declined email was sent, while the
+  // acceptance and the close still stand.
+  await expect.poll(() => dialogs).toHaveLength(2)
   expect(dialogs).toContainEqual(
     expect.stringContaining('the acceptance email could not be sent')
+  )
+  expect(dialogs).toContainEqual(
+    expect.stringContaining('1 decline email(s) could not be sent')
   )
 })
