@@ -354,7 +354,7 @@
                   "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
                   "emailMessage/To": "@triggerBody()?['responder']",
                   "emailMessage/Subject": "@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses - Your Proposal was posted",
-                  "emailMessage/Body": "<p class=\"editor-paragraph\">Your proposal on \"@{triggerBody()?['proposalTitle']}\" was posted on the @{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses Platform. You will be notified as soon as applications are received.<br><br>The proposal is visible on @{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/@{variables('ProposalId')}.<br><br>If you have any further remarks, please contact the @{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Thesis Coordinator by replying to this email.<br><br>Best regards,<br>@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Thesis Coordinator</p>",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">Your proposal on \"@{triggerBody()?['proposalTitle']}\" was posted on the @{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Theses Market. You will be notified as soon as applications are received.<br><br>The proposal is visible on @{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/@{variables('ProposalId')}.<br><br>If you have any further remarks, please contact the @{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Thesis Coordinator by replying to this email.<br><br>Best regards,<br>@{parameters('Department (uzhbf_thesisplatform_department_env_var)')} Thesis Coordinator</p>",
                   "emailMessage/Bcc": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
                   "emailMessage/ReplyTo": "@parameters('Outlook Management Inbox (uzhbf_thesisplatform_thesis_inbox_env_var)')",
                   "emailMessage/Importance": "Normal"
@@ -656,7 +656,7 @@
               "inputs": {
                 "parameters": {
                   "request/to": "@{parameters('Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)')};",
-                  "request/subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Theses Platform - Thesis Proposal Posting",
+                  "request/subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Theses Market - Thesis Proposal Posting",
                   "request/text": "<p>@{body('CreateHtmlTable')}</p>"
                 },
                 "host": {

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Workflow WorkflowId="{d12d741b-a027-ee11-9966-000d3a8321bd}" Name="UZH BF Theses Platform - Thesis Proposal Submission" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<Workflow WorkflowId="{d12d741b-a027-ee11-9966-000d3a8321bd}" Name="UZH BF Theses Market - Thesis Proposal Submission" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <JsonFileName>/Workflows/UZHBFThesisPlatform-ThesisProposalSubmission-D12D741B-A027-EE11-9966-000D3A8321BD.json</JsonFileName>
   <Type>1</Type>
   <Subprocess>0</Subprocess>
@@ -21,6 +21,6 @@
   <IsCustomProcessingStepAllowedForOtherPublishers>1</IsCustomProcessingStepAllowedForOtherPublishers>
   <PrimaryEntity>none</PrimaryEntity>
   <LocalizedNames>
-    <LocalizedName languagecode="1033" description="UZH BF Theses Platform - Thesis Proposal Submission" />
+    <LocalizedName languagecode="1033" description="UZH BF Theses Market - Thesis Proposal Submission" />
   </LocalizedNames>
 </Workflow>

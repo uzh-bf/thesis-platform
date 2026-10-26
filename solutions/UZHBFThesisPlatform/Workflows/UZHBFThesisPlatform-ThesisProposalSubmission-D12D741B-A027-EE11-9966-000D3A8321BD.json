@@ -1623,7 +1623,7 @@
               "inputs": {
                 "parameters": {
                   "request/to": "@{parameters('Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)')};",
-                  "request/subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Theses Platform - Thesis Proposal Submission",
+                  "request/subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Theses Market - Thesis Proposal Submission",
                   "request/text": "<p>@{body('CreateHtmlTable')}</p>"
                 },
                 "host": {

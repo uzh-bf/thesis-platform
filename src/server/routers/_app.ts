@@ -539,7 +539,7 @@ async function sendAdminChangeNotification({
 
   const timestamp = new Date().toISOString()
   const departmentName =
-    process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME ?? 'Theses Platform'
+    process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME ?? 'Theses Market'
   const subject = `[${environment}] ${departmentName} - Admin ${tab} change: ${action}`
   const content = buildAdminChangeNotificationHtmlContent({
     environment,
@@ -4070,7 +4070,7 @@ export const appRouter = router({
     }),
 
   // Undoes a (tentative) match of a student proposal: the supervision is
-  // removed and the proposal goes back to the Theses Platform as OPEN, so other
+  // removed and the proposal goes back to the Theses Market as OPEN, so other
   // supervisors can pick it up again. Used when supervisor and student agree
   // to part ways and the supervisor cannot release it themselves.
   adminReleaseStudentProposal: adminOnlyProcedure

@@ -1,4 +1,4 @@
-# Embedding the Theses Platform in an iframe
+# Embedding the Theses Market in an iframe
 
 The platform is iframe-ready: it can be embedded on department or
 university websites and adapts its UI, auth flows, and security headers
@@ -10,7 +10,7 @@ accordingly.
 <iframe
   src="https://theses.df.uzh.ch"
   style="width: 100%; border: 0;"
-  title="Theses Platform"
+  title="Theses Market"
 ></iframe>
 ```
 

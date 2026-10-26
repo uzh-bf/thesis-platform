@@ -149,7 +149,7 @@
                 "parameters": {
                   "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
                   "emailMessage/To": "@parameters('Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)')",
-                  "emailMessage/Subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Theses Platform - Thesis Student Reminder",
+                  "emailMessage/Subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Theses Market - Thesis Student Reminder",
                   "emailMessage/Body": "<p>@{body('CreateHtmlTable')}</p>",
                   "emailMessage/Importance": "Normal"
                 },

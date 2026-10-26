@@ -367,7 +367,7 @@
                 },
                 "parameters": {
                   "request/to": "@{parameters('Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)')};",
-                  "request/subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Theses Platform - Thesis Application Acceptance",
+                  "request/subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Theses Market - Thesis Application Acceptance",
                   "request/text": "<p>@{body('CreateHtmlTable')}</p>"
                 },
                 "authentication": "@parameters('$authentication')"

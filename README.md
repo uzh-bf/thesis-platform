@@ -33,7 +33,7 @@ For local database development, run PostgreSQL locally or use the configured dev
 DATABASE_URL="postgresql://thesis:<local-password>@localhost:5432/thesis?sslmode=disable"
 ```
 
-For shared secrets, run `infisical login` and `infisical init` locally for the Theses Platform project, then use Infisical to wrap the command:
+For shared secrets, run `infisical login` and `infisical init` locally for the thesis platform project, then use Infisical to wrap the command:
 
 ```bash
 infisical run --env=dev -- pnpm dev

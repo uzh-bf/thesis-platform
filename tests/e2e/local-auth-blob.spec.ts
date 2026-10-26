@@ -51,7 +51,7 @@ test('OpenAPI healthcheck, local OIDC admin UI, and browser PUT to Azurite work 
     isAdmin: true,
   })
 
-  await expect(page.getByText('Theses Platform')).toBeVisible()
+  await expect(page.getByText('Theses Market')).toBeVisible()
   const adminButton = page.getByRole('button', { name: 'Admin', exact: true })
   await expect(adminButton).toBeVisible()
 

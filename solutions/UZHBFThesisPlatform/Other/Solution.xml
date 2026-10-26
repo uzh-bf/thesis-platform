@@ -3,7 +3,7 @@
   <SolutionManifest>
     <UniqueName>UZHBFThesisPlatform</UniqueName>
     <LocalizedNames>
-      <LocalizedName description="UZH BF Theses Platform" languagecode="1033" />
+      <LocalizedName description="UZH BF Theses Market" languagecode="1033" />
     </LocalizedNames>
     <Descriptions />
     <Version>0.0.0.4</Version>
