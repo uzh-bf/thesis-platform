@@ -108,7 +108,7 @@ export default function AdminPanel() {
   const releaseProposal = trpc.adminReleaseStudentProposal.useMutation({
     onSuccess: () => {
       refetch()
-      alert('Supervisor removed. The proposal is back on the thesis market.')
+      alert('Supervisor removed. The proposal is back on the Theses Platform.')
     },
     onError: (error) => {
       alert(`Error: ${error.message}`)
@@ -312,7 +312,7 @@ export default function AdminPanel() {
   const handleRelease = (proposalId: string, title: string) => {
     if (
       confirm(
-        `Remove the supervisor from "${title}" and put the proposal back on the thesis market?`
+        `Remove the supervisor from "${title}" and put the proposal back on the Theses Platform?`
       )
     ) {
       releaseProposal.mutate({ proposalId })

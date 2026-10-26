@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Workflow WorkflowId="{0faa1671-aba5-f011-bbd3-002248747db4}" Name="UZH BF Thesis Platform - User Creation With Supervisor Role" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<Workflow WorkflowId="{0faa1671-aba5-f011-bbd3-002248747db4}" Name="UZH BF Theses Platform - User Creation With Supervisor Role" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <JsonFileName>/Workflows/UZHBFThesisPlatform-UserCreationWithSupervisorRole-0FAA1671-ABA5-F011-BBD3-002248747DB4.json</JsonFileName>
   <Type>1</Type>
   <Subprocess>0</Subprocess>
@@ -22,6 +22,6 @@
   <ModernFlowType>0</ModernFlowType>
   <PrimaryEntity>none</PrimaryEntity>
   <LocalizedNames>
-    <LocalizedName languagecode="1033" description="UZH BF Thesis Platform - User Creation With Supervisor Role" />
+    <LocalizedName languagecode="1033" description="UZH BF Theses Platform - User Creation With Supervisor Role" />
   </LocalizedNames>
 </Workflow>

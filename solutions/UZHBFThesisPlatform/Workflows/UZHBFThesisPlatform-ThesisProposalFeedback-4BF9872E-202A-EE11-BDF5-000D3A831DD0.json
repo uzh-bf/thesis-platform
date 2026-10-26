@@ -1111,7 +1111,7 @@
               "inputs": {
                 "parameters": {
                   "request/to": "@{parameters('Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)')};",
-                  "request/subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Thesis Platform - Thesis Proposal Feedback",
+                  "request/subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Theses Platform - Thesis Proposal Feedback",
                   "request/text": "<p>@{body('CreateHtmlTable')}</p>"
                 },
                 "host": {

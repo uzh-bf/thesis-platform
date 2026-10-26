@@ -33,7 +33,7 @@ export function buildThesisProposalCleverReachReminderMail({
   'send'
 >): ThesisProposalCleverReachReminderMail {
   const departmentName =
-    env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME?.trim() || 'Thesis Platform'
+    env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME?.trim() || 'Theses Platform'
   const adminUrl =
     env.CLEVERREACH_ADMIN_URL?.trim() || DEFAULT_CLEVERREACH_ADMIN_URL
 

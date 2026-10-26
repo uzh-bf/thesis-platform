@@ -342,7 +342,7 @@ async function verifyReminderAndOrchestration() {
   })
   assert.equal(
     defaultReminderMail.subject,
-    'Thesis Platform Theses - CleverReach mailing ready for review'
+    'Theses Platform Theses - CleverReach mailing ready for review'
   )
   assert.match(
     defaultReminderMail.bodyAsHtml,
