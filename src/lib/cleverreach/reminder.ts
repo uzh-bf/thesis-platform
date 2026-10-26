@@ -13,7 +13,7 @@ export type ThesisProposalCleverReachReminderMail = Parameters<
 
 type ReminderMailSender = (
   input: ThesisProposalCleverReachReminderMail
-) => Promise<void>
+) => Promise<unknown>
 
 type ReminderEnvironment = Record<string, string | undefined>
 

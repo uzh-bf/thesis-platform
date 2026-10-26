@@ -15,7 +15,9 @@ function readEnv(name: string): string | null {
   return value ? value : null
 }
 
-export async function sendMail(input: SendMailInput): Promise<void> {
+// Resolves to false when the mail was skipped because the relay is not
+// configured or there are no recipients.
+export async function sendMail(input: SendMailInput): Promise<boolean> {
   const triggerUrl = readEnv('MAIL_SENDING_HTTP_URL')
   const secret = readEnv('MAIL_SENDING_FLOW_SECRET')
   const from = input.from ?? readEnv('MAIL_SENDING_FROM')
@@ -24,12 +26,12 @@ export async function sendMail(input: SendMailInput): Promise<void> {
     console.warn(
       'sendMail skipped: MAIL_SENDING_HTTP_URL, MAIL_SENDING_FLOW_SECRET, or MAIL_SENDING_FROM missing'
     )
-    return
+    return false
   }
 
   if (input.to.length === 0) {
     console.warn('sendMail skipped: empty recipient list')
-    return
+    return false
   }
 
   const body = {
@@ -57,4 +59,6 @@ export async function sendMail(input: SendMailInput): Promise<void> {
   if (!response.ok) {
     throw new Error(`sendMail status=${response.status}`)
   }
+
+  return true
 }
