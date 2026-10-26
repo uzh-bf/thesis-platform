@@ -1,6 +1,6 @@
 # Better Stack Uptime Monitoring & Status Page
 
-The thesis platform is monitored with [Better Stack](https://betterstack.com)
+The Theses Market is monitored with [Better Stack](https://betterstack.com)
 (uptime monitors + public status page), analogous to the KlickerUZH setup
 (<https://klicker-uzh.betteruptime.com>). This document describes the code-side
 integration and the one-time setup in the Better Stack dashboard.
@@ -42,10 +42,10 @@ If the status page URL changes in Better Stack, update it in those places.
    Recommended settings: check frequency 30s–1min, alert after 2–3 failed
    checks, notify the team channel/on-call as configured for Klicker.
 
-2. Create a status page (Status pages → Create) named e.g. "Thesis Platform"
+2. Create a status page (Status pages → Create) named e.g. "Theses Market"
    with the subdomain `thesis-platform`, so it is served at
    `https://thesis-platform.betteruptime.com`, and add the monitors above as
-   resources (e.g. "Thesis Platform DF (Production)", "Thesis Platform IBW
+   resources (e.g. "Theses Market DF (Production)", "Theses Market IBW
    (Production)").
 
 3. Verify the URL matches `NEXT_PUBLIC_STATUS_PAGE_URL` (see above); adjust the

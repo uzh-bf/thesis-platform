@@ -195,16 +195,16 @@ test.describe('DF Community signup', () => {
     })
     await page.evaluate(() => {
       const iframe = document.createElement('iframe')
-      iframe.title = 'Thesis Market embed'
+      iframe.title = 'Theses Market embed'
       iframe.src = '/'
       document.body.replaceChildren(iframe)
     })
 
-    const frame = page.frameLocator('iframe[title="Thesis Market embed"]')
+    const frame = page.frameLocator('iframe[title="Theses Market embed"]')
     await expect(
       frame.getByRole('heading', { name: 'Join the DF Community' })
     ).toBeVisible()
-    await expect(frame.getByText('Thesis Market')).toBeVisible()
+    await expect(frame.getByText('Theses Market')).toBeVisible()
     expect(
       await frame
         .locator('html')
