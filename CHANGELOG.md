@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.27.0](https://github.com/uzh-bf/thesis-platform/compare/v1.26.2...v1.27.0) (2026-10-27)
+
+
+### Features
+
+* **proposals:** accept applications in-app instead of via Power Automate ([#208](https://github.com/uzh-bf/thesis-platform/issues/208)) ([3275898](https://github.com/uzh-bf/thesis-platform/commit/3275898a234e5237a7793343ad4955d5893e61a3))
+* **proposals:** accept multiple applications per proposal ([#207](https://github.com/uzh-bf/thesis-platform/issues/207)) ([77008a5](https://github.com/uzh-bf/thesis-platform/commit/77008a50a9c7f33b67d590fdcd79ae0129af66da))
+
+
+### Bug Fixes
+
+* **proposals:** use the department long name in the acceptance email ([#210](https://github.com/uzh-bf/thesis-platform/issues/210)) ([36bfcfd](https://github.com/uzh-bf/thesis-platform/commit/36bfcfd92c583974563efa9d428c577e9b35c011))
+
 ### [1.26.2](https://github.com/uzh-bf/thesis-platform/compare/v1.26.1...v1.26.2) (2026-10-21)
 
 
