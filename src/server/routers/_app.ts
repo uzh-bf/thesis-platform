@@ -519,21 +519,12 @@ async function sendAdminChangeNotification({
   oldState,
   newState,
 }: AdminChangeNotificationInput) {
-  const notificationUrl = process.env.EMAIL_NOTIFICATION_URL
-
-  if (!notificationUrl) {
-    console.warn(
-      'EMAIL_NOTIFICATION_URL not configured. Skipping admin change notification.'
-    )
-    return
-  }
-
   const environment = getNotificationEnvironment()
   const recipients = getManagementNotificationRecipients()
 
   if (recipients.length === 0) {
     console.warn(
-      'Admin change notification skipped because staging external flows are disabled.'
+      'Admin change notification skipped: ADMIN_CHANGE_NOTIFICATION_RECIPIENTS is empty.'
     )
     return
   }
@@ -555,21 +546,7 @@ async function sendAdminChangeNotification({
   })
 
   try {
-    await axios.post(
-      notificationUrl,
-      {
-        recipients,
-        subject,
-        content,
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          secretkey: process.env.FLOW_SECRET as string,
-        },
-        timeout: 8000,
-      }
-    )
+    await sendMail({ to: recipients, subject, bodyAsHtml: content })
   } catch (error) {
     console.error('Error sending admin change notification:', error)
   }
