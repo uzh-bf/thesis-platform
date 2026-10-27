@@ -137,7 +137,7 @@ export default function Header() {
             // Embedded pages live inside a branded host page, so a compact
             // title replaces the full UZH branding block
             <div className="min-w-0 truncate text-base font-semibold leading-6 text-[#121212]">
-              Thesis Market
+              Theses Market
             </div>
           ) : (
             <div className="flex min-w-0 items-center gap-5">
@@ -159,7 +159,7 @@ export default function Header() {
                   {organizationName}
                 </div>
                 <div className="truncate text-lg font-semibold leading-6 text-[#121212]">
-                  Thesis Market
+                  Theses Market
                 </div>
               </div>
             </div>
