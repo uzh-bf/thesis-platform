@@ -8,6 +8,9 @@ interface SendMailInput {
   replyTo?: string
   sensitivity?: 'Normal' | 'Personal' | 'Private' | 'Confidential'
   importance?: 'Low' | 'Normal' | 'High'
+  // Aborts the relay request after this many milliseconds; unset waits as
+  // long as the relay takes.
+  timeoutMs?: number
 }
 
 function readEnv(name: string): string | null {
@@ -54,6 +57,9 @@ export async function sendMail(input: SendMailInput): Promise<boolean> {
       Accept: 'application/json',
     },
     body: JSON.stringify(body),
+    ...(input.timeoutMs
+      ? { signal: AbortSignal.timeout(input.timeoutMs) }
+      : {}),
   })
 
   if (!response.ok) {
