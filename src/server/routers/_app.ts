@@ -780,7 +780,7 @@ async function sendApplicationAcceptedEmail({
   proposalTitle: string
   supervisorEmail: string | null
 }): Promise<boolean> {
-  const department = process.env.NEXT_PUBLIC_DEPARTMENT_NAME ?? ''
+  const department = process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME ?? ''
   const acceptedBy = supervisorEmail ? ` by ${escapeHtml(supervisorEmail)}` : ''
 
   return sendMail({
@@ -790,7 +790,7 @@ async function sendApplicationAcceptedEmail({
       ...(supervisorEmail ? [supervisorEmail] : []),
     ],
     replyTo: supervisorEmail ?? undefined,
-    subject: `${department} Theses - Proposal Application Accepted`,
+    subject: `${department} - Application Accepted`,
     bodyAsHtml: `<p>Dear ${escapeHtml(applicantFullName)},<br><br>Your application to the proposal "${escapeHtml(proposalTitle)}" was accepted${acceptedBy}.<br>Kindly get in touch with your supervisor by replying to this email within one week.<br><br>Best regards,<br>${escapeHtml(department)} Thesis Coordinator</p>`,
     importance: 'Normal',
   })
