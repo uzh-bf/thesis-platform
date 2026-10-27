@@ -546,7 +546,14 @@ async function sendAdminChangeNotification({
   })
 
   try {
-    await sendMail({ to: recipients, subject, bodyAsHtml: content })
+    // Admin mutations await this notice after saving, so a stalled relay
+    // must not hold up the response.
+    await sendMail({
+      to: recipients,
+      subject,
+      bodyAsHtml: content,
+      timeoutMs: 8000,
+    })
   } catch (error) {
     console.error('Error sending admin change notification:', error)
   }
