@@ -38,7 +38,9 @@ export default function ConfirmationModal({
 
   const canCloseAfterAccept =
     proposalDetails?.statusKey !== ProposalStatus.MATCHED
-  const otherOpenApplicationCount = (proposalDetails?.applications ?? []).filter(
+  const otherOpenApplicationCount = (
+    proposalDetails?.applications ?? []
+  ).filter(
     (application: { id: string; statusKey: string }) =>
       application.id !== row.id &&
       application.statusKey === ApplicationStatus.OPEN
@@ -67,19 +69,29 @@ export default function ConfirmationModal({
     const shouldClose = canCloseAfterAccept && closeAfterAccept
 
     try {
-      await acceptApplication.mutateAsync({
+      const result = await acceptApplication.mutateAsync({
         proposalId: proposalDetails.id,
         proposalApplicationId: row.id,
         applicantEmail: row.email,
       })
-    } catch (_error) {
+      if (!result.alreadyAccepted && !result.emailSent) {
+        alert(
+          `${row.fullName} was accepted, but the acceptance email could not be sent. Please contact the student directly.`
+        )
+      }
+    } catch (error) {
+      alert(
+        `${row.fullName} could not be accepted: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      )
       setIsProcessing(false) // Re-enable buttons on error
       resetAcceptOptions()
       return
     }
 
-    // The acceptance flow only responds once the acceptance is stored, so
-    // the proposal can be closed right after it.
+    // The acceptance is stored before the mutation responds, so the proposal
+    // can be closed right after it.
     if (shouldClose) {
       try {
         const result = await closeProposal.mutateAsync({
@@ -350,11 +362,7 @@ export default function ConfirmationModal({
             <Button onClick={closeDeclineModal} disabled={isProcessing}>
               Cancel
             </Button>
-            <Button
-              onClick={handleDecline}
-              destructive
-              disabled={isProcessing}
-            >
+            <Button onClick={handleDecline} destructive disabled={isProcessing}>
               {isProcessing ? 'Processing...' : 'Confirm'}
             </Button>
           </div>

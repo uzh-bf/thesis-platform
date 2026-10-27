@@ -20,7 +20,7 @@ shared submission is out of scope.
   open, sends each of them the existing declined email (with optional
   feedback) and sets the proposal to `MATCHED`.
 - The accept dialog offers the same close as an opt-in checkbox ("Also close
-  the proposal"), off by default. It runs after the acceptance flow has
+  the proposal"), off by default. It runs after the accept request has
   responded, which only happens once the acceptance is stored. The close call
   passes the accepted application's ID and is refused unless that application
   is already `ACCEPTED`, so the student who was just accepted can never be
@@ -41,7 +41,8 @@ copy to its original.
   applicant overview, CSV export and attachment links are unchanged, and its
   `supervisionId` points to the copy's supervision.
 - Re-running an acceptance for an already accepted application is a no-op, so
-  a retried Power Automate run does not create a second entry.
+  a repeated request neither creates a second entry nor emails the student
+  again.
 
 Because each accepted student has their own proposal, supervision and
 `AdminInfo` row, the admin overview, XLSX export, supervision statistics and
@@ -59,12 +60,21 @@ the status automation keep working per student without changes.
 - Hard deleting an original proposal (developers only) also removes its
   copies.
 
-## Power Automate
+## Acceptance and Emails
 
-`processProposalAcceptance` keeps its response shape. `declined_users` is
-now always empty, so any declined emails the acceptance flow sends from that
-list no longer go out at acceptance time; the platform sends them when the
-proposal is closed. The flow itself needs no change.
+Acceptance runs in the platform. `acceptProposalApplication` checks that the
+user is a developer, the proposal owner or one of its supervisors or
+responsible persons, records the acceptance and sends the accepted email
+through `sendMail` (to the student, CC the management inbox and the
+supervisor, reply-to the supervisor). If the email cannot be sent, the
+acceptance still stands and the accept dialog tells the supervisor.
+
+Declined emails (single decline and closing the proposal) also go through
+`sendMail`. A decline that could not be emailed still stands; closing the
+proposal reports how many declined emails were not sent.
+
+The Power Automate acceptance flow and its `processProposalAcceptance`
+endpoint are no longer used.
 
 ## Extensibility
 

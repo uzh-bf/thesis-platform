@@ -28,6 +28,7 @@ import {
   parseProposalLanguages,
   type ThesisProposalDraftPayload,
 } from 'src/lib/cleverreach/thesisProposal'
+import { sendMail } from 'src/lib/mail/sendMail'
 import type { Context } from 'src/server/context'
 import { prisma } from 'src/server/prisma'
 import {
@@ -588,21 +589,211 @@ async function sendApplicationDeclinedEmail({
     ? `<p><strong>Feedback:</strong><br>${escapedComment}</p>`
     : ''
 
-  await axios.post(
-    process.env.EMAIL_NOTIFICATION_URL as string,
-    {
-      recipients: [applicantEmail],
-      subject: `${process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME} - Application Declined`,
-      content: `<p>Your application for the proposal "${escapeHtml(proposalTitle)}" has been declined.</p>${feedbackContent}`,
-    },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        secretkey: process.env.FLOW_SECRET as string,
-      },
-      timeout: 8000,
-    }
+  const sent = await sendMail({
+    to: [applicantEmail],
+    subject: `${process.env.NEXT_PUBLIC_DEPARTMENT_LONG_NAME} - Application Declined`,
+    bodyAsHtml: `<p>Your application for the proposal "${escapeHtml(proposalTitle)}" has been declined.</p>${feedbackContent}`,
+  })
+
+  // Callers count a rejected promise as a decline email that was not sent.
+  if (!sent) {
+    throw new Error('Declined email was not sent: mail relay not configured')
+  }
+}
+
+// Developers, the proposal owner and its supervisors or responsible persons
+// may accept applicants and close the proposal.
+function canManageProposalApplications(
+  user: { email?: string | null; role?: string | null },
+  proposal: {
+    ownedByUserEmail: string | null
+    supervisedBy: {
+      supervisorEmail: string | null
+      responsible: { email: string } | null
+    }[]
+  }
+) {
+  const userEmail = user.email?.toLowerCase()
+  return (
+    user.role === UserRole.DEVELOPER ||
+    (!!userEmail &&
+      (proposal.ownedByUserEmail?.toLowerCase() === userEmail ||
+        proposal.supervisedBy.some(
+          (supervision) =>
+            supervision.supervisorEmail?.toLowerCase() === userEmail ||
+            supervision.responsible?.email.toLowerCase() === userEmail
+        )))
   )
+}
+
+// Records an OPEN application as accepted and returns whether this call
+// accepted it; an application that is already ACCEPTED is left unchanged.
+async function recordApplicationAcceptance({
+  proposal,
+  supervisionInfo,
+  application,
+}: {
+  proposal: Prisma.ProposalGetPayload<{}>
+  supervisionInfo: Prisma.UserProposalSupervisionGetPayload<{}>
+  application: Prisma.ProposalApplicationGetPayload<{}>
+}): Promise<boolean> {
+  const now = new Date()
+  const department = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+
+  return prisma.$transaction(async (tx) => {
+    // Serialize acceptances per proposal so overlapping requests cannot
+    // both create an entry, then re-check the state under that lock.
+    await tx.$queryRaw`SELECT id FROM "Proposal" WHERE id = ${proposal.id} FOR UPDATE`
+
+    const currentApplication = await tx.proposalApplication.findUniqueOrThrow({
+      where: { id: application.id },
+      select: { statusKey: true },
+    })
+    if (currentApplication.statusKey === ApplicationStatus.ACCEPTED) {
+      return false
+    }
+    if (currentApplication.statusKey !== ApplicationStatus.OPEN) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `Application cannot be accepted in status ${currentApplication.statusKey}`,
+      })
+    }
+
+    const [acceptedCount, existingAdminInfo] = await Promise.all([
+      tx.proposalApplication.count({
+        where: {
+          proposalId: proposal.id,
+          statusKey: ApplicationStatus.ACCEPTED,
+        },
+      }),
+      tx.adminInfo.findUnique({
+        where: { proposalId: proposal.id },
+        select: { id: true },
+      }),
+    ])
+    const isFirstAcceptance = acceptedCount === 0 && !existingAdminInfo
+
+    if (isFirstAcceptance) {
+      // The first accepted applicant keeps using the original proposal,
+      // exactly like a single-applicant proposal always did.
+      await tx.userProposalSupervision.update({
+        where: { id: supervisionInfo.id },
+        data: {
+          studentEmail: application.email,
+          updatedAt: now,
+        },
+      })
+
+      await tx.proposalApplication.update({
+        where: { id: application.id },
+        data: {
+          statusKey: ApplicationStatus.ACCEPTED,
+          supervisionId: supervisionInfo.id,
+          updatedAt: now,
+        },
+      })
+
+      await tx.proposal.update({
+        where: { id: proposal.id },
+        data: { updatedAt: now },
+      })
+
+      await tx.adminInfo.create({
+        data: {
+          id: uuidv4(),
+          proposalId: proposal.id,
+          status: ProposalStatus.OPEN,
+          department,
+        },
+      })
+
+      return true
+    }
+
+    // Every further accepted applicant gets a linked copy of the proposal
+    // with its own supervision and admin entry, so status, grade and
+    // submission dates are tracked per student. The application itself
+    // stays on the original proposal and points to the copy's supervision.
+    const childProposalId = uuidv4()
+    const childSupervisionId = uuidv4()
+
+    await tx.proposal.create({
+      data: {
+        id: childProposalId,
+        title: proposal.title,
+        description: proposal.description,
+        language: proposal.language,
+        studyLevel: proposal.studyLevel,
+        timeFrame: proposal.timeFrame,
+        additionalStudentComment: proposal.additionalStudentComment,
+        topicAreaSlug: proposal.topicAreaSlug,
+        department: proposal.department,
+        typeKey: proposal.typeKey,
+        statusKey: ProposalStatus.MATCHED,
+        ownedByUserEmail: proposal.ownedByUserEmail,
+        ownedByStudent: proposal.ownedByStudent,
+        parentProposalId: proposal.id,
+      },
+    })
+
+    await tx.userProposalSupervision.create({
+      data: {
+        id: childSupervisionId,
+        proposalId: childProposalId,
+        supervisorEmail: supervisionInfo.supervisorEmail,
+        responsibleId: supervisionInfo.responsibleId,
+        studyLevel: supervisionInfo.studyLevel,
+        studentEmail: application.email,
+      },
+    })
+
+    await tx.proposalApplication.update({
+      where: { id: application.id },
+      data: {
+        statusKey: ApplicationStatus.ACCEPTED,
+        supervisionId: childSupervisionId,
+        updatedAt: now,
+      },
+    })
+
+    await tx.adminInfo.create({
+      data: {
+        id: uuidv4(),
+        proposalId: childProposalId,
+        status: ProposalStatus.OPEN,
+        department,
+      },
+    })
+
+    return true
+  })
+}
+
+async function sendApplicationAcceptedEmail({
+  applicantEmail,
+  applicantFullName,
+  proposalTitle,
+  supervisorEmail,
+}: {
+  applicantEmail: string
+  applicantFullName: string
+  proposalTitle: string
+  supervisorEmail: string | null
+}): Promise<boolean> {
+  const department = process.env.NEXT_PUBLIC_DEPARTMENT_NAME ?? ''
+  const acceptedBy = supervisorEmail ? ` by ${escapeHtml(supervisorEmail)}` : ''
+
+  return sendMail({
+    to: [applicantEmail],
+    cc: [
+      ...getManagementNotificationRecipients(),
+      ...(supervisorEmail ? [supervisorEmail] : []),
+    ],
+    replyTo: supervisorEmail ?? undefined,
+    subject: `${department} Theses - Proposal Application Accepted`,
+    bodyAsHtml: `<p>Dear ${escapeHtml(applicantFullName)},<br><br>Your application to the proposal "${escapeHtml(proposalTitle)}" was accepted${acceptedBy}.<br>Kindly get in touch with your supervisor by replying to this email within one week.<br><br>Best regards,<br>${escapeHtml(department)} Thesis Coordinator</p>`,
+    importance: 'Normal',
+  })
 }
 
 async function applyAdminInfoStatusAutomation(department: Department) {
@@ -1359,7 +1550,9 @@ export const appRouter = router({
       }
     }),
 
-  acceptProposalApplication: optionalAuthedProcedure
+  // Accepting does not decline the other applicants; the supervisor closes
+  // the proposal separately (closeProposalApplications).
+  acceptProposalApplication: authedProcedure
     .input(
       z.object({
         proposalId: z.string(),
@@ -1367,18 +1560,99 @@ export const appRouter = router({
         applicantEmail: z.string().email(),
       })
     )
-    .mutation(async ({ input }) => {
-      const res = await axios.post(
-        process.env.APPLICATION_ACCEPTANCE_URL as string,
-        input,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            secretkey: process.env.FLOW_SECRET as string,
+    .output(z.object({ alreadyAccepted: z.boolean(), emailSent: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const proposal = await prisma.proposal.findFirst({
+        where: {
+          id: input.proposalId,
+          department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+        },
+        include: {
+          supervisedBy: {
+            include: {
+              responsible: true,
+            },
           },
-        }
-      )
-      return res.data
+        },
+      })
+
+      if (!proposal) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Proposal not found',
+        })
+      }
+
+      if (!canManageProposalApplications(ctx.user, proposal)) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message:
+            'You are not authorized to accept applications for this proposal',
+        })
+      }
+
+      const supervisionInfo = proposal.supervisedBy[0]
+      if (!supervisionInfo) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Supervision information not found',
+        })
+      }
+
+      const application = await prisma.proposalApplication.findFirst({
+        where: {
+          id: input.proposalApplicationId,
+          proposalId: input.proposalId,
+          email: input.applicantEmail,
+        },
+      })
+
+      if (!application) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Application not found',
+        })
+      }
+
+      if (
+        application.statusKey !== ApplicationStatus.OPEN &&
+        application.statusKey !== ApplicationStatus.ACCEPTED
+      ) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Application cannot be accepted in status ${application.statusKey}`,
+        })
+      }
+
+      const newlyAccepted =
+        application.statusKey === ApplicationStatus.OPEN &&
+        (await recordApplicationAcceptance({
+          proposal,
+          supervisionInfo,
+          application,
+        }))
+
+      // A repeated request for an accepted application must not email the
+      // applicant again.
+      if (!newlyAccepted) {
+        return { alreadyAccepted: true, emailSent: false }
+      }
+
+      try {
+        const emailSent = await sendApplicationAcceptedEmail({
+          applicantEmail: application.email,
+          applicantFullName: application.fullName,
+          proposalTitle: proposal.title,
+          supervisorEmail: supervisionInfo.supervisorEmail,
+        })
+        return { alreadyAccepted: false, emailSent }
+      } catch (error) {
+        console.error(
+          `Failed to send acceptance email for application ${application.id}:`,
+          error
+        )
+        return { alreadyAccepted: false, emailSent: false }
+      }
     }),
 
   declineProposalApplication: authedProcedure
@@ -1502,18 +1776,7 @@ export const appRouter = router({
         })
       }
 
-      const userEmail = ctx.user.email?.toLowerCase()
-      const isAuthorized =
-        ctx.user.role === UserRole.DEVELOPER ||
-        (!!userEmail &&
-          (proposal.ownedByUserEmail?.toLowerCase() === userEmail ||
-            proposal.supervisedBy.some(
-              (supervision) =>
-                supervision.supervisorEmail?.toLowerCase() === userEmail ||
-                supervision.responsible?.email.toLowerCase() === userEmail
-            )))
-
-      if (!isAuthorized) {
+      if (!canManageProposalApplications(ctx.user, proposal)) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You are not authorized to close this proposal',
@@ -2252,242 +2515,6 @@ export const appRouter = router({
         console.error('Error updating proposals:', error)
         throw new Error('Failed to update proposals')
       }
-    }),
-
-  processProposalAcceptance: publicProcedure
-    .meta({
-      openapi: {
-        method: 'POST',
-        path: '/processProposalAcceptance',
-      },
-    })
-    .input(
-      z.object({
-        flowSecret: z.string(),
-        proposalId: z.string(),
-        proposalApplicationId: z.string(),
-        applicantEmail: z.string(),
-      })
-    )
-    .output(
-      z.object({
-        proposal: z.object({
-          proposal_title: z.string(),
-          supervisor_email: z.string().nullable(),
-        }),
-        accepted_user: z.object({
-          accepted_email: z.string(),
-          accepted_fullName: z.string(),
-        }),
-        declined_users: z.array(
-          z.object({
-            declined_email: z.string(),
-            declined_fullName: z.string(),
-          })
-        ),
-      })
-    )
-    .mutation(async ({ input }) => {
-      if (input.flowSecret !== process.env.FLOW_SECRET) {
-        throw new TRPCError({ code: 'UNAUTHORIZED' })
-      }
-      const proposal = await prisma.proposal.findUnique({
-        where: { id: input.proposalId },
-        include: {
-          supervisedBy: true,
-        },
-      })
-
-      if (!proposal) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Proposal not found',
-        })
-      }
-
-      const supervisionInfo = proposal.supervisedBy[0]
-      if (!supervisionInfo) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Supervision information not found',
-        })
-      }
-
-      const application = await prisma.proposalApplication.findFirst({
-        where: {
-          id: input.proposalApplicationId,
-          proposalId: input.proposalId,
-          email: input.applicantEmail,
-        },
-      })
-
-      if (!application) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Application not found',
-        })
-      }
-
-      const result = {
-        proposal: {
-          proposal_title: proposal.title,
-          supervisor_email: supervisionInfo.supervisorEmail,
-        },
-        accepted_user: {
-          accepted_email: application.email,
-          accepted_fullName: application.fullName,
-        },
-        // Accepting no longer declines the other applicants. The supervisor
-        // closes the proposal separately (closeProposalApplications).
-        declined_users: [] as {
-          declined_email: string
-          declined_fullName: string
-        }[],
-      }
-
-      // A retried flow run must not create a second thesis entry.
-      if (application.statusKey === ApplicationStatus.ACCEPTED) {
-        return result
-      }
-
-      if (application.statusKey !== ApplicationStatus.OPEN) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Application cannot be accepted in status ${application.statusKey}`,
-        })
-      }
-
-      const now = new Date()
-      const department = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
-
-      await prisma.$transaction(async (tx) => {
-        // Serialize acceptances per proposal so overlapping flow runs cannot
-        // both create an entry, then re-check the state under that lock.
-        await tx.$queryRaw`SELECT id FROM "Proposal" WHERE id = ${proposal.id} FOR UPDATE`
-
-        const currentApplication =
-          await tx.proposalApplication.findUniqueOrThrow({
-            where: { id: application.id },
-            select: { statusKey: true },
-          })
-        if (currentApplication.statusKey === ApplicationStatus.ACCEPTED) {
-          return
-        }
-        if (currentApplication.statusKey !== ApplicationStatus.OPEN) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: `Application cannot be accepted in status ${currentApplication.statusKey}`,
-          })
-        }
-
-        const [acceptedCount, existingAdminInfo] = await Promise.all([
-          tx.proposalApplication.count({
-            where: {
-              proposalId: proposal.id,
-              statusKey: ApplicationStatus.ACCEPTED,
-            },
-          }),
-          tx.adminInfo.findUnique({
-            where: { proposalId: proposal.id },
-            select: { id: true },
-          }),
-        ])
-        const isFirstAcceptance = acceptedCount === 0 && !existingAdminInfo
-
-        if (isFirstAcceptance) {
-          // The first accepted applicant keeps using the original proposal,
-          // exactly like a single-applicant proposal always did.
-          await tx.userProposalSupervision.update({
-            where: { id: supervisionInfo.id },
-            data: {
-              studentEmail: application.email,
-              updatedAt: now,
-            },
-          })
-
-          await tx.proposalApplication.update({
-            where: { id: application.id },
-            data: {
-              statusKey: ApplicationStatus.ACCEPTED,
-              supervisionId: supervisionInfo.id,
-              updatedAt: now,
-            },
-          })
-
-          await tx.proposal.update({
-            where: { id: proposal.id },
-            data: { updatedAt: now },
-          })
-
-          await tx.adminInfo.create({
-            data: {
-              id: uuidv4(),
-              proposalId: proposal.id,
-              status: ProposalStatus.OPEN,
-              department,
-            },
-          })
-
-          return
-        }
-
-        // Every further accepted applicant gets a linked copy of the proposal
-        // with its own supervision and admin entry, so status, grade and
-        // submission dates are tracked per student. The application itself
-        // stays on the original proposal and points to the copy's supervision.
-        const childProposalId = uuidv4()
-        const childSupervisionId = uuidv4()
-
-        await tx.proposal.create({
-          data: {
-            id: childProposalId,
-            title: proposal.title,
-            description: proposal.description,
-            language: proposal.language,
-            studyLevel: proposal.studyLevel,
-            timeFrame: proposal.timeFrame,
-            additionalStudentComment: proposal.additionalStudentComment,
-            topicAreaSlug: proposal.topicAreaSlug,
-            department: proposal.department,
-            typeKey: proposal.typeKey,
-            statusKey: ProposalStatus.MATCHED,
-            ownedByUserEmail: proposal.ownedByUserEmail,
-            ownedByStudent: proposal.ownedByStudent,
-            parentProposalId: proposal.id,
-          },
-        })
-
-        await tx.userProposalSupervision.create({
-          data: {
-            id: childSupervisionId,
-            proposalId: childProposalId,
-            supervisorEmail: supervisionInfo.supervisorEmail,
-            responsibleId: supervisionInfo.responsibleId,
-            studyLevel: supervisionInfo.studyLevel,
-            studentEmail: application.email,
-          },
-        })
-
-        await tx.proposalApplication.update({
-          where: { id: application.id },
-          data: {
-            statusKey: ApplicationStatus.ACCEPTED,
-            supervisionId: childSupervisionId,
-            updatedAt: now,
-          },
-        })
-
-        await tx.adminInfo.create({
-          data: {
-            id: uuidv4(),
-            proposalId: childProposalId,
-            status: ProposalStatus.OPEN,
-            department,
-          },
-        })
-      })
-
-      return result
     }),
 
   createProposalApplication: publicProcedure
