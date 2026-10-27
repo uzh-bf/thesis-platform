@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.28.0](https://github.com/uzh-bf/thesis-platform/compare/v1.27.0...v1.28.0) (2026-10-27)
+
+
+### Features
+
+* **admin:** send admin change notifications through sendMail ([#211](https://github.com/uzh-bf/thesis-platform/issues/211)) ([510462e](https://github.com/uzh-bf/thesis-platform/commit/510462ea6a7a5d39a58bd3d2d7d8ba4b4b2e784e))
+
 ## [1.27.0](https://github.com/uzh-bf/thesis-platform/compare/v1.26.2...v1.27.0) (2026-10-27)
 
 
