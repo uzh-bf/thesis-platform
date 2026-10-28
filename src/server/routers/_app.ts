@@ -741,6 +741,39 @@ async function recordApplicationAcceptance({
   })
 }
 
+async function findResponsibleOrThrow(
+  tx: Prisma.TransactionClient,
+  name: string | undefined
+) {
+  const responsible = name
+    ? await tx.responsible.findFirst({ where: { name } })
+    : null
+  if (!responsible) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Person responsible not found',
+    })
+  }
+  return responsible
+}
+
+// Rejecting a tentative match reopens the proposal.
+async function reopenTentativeMatch(
+  tx: Prisma.TransactionClient,
+  proposalId: string,
+  applicationId: string
+) {
+  await tx.userProposalSupervision.delete({ where: { proposalId } })
+  await tx.proposalApplication.update({
+    where: { id: applicationId },
+    data: { statusKey: ApplicationStatus.OPEN },
+  })
+  await tx.proposal.update({
+    where: { id: proposalId },
+    data: { statusKey: ProposalStatus.OPEN },
+  })
+}
+
 // Records a supervisor's feedback on a student proposal, which the Power
 // Automate "Thesis Proposal Feedback" flow used to do through the
 // persistProposalFeedback* endpoints. Student proposals have a single
@@ -830,17 +863,10 @@ async function recordProposalFeedback({
       case 'ACCEPT': {
         if (!isOpen && !isTentativeSupervisor) throw conflict()
 
-        const responsible = personResponsibleName
-          ? await tx.responsible.findFirst({
-              where: { name: personResponsibleName },
-            })
-          : null
-        if (!responsible) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Person responsible not found',
-          })
-        }
+        const responsible = await findResponsibleOrThrow(
+          tx,
+          personResponsibleName
+        )
 
         await tx.proposal.update({
           where: { id: proposalId },
@@ -894,17 +920,8 @@ async function recordProposalFeedback({
       case 'REJECT':
         if (!isOpen && !isTentativeSupervisor) throw conflict()
 
-        // Rejecting a tentative match reopens the proposal.
         if (isTentativeSupervisor) {
-          await tx.userProposalSupervision.delete({ where: { proposalId } })
-          await tx.proposalApplication.update({
-            where: { id: applicationId },
-            data: { statusKey: ApplicationStatus.OPEN },
-          })
-          await tx.proposal.update({
-            where: { id: proposalId },
-            data: { statusKey: ProposalStatus.OPEN },
-          })
+          await reopenTentativeMatch(tx, proposalId, applicationId)
         }
 
         await createFeedbackEntry(getFeedbackTypeKey('REJECTED'))
