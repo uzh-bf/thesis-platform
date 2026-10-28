@@ -9,6 +9,8 @@ export const STUDENT_PROPOSAL_REMINDER_INTERVAL_DAYS = 8 * 7
 export const STUDENT_PROPOSAL_CONFIRMATION_DAYS = 7
 
 const DAY_MS = 24 * 60 * 60 * 1000
+// A stalled relay request fails this reminder instead of blocking the rest.
+const REMINDER_SEND_TIMEOUT_MS = 30_000
 
 export interface DueStudentProposal {
   id: string
@@ -140,7 +142,10 @@ export async function runStudentProposalReminders({
 
   for (const proposal of dueProposals) {
     try {
-      const sent = await send(buildStudentReminderMail({ proposal, appUrl }))
+      const sent = await send({
+        ...buildStudentReminderMail({ proposal, appUrl }),
+        timeoutMs: REMINDER_SEND_TIMEOUT_MS,
+      })
       if (!sent) {
         throw new Error('mail relay not configured or no recipients')
       }

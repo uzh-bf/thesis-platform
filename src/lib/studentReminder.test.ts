@@ -42,7 +42,10 @@ test('withdraws after one week and reminds after eight weeks', async () => {
     store,
     appUrl: 'https://theses.df.uzh.ch',
     now,
-    send: async () => true,
+    send: async (mail) => {
+      assert.equal(mail.timeoutMs, 30_000)
+      return true
+    },
   })
 
   assert.deepEqual(result, {
