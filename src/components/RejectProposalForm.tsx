@@ -37,14 +37,25 @@ export default function RejectProposalForm({
         comment: '',
         proposalId: proposalId,
         supervisorEmail: supervisorEmail,
-        actionType: 'REJECT',
+        actionType: 'REJECT' as const,
       }}
       validationSchema={SignupSchema}
       onSubmit={async (values, { resetForm }) => {
-        resetForm()
-        setProvidedFeedback('REJECT')
-        await submitFeedback.mutateAsync(values)
-        toast.success('Proposal rejected successfully!')
+        try {
+          const { emailSent } = await submitFeedback.mutateAsync(values)
+          resetForm()
+          setProvidedFeedback('REJECT')
+          toast.success('Proposal rejected successfully!')
+          if (!emailSent) {
+            toast.error(
+              'Your feedback was saved, but the notification email could not be sent.'
+            )
+          }
+        } catch (error) {
+          toast.error(
+            error instanceof Error ? error.message : 'Could not submit feedback'
+          )
+        }
       }}
     >
       <Form>
@@ -77,7 +88,7 @@ export default function RejectProposalForm({
                 label: 'Proposal or scope not clear',
               },
               {
-                value: 'FORMAT',
+                value: 'FORMAT_UNSUITABLE',
                 label: 'Format unsuitable',
               },
               {

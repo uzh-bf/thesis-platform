@@ -37,14 +37,25 @@ export default function DeclineProposalForm({
         comment: '',
         proposalId: proposalId,
         supervisorEmail: supervisorEmail,
-        actionType: 'DECLINE',
+        actionType: 'DECLINE' as const,
       }}
       validationSchema={SignupSchema}
       onSubmit={async (values, { resetForm }) => {
-        resetForm()
-        setProvidedFeedback('DECLINE')
-        await submitFeedback.mutateAsync(values)
-        toast.success('Proposal declined successfully!')
+        try {
+          const { emailSent } = await submitFeedback.mutateAsync(values)
+          resetForm()
+          setProvidedFeedback('DECLINE')
+          toast.success('Proposal declined successfully!')
+          if (!emailSent) {
+            toast.error(
+              'Your feedback was saved, but the notification email could not be sent.'
+            )
+          }
+        } catch (error) {
+          toast.error(
+            error instanceof Error ? error.message : 'Could not submit feedback'
+          )
+        }
       }}
     >
       <Form>

@@ -39,14 +39,25 @@ export default function AcceptProposalForm({
         comment: '',
         proposalId: proposalId,
         supervisorEmail: supervisorEmail,
-        actionType: 'ACCEPT',
+        actionType: 'ACCEPT' as const,
       }}
       validationSchema={SignupSchema}
       onSubmit={async (values, { resetForm }) => {
-        setProvidedFeedback('ACCEPT')
-        resetForm()
-        await submitFeedback.mutateAsync(values)
-        toast.success('Proposal accepted successfully!')
+        try {
+          const { emailSent } = await submitFeedback.mutateAsync(values)
+          resetForm()
+          setProvidedFeedback('ACCEPT')
+          toast.success('Proposal accepted successfully!')
+          if (!emailSent) {
+            toast.error(
+              'Your feedback was saved, but the notification email could not be sent.'
+            )
+          }
+        } catch (error) {
+          toast.error(
+            error instanceof Error ? error.message : 'Could not submit feedback'
+          )
+        }
       }}
     >
       <Form>
