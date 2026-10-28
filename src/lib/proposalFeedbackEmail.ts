@@ -1,4 +1,4 @@
-import { escapeHtml } from './mail/escapeHtml'
+import { escapeHtml } from './cleverreach/thesisProposal'
 
 export const PROPOSAL_FEEDBACK_ACTIONS = [
   'ACCEPT',
@@ -75,7 +75,7 @@ export function buildProposalFeedbackEmail({
       return {
         to: managementRecipients,
         subject: `${department} Theses - Proposal ${verb} (${proposalTitle})`,
-        bodyAsHtml: `<p>The proposal "${title}" has been ${verb} by "${supervisor}".<br><br><strong>Reason:</strong> ${escapeHtml(reason)}<br><strong>Comment:</strong> ${formatMultiline(comment)}</p>`,
+        bodyAsHtml: `<p>The proposal "${title}" has been ${verb} by "${supervisor}".<br><br><strong>Reason:</strong> ${escapeHtml(reason ?? '')}<br><strong>Comment:</strong> ${formatMultiline(comment)}</p>`,
       }
     }
   }

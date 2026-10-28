@@ -5,7 +5,8 @@ import {
   FormikTextareaField,
 } from '@uzh-bf/design-system'
 import { Form, Formik } from 'formik'
-import toast, { Toaster } from 'react-hot-toast'
+import { Toaster } from 'react-hot-toast'
+import useSubmitProposalFeedback from 'src/lib/hooks/useSubmitProposalFeedback'
 import { trpc } from 'src/lib/trpc'
 import * as Yup from 'yup'
 
@@ -27,7 +28,10 @@ export default function AcceptProposalForm({
     personResponsible: Yup.string().required('Required'),
   })
 
-  const submitFeedback = trpc.submitProposalFeedback.useMutation()
+  const onSubmit = useSubmitProposalFeedback(
+    setProvidedFeedback,
+    'Proposal accepted successfully!'
+  )
   const allPersonsResponsible = trpc.getAllPersonsResponsible.useQuery()
 
   return (
@@ -42,23 +46,7 @@ export default function AcceptProposalForm({
         actionType: 'ACCEPT' as const,
       }}
       validationSchema={SignupSchema}
-      onSubmit={async (values, { resetForm }) => {
-        try {
-          const { emailSent } = await submitFeedback.mutateAsync(values)
-          resetForm()
-          setProvidedFeedback('ACCEPT')
-          toast.success('Proposal accepted successfully!')
-          if (!emailSent) {
-            toast.error(
-              'Your feedback was saved, but the notification email could not be sent.'
-            )
-          }
-        } catch (error) {
-          toast.error(
-            error instanceof Error ? error.message : 'Could not submit feedback'
-          )
-        }
-      }}
+      onSubmit={onSubmit}
     >
       <Form>
         <div>

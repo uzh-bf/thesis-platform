@@ -1,8 +1,14 @@
-import { expect, test, type APIRequestContext } from '@playwright/test'
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type Page,
+} from '@playwright/test'
 import { prisma } from '../../src/server/prisma'
 
 const proposalId = 'e2e0feed-0000-4000-8000-000000000001'
 const supervisorEmail = 'admin@example.com'
+const otherSupervisorEmail = 'e2e.other.supervisor@example.com'
 
 async function removeTestProposal() {
   await prisma.adminInfo.deleteMany({ where: { proposalId } })
@@ -12,12 +18,33 @@ async function removeTestProposal() {
   await prisma.proposal.deleteMany({ where: { id: proposalId } })
 }
 
+async function signIn(page: Page) {
+  await page.goto('/api/auth/signin')
+  await page.getByRole('button', { name: 'Sign in with Local OIDC' }).click()
+  await page.waitForURL('**/')
+}
+
+// Everything a feedback request may change, to check that a denied request
+// changed nothing.
+function getFeedbackState() {
+  return prisma.proposal.findUniqueOrThrow({
+    where: { id: proposalId },
+    include: {
+      applications: true,
+      supervisedBy: true,
+      receivedFeedbacks: true,
+      AdminInfo: true,
+    },
+  })
+}
+
 async function submitFeedback(
   request: APIRequestContext,
   input: {
     actionType: 'ACCEPT' | 'ACCEPT_TENTATIVE' | 'DECLINE' | 'REJECT'
     personResponsible?: string
     reason?: string
+    supervisorEmail?: string
   }
 ) {
   return request.post('/api/trpc/submitProposalFeedback?batch=1', {
@@ -67,6 +94,7 @@ test.beforeEach(async () => {
 
 test.afterAll(async () => {
   await removeTestProposal()
+  await prisma.user.deleteMany({ where: { email: otherSupervisorEmail } })
   await prisma.$disconnect()
 })
 
@@ -86,9 +114,7 @@ test('giving feedback requires a signed-in user', async ({ request }) => {
 test('supervisor tentatively accepts, rejects, then accepts a proposal', async ({
   page,
 }) => {
-  await page.goto('/api/auth/signin')
-  await page.getByRole('button', { name: 'Sign in with Local OIDC' }).click()
-  await page.waitForURL('**/')
+  await signIn(page)
 
   // The local setup has no mail relay configured, so every response reports
   // that no email was sent while the feedback itself is stored.
@@ -162,4 +188,82 @@ test('supervisor tentatively accepts, rejects, then accepts a proposal', async (
   expect(
     await prisma.adminInfo.findUnique({ where: { proposalId } })
   ).not.toBeNull()
+})
+
+test('feedback for another supervisor is forbidden', async ({ page }) => {
+  await signIn(page)
+  const before = await getFeedbackState()
+
+  const response = await submitFeedback(page.request, {
+    actionType: 'ACCEPT_TENTATIVE',
+    supervisorEmail: otherSupervisorEmail,
+  })
+
+  expect(response.status()).toBe(403)
+  expect(await getFeedbackState()).toEqual(before)
+})
+
+test("another supervisor's tentative match cannot be accepted or rejected", async ({
+  page,
+}) => {
+  await prisma.user.upsert({
+    where: { email: otherSupervisorEmail },
+    create: {
+      email: otherSupervisorEmail,
+      name: 'E2E Other Supervisor',
+      role: 'SUPERVISOR',
+    },
+    update: {},
+  })
+  await prisma.proposal.update({
+    where: { id: proposalId },
+    data: {
+      statusKey: 'MATCHED_TENTATIVE',
+      applications: {
+        update: {
+          where: { id: proposalId },
+          data: { statusKey: 'ACCEPTED_TENTATIVE' },
+        },
+      },
+      supervisedBy: {
+        create: { id: proposalId, supervisorEmail: otherSupervisorEmail },
+      },
+    },
+  })
+  const responsible = await prisma.responsible.findFirstOrThrow()
+
+  await signIn(page)
+  const before = await getFeedbackState()
+
+  const accept = await submitFeedback(page.request, {
+    actionType: 'ACCEPT',
+    personResponsible: responsible.name,
+  })
+  const reject = await submitFeedback(page.request, {
+    actionType: 'REJECT',
+    reason: 'TOO_BROAD',
+  })
+
+  expect(accept.status()).toBe(409)
+  expect(reject.status()).toBe(409)
+  expect(await getFeedbackState()).toEqual(before)
+})
+
+test('a repeated decline is a conflict', async ({ page }) => {
+  await signIn(page)
+
+  const first = await submitFeedback(page.request, {
+    actionType: 'DECLINE',
+    reason: 'LANGUAGE',
+  })
+  expect(first.status()).toBe(200)
+  const afterFirst = await getFeedbackState()
+  expect(afterFirst.receivedFeedbacks).toHaveLength(1)
+
+  const repeated = await submitFeedback(page.request, {
+    actionType: 'DECLINE',
+    reason: 'LANGUAGE',
+  })
+  expect(repeated.status()).toBe(409)
+  expect(await getFeedbackState()).toEqual(afterFirst)
 })

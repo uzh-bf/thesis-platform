@@ -5,8 +5,8 @@ import {
   FormikTextareaField,
 } from '@uzh-bf/design-system'
 import { Form, Formik } from 'formik'
-import toast, { Toaster } from 'react-hot-toast'
-import { trpc } from 'src/lib/trpc'
+import { Toaster } from 'react-hot-toast'
+import useSubmitProposalFeedback from 'src/lib/hooks/useSubmitProposalFeedback'
 import * as Yup from 'yup'
 
 interface DeclineProposalFormProps {
@@ -27,7 +27,10 @@ export default function DeclineProposalForm({
     comment: Yup.string().required('Required'),
   })
 
-  const submitFeedback = trpc.submitProposalFeedback.useMutation()
+  const onSubmit = useSubmitProposalFeedback(
+    setProvidedFeedback,
+    'Proposal declined successfully!'
+  )
 
   return (
     <Formik
@@ -40,23 +43,7 @@ export default function DeclineProposalForm({
         actionType: 'DECLINE' as const,
       }}
       validationSchema={SignupSchema}
-      onSubmit={async (values, { resetForm }) => {
-        try {
-          const { emailSent } = await submitFeedback.mutateAsync(values)
-          resetForm()
-          setProvidedFeedback('DECLINE')
-          toast.success('Proposal declined successfully!')
-          if (!emailSent) {
-            toast.error(
-              'Your feedback was saved, but the notification email could not be sent.'
-            )
-          }
-        } catch (error) {
-          toast.error(
-            error instanceof Error ? error.message : 'Could not submit feedback'
-          )
-        }
-      }}
+      onSubmit={onSubmit}
     >
       <Form>
         <div>

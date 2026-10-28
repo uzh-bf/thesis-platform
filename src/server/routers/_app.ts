@@ -30,7 +30,6 @@ import {
   parseProposalLanguages,
   type ThesisProposalDraftPayload,
 } from 'src/lib/cleverreach/thesisProposal'
-import { escapeHtml } from 'src/lib/mail/escapeHtml'
 import { sendMail } from 'src/lib/mail/sendMail'
 import {
   PROPOSAL_FEEDBACK_ACTIONS,
@@ -357,6 +356,14 @@ function triggerThesisProposalCleverReachDraft(
     }
   })()
 }
+
+const escapeHtml = (value: unknown): string =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 
 const buildAdminChangeNotificationHtmlContent = ({
   environment,
@@ -797,6 +804,28 @@ async function recordProposalFeedback({
           supervisorEmail.toLowerCase()
       )
 
+    // A supervisor gives one decline or rejection per proposal
+    // (unique on proposalId and userEmail), so a repeat is a conflict.
+    const createFeedbackEntry = async (typeKey: string) => {
+      const existing = await tx.userProposalFeedback.findUnique({
+        where: {
+          proposalId_userEmail: { proposalId, userEmail: supervisorEmail },
+        },
+        select: { id: true },
+      })
+      if (existing) throw conflict()
+
+      await tx.userProposalFeedback.create({
+        data: {
+          proposalId,
+          userEmail: supervisorEmail,
+          reason: typeKey,
+          typeKey,
+          comment,
+        },
+      })
+    }
+
     switch (actionType) {
       case 'ACCEPT': {
         if (!isOpen && !isTentativeSupervisor) throw conflict()
@@ -857,24 +886,12 @@ async function recordProposalFeedback({
         })
         return
 
-      case 'DECLINE': {
-        const feedbackTypeKey = getFeedbackTypeKey('DECLINED')
+      case 'DECLINE':
         if (!isOpen && !isTentative) throw conflict()
-
-        await tx.userProposalFeedback.create({
-          data: {
-            proposalId,
-            userEmail: supervisorEmail,
-            reason: feedbackTypeKey,
-            typeKey: feedbackTypeKey,
-            comment,
-          },
-        })
+        await createFeedbackEntry(getFeedbackTypeKey('DECLINED'))
         return
-      }
 
-      case 'REJECT': {
-        const feedbackTypeKey = getFeedbackTypeKey('REJECTED')
+      case 'REJECT':
         if (!isOpen && !isTentativeSupervisor) throw conflict()
 
         // Rejecting a tentative match reopens the proposal.
@@ -890,17 +907,8 @@ async function recordProposalFeedback({
           })
         }
 
-        await tx.userProposalFeedback.create({
-          data: {
-            proposalId,
-            userEmail: supervisorEmail,
-            reason: feedbackTypeKey,
-            typeKey: feedbackTypeKey,
-            comment,
-          },
-        })
+        await createFeedbackEntry(getFeedbackTypeKey('REJECTED'))
         return
-      }
     }
   })
 }
