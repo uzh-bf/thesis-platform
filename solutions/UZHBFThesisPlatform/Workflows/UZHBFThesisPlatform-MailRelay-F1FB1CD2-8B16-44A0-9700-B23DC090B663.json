@@ -102,36 +102,8 @@
       },
       "actions": {
         "IsSecretValid": {
-          "runAfter": {},
-          "metadata": {
-            "operationMetadataId": "0c5d1e2f-3a4b-4c6d-8e9f-1a2b3c4d5e61"
-          },
-          "type": "If",
-          "expression": {
-            "and": [
-              {
-                "not": {
-                  "equals": [
-                    "@parameters('Mail Relay Secret (uzhbf_thesisplatform_mail_relay_secret_env_var)')",
-                    ""
-                  ]
-                }
-              },
-              {
-                "equals": [
-                  "@triggerBody()?['secret']",
-                  "@parameters('Mail Relay Secret (uzhbf_thesisplatform_mail_relay_secret_env_var)')"
-                ]
-              }
-            ]
-          },
           "actions": {
             "Try": {
-              "runAfter": {},
-              "metadata": {
-                "operationMetadataId": "1d6e2f30-4b5c-4d7e-9fa0-2b3c4d5e6f62"
-              },
-              "type": "Scope",
               "actions": {
                 "SendEmail": {
                   "runAfter": {},
@@ -179,19 +151,14 @@
                     }
                   }
                 }
-              }
+              },
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "1d6e2f30-4b5c-4d7e-9fa0-2b3c4d5e6f62"
+              },
+              "type": "Scope"
             },
             "Catch": {
-              "runAfter": {
-                "Try": [
-                  "Failed",
-                  "TimedOut"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "40915263-7e8f-4a01-82d3-5e6f70819265"
-              },
-              "type": "Scope",
               "actions": {
                 "FailedResponse": {
                   "runAfter": {},
@@ -229,9 +196,20 @@
                     }
                   }
                 }
-              }
+              },
+              "runAfter": {
+                "Try": [
+                  "Failed",
+                  "TimedOut"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "40915263-7e8f-4a01-82d3-5e6f70819265"
+              },
+              "type": "Scope"
             }
           },
+          "runAfter": {},
           "else": {
             "actions": {
               "UnauthorizedResponse": {
@@ -252,7 +230,29 @@
                 }
               }
             }
-          }
+          },
+          "expression": {
+            "and": [
+              {
+                "not": {
+                  "equals": [
+                    "@parameters('Mail Relay Secret (uzhbf_thesisplatform_mail_relay_secret_env_var)')",
+                    ""
+                  ]
+                }
+              },
+              {
+                "equals": [
+                  "@triggerBody()?['secret']",
+                  "@parameters('Mail Relay Secret (uzhbf_thesisplatform_mail_relay_secret_env_var)')"
+                ]
+              }
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "0c5d1e2f-3a4b-4c6d-8e9f-1a2b3c4d5e61"
+          },
+          "type": "If"
         }
       },
       "outputs": {}
