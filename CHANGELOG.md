@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.29.0](https://github.com/uzh-bf/thesis-platform/compare/v1.28.0...v1.29.0) (2026-10-28)
+
+
+### Features
+
+* **proposals:** give student proposal feedback in-app instead of via Power Automate ([#214](https://github.com/uzh-bf/thesis-platform/issues/214)) ([243cabc](https://github.com/uzh-bf/thesis-platform/commit/243cabc6fc864aed36e9d96eb482f4b955169ff4))
+* **reminders:** send student proposal reminders from a CronJob ([#213](https://github.com/uzh-bf/thesis-platform/issues/213)) ([870582b](https://github.com/uzh-bf/thesis-platform/commit/870582b2cbc6ec5fd10a931950e77eeea45d495b))
+
 ## [1.28.0](https://github.com/uzh-bf/thesis-platform/compare/v1.27.0...v1.28.0) (2026-10-27)
 
 
