@@ -61,7 +61,7 @@
           }
         },
         "Root URL (uzhbf_thesisplatform_root_url_env_var)": {
-          "defaultValue": "https://mentally-ace-maggot.ngrok-free.app",
+          "defaultValue": "https://theses.stg.df-app.ch",
           "type": "String",
           "metadata": {
             "schemaName": "uzhbf_thesisplatform_root_url_env_var"
@@ -220,9 +220,9 @@
                       "type": "OpenApiConnection",
                       "inputs": {
                         "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
                           "connectionName": "shared_office365",
-                          "operationId": "SharedMailboxSendEmailV2",
-                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                          "operationId": "SharedMailboxSendEmailV2"
                         },
                         "parameters": {
                           "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
@@ -230,8 +230,7 @@
                           "emailMessage/Subject": "Action Required: Proposal bestätigen",
                           "emailMessage/Body": "<p class=\"editor-paragraph\"><i><em class=\"editor-text-italic\">Dies ist eine automatisch generierte E-Mail.</em></i></p><p class=\"editor-paragraph\">Bitte bestätige, ob dein Proposal mit dem Titel: „@{item()['proposalTitle']}“ noch aktuell ist.</p><p class=\"editor-paragraph\">Falls ja, klicke auf den folgenden Link: <a href=\"@{parameters('Root URL (uzhbf_thesisplatform_root_url_env_var)')}/api/updateProposalUpdatedAt/@{item()['id']}\" class=\"editor-link\">Bestätigungslink</a><br>Falls nicht, kannst du diese E-Mail einfach ignorieren.</p><p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\">Hinweis</strong></b>: Das Proposal wird automatisch gelöscht, sofern der Bestätigungslink nicht innerhalb von 7 Tagen angeklickt wird.</p><p class=\"editor-paragraph\">Vielen Dank!</p><br>",
                           "emailMessage/Importance": "Normal"
-                        },
-                        "authentication": "@parameters('$authentication')"
+                        }
                       }
                     },
                     "updateProposalStatus": {
@@ -291,7 +290,11 @@
               "type": "If"
             }
           },
-          "runAfter": {},
+          "runAfter": {
+            "Skip_reminders_in_DEV": [
+              "Succeeded"
+            ]
+          },
           "metadata": {
             "operationMetadataId": "b995b4fe-ad72-4c49-b754-9266d34ccaf2"
           },
@@ -357,16 +360,15 @@
               "type": "OpenApiConnection",
               "inputs": {
                 "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sendmail",
                   "connectionName": "shared_sendmail-2",
-                  "operationId": "SendEmailV3",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sendmail"
+                  "operationId": "SendEmailV3"
                 },
                 "parameters": {
                   "request/to": "@parameters('Email Failure Notification (uzhbf_thesisplatform_email_failure_env_var)')",
-                  "request/subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Theses Market - Thesis Student Reminder",
+                  "request/subject": "(@{parameters('Environment (uzhbf_thesisplatform_environment_env_var)')}) Failure in UZH BF Thesis Platform - Thesis Student Reminder",
                   "request/text": "<p>@{body('CreateHtmlTable')}</p>"
-                },
-                "authentication": "@parameters('$authentication')"
+                }
               }
             }
           },
@@ -380,6 +382,30 @@
             "operationMetadataId": "054f28a3-080c-4f8a-9529-1183121f12f9"
           },
           "type": "Scope"
+        },
+        "Skip_reminders_in_DEV": {
+          "type": "If",
+          "description": "Scheduled student reminders are intentionally skipped in DEV.",
+          "expression": {
+            "equals": [
+              "@toUpper(trim(parameters('Environment (uzhbf_thesisplatform_environment_env_var)')))",
+              "DEV"
+            ]
+          },
+          "actions": {
+            "Skip_DEV_reminders": {
+              "type": "Terminate",
+              "description": "Expected DEV no-op: reminder emails and proposal updates are skipped.",
+              "inputs": {
+                "runStatus": "Succeeded"
+              },
+              "runAfter": {}
+            }
+          },
+          "else": {
+            "actions": {}
+          },
+          "runAfter": {}
         }
       }
     },

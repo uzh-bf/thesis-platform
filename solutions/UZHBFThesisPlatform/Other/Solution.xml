@@ -1,12 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ImportExportXml version="9.2.26081.137" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26081.137" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26081.00137">
+<ImportExportXml version="9.2.26102.122" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26102.122" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26102.00122">
   <SolutionManifest>
     <UniqueName>UZHBFThesisPlatform</UniqueName>
     <LocalizedNames>
-      <LocalizedName description="UZH BF Theses Market" languagecode="1033" />
+      <LocalizedName description="UZH BF Thesis Platform" languagecode="1033" />
     </LocalizedNames>
     <Descriptions />
-    <Version>0.0.0.4</Version>
+    <Version>0.0.0.5</Version>
     <Managed>2</Managed>
     <Publisher>
       <UniqueName>UZHBF</UniqueName>
@@ -79,12 +79,11 @@
     </Publisher>
     <RootComponents>
       <RootComponent type="29" id="{0faa1671-aba5-f011-bbd3-002248747db4}" behavior="0" />
-      <RootComponent type="29" id="{1100a742-f586-f011-b4cc-000d3a831814}" behavior="0" />
       <RootComponent type="29" id="{3050e705-262a-ee11-bdf5-000d3a831dd0}" behavior="0" />
       <RootComponent type="29" id="{4bf9872e-202a-ee11-bdf5-000d3a831dd0}" behavior="0" />
-      <RootComponent type="29" id="{7c987104-6984-ee11-8179-002248db4b50}" behavior="0" />
       <RootComponent type="29" id="{93b9e019-c3d1-ef11-a72e-00224874b90b}" behavior="0" />
       <RootComponent type="29" id="{d12d741b-a027-ee11-9966-000d3a8321bd}" behavior="0" />
+      <RootComponent type="29" id="{f1fb1cd2-8b16-44a0-9700-b23dc090b663}" behavior="0" />
       <RootComponent type="29" id="{f3e0b1eb-152a-ee11-bdf5-000d3a831dd0}" behavior="0" />
     </RootComponents>
     <MissingDependencies />
