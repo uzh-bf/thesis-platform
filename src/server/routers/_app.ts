@@ -23,6 +23,7 @@ import {
   AdminInfoAssignmentPolicyError,
   resolveAdminInfoAssignment,
 } from 'src/lib/adminInfoAssignment'
+import { getAppBaseUrl } from 'src/lib/appUrl'
 import { createThesisProposalCleverReachDraftAndNotify } from 'src/lib/cleverreach/reminder'
 import {
   CleverReachConfigError,
@@ -36,6 +37,7 @@ import {
   buildProposalFeedbackEmail,
   type ProposalFeedbackAction,
 } from 'src/lib/proposalFeedbackEmail'
+import { STUDENT_PROPOSAL_REMINDER_INTERVAL_DAYS } from 'src/lib/studentReminder'
 import type { Context } from 'src/server/context'
 import { prisma } from 'src/server/prisma'
 import {
@@ -107,7 +109,6 @@ const acceptedApplicationOverviewSelect = {
   supervisionId: true,
 } satisfies Prisma.ProposalApplicationSelect
 
-const STUDENT_PROPOSAL_REMINDER_INTERVAL_DAYS = 8 * 7
 const CLEVERREACH_PROPOSAL_LOOKUP_ATTEMPTS = 12
 const CLEVERREACH_PROPOSAL_LOOKUP_DELAY_MS = 5000
 
@@ -210,25 +211,6 @@ const getManagementNotificationRecipients = (
 const getCleverReachReminderRecipients = (
   value = process.env.CLEVERREACH_REMINDER_RECIPIENTS
 ) => parseNotificationRecipients(value)
-
-const getAppBaseUrl = () => {
-  const nextAuthUrl = process.env.NEXTAUTH_URL?.trim()
-
-  if (nextAuthUrl) {
-    return nextAuthUrl.replace(/\/+$/g, '')
-  }
-
-  const publicAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim()
-
-  if (publicAppUrl) {
-    const url = publicAppUrl.startsWith('http')
-      ? publicAppUrl
-      : `https://${publicAppUrl}`
-    return url.replace(/\/+$/g, '')
-  }
-
-  return 'http://localhost:3000'
-}
 
 const wait = (durationMs: number) =>
   new Promise((resolve) => setTimeout(resolve, durationMs))

@@ -15,6 +15,9 @@ notificationRecipients:
 # 89.206.64.0/18 = WLAN, VPN, public network workstations
 adminAllowedIpRanges: '130.60.0.0/16,89.206.64.0/18'
 
+studentReminder:
+  enabled: true
+
 azureAd:
   clientId: ''
   clientSecret: ''

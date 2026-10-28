@@ -65,5 +65,12 @@ migration:
       memory: 1024Mi
       cpu: 1000m
 
+# Daily student proposal reminders (replaces the Student Reminder flow). Off
+# by default so staging never mails students; production enables it.
+studentReminder:
+  enabled: false
+  schedule: '0 10 * * *'
+  timeZone: 'Europe/Zurich'
+
 annotations: {}
 podAnnotations: {}
