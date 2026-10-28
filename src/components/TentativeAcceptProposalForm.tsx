@@ -4,8 +4,8 @@ import {
   FormikTextareaField,
 } from '@uzh-bf/design-system'
 import { Form, Formik } from 'formik'
-import toast, { Toaster } from 'react-hot-toast'
-import { trpc } from 'src/lib/trpc'
+import { Toaster } from 'react-hot-toast'
+import useSubmitProposalFeedback from 'src/lib/hooks/useSubmitProposalFeedback'
 import * as Yup from 'yup'
 
 interface TentativeAcceptProposalFormProps {
@@ -25,7 +25,10 @@ export default function TentativeAcceptProposalForm({
     comment: Yup.string().required('Required'),
   })
 
-  const submitFeedback = trpc.submitProposalFeedback.useMutation()
+  const onSubmit = useSubmitProposalFeedback(
+    setProvidedFeedback,
+    'Proposal tentatively accepted successfully!'
+  )
 
   return (
     <Formik
@@ -34,15 +37,10 @@ export default function TentativeAcceptProposalForm({
         comment: '',
         proposalId: proposalId,
         supervisorEmail: supervisorEmail,
-        actionType: 'ACCEPT_TENTATIVE',
+        actionType: 'ACCEPT_TENTATIVE' as const,
       }}
       validationSchema={SignupSchema}
-      onSubmit={async (values, { resetForm }) => {
-        resetForm()
-        setProvidedFeedback('ACCEPT_TENTATIVE')
-        await submitFeedback.mutateAsync(values)
-        toast.success('Proposal tentatively accepted successfully!')
-      }}
+      onSubmit={onSubmit}
     >
       <Form>
         <div>

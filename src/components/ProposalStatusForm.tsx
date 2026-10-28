@@ -1,6 +1,7 @@
 import { useSessionStorage } from '@uidotdev/usehooks'
 import { TabContent, Tabs, UserNotification } from '@uzh-bf/design-system'
 import { useSession } from 'next-auth/react'
+import { Toaster } from 'react-hot-toast'
 import { ProposalDetails } from 'src/types/app'
 import AcceptProposalForm from './AcceptProposalForm' // Import AcceptProposalForm and other form components
 import DeclineProposalForm from './DeclineProposalForm'
@@ -88,6 +89,8 @@ export default function ProposalStatusForm({
         proposalDetails?.applications?.[0].statusKey === 'ACCEPTED'
           ? 'You have already accepted this proposal!'
           : 'You have already provided feedback to this proposal!'}
+        {/* The feedback forms unmount on success, so their toasts show here. */}
+        <Toaster />
       </div>
     )
   } else if (proposalDetails?.typeKey === 'STUDENT') {

@@ -5,8 +5,8 @@ import {
   FormikTextareaField,
 } from '@uzh-bf/design-system'
 import { Form, Formik } from 'formik'
-import toast, { Toaster } from 'react-hot-toast'
-import { trpc } from 'src/lib/trpc'
+import { Toaster } from 'react-hot-toast'
+import useSubmitProposalFeedback from 'src/lib/hooks/useSubmitProposalFeedback'
 import * as Yup from 'yup'
 
 interface RejectProposalFormProps {
@@ -27,7 +27,10 @@ export default function RejectProposalForm({
     comment: Yup.string().required('Required'),
   })
 
-  const submitFeedback = trpc.submitProposalFeedback.useMutation()
+  const onSubmit = useSubmitProposalFeedback(
+    setProvidedFeedback,
+    'Proposal rejected successfully!'
+  )
 
   return (
     <Formik
@@ -37,15 +40,10 @@ export default function RejectProposalForm({
         comment: '',
         proposalId: proposalId,
         supervisorEmail: supervisorEmail,
-        actionType: 'REJECT',
+        actionType: 'REJECT' as const,
       }}
       validationSchema={SignupSchema}
-      onSubmit={async (values, { resetForm }) => {
-        resetForm()
-        setProvidedFeedback('REJECT')
-        await submitFeedback.mutateAsync(values)
-        toast.success('Proposal rejected successfully!')
-      }}
+      onSubmit={onSubmit}
     >
       <Form>
         <div>
@@ -77,7 +75,7 @@ export default function RejectProposalForm({
                 label: 'Proposal or scope not clear',
               },
               {
-                value: 'FORMAT',
+                value: 'FORMAT_UNSUITABLE',
                 label: 'Format unsuitable',
               },
               {
