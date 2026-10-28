@@ -1,0 +1,65 @@
+{{- if .Values.studentReminder.enabled }}
+# Replaces the Student Reminder Power Automate flow: triggers the in-app job
+# through the cluster Service, so the ingress and admin IP allowlist are not
+# involved. Reuses the app image, whose entrypoint is node in both runtimes.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "thesis-platform.fullname" . }}-student-reminder
+  labels:
+    {{- include "thesis-platform.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.studentReminder.schedule | quote }}
+  timeZone: {{ .Values.studentReminder.timeZone | quote }}
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 600
+      ttlSecondsAfterFinished: 604800
+      template:
+        metadata:
+          labels:
+            app: {{ include "thesis-platform.fullname" . }}-student-reminder
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          containers:
+            - name: student-reminder
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              args:
+                - -e
+                - |
+                  fetch(process.env.JOB_URL, {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${process.env.FLOW_SECRET}` },
+                    signal: AbortSignal.timeout(540000),
+                  })
+                    .then(async (res) => {
+                      console.log(res.status, await res.text())
+                      process.exitCode = res.ok ? 0 : 1
+                    })
+                    .catch((error) => {
+                      console.error(error)
+                      process.exitCode = 1
+                    })
+              env:
+                - name: JOB_URL
+                  value: "http://{{ include "thesis-platform.fullname" . }}:{{ .Values.service.port }}/api/jobs/student-reminder"
+                - name: FLOW_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "thesis-platform.secretName" . }}
+                      key: FLOW_SECRET
+              resources:
+                requests:
+                  memory: 32Mi
+                  cpu: 10m
+                limits:
+                  memory: 128Mi
+                  cpu: 100m
+{{- end }}
