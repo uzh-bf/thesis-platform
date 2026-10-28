@@ -1,0 +1,263 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "uzhbf_thesisplatform_outlook365_ref"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)": {
+          "defaultValue": "ibf-srv-powplatf@d.uzh.ch",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_outlook_from_address_env_var"
+          }
+        },
+        "Mail Relay Secret (uzhbf_thesisplatform_mail_relay_secret_env_var)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_mail_relay_secret_env_var"
+          }
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "6f0b3a51-2c4e-4d8a-9b7e-1a2f3c4d5e60"
+          },
+          "type": "Request",
+          "kind": "Http",
+          "inputs": {
+            "triggerAuthenticationType": "All",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "type": "string"
+                },
+                "to": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "cc": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "bcc": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "replyTo": {
+                  "type": "string"
+                },
+                "subject": {
+                  "type": "string"
+                },
+                "bodyAsHtml": {
+                  "type": "string"
+                },
+                "importance": {
+                  "type": "string"
+                },
+                "sensitivity": {
+                  "type": "string"
+                },
+                "secret": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "to",
+                "subject",
+                "bodyAsHtml",
+                "secret"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "IsSecretValid": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "0c5d1e2f-3a4b-4c6d-8e9f-1a2b3c4d5e61"
+          },
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "not": {
+                  "equals": [
+                    "@parameters('Mail Relay Secret (uzhbf_thesisplatform_mail_relay_secret_env_var)')",
+                    ""
+                  ]
+                }
+              },
+              {
+                "equals": [
+                  "@triggerBody()?['secret']",
+                  "@parameters('Mail Relay Secret (uzhbf_thesisplatform_mail_relay_secret_env_var)')"
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "Try": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "1d6e2f30-4b5c-4d7e-9fa0-2b3c4d5e6f62"
+              },
+              "type": "Scope",
+              "actions": {
+                "SendEmail": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "2e7f3041-5c6d-4e8f-a0b1-3c4d5e6f7063"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_office365",
+                      "operationId": "SharedMailboxSendEmailV2",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                    },
+                    "parameters": {
+                      "emailMessage/MailboxAddress": "@parameters('Outlook From Address (uzhbf_thesisplatform_outlook_from_address_env_var)')",
+                      "emailMessage/To": "@join(triggerBody()?['to'], ';')",
+                      "emailMessage/Cc": "@if(empty(triggerBody()?['cc']), null, join(triggerBody()?['cc'], ';'))",
+                      "emailMessage/Bcc": "@if(empty(triggerBody()?['bcc']), null, join(triggerBody()?['bcc'], ';'))",
+                      "emailMessage/ReplyTo": "@if(empty(triggerBody()?['replyTo']), null, triggerBody()?['replyTo'])",
+                      "emailMessage/Subject": "@triggerBody()?['subject']",
+                      "emailMessage/Body": "@triggerBody()?['bodyAsHtml']",
+                      "emailMessage/Importance": "@coalesce(triggerBody()?['importance'], 'Normal')"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "SentResponse": {
+                  "runAfter": {
+                    "SendEmail": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "3f804152-6d7e-4f90-b1c2-4d5e6f708164"
+                  },
+                  "type": "Response",
+                  "kind": "Http",
+                  "inputs": {
+                    "statusCode": 200,
+                    "headers": {
+                      "Content-Type": "application/json"
+                    },
+                    "body": {
+                      "status": "sent"
+                    }
+                  }
+                }
+              }
+            },
+            "Catch": {
+              "runAfter": {
+                "Try": [
+                  "Failed",
+                  "TimedOut"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "40915263-7e8f-4a01-82d3-5e6f70819265"
+              },
+              "type": "Scope",
+              "actions": {
+                "FailedResponse": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "51a26374-8f90-4b12-93e4-6f7081920366"
+                  },
+                  "type": "Response",
+                  "kind": "Http",
+                  "inputs": {
+                    "statusCode": 502,
+                    "headers": {
+                      "Content-Type": "application/json"
+                    },
+                    "body": {
+                      "status": "failed",
+                      "error": "@{outputs('SendEmail')?['body']?['error']?['message']}"
+                    }
+                  }
+                },
+                "Terminate": {
+                  "runAfter": {
+                    "FailedResponse": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "62b37485-90a1-4c23-a4f5-708192a30467"
+                  },
+                  "type": "Terminate",
+                  "inputs": {
+                    "runStatus": "Failed",
+                    "runError": {
+                      "code": "SendFailed",
+                      "message": "The email could not be sent."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "actions": {
+              "UnauthorizedResponse": {
+                "runAfter": {},
+                "metadata": {
+                  "operationMetadataId": "73c48596-a1b2-4d34-b506-8192a3b40568"
+                },
+                "type": "Response",
+                "kind": "Http",
+                "inputs": {
+                  "statusCode": 401,
+                  "headers": {
+                    "Content-Type": "application/json"
+                  },
+                  "body": {
+                    "status": "unauthorized"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

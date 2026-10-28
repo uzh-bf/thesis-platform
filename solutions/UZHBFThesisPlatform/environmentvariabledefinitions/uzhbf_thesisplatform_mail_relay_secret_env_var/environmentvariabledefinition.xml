@@ -1,0 +1,10 @@
+<environmentvariabledefinition schemaname="uzhbf_thesisplatform_mail_relay_secret_env_var">
+  <displayname default="Mail Relay Secret">
+    <label description="Mail Relay Secret" languagecode="1033" />
+  </displayname>
+  <introducedversion>0.0.0.5</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>
