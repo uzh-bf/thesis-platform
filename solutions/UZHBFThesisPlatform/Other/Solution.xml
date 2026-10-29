@@ -6,7 +6,7 @@
       <LocalizedName description="UZH BF Thesis Platform" languagecode="1033" />
     </LocalizedNames>
     <Descriptions />
-    <Version>0.0.0.5</Version>
+    <Version>0.0.0.6</Version>
     <Managed>2</Managed>
     <Publisher>
       <UniqueName>UZHBF</UniqueName>
