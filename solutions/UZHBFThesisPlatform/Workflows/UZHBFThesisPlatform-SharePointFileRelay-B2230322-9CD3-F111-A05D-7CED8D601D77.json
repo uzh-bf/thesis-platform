@@ -1,0 +1,246 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_azureblob-1": {
+        "api": {
+          "name": "shared_azureblob"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "uzhbf_thesisplatform_azure_blob_ref"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "uzhbf_thesisplatform_sharePoint_ref"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "Proposals Document Library Name (uzhbf_thesisplatform_proposals_document_library_name_env_var)": {
+          "defaultValue": "ProposalDocuments",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_proposals_document_library_name_env_var"
+          }
+        },
+        "Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)": {
+          "defaultValue": "https://uzh.sharepoint.com/sites/UZHBFThesisPlatformDEV",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_sharepoint_site_env_var"
+          }
+        },
+        "Blob Storage Endpoint (uzhbf_thesisplatform_blob_storage_endpoint_env_var)": {
+          "defaultValue": "thesisplatformdev",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_blob_storage_endpoint_env_var"
+          }
+        },
+        "Mail Relay Secret (uzhbf_thesisplatform_mail_relay_secret_env_var)": {
+          "defaultValue": "JodeppJ3HMD_YNN3aHmGAt7I-dTmXI6Y7kI7lo2oKzU",
+          "type": "String",
+          "metadata": {
+            "schemaName": "uzhbf_thesisplatform_mail_relay_secret_env_var"
+          }
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "Http",
+          "inputs": {
+            "triggerAuthenticationType": "All",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "secret": {
+                  "type": "string"
+                },
+                "blobPath": {
+                  "type": "string"
+                },
+                "folder": {
+                  "type": "string"
+                },
+                "fileName": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "actions": {
+        "IsSecretValid": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@triggerBody()?['secret']",
+                  "@parameters('Mail Relay Secret (uzhbf_thesisplatform_mail_relay_secret_env_var)')"
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "Try": {
+              "type": "Scope",
+              "actions": {
+                "GetBlobContent": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "@parameters('Blob Storage Endpoint (uzhbf_thesisplatform_blob_storage_endpoint_env_var)')",
+                      "path": "@concat('/', triggerBody()?['blobPath'])",
+                      "inferContentType": true
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_azureblob",
+                      "operationId": "GetFileContentByPath_V2",
+                      "connectionName": "shared_azureblob-1"
+                    }
+                  }
+                },
+                "CreateFile": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
+                      "folderPath": "@concat('/', parameters('Proposals Document Library Name (uzhbf_thesisplatform_proposals_document_library_name_env_var)'), '/', triggerBody()?['folder'])",
+                      "name": "@triggerBody()?['fileName']",
+                      "body": "@body('GetBlobContent')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "GetBlobContent": [
+                      "SUCCEEDED"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "CreateSharingLink": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "@parameters('Sharepoint Site (uzhbf_thesisplatform_sharepoint_site_env_var)')",
+                      "table": "@parameters('Proposals Document Library Name (uzhbf_thesisplatform_proposals_document_library_name_env_var)')",
+                      "id": "@outputs('CreateFile')?['body/ItemId']",
+                      "permission/type": "view",
+                      "permission/scope": "organization"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "CreateSharingLink",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "CreateFile": [
+                      "SUCCEEDED"
+                    ]
+                  }
+                },
+                "SentResponse": {
+                  "type": "Response",
+                  "kind": "Http",
+                  "inputs": {
+                    "statusCode": 200,
+                    "headers": {
+                      "Content-Type": "application/json"
+                    },
+                    "body": "@addProperty(addProperty(json('{}'), 'webUrl', outputs('CreateSharingLink')?['body/link/webUrl']), 'mediaType', outputs('CreateFile')?['body/MediaType'])"
+                  },
+                  "runAfter": {
+                    "CreateSharingLink": [
+                      "SUCCEEDED"
+                    ]
+                  }
+                }
+              }
+            },
+            "Catch": {
+              "type": "Scope",
+              "actions": {
+                "FailedResponse": {
+                  "type": "Response",
+                  "kind": "Http",
+                  "inputs": {
+                    "statusCode": 502,
+                    "headers": {
+                      "Content-Type": "application/json"
+                    },
+                    "body": {
+                      "status": "failed"
+                    }
+                  }
+                },
+                "Terminate": {
+                  "type": "Terminate",
+                  "inputs": {
+                    "runStatus": "Failed"
+                  },
+                  "runAfter": {
+                    "FailedResponse": [
+                      "SUCCEEDED"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "Try": [
+                  "TIMEDOUT",
+                  "FAILED"
+                ]
+              }
+            }
+          },
+          "else": {
+            "actions": {
+              "UnauthorizedResponse": {
+                "type": "Response",
+                "kind": "Http",
+                "inputs": {
+                  "statusCode": 401,
+                  "body": {
+                    "status": "unauthorized"
+                  }
+                }
+              }
+            }
+          },
+          "runAfter": {}
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}
