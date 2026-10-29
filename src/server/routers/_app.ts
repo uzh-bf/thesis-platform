@@ -12,6 +12,7 @@ import {
 // import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials'
 import {
   BlobSASPermissions,
+  BlobServiceClient,
   StorageSharedKeyCredential,
   generateBlobSASQueryParameters,
 } from '@azure/storage-blob'
@@ -36,6 +37,13 @@ import {
   buildProposalFeedbackEmail,
   type ProposalFeedbackAction,
 } from 'src/lib/proposalFeedbackEmail'
+import {
+  ProposalPostingError,
+  createPrismaProposalPostingStore,
+  normalizeTopicAreaSlug,
+  postSupervisorProposal,
+} from 'src/lib/proposalPosting'
+import { isFileRelayConfigured } from 'src/lib/sharePointFileRelay'
 import { STUDENT_PROPOSAL_REMINDER_INTERVAL_DAYS } from 'src/lib/studentReminder'
 import type { Context } from 'src/server/context'
 import { prisma } from 'src/server/prisma'
@@ -214,9 +222,6 @@ const getCleverReachReminderRecipients = (
 const wait = (durationMs: number) =>
   new Promise((resolve) => setTimeout(resolve, durationMs))
 
-const normalizeFlowTopicAreaSlug = (value: string) =>
-  value.toLowerCase().replace(/ /g, '_').replace(/,/g, '').replace(/&/g, 'and')
-
 async function findPublishedProposalForCleverReach(
   input: ProposalPublishInput,
   submittedAt: Date
@@ -227,7 +232,7 @@ async function findPublishedProposalForCleverReach(
       description: input.proposalSummary,
       language: input.proposalLanguage,
       studyLevel: input.bachelorOrMasterLevel,
-      topicAreaSlug: normalizeFlowTopicAreaSlug(input.fieldOfResearch),
+      topicAreaSlug: normalizeTopicAreaSlug(input.fieldOfResearch),
       timeFrame: input.timeFrame,
       ownedByUserEmail: input.responder,
       typeKey: ProposalType.SUPERVISOR,
@@ -1333,6 +1338,26 @@ const getBlobServiceClientUrl = (serviceUrl: string, containerName: string) => {
   return serviceUrl
 }
 
+const deleteUploadedBlob = async (blobName: string) => {
+  const containerName = process.env.NEXT_PUBLIC_CONTAINER_NAME!
+  const serviceUrl = getBlobServiceClientUrl(
+    process.env.NEXT_PUBLIC_BLOBSERVICECLIENT_URL!,
+    containerName
+  )
+  const sharedKeyCredential = new StorageSharedKeyCredential(
+    process.env.NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME!,
+    process.env.AZURE_STORAGE_ACCOUNT_ACCESS_KEY!
+  )
+  const blobServiceClient = new BlobServiceClient(
+    serviceUrl.split(/[?#]/)[0],
+    sharedKeyCredential
+  )
+  await blobServiceClient
+    .getContainerClient(containerName)
+    .getBlobClient(blobName)
+    .deleteIfExists()
+}
+
 const uploadPurposeSchema = z.enum([
   'application-cv',
   'application-transcript',
@@ -1732,6 +1757,36 @@ export const appRouter = router({
         timeFrame: input.timeFrame,
         furtherAttachments: input.furtherAttachments || '',
         personResponsibleEmail: input.personResponsibleEmail,
+      }
+
+      if (isFileRelayConfigured()) {
+        try {
+          const result = await postSupervisorProposal({
+            input,
+            store: createPrismaProposalPostingStore(
+              prisma,
+              process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+            ),
+            department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME ?? '',
+            appUrl: getAppBaseUrl(),
+            containerName: process.env.NEXT_PUBLIC_CONTAINER_NAME!,
+            managementRecipients: getManagementNotificationRecipients(),
+            deleteBlob: deleteUploadedBlob,
+          })
+          triggerThesisProposalCleverReachDraft(input, submittedAt)
+          return { success: true, ...result }
+        } catch (error) {
+          if (error instanceof ProposalPostingError) {
+            throw new TRPCError({
+              code:
+                error.code === 'UPLOAD_FAILED'
+                  ? 'INTERNAL_SERVER_ERROR'
+                  : 'BAD_REQUEST',
+              message: error.message,
+            })
+          }
+          throw error
+        }
       }
 
       if (!process.env.PROPOSAL_PUBLISH_URL) {
