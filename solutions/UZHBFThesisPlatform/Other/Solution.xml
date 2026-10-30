@@ -1,12 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ImportExportXml version="9.2.26102.122" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26102.122" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26102.00122">
+<ImportExportXml version="9.2.26102.122" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26102.122" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26103.00145">
   <SolutionManifest>
     <UniqueName>UZHBFThesisPlatform</UniqueName>
     <LocalizedNames>
       <LocalizedName description="UZH BF Thesis Platform" languagecode="1033" />
     </LocalizedNames>
     <Descriptions />
-    <Version>0.0.0.7</Version>
+    <Version>0.0.0.8</Version>
     <Managed>2</Managed>
     <Publisher>
       <UniqueName>UZHBF</UniqueName>
@@ -83,7 +83,6 @@
       <RootComponent type="29" id="{b2230322-9cd3-f111-a05d-7ced8d601d77}" behavior="0" />
       <RootComponent type="29" id="{d12d741b-a027-ee11-9966-000d3a8321bd}" behavior="0" />
       <RootComponent type="29" id="{f1fb1cd2-8b16-44a0-9700-b23dc090b663}" behavior="0" />
-      <RootComponent type="29" id="{f3e0b1eb-152a-ee11-bdf5-000d3a831dd0}" behavior="0" />
     </RootComponents>
     <MissingDependencies />
   </SolutionManifest>
