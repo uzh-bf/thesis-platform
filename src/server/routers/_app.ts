@@ -1742,99 +1742,41 @@ export const appRouter = router({
       }
 
       const submittedAt = new Date()
-      const submitDate = submittedAt.toISOString()
 
-      const payload = {
-        responder: input.responder,
-        submitDate: submitDate,
-        proposalSummary: input.proposalSummary,
-        fieldOfResearch: input.fieldOfResearch,
-        supervisor: input.supervisor,
-        researchProposalPDF: input.researchProposalPDF || '',
-        proposalTitle: input.proposalTitle,
-        bachelorOrMasterLevel: input.bachelorOrMasterLevel,
-        proposalLanguage: input.proposalLanguage,
-        timeFrame: input.timeFrame,
-        furtherAttachments: input.furtherAttachments || '',
-        personResponsibleEmail: input.personResponsibleEmail,
-      }
-
-      if (isFileRelayConfigured()) {
-        try {
-          const result = await postSupervisorProposal({
-            input,
-            store: createPrismaProposalPostingStore(
-              prisma,
-              process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
-            ),
-            department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME ?? '',
-            appUrl: getAppBaseUrl(),
-            containerName: process.env.NEXT_PUBLIC_CONTAINER_NAME!,
-            managementRecipients: getManagementNotificationRecipients(),
-            deleteBlob: deleteUploadedBlob,
-          })
-          triggerThesisProposalCleverReachDraft(input, submittedAt)
-          return { success: true, ...result }
-        } catch (error) {
-          if (error instanceof ProposalPostingError) {
-            throw new TRPCError({
-              code:
-                error.code === 'UPLOAD_FAILED'
-                  ? 'INTERNAL_SERVER_ERROR'
-                  : 'BAD_REQUEST',
-              message: error.message,
-            })
-          }
-          throw error
-        }
-      }
-
-      if (!process.env.PROPOSAL_PUBLISH_URL) {
+      // Local development has no relay; nothing is stored or sent there.
+      if (!isFileRelayConfigured()) {
         return {
           success: true,
-          message: 'Development mode: PROPOSAL_PUBLISH_URL not configured',
-          data: payload,
+          message: 'Development mode: FILE_RELAY_HTTP_URL not configured',
         }
       }
 
       try {
-        console.log('Submitting proposal to Power Automate flow...')
-
-        const res = await axios.post(
-          process.env.PROPOSAL_PUBLISH_URL,
-          payload,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              secretkey: process.env.FLOW_SECRET as string,
-            },
-          }
-        )
-
-        console.log('Successfully submitted proposal')
-        triggerThesisProposalCleverReachDraft(input, submittedAt)
-        return res.data
-      } catch (error: unknown) {
-        const responseStatus = axios.isAxiosError(error)
-          ? error.response?.status
-          : undefined
-
-        console.error('Error submitting proposal to Power Automate flow', {
-          status: responseStatus,
+        const result = await postSupervisorProposal({
+          input,
+          store: createPrismaProposalPostingStore(
+            prisma,
+            process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+          ),
+          department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME ?? '',
+          appUrl: getAppBaseUrl(),
+          containerName: process.env.NEXT_PUBLIC_CONTAINER_NAME!,
+          managementRecipients: getManagementNotificationRecipients(),
+          deleteBlob: deleteUploadedBlob,
         })
-
-        if (responseStatus === 401) {
+        triggerThesisProposalCleverReachDraft(input, submittedAt)
+        return { success: true, ...result }
+      } catch (error) {
+        if (error instanceof ProposalPostingError) {
           throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message:
-              'Authentication failed with Power Automate flow. Check FLOW_SECRET environment variable.',
+            code:
+              error.code === 'UPLOAD_FAILED'
+                ? 'INTERNAL_SERVER_ERROR'
+                : 'BAD_REQUEST',
+            message: error.message,
           })
         }
-
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to submit proposal through Power Automate flow',
-        })
+        throw error
       }
     }),
 
@@ -2624,212 +2566,6 @@ export const appRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to create user',
-        })
-      }
-    }),
-
-  addAttachment: publicProcedure
-    .meta({
-      openapi: {
-        method: 'POST',
-        path: '/addAttachment',
-      },
-    })
-    .input(
-      z.object({
-        flowSecret: z.string(),
-        name: z.string(),
-        href: z.string(),
-        type: z.string(),
-        proposalId: z.string(),
-      })
-    )
-    .output(
-      z.object({
-        success: z.boolean(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      // Validate flow secret
-      const expectedSecret = process.env.FLOW_SECRET
-      if (!expectedSecret) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Flow secret not configured',
-        })
-      }
-
-      if (input.flowSecret !== expectedSecret) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'Invalid flow secret',
-        })
-      }
-
-      try {
-        await prisma.proposalAttachment.create({
-          data: {
-            id: uuidv4(),
-            name: input.name,
-            href: input.href,
-            type: input.type,
-            proposalId: input.proposalId,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        })
-
-        return {
-          success: true,
-        }
-      } catch (error) {
-        console.error('Error creating attachment:', error)
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create attachment',
-        })
-      }
-    }),
-
-  addProposal: publicProcedure
-    .meta({
-      openapi: {
-        method: 'POST',
-        path: '/addProposal',
-      },
-    })
-    .input(
-      z.object({
-        flowSecret: z.string(),
-        id: z.string().uuid(),
-        title: z.string(),
-        description: z.string(),
-        language: z.string(),
-        studyLevel: z.string(),
-        topicAreaSlug: z.string(),
-        timeFrame: z.string(),
-        ownedByUserEmail: z.string().email(),
-      })
-    )
-    .output(
-      z.object({
-        success: z.boolean(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      // Validate flow secret
-      const expectedSecret = process.env.FLOW_SECRET
-      if (!expectedSecret) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Flow secret not configured',
-        })
-      }
-
-      if (input.flowSecret !== expectedSecret) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'Invalid flow secret',
-        })
-      }
-      try {
-        await prisma.proposal.create({
-          data: {
-            id: input.id,
-            title: input.title,
-            description: input.description,
-            language: input.language,
-            studyLevel: input.studyLevel,
-            topicAreaSlug: input.topicAreaSlug,
-            typeKey: ProposalType.SUPERVISOR,
-            statusKey: ProposalStatus.OPEN,
-            timeFrame: input.timeFrame,
-            ownedByUserEmail: input.ownedByUserEmail,
-            department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        })
-
-        return { success: true }
-      } catch (error) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create proposal',
-        })
-      }
-    }),
-
-  getResponsibleIdAndAddProposalSupervision: publicProcedure
-    .meta({
-      openapi: {
-        method: 'POST',
-        path: '/getResponsibleIdAndAddProposalSupervision',
-      },
-    })
-    .input(
-      z.object({
-        flowSecret: z.string(),
-        proposalId: z.string().uuid(),
-        supervisorEmail: z.string().email(),
-        studyLevel: z.string(),
-        responsibleEmail: z.string(),
-      })
-    )
-    .output(
-      z.object({
-        success: z.boolean(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      // Validate flow secret
-      const expectedSecret = process.env.FLOW_SECRET
-      if (!expectedSecret) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Flow secret not configured',
-        })
-      }
-
-      if (input.flowSecret !== expectedSecret) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'Invalid flow secret',
-        })
-      }
-      try {
-        const responsible = await prisma.responsible.findFirst({
-          where: {
-            email: input.responsibleEmail,
-            department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
-          },
-        })
-
-        if (!responsible) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Responsible person not found',
-          })
-        }
-
-        await prisma.userProposalSupervision.create({
-          data: {
-            id: uuidv4(),
-            proposalId: input.proposalId,
-            supervisorEmail: input.supervisorEmail,
-            studyLevel: input.studyLevel,
-            responsibleId: responsible.id,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        })
-
-        return { success: true }
-      } catch (error) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message:
-            'Failed to get responsible person or create proposal supervision',
         })
       }
     }),

@@ -51,8 +51,8 @@ async function assertRejected(
 }
 
 async function main() {
-  const originalProposalPublishUrl = process.env.PROPOSAL_PUBLISH_URL
-  delete process.env.PROPOSAL_PUBLISH_URL
+  const originalFileRelayUrl = process.env.FILE_RELAY_HTTP_URL
+  delete process.env.FILE_RELAY_HTTP_URL
 
   try {
     await assertRejected(undefined, 'UNAUTHORIZED')
@@ -65,16 +65,16 @@ async function main() {
       assert.equal(result.success, true)
       assert.equal(
         result.message,
-        'Development mode: PROPOSAL_PUBLISH_URL not configured'
+        'Development mode: FILE_RELAY_HTTP_URL not configured'
       )
     }
 
     console.log('Supervisor proposal publication authorization checks passed.')
   } finally {
-    if (originalProposalPublishUrl === undefined) {
-      delete process.env.PROPOSAL_PUBLISH_URL
+    if (originalFileRelayUrl === undefined) {
+      delete process.env.FILE_RELAY_HTTP_URL
     } else {
-      process.env.PROPOSAL_PUBLISH_URL = originalProposalPublishUrl
+      process.env.FILE_RELAY_HTTP_URL = originalFileRelayUrl
     }
   }
 }
