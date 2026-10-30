@@ -1,0 +1,16 @@
+{
+  "schema": "ocr-review-config/v1",
+  "context_roots": ["README.md", "docs", "solutions", ".agents/skills"],
+  "docs_libraries": [
+    "/vercel/next.js",
+    "/reactjs/react.dev",
+    "/microsoft/typescript",
+    "/prisma/web",
+    "/trpc/trpc",
+    "/tanstack/query",
+    "/nextauthjs/next-auth",
+    "/colinhacks/zod"
+  ],
+  "plan_globs": ["project/**/*-plan.md"],
+  "exclude": ["docs/**", "project/**", "solutions/**"]
+}
