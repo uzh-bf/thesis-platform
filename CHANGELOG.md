@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.30.0](https://github.com/uzh-bf/thesis-platform/compare/v1.29.0...v1.30.0) (2026-10-30)
+
+
+### Features
+
+* **proposals:** post supervisor proposals in-app through a SharePoint file relay ([#216](https://github.com/uzh-bf/thesis-platform/issues/216)) ([f46f46f](https://github.com/uzh-bf/thesis-platform/commit/f46f46ffcc12ee45aa935aeba98c081d11565250))
+
 ## [1.29.0](https://github.com/uzh-bf/thesis-platform/compare/v1.28.0...v1.29.0) (2026-10-28)
 
 
