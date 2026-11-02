@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import type { FailureReport } from './failureNotification'
 import {
   ProposalApplicationError,
   buildApplicationConfirmationEmail,
@@ -285,4 +286,53 @@ test('builds the student confirmation like the flow did', () => {
 test('recognizes upload blob names', () => {
   assert.equal(isUploadedBlobName(cvBlob), true)
   assert.equal(isUploadedBlobName('not-a-uuid-cv.pdf'), false)
+})
+
+test('reports failed application emails', async () => {
+  const { store, created } = createStore()
+  const reports: FailureReport[] = []
+
+  await submitProposalApplication({
+    ...base,
+    input,
+    store,
+    upload: okUpload,
+    send: async (mail) => {
+      if (mail.to.includes('student@uzh.ch')) throw new Error('status=401')
+      return true
+    },
+    deleteBlob: async () => {},
+    reportFailure: async (report) => {
+      reports.push(report)
+    },
+  })
+
+  assert.equal(created.length, 1)
+  assert.equal(reports.length, 1)
+  assert.equal(reports[0].process, 'Proposal application')
+  assert.deepEqual(reports[0].problems, [
+    'The confirmation email to student@uzh.ch failed: status=401',
+  ])
+})
+
+test('reports nothing when both application emails go out', async () => {
+  const { store } = createStore()
+  const reports: FailureReport[] = []
+
+  await submitProposalApplication({
+    ...base,
+    input,
+    store,
+    upload: okUpload,
+    send: async () => true,
+    deleteBlob: async () => {},
+    reportFailure: async (report) => {
+      reports.push(report)
+    },
+  })
+
+  assert.deepEqual(
+    reports.flatMap((report) => report.problems),
+    []
+  )
 })

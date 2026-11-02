@@ -1,6 +1,11 @@
 import type { Department, PrismaClient } from '@prisma/client'
 import { escapeHtml } from 'src/lib/cleverreach/thesisProposal'
 import { ProposalStatus, ProposalType } from 'src/lib/constants'
+import {
+  type ReportFailure,
+  describeError,
+  ignoreFailures,
+} from 'src/lib/failureNotification'
 import { sendMail } from 'src/lib/mail/sendMail'
 import {
   type SharePointUploadResult,
@@ -147,7 +152,8 @@ export function buildProposalPostedEmail({
 // uploaded PDFs to SharePoint through the file relay, creates the proposal
 // with its attachments and supervision in one write, and confirms it to the
 // supervisor. The proposal stands even if the email or the blob cleanup
-// fails; files already in SharePoint stay there if the write fails.
+// fails; files already in SharePoint stay there if the write fails. A failed
+// email is reported.
 export async function postSupervisorProposal({
   input,
   store,
@@ -159,6 +165,7 @@ export async function postSupervisorProposal({
   send = sendMail,
   deleteBlob,
   newId = uuidv4,
+  reportFailure = ignoreFailures,
 }: {
   input: ProposalPostingInput
   store: ProposalPostingStore
@@ -170,6 +177,7 @@ export async function postSupervisorProposal({
   send?: typeof sendMail
   deleteBlob: (blobName: string) => Promise<void>
   newId?: () => string
+  reportFailure?: ReportFailure
 }): Promise<{ proposalId: string; emailSent: boolean }> {
   const topicAreaSlug = normalizeTopicAreaSlug(input.fieldOfResearch)
   const [responsibleId, topicAreaExists] = await Promise.all([
@@ -240,6 +248,7 @@ export async function postSupervisorProposal({
   })
 
   let emailSent = false
+  let emailError: string | null = null
   try {
     emailSent = await send(
       buildProposalPostedEmail({
@@ -253,7 +262,19 @@ export async function postSupervisorProposal({
   } catch (error) {
     console.error('Failed to send proposal posted email', {
       proposalId,
-      error: error instanceof Error ? error.message : String(error),
+      error: describeError(error),
+    })
+    emailError = describeError(error)
+  }
+  if (!emailSent) {
+    await reportFailure({
+      process: 'Supervisor proposal posting',
+      reference: `proposal ${proposalId}`,
+      problems: [
+        emailError
+          ? `The confirmation email to ${input.responder} failed: ${emailError}`
+          : `The confirmation email to ${input.responder} was not sent`,
+      ],
     })
   }
 
