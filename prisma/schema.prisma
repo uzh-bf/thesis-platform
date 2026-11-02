@@ -86,6 +86,11 @@ model User {
   supervisedProposals UserProposalSupervision[]
   createdFeedbacks    UserProposalFeedback[]
 
+  // Supervisors are matched to student submissions by topic area; only those
+  // with notifications enabled are emailed about a new submission.
+  supervisorTopicAreas              TopicArea[] @relation("SupervisorTopicAreas")
+  supervisorSubmissionNotifications Boolean     @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 }
@@ -98,7 +103,8 @@ model TopicArea {
 
   department Department?
 
-  proposals Proposal[]
+  proposals   Proposal[]
+  supervisors User[]     @relation("SupervisorTopicAreas")
 }
 
 model ProposalAttachment {

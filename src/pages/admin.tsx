@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from 'react'
 import AdminInfoOverview from 'src/components/AdminInfoOverview'
 import AdminProfessors from 'src/components/AdminProfessors'
 import AdminStatsDashboard from 'src/components/AdminStatsDashboard'
+import AdminSupervisors from 'src/components/AdminSupervisors'
 import AdminUserRoles from 'src/components/AdminUserRoles'
 import { ProposalStatus } from 'src/lib/constants'
 import useUserRole from 'src/lib/hooks/useUserRole'
@@ -47,6 +48,7 @@ const TABS_GRID_CLASSES: Record<number, string> = {
   3: 'grid-cols-3',
   4: 'grid-cols-4',
   5: 'grid-cols-5',
+  6: 'grid-cols-6',
 }
 
 export default function AdminPanel() {
@@ -171,6 +173,9 @@ export default function AdminPanel() {
     if (router.query.tab === 'users' && canAccessUsersTab) {
       setActiveTab('users')
     }
+    if (router.query.tab === 'supervisors' && canAccessUsersTab) {
+      setActiveTab('supervisors')
+    }
     if (router.query.tab === 'stats' && isAdminOnly) setActiveTab('stats')
     if (router.query.tab === 'professors' && (isAdmin || isDeveloper)) {
       setActiveTab('professors')
@@ -189,6 +194,7 @@ export default function AdminPanel() {
       !canManageProposals &&
       activeTab !== 'admininfo' &&
       activeTab !== 'users' &&
+      activeTab !== 'supervisors' &&
       activeTab !== 'professors'
     ) {
       setActiveTab('admininfo')
@@ -271,6 +277,11 @@ export default function AdminPanel() {
             id: 'admin-tabs-users',
             value: 'users',
             label: 'Users',
+          },
+          {
+            id: 'admin-tabs-supervisors',
+            value: 'supervisors',
+            label: 'Supervisors',
           },
         ]
       : []),
@@ -1453,6 +1464,12 @@ export default function AdminPanel() {
           {canAccessUsersTab && (
             <TabContent value="users" className={{ root: 'pt-3' }}>
               <AdminUserRoles />
+            </TabContent>
+          )}
+
+          {canAccessUsersTab && (
+            <TabContent value="supervisors" className={{ root: 'pt-3' }}>
+              <AdminSupervisors />
             </TabContent>
           )}
 
