@@ -14,6 +14,7 @@ import { UserRole } from 'src/lib/constants'
 import { openAuthPopup, watchAuthPopup } from 'src/lib/embedding'
 import useIsEmbedded from 'src/lib/hooks/useIsEmbedded'
 import useUserRole from 'src/lib/hooks/useUserRole'
+import MySupervisorSettings from './MySupervisorSettings'
 import NewProposalButton from './NewProposalButton'
 
 export default function Header() {
@@ -195,6 +196,10 @@ export default function Header() {
                   <FontAwesomeIcon icon={faArrowRightArrowLeft} />
                 </Button>
               </a>
+            )}
+
+            {session?.user?.role === UserRole.SUPERVISOR && (
+              <MySupervisorSettings buttonClassName={serviceButtonClass} />
             )}
 
             {isAdmin && !isOnAdminPage && (
