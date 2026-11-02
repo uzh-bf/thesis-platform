@@ -56,7 +56,16 @@ import {
 } from 'src/lib/proposalSubmission'
 import { isFileRelayConfigured } from 'src/lib/sharePointFileRelay'
 import { STUDENT_PROPOSAL_REMINDER_INTERVAL_DAYS } from 'src/lib/studentReminder'
-import { createPrismaSupervisorStore } from 'src/lib/supervisors'
+import {
+  SupervisorError,
+  addSupervisor,
+  applySupervisorImport,
+  createPrismaSupervisorStore,
+  parseSupervisorCsv,
+  planSupervisorImport,
+  removeSupervisorRole,
+  updateSupervisorSettings,
+} from 'src/lib/supervisors'
 import type { Context } from 'src/server/context'
 import { prisma } from 'src/server/prisma'
 import {
@@ -165,7 +174,7 @@ function formatDateForStudentMessage(date: Date) {
 }
 
 type AdminChangeNotificationInput = {
-  tab: 'Admin Info' | 'Proposals' | 'Users' | 'Professors'
+  tab: 'Admin Info' | 'Proposals' | 'Users' | 'Professors' | 'Supervisors'
   action: string
   actor: {
     userId?: string
@@ -514,6 +523,44 @@ async function assertProfessorIsUnique({
     })
   }
 }
+
+const supervisorErrorCodes = {
+  NOT_FOUND: 'NOT_FOUND',
+  NOT_A_SUPERVISOR: 'BAD_REQUEST',
+  OTHER_DEPARTMENT: 'CONFLICT',
+  DEVELOPER: 'CONFLICT',
+  UNKNOWN_TOPIC_AREA: 'BAD_REQUEST',
+} as const
+
+// Supervisors and their topic areas are kept per department, like the
+// SharePoint "Thesis Supervisors" list of each department was.
+async function runSupervisorAction<T>(
+  action: (args: {
+    store: ReturnType<typeof createPrismaSupervisorStore>
+    department: Department
+  }) => Promise<T>
+): Promise<T> {
+  const department = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+  try {
+    return await action({
+      store: createPrismaSupervisorStore(prisma, department),
+      department,
+    })
+  } catch (error) {
+    if (error instanceof SupervisorError) {
+      throw new TRPCError({
+        code: supervisorErrorCodes[error.code],
+        message: error.message,
+      })
+    }
+    throw error
+  }
+}
+
+const supervisorSettingsInput = z.object({
+  topicAreaSlugs: z.array(z.string().min(1)),
+  submissionNotifications: z.boolean(),
+})
 
 async function sendAdminChangeNotification({
   tab,
@@ -4290,6 +4337,194 @@ export const appRouter = router({
         })
       }
 
+      return { success: true }
+    }),
+
+  adminGetSupervisors: adminProcedure.query(() =>
+    runSupervisorAction(async ({ store }) => {
+      const [supervisors, topicAreas] = await Promise.all([
+        store.listSupervisors(),
+        store.listTopicAreas(),
+      ])
+      return { supervisors, topicAreas }
+    })
+  ),
+
+  adminAddSupervisor: adminProcedure
+    .input(
+      supervisorSettingsInput.extend({
+        name: z.string().trim().min(1),
+        email: z.string().trim().email(),
+      })
+    )
+    .output(z.object({ success: z.boolean(), created: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      const { before, after } = await runSupervisorAction(
+        ({ store, department }) =>
+          addSupervisor({ store, department, ...input })
+      )
+
+      await sendAdminChangeNotification({
+        tab: 'Supervisors',
+        action: before ? 'Update supervisor' : 'Add supervisor',
+        actor: {
+          userId: ctx.user.sub,
+          name: ctx.user.name,
+          email: ctx.user.email,
+          role: ctx.user.role,
+          adminRole: ctx.user.adminRole,
+        },
+        entityId: after.id,
+        details: `Supervisor: ${after.name} (${after.email})`,
+        oldState: before,
+        newState: after,
+      })
+
+      return { success: true, created: before === null }
+    }),
+
+  adminUpdateSupervisorSettings: adminProcedure
+    .input(supervisorSettingsInput.extend({ userId: z.string().min(1) }))
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      const { before, after } = await runSupervisorAction(
+        ({ store, department }) =>
+          updateSupervisorSettings({ store, department, ...input })
+      )
+
+      await sendAdminChangeNotification({
+        tab: 'Supervisors',
+        action: 'Update supervisor settings',
+        actor: {
+          userId: ctx.user.sub,
+          name: ctx.user.name,
+          email: ctx.user.email,
+          role: ctx.user.role,
+          adminRole: ctx.user.adminRole,
+        },
+        entityId: after.id,
+        details: `Supervisor: ${after.name} (${after.email})`,
+        oldState: before,
+        newState: after,
+      })
+
+      return { success: true }
+    }),
+
+  adminRemoveSupervisorRole: adminProcedure
+    .input(z.object({ userId: z.string().min(1) }))
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      if (input.userId === ctx.user.sub) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You cannot change your own role',
+        })
+      }
+
+      const { before, after } = await runSupervisorAction(
+        ({ store, department }) =>
+          removeSupervisorRole({ store, department, userId: input.userId })
+      )
+
+      await sendAdminChangeNotification({
+        tab: 'Supervisors',
+        action: 'Remove supervisor role',
+        actor: {
+          userId: ctx.user.sub,
+          name: ctx.user.name,
+          email: ctx.user.email,
+          role: ctx.user.role,
+          adminRole: ctx.user.adminRole,
+        },
+        entityId: after.id,
+        details: `Former supervisor: ${after.name} (${after.email})`,
+        oldState: before,
+        newState: after,
+      })
+
+      return { success: true }
+    }),
+
+  // One-time import of the SharePoint "Thesis Supervisors" list. Remove
+  // together with createUserWithSupervisorRole once the flow is off.
+  adminImportSupervisors: adminProcedure
+    .input(z.object({ csv: z.string().min(1), apply: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      let rows
+      try {
+        rows = parseSupervisorCsv(input.csv)
+      } catch (error) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: error instanceof Error ? error.message : String(error),
+        })
+      }
+
+      return runSupervisorAction(async ({ store }) => {
+        const plan = await planSupervisorImport({ store, rows })
+        if (!input.apply) return { ...plan, updated: 0 }
+
+        const updated = await applySupervisorImport({
+          store,
+          matches: plan.matches,
+        })
+        const changed = plan.matches.filter((match) => match.changed)
+
+        if (updated > 0) {
+          await sendAdminChangeNotification({
+            tab: 'Supervisors',
+            action: 'Import supervisors from SharePoint list',
+            actor: {
+              userId: ctx.user.sub,
+              name: ctx.user.name,
+              email: ctx.user.email,
+              role: ctx.user.role,
+              adminRole: ctx.user.adminRole,
+            },
+            entityId: 'supervisor-import',
+            details: `${updated} supervisor(s) updated, ${plan.skipped.length} row(s) skipped`,
+            oldState: changed.map((match) => match.supervisor),
+            newState: changed.map((match) => ({
+              email: match.supervisor.email,
+              ...match.settings,
+            })),
+          })
+        }
+
+        return { ...plan, updated }
+      })
+    }),
+
+  // Supervisors choose their own topic areas and whether they are emailed
+  // about new student submissions in them.
+  getMySupervisorSettings: authedProcedure.query(({ ctx }) =>
+    runSupervisorAction(async ({ store, department }) => {
+      const user = ctx.user.sub ? await store.findUserById(ctx.user.sub) : null
+      if (
+        user?.role !== UserRole.SUPERVISOR ||
+        user.department !== department
+      ) {
+        return null
+      }
+      return {
+        topicAreaSlugs: user.topicAreaSlugs,
+        submissionNotifications: user.submissionNotifications,
+        topicAreas: await store.listTopicAreas(),
+      }
+    })
+  ),
+
+  updateMySupervisorSettings: authedProcedure
+    .input(supervisorSettingsInput)
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      const userId = ctx.user.sub
+      if (!userId) throw new TRPCError({ code: 'UNAUTHORIZED' })
+
+      await runSupervisorAction(({ store, department }) =>
+        updateSupervisorSettings({ store, department, userId, ...input })
+      )
       return { success: true }
     }),
 
