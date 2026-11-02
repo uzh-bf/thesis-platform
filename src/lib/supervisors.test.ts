@@ -117,12 +117,57 @@ test('promotes an existing user and updates the name like the flow did', async (
     ...settings,
   })
 
-  assert.equal(result.before, null)
+  assert.equal(result.before?.role, 'UNSET')
   const stored = users.get('u1')!
   assert.equal(stored.role, 'SUPERVISOR')
   assert.equal(stored.department, 'DF')
   assert.equal(stored.name, 'Ada Lovelace')
   assert.equal(stored.submissionNotifications, true)
+})
+
+test('re-adding a former supervisor sets only the new name and areas', async () => {
+  const { store, users } = createStore([user()])
+  await removeSupervisorRole({ store, department: 'DF', userId: 'u1' })
+
+  await addSupervisor({
+    store,
+    department: 'DF',
+    name: 'Ada King',
+    email: 'ada@df.uzh.ch',
+    topicAreaSlugs: ['banking_and_insurance'],
+    submissionNotifications: false,
+  })
+
+  assert.deepEqual(users.get('u1'), {
+    ...user(),
+    name: 'Ada King',
+    topicAreaSlugs: ['banking_and_insurance'],
+  })
+})
+
+test('refuses to add an existing supervisor and changes nothing', async () => {
+  const existing = user({
+    topicAreaSlugs: ['corporate_finance'],
+    submissionNotifications: true,
+  })
+  const { store, users } = createStore([existing])
+
+  await assert.rejects(
+    addSupervisor({
+      store,
+      department: 'DF',
+      name: 'Duplicate Check',
+      email: ' ADA@df.uzh.ch ',
+      topicAreaSlugs: [],
+      submissionNotifications: false,
+    }),
+    {
+      code: 'ALREADY_SUPERVISOR',
+      message:
+        'ada@df.uzh.ch is already a supervisor; use Edit to change their settings',
+    }
+  )
+  assert.deepEqual(users.get('u1'), existing)
 })
 
 test('refuses users of another department and developers', async () => {

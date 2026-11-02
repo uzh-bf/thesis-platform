@@ -63,6 +63,7 @@ export default function SupervisorSettingsFields({
         <input
           id={`${idPrefix}-notifications`}
           type="checkbox"
+          aria-label="Email about new student proposals in these topic areas"
           checked={value.submissionNotifications}
           onChange={(e) =>
             onChange({ ...value, submissionNotifications: e.target.checked })
