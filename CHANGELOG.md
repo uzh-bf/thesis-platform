@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.33.0](https://github.com/uzh-bf/thesis-platform/compare/v1.32.0...v1.33.0) (2026-11-02)
+
+
+### Features
+
+* **notifications:** mail failures of the in-app flows like Power Automate did ([#223](https://github.com/uzh-bf/thesis-platform/issues/223)) ([a6f027e](https://github.com/uzh-bf/thesis-platform/commit/a6f027eb336d14ab5b446c4f3973adfdf60cd594))
+
 ## [1.32.0](https://github.com/uzh-bf/thesis-platform/compare/v1.31.0...v1.32.0) (2026-11-02)
 
 
