@@ -69,8 +69,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             NEXT_PUBLIC_APP_URL=theses.df.uzh.ch
-            NEXT_PUBLIC_FORMS_URL_PUBLISH=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAs9iU1p12TNBNlqpakIPkkQVUOVpKSFRLRksxVUlSWUNXMjNJVlYzNFoxTyQlQCN0PWcu
-            NEXT_PUBLIC_FORMS_URL_SUBMIT=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAs_TeTD3rkXtGpbExdNgeYCZUNkpHOVo4MlREUTJPNE9LV0lVUEVSOElJVC4u&embed=true
             NEXT_PUBLIC_BLOBSERVICECLIENT_URL=https://prdthesisplatformff7fo.blob.core.windows.net/uploads?
             NEXT_PUBLIC_CONTAINER_NAME=uploads
             NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME=prdthesisplatformff7fo
@@ -151,8 +149,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             NEXT_PUBLIC_APP_URL=theses.business.uzh.ch
-            NEXT_PUBLIC_FORMS_URL_PUBLISH=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAswMW9Ql8fXxAnGa_PK_OI41UQ1AyT1pNRFVRV1FGQ1NDVTJORERFMlZXNCQlQCN0PWcu
-            NEXT_PUBLIC_FORMS_URL_SUBMIT=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAswMW9Ql8fXxAnGa_PK_OI41UMlpJRDYxUjdBRk5WVk05N0JZNFNLRlNHNiQlQCN0PWcu
             NEXT_PUBLIC_BLOBSERVICECLIENT_URL=https://prdthesisplatformbz89yx5.blob.core.windows.net/uploads?
             NEXT_PUBLIC_CONTAINER_NAME=uploads
             NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME=prdthesisplatformbz89yx5

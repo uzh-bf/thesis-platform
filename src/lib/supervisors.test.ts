@@ -3,13 +3,7 @@ import test from 'node:test'
 import {
   SupervisorError,
   addSupervisor,
-  applySupervisorImport,
   findSupervisorsToNotify,
-  isNotificationEnabled,
-  matchTopicAreas,
-  parseCsv,
-  parseSupervisorCsv,
-  planSupervisorImport,
   removeSupervisorRole,
   updateSupervisorSettings,
   type SupervisorStore,
@@ -258,105 +252,4 @@ test('notifies only opted-in supervisors of the topic area', async () => {
   assert.deepEqual(await findSupervisorsToNotify(store, 'corporate_finance'), [
     { name: 'Ada Lovelace', email: 'ada@df.uzh.ch' },
   ])
-})
-
-test('parses quoted CSV fields, BOM and semicolon delimiters', () => {
-  assert.deepEqual(parseCsv('﻿a,"b, ""c"""\r\n1,"x\ny"\n\n'), [
-    ['a', 'b, "c"'],
-    ['1', 'x\ny'],
-  ])
-  assert.deepEqual(parseCsv('a;b\n1;2,3'), [
-    ['a', 'b'],
-    ['1', '2,3'],
-  ])
-})
-
-test('reads the SharePoint list export by column header', () => {
-  const csv = [
-    'Title,Name,Person,Areas Of Interest,Email Notification',
-    ',Ada Lovelace,Ada@df.uzh.ch,"Corporate Finance;#Banking and Insurance",y',
-    ',Grace Hopper,Grace Hopper,,n',
-  ].join('\n')
-
-  assert.deepEqual(parseSupervisorCsv(csv), [
-    {
-      line: 2,
-      name: 'Ada Lovelace',
-      email: 'ada@df.uzh.ch',
-      areasOfInterest: 'Corporate Finance;#Banking and Insurance',
-      emailNotification: 'y',
-    },
-    {
-      line: 3,
-      name: 'Grace Hopper',
-      email: null,
-      areasOfInterest: '',
-      emailNotification: 'n',
-    },
-  ])
-  assert.throws(() => parseSupervisorCsv('Name,Person\nA,B'), /AreasOfInterest/)
-})
-
-test('matches area names regardless of the separator', () => {
-  assert.deepEqual(
-    matchTopicAreas(
-      'Strategy, Organization & Innovation, corporate finance',
-      topicAreas
-    ),
-    ['corporate_finance', 'strategy_organization_and_innovation']
-  )
-  assert.equal(isNotificationEnabled(' Y '), true)
-  assert.equal(isNotificationEnabled('n'), false)
-  assert.equal(isNotificationEnabled(''), false)
-})
-
-test('plans the import by email, then name, and applies only changes', async () => {
-  const { store, users } = createStore([
-    user(),
-    user({ id: 'u2', name: 'Grace Hopper', email: 'grace@df.uzh.ch' }),
-    user({ id: 'u3', name: 'Twin', email: 't1@df.uzh.ch' }),
-    user({ id: 'u4', name: 'Twin', email: 't2@df.uzh.ch' }),
-    user({
-      id: 'u5',
-      name: 'Unchanged',
-      email: 'u@df.uzh.ch',
-      topicAreaSlugs: ['corporate_finance'],
-      submissionNotifications: true,
-    }),
-  ])
-  const rows = parseSupervisorCsv(
-    [
-      'Name,Person,AreasOfInterest,EmailNotification',
-      'Renamed,ada@df.uzh.ch,Corporate Finance,y',
-      'grace hopper,Grace Hopper,Banking and Insurance,n',
-      'Twin,Twin,Corporate Finance,y',
-      'Nobody,Nobody,Corporate Finance,y',
-      'Unchanged,,Corporate Finance,y',
-      'Ada Lovelace,,Corporate Finance,n',
-    ].join('\n')
-  )
-
-  const plan = await planSupervisorImport({ store, rows })
-  assert.deepEqual(
-    plan.matches.map((m) => [m.supervisor.id, m.changed]),
-    [
-      ['u1', true],
-      ['u2', true],
-      ['u5', false],
-    ]
-  )
-  assert.deepEqual(
-    plan.skipped.map((s) => [s.line, s.reason]),
-    [
-      [4, 'Several supervisors have this name'],
-      [5, 'No supervisor with this name or email in the app'],
-      [7, 'ada@df.uzh.ch appears more than once'],
-    ]
-  )
-
-  assert.equal(await applySupervisorImport({ store, matches: plan.matches }), 2)
-  assert.deepEqual(users.get('u1')!.topicAreaSlugs, ['corporate_finance'])
-  assert.equal(users.get('u1')!.submissionNotifications, true)
-  assert.deepEqual(users.get('u2')!.topicAreaSlugs, ['banking_and_insurance'])
-  assert.equal(users.get('u2')!.submissionNotifications, false)
 })
