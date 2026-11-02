@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import type { FailureReport } from './failureNotification'
 import {
   buildStudentReminderMail,
   runStudentProposalReminders,
@@ -94,4 +95,60 @@ test('builds the confirmation mail with an escaped title', () => {
     /href="https:\/\/theses\.df\.uzh\.ch\/api\/updateProposalUpdatedAt\/p%201"/
   )
   assert.match(mail.bodyAsHtml, /innerhalb von 7 Tagen/)
+})
+
+test('reports failed reminders in one mail per run', async () => {
+  const { store } = createStore([
+    { id: 'p1', title: 'Bonds', emails: ['a@uzh.ch'] },
+    { id: 'p2', title: 'Rates', emails: ['b@uzh.ch'] },
+    { id: 'p3', title: 'Swaps', emails: ['c@uzh.ch'] },
+  ])
+  const reports: FailureReport[] = []
+
+  const result = await runStudentProposalReminders({
+    store,
+    appUrl: 'https://theses.df.uzh.ch',
+    now,
+    send: async (mail) => {
+      if (mail.to.includes('b@uzh.ch')) throw new Error('status=401')
+      return !mail.to.includes('c@uzh.ch')
+    },
+    reportFailure: async (report) => {
+      reports.push(report)
+    },
+  })
+
+  assert.deepEqual(result.failedProposalIds, ['p2', 'p3'])
+  assert.deepEqual(reports, [
+    {
+      process: 'Student proposal reminders',
+      reference: '2 of 3 reminders',
+      problems: [
+        'The reminder for proposal p2 ("Rates") to b@uzh.ch failed: status=401',
+        'The reminder for proposal p3 ("Swaps") to c@uzh.ch failed: mail relay not configured or no recipients',
+      ],
+    },
+  ])
+})
+
+test('reports nothing when every reminder is sent', async () => {
+  const { store } = createStore([
+    { id: 'p1', title: 'Bonds', emails: ['a@uzh.ch'] },
+  ])
+  const reports: FailureReport[] = []
+
+  await runStudentProposalReminders({
+    store,
+    appUrl: 'https://theses.df.uzh.ch',
+    now,
+    send: async () => true,
+    reportFailure: async (report) => {
+      reports.push(report)
+    },
+  })
+
+  assert.deepEqual(
+    reports.flatMap((report) => report.problems),
+    []
+  )
 })
