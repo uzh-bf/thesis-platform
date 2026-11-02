@@ -1,5 +1,10 @@
 import type { Department, PrismaClient } from '@prisma/client'
 import { escapeHtml } from 'src/lib/cleverreach/thesisProposal'
+import {
+  type ReportFailure,
+  describeError,
+  ignoreFailures,
+} from 'src/lib/failureNotification'
 import { sendMail } from 'src/lib/mail/sendMail'
 
 // Open student proposals are reminded after 8 weeks without an update; a
@@ -116,17 +121,20 @@ export function buildStudentReminderMail({
 }
 
 // Replaces the Student Reminder Power Automate flow. A reminder that cannot
-// be sent leaves its proposal open, so the next run retries it.
+// be sent leaves its proposal open, so the next run retries it; the failed
+// reminders of a run are reported in one mail.
 export async function runStudentProposalReminders({
   store,
   appUrl,
   now = new Date(),
   send = sendMail,
+  reportFailure = ignoreFailures,
 }: {
   store: StudentReminderStore
   appUrl: string
   now?: Date
   send?: typeof sendMail
+  reportFailure?: ReportFailure
 }): Promise<StudentReminderResult> {
   const withdrawnProposalIds = await store.withdrawUnconfirmed(
     new Date(now.getTime() - STUDENT_PROPOSAL_CONFIRMATION_DAYS * DAY_MS)
@@ -139,6 +147,7 @@ export async function runStudentProposalReminders({
 
   const remindedProposalIds: string[] = []
   const failedProposalIds: string[] = []
+  const problems: string[] = []
 
   for (const proposal of dueProposals) {
     try {
@@ -155,11 +164,20 @@ export async function runStudentProposalReminders({
     } catch (error) {
       console.error('Student proposal reminder failed', {
         proposalId: proposal.id,
-        error: error instanceof Error ? error.message : String(error),
+        error: describeError(error),
       })
       failedProposalIds.push(proposal.id)
+      problems.push(
+        `The reminder for proposal ${proposal.id} ("${proposal.title}") to ${proposal.emails.join(', ')} failed: ${describeError(error)}`
+      )
     }
   }
+
+  await reportFailure({
+    process: 'Student proposal reminders',
+    reference: `${failedProposalIds.length} of ${dueProposals.length} reminders`,
+    problems,
+  })
 
   return { withdrawnProposalIds, remindedProposalIds, failedProposalIds }
 }
