@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.32.0](https://github.com/uzh-bf/thesis-platform/compare/v1.31.0...v1.32.0) (2026-11-02)
+
+
+### Features
+
+* **proposals:** submit student proposals in-app instead of via Power Automate ([#220](https://github.com/uzh-bf/thesis-platform/issues/220)) ([72acdf6](https://github.com/uzh-bf/thesis-platform/commit/72acdf63edb68bd332b674a034952e9ac245ff74))
+* **supervisors:** manage supervisors, topic areas and notifications in-app ([#221](https://github.com/uzh-bf/thesis-platform/issues/221)) ([2de0d64](https://github.com/uzh-bf/thesis-platform/commit/2de0d64b0133a2f19515cb711b91d3d799ba4b8f))
+
+
+### Bug Fixes
+
+* **supervisors:** refuse adding an existing supervisor again ([#222](https://github.com/uzh-bf/thesis-platform/issues/222)) ([4606039](https://github.com/uzh-bf/thesis-platform/commit/4606039245f3d46acb4fe0f639ee0d7fef52c1e6))
+
 ## [1.31.0](https://github.com/uzh-bf/thesis-platform/compare/v1.30.1...v1.31.0) (2026-11-02)
 
 
