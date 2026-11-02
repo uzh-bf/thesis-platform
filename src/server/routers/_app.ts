@@ -3,6 +3,7 @@ import type { Prisma } from '@prisma/client'
 import {
   ApplicationStatus,
   Department,
+  MAX_FURTHER_SUBMISSION_ATTACHMENTS,
   ProposalFeedbackType,
   ProposalStatus,
   ProposalType,
@@ -47,6 +48,12 @@ import {
   normalizeTopicAreaSlug,
   postSupervisorProposal,
 } from 'src/lib/proposalPosting'
+import {
+  ProposalSubmissionError,
+  createPrismaProposalSubmissionStore,
+  submitStudentProposal,
+  type SupervisorMatcher,
+} from 'src/lib/proposalSubmission'
 import { isFileRelayConfigured } from 'src/lib/sharePointFileRelay'
 import { STUDENT_PROPOSAL_REMINDER_INTERVAL_DAYS } from 'src/lib/studentReminder'
 import type { Context } from 'src/server/context'
@@ -1367,7 +1374,20 @@ const uploadPurposeSchema = z.enum([
   'application-transcript',
   'proposal-file',
   'proposal-attachment',
+  'submission-proposal',
+  'submission-cv',
+  'submission-transcript',
+  'submission-attachment',
 ])
+
+// TODO: match on the supervisors' topic areas and notification opt-in once
+// the supervisor data model moves from the SharePoint list into the
+// database. Until then no supervisor is notified.
+const supervisorMatcher: SupervisorMatcher = {
+  async findNotifiedSupervisorEmails() {
+    return []
+  },
+}
 
 const sanitizeUploadFileName = (fileName: string) => {
   const normalizedName = fileName
@@ -1720,6 +1740,77 @@ export const appRouter = router({
                   : error.code === 'ALREADY_APPLIED'
                     ? 'CONFLICT'
                     : 'BAD_REQUEST',
+            message: error.message,
+          })
+        }
+        throw error
+      }
+    }),
+
+  submitStudentProposal: optionalAuthedProcedure
+    .input(
+      z.object({
+        uzhemail: z
+          .string()
+          .trim()
+          .toLowerCase()
+          .email()
+          .refine((email) => email.endsWith('@uzh.ch'), {
+            message: 'Please use your @uzh.ch email address',
+          }),
+        fullName: z.string().trim().min(1),
+        matriculationNumber: z.string().regex(/^\d{1,2}-\d{3}-\d{3}$/),
+        title: z.string().trim().min(5),
+        description: z.string().trim().min(100),
+        language: z.string().min(1),
+        studyLevel: z.string().min(1),
+        topicAreaSlug: z.string().min(1),
+        plannedStartAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        motivation: z.string().trim().min(200),
+        additionalStudentComment: z.string().optional(),
+        allowUsage: z.boolean(),
+        allowPublication: z.boolean(),
+        proposalFile: z.string(),
+        cvFile: z.string(),
+        transcriptFile: z.string(),
+        furtherAttachments: z
+          .array(z.string())
+          .max(MAX_FURTHER_SUBMISSION_ATTACHMENTS),
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Local development has no relay; nothing is stored or sent there.
+      if (!isFileRelayConfigured()) {
+        return {
+          success: true,
+          message: 'Development mode: FILE_RELAY_HTTP_URL not configured',
+        }
+      }
+
+      try {
+        const result = await submitStudentProposal({
+          input,
+          store: createPrismaProposalSubmissionStore(
+            prisma,
+            process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+          ),
+          matcher: supervisorMatcher,
+          department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME ?? '',
+          appUrl: getAppBaseUrl(),
+          containerName: process.env.NEXT_PUBLIC_CONTAINER_NAME!,
+          managementRecipients: getManagementNotificationRecipients(),
+          deleteBlob: deleteUploadedBlob,
+        })
+        return { success: true, ...result }
+      } catch (error) {
+        if (error instanceof ProposalSubmissionError) {
+          throw new TRPCError({
+            code:
+              error.code === 'UPLOAD_FAILED'
+                ? 'INTERNAL_SERVER_ERROR'
+                : error.code === 'ALREADY_SUBMITTED'
+                  ? 'CONFLICT'
+                  : 'BAD_REQUEST',
             message: error.message,
           })
         }

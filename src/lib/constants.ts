@@ -64,3 +64,5 @@ export enum Department {
   DF = 'DF',
   IBW = 'IBW',
 }
+// Further PDFs a student may attach to a submitted proposal.
+export const MAX_FURTHER_SUBMISSION_ATTACHMENTS = 5
