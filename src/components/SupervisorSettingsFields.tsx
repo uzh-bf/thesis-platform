@@ -19,7 +19,7 @@ export default function SupervisorSettingsFields({
   value,
   onChange,
   disabled,
-}: Props) {
+}: Readonly<Props>) {
   const toggleArea = (slug: string, checked: boolean) =>
     onChange({
       ...value,
@@ -69,7 +69,7 @@ export default function SupervisorSettingsFields({
           }
           disabled={disabled}
         />
-        Email about new student proposals in these topic areas
+        <span>Email about new student proposals in these topic areas</span>
       </label>
     </div>
   )

@@ -11,9 +11,9 @@ import { trpc } from 'src/lib/trpc'
 // about new student proposals in them.
 export default function MySupervisorSettings({
   buttonClassName,
-}: {
+}: Readonly<{
   buttonClassName: string
-}) {
+}>) {
   const [isOpen, setIsOpen] = useState(false)
   const [draft, setDraft] = useState<SupervisorSettingsDraft | null>(null)
   const [error, setError] = useState<string | null>(null)

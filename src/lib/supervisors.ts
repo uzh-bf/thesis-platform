@@ -206,7 +206,10 @@ async function assertKnownTopicAreas(store: SupervisorStore, slugs: string[]) {
   }
 }
 
-const uniqueSlugs = (slugs: string[]) => [...new Set(slugs)].sort()
+const sortSlugs = (slugs: string[]) =>
+  [...slugs].sort((a, b) => a.localeCompare(b))
+
+const uniqueSlugs = (slugs: string[]) => sortSlugs([...new Set(slugs)])
 
 // Replaces the Power Automate "User Creation With Supervisor Role" flow: adds
 // a new user as supervisor, or makes an existing user of this department one.
@@ -354,7 +357,7 @@ export interface SupervisorImportRow {
 }
 
 export function parseCsv(text: string): string[][] {
-  const source = text.replace(/^﻿/, '')
+  const source = text.replace(/^\uFEFF/, '')
   const firstLine = source.split(/\r?\n/, 1)[0] ?? ''
   const delimiter =
     firstLine.split(';').length > firstLine.split(',').length ? ';' : ','
@@ -362,45 +365,68 @@ export function parseCsv(text: string): string[][] {
   const rows: string[][] = []
   let row: string[] = []
   let field = ''
-  let quoted = false
+  const endField = () => {
+    row.push(field)
+    field = ''
+  }
+  const endRow = () => {
+    endField()
+    rows.push(row)
+    row = []
+  }
 
-  for (let i = 0; i < source.length; i++) {
+  let i = 0
+  while (i < source.length) {
     const char = source[i]
-    if (quoted) {
-      if (char === '"' && source[i + 1] === '"') {
-        field += '"'
-        i++
-      } else if (char === '"') {
-        quoted = false
-      } else {
-        field += char
-      }
-    } else if (char === '"') {
-      quoted = true
-    } else if (char === delimiter) {
-      row.push(field)
-      field = ''
-    } else if (char === '\n' || char === '\r') {
-      if (char === '\r' && source[i + 1] === '\n') i++
-      row.push(field)
-      rows.push(row)
-      row = []
-      field = ''
+    if (char === '"') {
+      const quoted = readQuotedField(source, i + 1)
+      field += quoted.value
+      i = quoted.end
+      continue
+    }
+    if (char === delimiter) endField()
+    else if (char === '\n') endRow()
+    else if (char !== '\r') field += char
+    i++
+  }
+  if (field !== '' || row.length > 0) endRow()
+
+  return rows.filter((r) => r.some((cell) => cell.trim() !== ''))
+}
+
+// Reads a quoted field from just after its opening quote; "" stands for one
+// quote. Returns the value and the index after the closing quote.
+function readQuotedField(source: string, start: number) {
+  let value = ''
+  let i = start
+  while (i < source.length) {
+    if (source[i] !== '"') {
+      value += source[i]
+      i++
+    } else if (source[i + 1] === '"') {
+      value += '"'
+      i += 2
     } else {
-      field += char
+      return { value, end: i + 1 }
     }
   }
-  if (field !== '' || row.length > 0) {
-    row.push(field)
-    rows.push(row)
-  }
-  return rows.filter((r) => r.some((cell) => cell.trim() !== ''))
+  return { value, end: i }
 }
 
 const normalizeHeader = (value: string) =>
   value.toLowerCase().replace(/[^a-z]/g, '')
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const isEmail = (value: string) => {
+  const at = value.indexOf('@')
+  const dot = value.lastIndexOf('.')
+  return (
+    at > 0 &&
+    at === value.lastIndexOf('@') &&
+    dot > at + 1 &&
+    dot < value.length - 1 &&
+    !/\s/.test(value)
+  )
+}
 
 // Reads a CSV export of the SharePoint list. Columns are found by header
 // (Name, Person, AreasOfInterest, EmailNotification), so column order and
@@ -428,7 +454,7 @@ export function parseSupervisorCsv(text: string): SupervisorImportRow[] {
     return {
       line: index + 2,
       name: (cells[nameColumn] ?? '').trim(),
-      email: EMAIL.test(person) ? person.toLowerCase() : null,
+      email: isEmail(person) ? person.toLowerCase() : null,
       areasOfInterest: cells[areasColumn] ?? '',
       emailNotification: (cells[notificationColumn] ?? '').trim(),
     }
@@ -443,7 +469,7 @@ export function matchTopicAreas(value: string, topicAreas: TopicAreaOption[]) {
   return topicAreas
     .filter((area) => cell.includes(area.name.toLowerCase()))
     .map((area) => area.slug)
-    .sort()
+    .sort((a, b) => a.localeCompare(b))
 }
 
 // The flow only notified supervisors whose EmailNotification was "y".
@@ -527,7 +553,7 @@ export async function planSupervisorImport({
         settings.submissionNotifications !==
           supervisor.submissionNotifications ||
         settings.topicAreaSlugs.join() !==
-          [...supervisor.topicAreaSlugs].sort().join(),
+          sortSlugs(supervisor.topicAreaSlugs).join(),
     })
   }
 
@@ -541,10 +567,11 @@ export async function applySupervisorImport({
   store: SupervisorStore
   matches: SupervisorImportMatch[]
 }): Promise<number> {
-  let updated = 0
-  for (const match of matches.filter((m) => m.changed)) {
-    await store.updateUser(match.supervisor.id, match.settings)
-    updated++
-  }
-  return updated
+  const changed = matches.filter((match) => match.changed)
+  await Promise.all(
+    changed.map((match) =>
+      store.updateUser(match.supervisor.id, match.settings)
+    )
+  )
+  return changed.length
 }
