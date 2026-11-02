@@ -76,8 +76,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             NEXT_PUBLIC_APP_URL=theses.stg.df-app.ch
-            NEXT_PUBLIC_FORMS_URL_PUBLISH=''
-            NEXT_PUBLIC_FORMS_URL_SUBMIT=https://forms.office.com/Pages/ResponsePage.aspx?id=2zjkx2LkIkypCsNYsWmAs0LFaOQJoXlHrbsK8Pa1si9UQkQ0QUJDREtaM1FOSEZEQllLSUlDQVhRTyQlQCN0PWcu
             NEXT_PUBLIC_BLOBSERVICECLIENT_URL=https://stgthesisplatformbtv7s.blob.core.windows.net/uploads?
             NEXT_PUBLIC_CONTAINER_NAME=uploads
             NEXT_PUBLIC_AZURE_STORAGE_ACCOUNT_NAME=stgthesisplatformbtv7s

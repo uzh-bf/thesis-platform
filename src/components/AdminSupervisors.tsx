@@ -7,9 +7,6 @@ import SupervisorSettingsFields, {
   type SupervisorSettingsDraft,
 } from 'src/components/SupervisorSettingsFields'
 import { trpc } from 'src/lib/trpc'
-import type { RouterOutput } from 'src/types/app'
-
-type ImportResult = RouterOutput['adminImportSupervisors']
 
 const INPUT_CLASSES =
   'w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
@@ -36,12 +33,6 @@ export default function AdminSupervisors() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState(EMPTY_SETTINGS)
   const [editError, setEditError] = useState<string | null>(null)
-  const [showImport, setShowImport] = useState(false)
-  const [importCsv, setImportCsv] = useState('')
-  const [importResult, setImportResult] = useState<
-    (ImportResult & { applied: boolean }) | null
-  >(null)
-  const [importError, setImportError] = useState<string | null>(null)
 
   const { data, isLoading, refetch } = trpc.adminGetSupervisors.useQuery(
     undefined,
@@ -81,18 +72,6 @@ export default function AdminSupervisors() {
     onError: (error) => alert(`Error: ${error.message}`),
   })
 
-  const importSupervisors = trpc.adminImportSupervisors.useMutation({
-    onSuccess: async (result, variables) => {
-      setImportResult({ ...result, applied: variables.apply })
-      setImportError(null)
-      if (variables.apply) await refetch()
-    },
-    onError: (error) => {
-      setImportResult(null)
-      setImportError(error.message)
-    },
-  })
-
   const filteredSupervisors = useMemo(() => {
     const list = data?.supervisors ?? []
     const q = search.trim().toLowerCase()
@@ -123,12 +102,6 @@ export default function AdminSupervisors() {
     ) {
       removeRole.mutate({ userId: supervisor.id })
     }
-  }
-
-  const handleImportFile = async (file: File | undefined) => {
-    if (!file) return
-    setImportCsv(await file.text())
-    setImportResult(null)
   }
 
   const formatAreas = (slugs: string[]) =>
@@ -374,129 +347,6 @@ export default function AdminSupervisors() {
                 })}
               </tbody>
             </table>
-          </div>
-        )}
-      </div>
-
-      <div className="mt-4 border-t border-gray-200 pt-3">
-        <button
-          type="button"
-          onClick={() => setShowImport((prev) => !prev)}
-          className="text-sm font-medium text-blue-700 hover:underline"
-        >
-          {showImport ? 'Hide' : 'Import'} topic areas from the SharePoint list
-        </button>
-        {showImport && (
-          <div className="mt-2 flex flex-col gap-2">
-            <p className="text-sm text-gray-600">
-              One-time import of the “Thesis Supervisors” SharePoint list.
-              Export the list as CSV in SharePoint and choose the file or paste
-              its content. Rows are matched to existing supervisors by email,
-              then by name; their topic areas and notification setting are
-              replaced. Nothing is saved until you click Apply.
-            </p>
-            <input
-              type="file"
-              accept=".csv,text/csv"
-              aria-label="SharePoint list CSV file"
-              onChange={(e) => void handleImportFile(e.target.files?.[0])}
-              className="text-sm"
-            />
-            <textarea
-              aria-label="SharePoint list CSV content"
-              value={importCsv}
-              onChange={(e) => {
-                setImportCsv(e.target.value)
-                setImportResult(null)
-              }}
-              rows={5}
-              placeholder="Name,Person,AreasOfInterest,EmailNotification"
-              className={`${INPUT_CLASSES} font-mono text-xs`}
-            />
-            <div className="flex gap-2">
-              <Button
-                onClick={() =>
-                  importSupervisors.mutate({ csv: importCsv, apply: false })
-                }
-                disabled={!importCsv.trim() || importSupervisors.isPending}
-                className={{ root: 'text-sm' }}
-              >
-                Preview
-              </Button>
-              <Button
-                onClick={() =>
-                  importSupervisors.mutate({ csv: importCsv, apply: true })
-                }
-                disabled={
-                  !importResult ||
-                  importResult.applied ||
-                  !importResult.matches.some((m) => m.changed) ||
-                  importSupervisors.isPending
-                }
-                className={{ root: 'text-sm' }}
-              >
-                Apply
-              </Button>
-            </div>
-            {importError && (
-              <p className="text-sm text-red-600">{importError}</p>
-            )}
-            {importResult && (
-              <div className="flex flex-col gap-2 text-sm">
-                <p className="font-medium text-gray-800">
-                  {importResult.applied
-                    ? `${importResult.updated} supervisor(s) updated.`
-                    : `${importResult.matches.filter((m) => m.changed).length} of ${importResult.matches.length} matched supervisor(s) would change.`}{' '}
-                  {importResult.skipped.length} row(s) skipped.
-                </p>
-                {importResult.matches.length > 0 && (
-                  <table className="w-full table-fixed divide-y divide-gray-200 border border-gray-300">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className={`${TH_CLASSES} w-[8%]`}>Row</th>
-                        <th className={`${TH_CLASSES} w-[30%]`}>Supervisor</th>
-                        <th className={`${TH_CLASSES} w-[42%]`}>Topic areas</th>
-                        <th className={`${TH_CLASSES} w-[20%]`}>
-                          Notifications
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {importResult.matches.map((match) => (
-                        <tr
-                          key={match.supervisor.id}
-                          className={match.changed ? '' : 'text-gray-400'}
-                        >
-                          <td className="px-2 py-1">{match.line}</td>
-                          <td className="px-2 py-1 break-words">
-                            {match.supervisor.name} ({match.supervisor.email})
-                          </td>
-                          <td className="px-2 py-1">
-                            {formatAreas(match.settings.topicAreaSlugs)}
-                          </td>
-                          <td className="px-2 py-1">
-                            {match.settings.submissionNotifications
-                              ? 'Yes'
-                              : 'No'}
-                            {match.changed ? '' : ' (unchanged)'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-                {importResult.skipped.length > 0 && (
-                  <ul className="list-disc pl-5 text-red-700">
-                    {importResult.skipped.map((skip) => (
-                      <li key={skip.line}>
-                        Row {skip.line} ({skip.name || 'no name'}):{' '}
-                        {skip.reason}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
           </div>
         )}
       </div>
