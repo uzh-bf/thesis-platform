@@ -6,6 +6,11 @@ import {
   ProposalStatus,
   ProposalType,
 } from 'src/lib/constants'
+import {
+  type ReportFailure,
+  describeError,
+  ignoreFailures,
+} from 'src/lib/failureNotification'
 import { sendMail } from 'src/lib/mail/sendMail'
 import { isUploadedBlobName } from 'src/lib/proposalApplication'
 import {
@@ -278,7 +283,9 @@ export function buildSupervisorNotificationEmail({
 // with the student's own application, confirms it to the student and
 // informs the supervisors who follow its topic area. The proposal stands
 // even if an email, the matching or the blob cleanup fails; files already
-// in SharePoint stay there if the write fails.
+// in SharePoint stay there if the write fails. Failed emails, a failed
+// matching and a topic area nobody follows are reported, so a submission that
+// reaches no supervisor does not go unnoticed.
 export async function submitStudentProposal({
   input,
   store,
@@ -292,6 +299,7 @@ export async function submitStudentProposal({
   deleteBlob,
   newId = uuidv4,
   now = () => new Date(),
+  reportFailure = ignoreFailures,
 }: {
   input: ProposalSubmissionInput
   store: ProposalSubmissionStore
@@ -305,6 +313,7 @@ export async function submitStudentProposal({
   deleteBlob: (blobName: string) => Promise<void>
   newId?: () => string
   now?: () => Date
+  reportFailure?: ReportFailure
 }): Promise<{
   proposalId: string
   studentEmailSent: boolean
@@ -397,17 +406,26 @@ export async function submitStudentProposal({
     attachments,
   })
 
+  const problems: string[] = []
   const trySend = async (
     kind: string,
     email: Parameters<typeof sendMail>[0]
   ) => {
     try {
-      return await send(email)
+      const sent = await send(email)
+      if (!sent)
+        problems.push(
+          `The ${kind} email to ${email.to.join(', ')} was not sent`
+        )
+      return sent
     } catch (error) {
       console.error(`Failed to send submission ${kind} email`, {
         proposalId,
-        error: error instanceof Error ? error.message : String(error),
+        error: describeError(error),
       })
+      problems.push(
+        `The ${kind} email to ${email.to.join(', ')} failed: ${describeError(error)}`
+      )
       return false
     }
   }
@@ -425,15 +443,25 @@ export async function submitStudentProposal({
   )
 
   let supervisorEmails: string[] = []
+  let matchingFailed = false
   try {
     supervisorEmails = [
       ...new Set(await matcher.findNotifiedSupervisorEmails(topicArea.slug)),
     ]
   } catch (error) {
+    matchingFailed = true
     console.error('Failed to match supervisors for submission', {
       proposalId,
-      error: error instanceof Error ? error.message : String(error),
+      error: describeError(error),
     })
+    problems.push(
+      `Finding the supervisors to inform failed, so none were emailed: ${describeError(error)}`
+    )
+  }
+  if (!matchingFailed && supervisorEmails.length === 0) {
+    problems.push(
+      `No supervisor has email notifications on for "${topicArea.name}", so none were informed`
+    )
   }
 
   let supervisorEmailsSent = 0
@@ -465,6 +493,12 @@ export async function submitStudentProposal({
       })
     }
   }
+
+  await reportFailure({
+    process: 'Student proposal submission',
+    reference: `proposal ${proposalId}`,
+    problems,
+  })
 
   return { proposalId, studentEmailSent, supervisorEmailsSent }
 }

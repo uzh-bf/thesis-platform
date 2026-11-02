@@ -31,6 +31,12 @@ import {
   parseProposalLanguages,
   type ThesisProposalDraftPayload,
 } from 'src/lib/cleverreach/thesisProposal'
+import {
+  createFailureReporter,
+  describeError,
+  getFailureNotificationRecipients,
+  type ReportFailure,
+} from 'src/lib/failureNotification'
 import { sendMail } from 'src/lib/mail/sendMail'
 import {
   ProposalApplicationError,
@@ -235,6 +241,25 @@ const getNotificationEnvironment = (): NotificationEnvironment => {
 const getManagementNotificationRecipients = (
   value = process.env.ADMIN_CHANGE_NOTIFICATION_RECIPIENTS
 ) => parseNotificationRecipients(value)
+
+// Mails what went wrong to FAILURE_NOTIFICATION_RECIPIENTS (or the
+// management recipients), as the Power Automate flows did.
+const reportFailure: ReportFailure = (report) =>
+  createFailureReporter({
+    department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME ?? '',
+    recipients: getFailureNotificationRecipients(),
+  })(report)
+
+// Errors the user caused (bad input, duplicates) are not reported; storage
+// failures and unexpected errors are.
+const reportRequestFailure = (
+  processName: string,
+  error: unknown,
+  isUserError: boolean
+) =>
+  isUserError
+    ? Promise.resolve()
+    : reportFailure({ process: processName, problems: [describeError(error)] })
 
 const getCleverReachReminderRecipients = (
   value = process.env.CLEVERREACH_REMINDER_RECIPIENTS
@@ -1709,8 +1734,10 @@ export const appRouter = router({
 
       // The feedback stands even if the email cannot be sent; the form tells
       // the supervisor instead.
+      let emailSent = false
+      let emailError: string | null = null
       try {
-        const emailSent = await sendMail(
+        emailSent = await sendMail(
           buildProposalFeedbackEmail({
             actionType: input.actionType,
             department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME ?? '',
@@ -1723,15 +1750,24 @@ export const appRouter = router({
             managementRecipients: getManagementNotificationRecipients(),
           })
         )
-        return { emailSent }
       } catch (error) {
         console.error('Failed to send proposal feedback email', {
           proposalId: proposal.id,
           actionType: input.actionType,
-          error: error instanceof Error ? error.message : String(error),
+          error: describeError(error),
         })
-        return { emailSent: false }
+        emailError = describeError(error)
       }
+      if (!emailSent) {
+        await reportFailure({
+          process: 'Student proposal feedback',
+          reference: `proposal ${proposal.id}`,
+          problems: [
+            `The ${input.actionType} email ${emailError ? `failed: ${emailError}` : 'was not sent'}`,
+          ],
+        })
+      }
+      return { emailSent }
     }),
 
   submitProposalApplication: optionalAuthedProcedure
@@ -1767,9 +1803,16 @@ export const appRouter = router({
           containerName: process.env.NEXT_PUBLIC_CONTAINER_NAME!,
           managementRecipients: getManagementNotificationRecipients(),
           deleteBlob: deleteUploadedBlob,
+          reportFailure,
         })
         return { success: true, ...result }
       } catch (error) {
+        await reportRequestFailure(
+          'Proposal application',
+          error,
+          error instanceof ProposalApplicationError &&
+            error.code !== 'UPLOAD_FAILED'
+        )
         if (error instanceof ProposalApplicationError) {
           throw new TRPCError({
             code:
@@ -1845,9 +1888,16 @@ export const appRouter = router({
           containerName: process.env.NEXT_PUBLIC_CONTAINER_NAME!,
           managementRecipients: getManagementNotificationRecipients(),
           deleteBlob: deleteUploadedBlob,
+          reportFailure,
         })
         return { success: true, ...result }
       } catch (error) {
+        await reportRequestFailure(
+          'Student proposal submission',
+          error,
+          error instanceof ProposalSubmissionError &&
+            error.code !== 'UPLOAD_FAILED'
+        )
         if (error instanceof ProposalSubmissionError) {
           throw new TRPCError({
             code:
@@ -1899,10 +1949,17 @@ export const appRouter = router({
           containerName: process.env.NEXT_PUBLIC_CONTAINER_NAME!,
           managementRecipients: getManagementNotificationRecipients(),
           deleteBlob: deleteUploadedBlob,
+          reportFailure,
         })
         triggerThesisProposalCleverReachDraft(input, submittedAt)
         return { success: true, ...result }
       } catch (error) {
+        await reportRequestFailure(
+          'Supervisor proposal posting',
+          error,
+          error instanceof ProposalPostingError &&
+            error.code !== 'UPLOAD_FAILED'
+        )
         if (error instanceof ProposalPostingError) {
           throw new TRPCError({
             code:
@@ -2004,21 +2061,32 @@ export const appRouter = router({
         return { alreadyAccepted: true, emailSent: false }
       }
 
+      let emailSent = false
+      let emailError: string | null = null
       try {
-        const emailSent = await sendApplicationAcceptedEmail({
+        emailSent = await sendApplicationAcceptedEmail({
           applicantEmail: application.email,
           applicantFullName: application.fullName,
           proposalTitle: proposal.title,
           supervisorEmail: supervisionInfo.supervisorEmail,
         })
-        return { alreadyAccepted: false, emailSent }
       } catch (error) {
         console.error(
           `Failed to send acceptance email for application ${application.id}:`,
           error
         )
-        return { alreadyAccepted: false, emailSent: false }
+        emailError = describeError(error)
       }
+      if (!emailSent) {
+        await reportFailure({
+          process: 'Application acceptance',
+          reference: `application ${application.id}`,
+          problems: [
+            `The acceptance email to ${application.email} ${emailError ? `failed: ${emailError}` : 'was not sent'}`,
+          ],
+        })
+      }
+      return { alreadyAccepted: false, emailSent }
     }),
 
   declineProposalApplication: authedProcedure
@@ -2089,6 +2157,13 @@ export const appRouter = router({
         return { success: true }
       } catch (error) {
         console.error('Error sending email notification:', error)
+        await reportFailure({
+          process: 'Application decline',
+          reference: `application ${input.proposalApplicationId}`,
+          problems: [
+            `The decline email to ${input.applicantEmail} failed: ${describeError(error)}`,
+          ],
+        })
         return { success: false }
       }
     }),
@@ -2238,6 +2313,17 @@ export const appRouter = router({
         console.error(
           `Failed to send ${failedNotificationCount} decline notification(s) for proposal ${proposal.id}`
         )
+        await reportFailure({
+          process: 'Closing a proposal',
+          reference: `proposal ${proposal.id}`,
+          problems: notificationResults.flatMap((result, index) =>
+            result.status === 'rejected'
+              ? [
+                  `The decline email to ${applicationsToDecline[index].email} failed: ${describeError(result.reason)}`,
+                ]
+              : []
+          ),
+        })
       }
 
       return {

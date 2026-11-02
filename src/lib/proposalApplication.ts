@@ -1,5 +1,10 @@
 import type { PrismaClient } from '@prisma/client'
 import { escapeHtml } from 'src/lib/cleverreach/thesisProposal'
+import {
+  type ReportFailure,
+  describeError,
+  ignoreFailures,
+} from 'src/lib/failureNotification'
 import { sendMail } from 'src/lib/mail/sendMail'
 import {
   type SharePointUploadResult,
@@ -199,7 +204,8 @@ export function buildApplicationConfirmationEmail({
 // CV and transcript to SharePoint through the file relay, saves the
 // application with both links, and informs the supervisor and the student.
 // The application stands even if an email or the blob cleanup fails; files
-// already in SharePoint stay there if the write fails.
+// already in SharePoint stay there if the write fails. Failed emails are
+// reported.
 export async function submitProposalApplication({
   input,
   store,
@@ -210,6 +216,7 @@ export async function submitProposalApplication({
   send = sendMail,
   deleteBlob,
   newId = uuidv4,
+  reportFailure = ignoreFailures,
 }: {
   input: ProposalApplicationInput
   store: ProposalApplicationStore
@@ -220,6 +227,7 @@ export async function submitProposalApplication({
   send?: typeof sendMail
   deleteBlob: (blobName: string) => Promise<void>
   newId?: () => string
+  reportFailure?: ReportFailure
 }): Promise<{
   applicationId: string
   supervisorEmailSent: boolean
@@ -293,17 +301,27 @@ export async function submitProposalApplication({
     attachments,
   })
 
+  const problems: string[] = []
   const trySend = async (
     kind: string,
     email: Parameters<typeof sendMail>[0]
   ) => {
     try {
-      return await send(email)
+      const sent = await send(email)
+      if (!sent) {
+        problems.push(
+          `The ${kind} email to ${email.to.join(', ') || '(no recipient)'} was not sent`
+        )
+      }
+      return sent
     } catch (error) {
       console.error(`Failed to send application ${kind} email`, {
         applicationId,
-        error: error instanceof Error ? error.message : String(error),
+        error: describeError(error),
       })
+      problems.push(
+        `The ${kind} email to ${email.to.join(', ')} failed: ${describeError(error)}`
+      )
       return false
     }
   }
@@ -341,6 +359,12 @@ export async function submitProposalApplication({
       })
     }
   }
+
+  await reportFailure({
+    process: 'Proposal application',
+    reference: `application ${applicationId} to proposal ${input.proposalId}`,
+    problems,
+  })
 
   return { applicationId, supervisorEmailSent, studentEmailSent }
 }

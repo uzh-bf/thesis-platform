@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import type { FailureReport } from './failureNotification'
 import {
   ProposalSubmissionError,
   buildSubmissionConfirmationEmail,
@@ -415,4 +416,106 @@ test('matches supervisors through the supervisor store', async () => {
     ['a@df.uzh.ch']
   )
   assert.deepEqual(slugs, ['banking_and_insurance'])
+})
+
+test('reports nothing when every email goes out', async () => {
+  const { store } = createStore()
+  const reports: FailureReport[] = []
+
+  await submitStudentProposal({
+    ...base,
+    input,
+    store,
+    matcher: matcher(['a@df.uzh.ch']),
+    upload: okUpload,
+    send: async () => true,
+    deleteBlob: async () => {},
+    reportFailure: async (report) => {
+      reports.push(report)
+    },
+  })
+
+  assert.deepEqual(
+    reports.flatMap((report) => report.problems),
+    []
+  )
+})
+
+test('reports a topic area that no supervisor follows', async () => {
+  const { store, created } = createStore()
+  const reports: FailureReport[] = []
+
+  await submitStudentProposal({
+    ...base,
+    input,
+    store,
+    matcher: matcher([]),
+    upload: okUpload,
+    send: async () => true,
+    deleteBlob: async () => {},
+    reportFailure: async (report) => {
+      reports.push(report)
+    },
+  })
+
+  assert.equal(created.length, 1)
+  assert.equal(reports.length, 1)
+  assert.equal(reports[0].process, 'Student proposal submission')
+  assert.equal(reports[0].reference, 'proposal prop-1')
+  assert.deepEqual(reports[0].problems, [
+    'No supervisor has email notifications on for "Banking & Insurance", so none were informed',
+  ])
+})
+
+test('reports failed emails and a failed matching in one report', async () => {
+  const { store } = createStore()
+  const reports: FailureReport[] = []
+
+  await submitStudentProposal({
+    ...base,
+    input,
+    store,
+    matcher: {
+      async findNotifiedSupervisorEmails() {
+        throw new Error('db down')
+      },
+    },
+    upload: okUpload,
+    send: async () => {
+      throw new Error('sendMail status=401')
+    },
+    deleteBlob: async () => {},
+    reportFailure: async (report) => {
+      reports.push(report)
+    },
+  })
+
+  assert.equal(reports.length, 1)
+  assert.deepEqual(reports[0].problems, [
+    'The confirmation email to student@uzh.ch failed: sendMail status=401',
+    'Finding the supervisors to inform failed, so none were emailed: db down',
+  ])
+})
+
+test('reports supervisor emails the relay skipped', async () => {
+  const { store } = createStore()
+  const reports: FailureReport[] = []
+
+  const result = await submitStudentProposal({
+    ...base,
+    input,
+    store,
+    matcher: matcher(['a@df.uzh.ch', 'b@df.uzh.ch']),
+    upload: okUpload,
+    send: async (mail) => !mail.to.includes('b@df.uzh.ch'),
+    deleteBlob: async () => {},
+    reportFailure: async (report) => {
+      reports.push(report)
+    },
+  })
+
+  assert.equal(result.supervisorEmailsSent, 1)
+  assert.deepEqual(reports[0].problems, [
+    'The supervisor email to b@df.uzh.ch was not sent',
+  ])
 })

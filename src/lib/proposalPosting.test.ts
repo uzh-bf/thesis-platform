@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import type { FailureReport } from './failureNotification'
 import {
   ProposalPostingError,
   buildProposalPostedEmail,
@@ -223,4 +224,33 @@ test('replaces characters SharePoint does not allow', () => {
     toSharePointName('a/b\\c:d*e?f"g<h>i|j#k%l'),
     'a_b_c_d_e_f_g_h_i_j_k_l'
   )
+})
+
+test('reports a posted email that was not sent', async () => {
+  const { store } = createStore()
+  const reports: FailureReport[] = []
+
+  const result = await postSupervisorProposal({
+    ...base,
+    input,
+    store,
+    upload: async () => ({
+      webUrl: 'https://sp/f',
+      mediaType: 'application/pdf',
+    }),
+    send: async () => false,
+    deleteBlob: async () => {},
+    reportFailure: async (report) => {
+      reports.push(report)
+    },
+  })
+
+  assert.equal(result.emailSent, false)
+  assert.deepEqual(reports, [
+    {
+      process: 'Supervisor proposal posting',
+      reference: 'proposal p1',
+      problems: ['The confirmation email to prof@df.uzh.ch was not sent'],
+    },
+  ])
 })
