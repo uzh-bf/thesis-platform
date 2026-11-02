@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.31.0](https://github.com/uzh-bf/thesis-platform/compare/v1.30.1...v1.31.0) (2026-11-02)
+
+
+### Features
+
+* **applications:** submit student applications in-app instead of via Power Automate ([#219](https://github.com/uzh-bf/thesis-platform/issues/219)) ([0063be6](https://github.com/uzh-bf/thesis-platform/commit/0063be6fd37dc8ee2e6426a155e585162051d2a2))
+
 ### [1.30.1](https://github.com/uzh-bf/thesis-platform/compare/v1.30.0...v1.30.1) (2026-11-02)
 
 ## [1.30.0](https://github.com/uzh-bf/thesis-platform/compare/v1.29.0...v1.30.0) (2026-10-30)
