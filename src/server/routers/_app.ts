@@ -529,6 +529,7 @@ const supervisorErrorCodes = {
   NOT_A_SUPERVISOR: 'BAD_REQUEST',
   OTHER_DEPARTMENT: 'CONFLICT',
   DEVELOPER: 'CONFLICT',
+  ALREADY_SUPERVISOR: 'CONFLICT',
   UNKNOWN_TOPIC_AREA: 'BAD_REQUEST',
 } as const
 
@@ -4366,7 +4367,7 @@ export const appRouter = router({
 
       await sendAdminChangeNotification({
         tab: 'Supervisors',
-        action: before ? 'Update supervisor' : 'Add supervisor',
+        action: before ? 'Make existing user a supervisor' : 'Add supervisor',
         actor: {
           userId: ctx.user.sub,
           name: ctx.user.name,

@@ -51,6 +51,7 @@ export type SupervisorErrorCode =
   | 'NOT_A_SUPERVISOR'
   | 'OTHER_DEPARTMENT'
   | 'DEVELOPER'
+  | 'ALREADY_SUPERVISOR'
   | 'UNKNOWN_TOPIC_AREA'
 
 export class SupervisorError extends Error {
@@ -213,7 +214,8 @@ const uniqueSlugs = (slugs: string[]) => sortSlugs([...new Set(slugs)])
 
 // Replaces the Power Automate "User Creation With Supervisor Role" flow: adds
 // a new user as supervisor, or makes an existing user of this department one.
-// Like the flow, the name of an existing user is updated.
+// An existing user gets the new name, as with the flow. Existing supervisors
+// are refused so that adding someone twice cannot wipe their settings.
 export async function addSupervisor({
   store,
   department,
@@ -227,7 +229,8 @@ export async function addSupervisor({
   name: string
   email: string
 } & SupervisorSettings): Promise<{
-  before: Supervisor | null
+  // The user before it became a supervisor; null for a new user.
+  before: SupervisorUser | null
   after: Supervisor
 }> {
   const settings = {
@@ -263,6 +266,12 @@ export async function addSupervisor({
       `${existing.email} is a developer and cannot be made a supervisor`
     )
   }
+  if (existing.role === UserRole.SUPERVISOR) {
+    throw new SupervisorError(
+      'ALREADY_SUPERVISOR',
+      `${existing.email} is already a supervisor; use Edit to change their settings`
+    )
+  }
 
   const after = await store.updateUser(existing.id, {
     name: trimmedName,
@@ -270,11 +279,7 @@ export async function addSupervisor({
     department,
     ...settings,
   })
-  return {
-    before:
-      existing.role === UserRole.SUPERVISOR ? toSupervisor(existing) : null,
-    after,
-  }
+  return { before: existing, after }
 }
 
 async function findSupervisor(
