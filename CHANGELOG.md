@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.34.0](https://github.com/uzh-bf/thesis-platform/compare/v1.33.0...v1.34.0) (2026-11-02)
+
+
+### Features
+
+* **reminders:** mail failures of the student reminder job ([#225](https://github.com/uzh-bf/thesis-platform/issues/225)) ([69dc022](https://github.com/uzh-bf/thesis-platform/commit/69dc022da4e82f4214fb66b9a7b8a972f65d2809))
+
 ## [1.33.0](https://github.com/uzh-bf/thesis-platform/compare/v1.32.0...v1.33.0) (2026-11-02)
 
 
