@@ -13,6 +13,7 @@ import {
   toSharePointName,
   uploadToSharePoint,
 } from 'src/lib/sharePointFileRelay'
+import type { SupervisorStore } from 'src/lib/supervisors'
 import { v4 as uuidv4 } from 'uuid'
 
 export interface ProposalSubmissionInput {
@@ -78,6 +79,19 @@ export interface ProposalSubmissionStore {
 // opt-in, which the Power Automate flow read from the SharePoint list.
 export interface SupervisorMatcher {
   findNotifiedSupervisorEmails(topicAreaSlug: string): Promise<string[]>
+}
+
+// Supervisors of this department who follow the topic area and opted into
+// submission notifications (Admin → Supervisors or "My topic areas").
+export function createSupervisorMatcher(
+  store: Pick<SupervisorStore, 'findSupervisorsToNotify'>
+): SupervisorMatcher {
+  return {
+    async findNotifiedSupervisorEmails(topicAreaSlug) {
+      const supervisors = await store.findSupervisorsToNotify(topicAreaSlug)
+      return supervisors.map((supervisor) => supervisor.email)
+    },
+  }
 }
 
 export type ProposalSubmissionErrorCode =

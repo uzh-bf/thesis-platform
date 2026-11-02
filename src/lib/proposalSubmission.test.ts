@@ -4,6 +4,7 @@ import {
   ProposalSubmissionError,
   buildSubmissionConfirmationEmail,
   buildSupervisorNotificationEmail,
+  createSupervisorMatcher,
   formatLanguages,
   submitStudentProposal,
   type NewStudentProposal,
@@ -396,4 +397,22 @@ test('links the proposal in the supervisor email', () => {
 test('formats stored languages for emails', () => {
   assert.equal(formatLanguages('["English","German"]'), 'English, German')
   assert.equal(formatLanguages('English'), 'English')
+})
+
+test('matches supervisors through the supervisor store', async () => {
+  const slugs: string[] = []
+  const supervisorMatcher = createSupervisorMatcher({
+    async findSupervisorsToNotify(slug) {
+      slugs.push(slug)
+      return [{ name: 'A', email: 'a@df.uzh.ch' }]
+    },
+  })
+
+  assert.deepEqual(
+    await supervisorMatcher.findNotifiedSupervisorEmails(
+      'banking_and_insurance'
+    ),
+    ['a@df.uzh.ch']
+  )
+  assert.deepEqual(slugs, ['banking_and_insurance'])
 })

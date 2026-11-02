@@ -51,11 +51,12 @@ import {
 import {
   ProposalSubmissionError,
   createPrismaProposalSubmissionStore,
+  createSupervisorMatcher,
   submitStudentProposal,
-  type SupervisorMatcher,
 } from 'src/lib/proposalSubmission'
 import { isFileRelayConfigured } from 'src/lib/sharePointFileRelay'
 import { STUDENT_PROPOSAL_REMINDER_INTERVAL_DAYS } from 'src/lib/studentReminder'
+import { createPrismaSupervisorStore } from 'src/lib/supervisors'
 import type { Context } from 'src/server/context'
 import { prisma } from 'src/server/prisma'
 import {
@@ -1380,15 +1381,6 @@ const uploadPurposeSchema = z.enum([
   'submission-attachment',
 ])
 
-// TODO: match on the supervisors' topic areas and notification opt-in once
-// the supervisor data model moves from the SharePoint list into the
-// database. Until then no supervisor is notified.
-const supervisorMatcher: SupervisorMatcher = {
-  async findNotifiedSupervisorEmails() {
-    return []
-  },
-}
-
 const sanitizeUploadFileName = (fileName: string) => {
   const normalizedName = fileName
     .split(/[\\/]/)
@@ -1794,7 +1786,12 @@ export const appRouter = router({
             prisma,
             process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
           ),
-          matcher: supervisorMatcher,
+          matcher: createSupervisorMatcher(
+            createPrismaSupervisorStore(
+              prisma,
+              process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+            )
+          ),
           department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME ?? '',
           appUrl: getAppBaseUrl(),
           containerName: process.env.NEXT_PUBLIC_CONTAINER_NAME!,
