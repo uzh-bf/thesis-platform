@@ -126,7 +126,20 @@ export default function ApplicationForm({
       }}
       validationSchema={SignupSchema}
       onSubmit={async (values, { resetForm }) => {
-        await submitApplication.mutateAsync(values)
+        try {
+          await submitApplication.mutateAsync({
+            ...values,
+            cvFile: values.cvFile ?? '',
+            transcriptFile: values.transcriptFile ?? '',
+          })
+        } catch (error: any) {
+          console.error('Application submission error:', error)
+          toast.error(
+            error?.message ||
+              'Failed to submit your application. Please try again.'
+          )
+          return
+        }
         await setLocalStorage(true)
         resetForm()
         setCv([])
@@ -277,8 +290,14 @@ export default function ApplicationForm({
             </div>
           </div>
           <div>
-            <Button className={{ root: 'mt-2' }} type="submit">
-              Submit Application
+            <Button
+              className={{ root: 'mt-2' }}
+              type="submit"
+              disabled={submitApplication.isPending}
+            >
+              {submitApplication.isPending
+                ? 'Submitting...'
+                : 'Submit Application'}
             </Button>
             <Toaster />
           </div>

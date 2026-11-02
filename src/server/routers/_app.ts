@@ -17,7 +17,6 @@ import {
   generateBlobSASQueryParameters,
 } from '@azure/storage-blob'
 import { TRPCError } from '@trpc/server'
-import axios from 'axios'
 import 'cross-fetch/polyfill'
 import dayjs from 'dayjs'
 import {
@@ -32,6 +31,11 @@ import {
   type ThesisProposalDraftPayload,
 } from 'src/lib/cleverreach/thesisProposal'
 import { sendMail } from 'src/lib/mail/sendMail'
+import {
+  ProposalApplicationError,
+  createPrismaProposalApplicationStore,
+  submitProposalApplication,
+} from 'src/lib/proposalApplication'
 import {
   PROPOSAL_FEEDBACK_ACTIONS,
   buildProposalFeedbackEmail,
@@ -1680,50 +1684,46 @@ export const appRouter = router({
         startingDate: z.string(),
         motivation: z.string(),
         proposalId: z.string(),
-        cvFile: z.any(),
-        transcriptFile: z.any(),
+        cvFile: z.string(),
+        transcriptFile: z.string(),
         allowUsage: z.boolean(),
         allowPublication: z.boolean(),
       })
     )
     .mutation(async ({ input }) => {
-      try {
-        console.log('Submitting application to Power Automate...')
-        console.log('APPLICATION_URL:', process.env.APPLICATION_URL)
-        console.log(
-          'Payload:',
-          JSON.stringify(
-            { ...input, cvFile: '[file]', transcriptFile: '[file]' },
-            null,
-            2
-          )
-        )
-
-        const res = await axios.post(
-          process.env.APPLICATION_URL as string,
-          input,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              secretkey: process.env.FLOW_SECRET as string,
-            },
-            timeout: 10000,
-          }
-        )
-
-        console.log('Power Automate response:', res.status, res.statusText)
-        return { success: true, data: res.data }
-      } catch (error: any) {
-        console.error('Error submitting application to Power Automate:')
-        console.error('Error message:', error.message)
-        if (error.response) {
-          console.error('Response status:', error.response.status)
-          console.error('Response data:', error.response.data)
+      // Local development has no relay; nothing is stored or sent there.
+      if (!isFileRelayConfigured()) {
+        return {
+          success: true,
+          message: 'Development mode: FILE_RELAY_HTTP_URL not configured',
         }
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: `Failed to submit application: ${error.message}`,
+      }
+
+      try {
+        const result = await submitProposalApplication({
+          input,
+          store: createPrismaProposalApplicationStore(prisma),
+          department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME ?? '',
+          containerName: process.env.NEXT_PUBLIC_CONTAINER_NAME!,
+          managementRecipients: getManagementNotificationRecipients(),
+          deleteBlob: deleteUploadedBlob,
         })
+        return { success: true, ...result }
+      } catch (error) {
+        if (error instanceof ProposalApplicationError) {
+          throw new TRPCError({
+            code:
+              error.code === 'UPLOAD_FAILED'
+                ? 'INTERNAL_SERVER_ERROR'
+                : error.code === 'PROPOSAL_NOT_FOUND'
+                  ? 'NOT_FOUND'
+                  : error.code === 'ALREADY_APPLIED'
+                    ? 'CONFLICT'
+                    : 'BAD_REQUEST',
+            message: error.message,
+          })
+        }
+        throw error
       }
     }),
 
@@ -2339,122 +2339,6 @@ export const appRouter = router({
       } catch (error) {
         console.error('Error updating proposal:', error)
         throw new Error('Failed to update proposal')
-      }
-    }),
-
-  createProposalApplication: publicProcedure
-    .meta({
-      openapi: {
-        method: 'POST',
-        path: '/createProposalApplication',
-      },
-    })
-    .input(
-      z.object({
-        flowSecret: z.string(),
-        proposalApplication: z.object({
-          email: z.string(),
-          matriculationNumber: z.string(),
-          fullName: z.string(),
-          plannedStartAt: z.string(),
-          motivation: z.string(),
-          proposalId: z.string(),
-          allowPublication: z.boolean(),
-          allowUsage: z.boolean(),
-        }),
-        applicationAttachment: z.object({
-          href_cv: z.string(),
-          href_transcript: z.string(),
-        }),
-      })
-    )
-    .output(
-      z.object({
-        proposal: z.object({
-          title: z.string(),
-          ownedByUserEmail: z.string().nullable(),
-        }),
-        supervisor: z.object({ email: z.string().nullable() }),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      // Step 1: Check if flowSecret is correct
-      if (input.flowSecret !== process.env.FLOW_SECRET) {
-        throw new TRPCError({ code: 'UNAUTHORIZED' })
-      }
-
-      // Get proposal and supervision details first
-      const proposal = await prisma.proposal.findUnique({
-        where: { id: input.proposalApplication.proposalId },
-        include: {
-          supervisedBy: {
-            include: {
-              supervisor: true,
-              responsible: true,
-            },
-          },
-        },
-      })
-
-      if (!proposal) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Proposal not found',
-        })
-      }
-
-      // Create the application with attachments in a transaction
-      await prisma.$transaction(async (tx) => {
-        // Create the main application
-        const application = await tx.proposalApplication.create({
-          data: {
-            statusKey: 'OPEN',
-            email: input.proposalApplication.email,
-            matriculationNumber: input.proposalApplication.matriculationNumber,
-            fullName: input.proposalApplication.fullName,
-            plannedStartAt: new Date(input.proposalApplication.plannedStartAt),
-            motivation: input.proposalApplication.motivation,
-            proposalId: input.proposalApplication.proposalId,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            allowPublication: input.proposalApplication.allowPublication,
-            allowUsage: input.proposalApplication.allowUsage,
-          },
-        })
-
-        // Create CV attachment
-        await tx.applicationAttachment.create({
-          data: {
-            name: 'CV',
-            href: input.applicationAttachment.href_cv,
-            type: 'application/pdf',
-            proposalApplicationId: application.id,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        })
-
-        // Create transcript attachment
-        await tx.applicationAttachment.create({
-          data: {
-            name: 'Transcript',
-            href: input.applicationAttachment.href_transcript,
-            type: 'application/pdf',
-            proposalApplicationId: application.id,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        })
-      })
-
-      return {
-        proposal: {
-          title: proposal.title,
-          ownedByUserEmail: proposal.ownedByUserEmail,
-        },
-        supervisor: {
-          email: proposal.supervisedBy[0]?.supervisorEmail ?? null,
-        },
       }
     }),
 
