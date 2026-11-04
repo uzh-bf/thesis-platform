@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.36.0](https://github.com/uzh-bf/thesis-platform/compare/v1.35.0...v1.36.0) (2026-11-04)
+
+
+### Features
+
+* **supervisors:** admin notes and restricted supervisor list ([#227](https://github.com/uzh-bf/thesis-platform/issues/227)) ([b7a095c](https://github.com/uzh-bf/thesis-platform/commit/b7a095c130b8d5fb889d05b6bea8fe2067e54e98))
+
 ## [1.35.0](https://github.com/uzh-bf/thesis-platform/compare/v1.34.0...v1.35.0) (2026-11-04)
 
 
