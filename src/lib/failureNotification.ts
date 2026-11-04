@@ -34,16 +34,34 @@ export function getFailureNotificationRecipients(
     : parseRecipients(env.ADMIN_CHANGE_NOTIFICATION_RECIPIENTS)
 }
 
+// Staging also runs as department DF, so its failures would read exactly like
+// production's; non-production environments are named in the subject.
+const environmentLabels: Record<string, string> = {
+  stg: 'Staging',
+  dev: 'Dev',
+}
+
+export function getFailureEnvironmentLabel(
+  env: Record<string, string | undefined> = process.env
+) {
+  const environment = (env.THESIS_PLATFORM_ENV ?? '').trim().toLowerCase()
+  return environmentLabels[environment] ?? ''
+}
+
 export function buildFailureNotificationEmail({
   department,
+  environment = '',
   report,
   recipients,
 }: {
   // Short department name (DF, IBW) used in the subject.
   department: string
+  // e.g. "Staging"; empty in production.
+  environment?: string
   report: FailureReport
   recipients: string[]
 }): Parameters<typeof sendMail>[0] {
+  const prefix = environment ? `[${environment}] ` : ''
   const reference = report.reference ? ` (${report.reference})` : ''
   const problems = report.problems
     .map((problem) => `<li>${escapeHtml(problem)}</li>`)
@@ -51,7 +69,7 @@ export function buildFailureNotificationEmail({
 
   return {
     to: recipients,
-    subject: `${department} Theses - Failure: ${report.process}${reference}`,
+    subject: `${prefix}${department} Theses - Failure: ${report.process}${reference}`,
     bodyAsHtml: `<p>${escapeHtml(report.process)}${escapeHtml(reference)} did not complete everything:</p><ul>${problems}</ul><p>Details are in the application logs.</p>`,
     importance: 'High',
   }
@@ -62,10 +80,12 @@ export function buildFailureNotificationEmail({
 // report only reaches the logs.
 export function createFailureReporter({
   department,
+  environment,
   recipients,
   send = sendMail,
 }: {
   department: string
+  environment?: string
   recipients: string[]
   send?: typeof sendMail
 }): ReportFailure {
@@ -82,7 +102,12 @@ export function createFailureReporter({
 
     try {
       const sent = await send(
-        buildFailureNotificationEmail({ department, report, recipients })
+        buildFailureNotificationEmail({
+          department,
+          environment,
+          report,
+          recipients,
+        })
       )
       if (!sent) console.warn('Failure report mail was skipped by sendMail')
     } catch (error) {

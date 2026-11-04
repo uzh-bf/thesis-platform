@@ -5,6 +5,7 @@ import { getAppBaseUrl } from 'src/lib/appUrl'
 import {
   createFailureReporter,
   describeError,
+  getFailureEnvironmentLabel,
   getFailureNotificationRecipients,
 } from 'src/lib/failureNotification'
 import {
@@ -46,6 +47,7 @@ export default async function handler(
   const department = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
   const reportFailure = createFailureReporter({
     department: department ?? '',
+    environment: getFailureEnvironmentLabel(),
     recipients: getFailureNotificationRecipients(),
   })
 

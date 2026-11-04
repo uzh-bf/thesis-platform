@@ -3,6 +3,7 @@ import test from 'node:test'
 import {
   buildFailureNotificationEmail,
   createFailureReporter,
+  getFailureEnvironmentLabel,
   getFailureNotificationRecipients,
 } from './failureNotification'
 
@@ -45,6 +46,34 @@ test('builds an escaped failure mail', () => {
     mail.bodyAsHtml,
     /<li>Mail to &lt;a@b&gt; failed: status=401<\/li>/
   )
+})
+
+test('names non-production environments', () => {
+  assert.equal(
+    getFailureEnvironmentLabel({ THESIS_PLATFORM_ENV: 'stg' }),
+    'Staging'
+  )
+  assert.equal(
+    getFailureEnvironmentLabel({ THESIS_PLATFORM_ENV: ' DEV ' }),
+    'Dev'
+  )
+  assert.equal(getFailureEnvironmentLabel({ THESIS_PLATFORM_ENV: 'prd' }), '')
+  assert.equal(
+    getFailureEnvironmentLabel({ THESIS_PLATFORM_ENV: 'prd_ibw' }),
+    ''
+  )
+  assert.equal(getFailureEnvironmentLabel({}), '')
+})
+
+test('marks the subject of a staging failure mail', () => {
+  const mail = buildFailureNotificationEmail({
+    department: 'DF',
+    environment: 'Staging',
+    report: { process: 'Posting', problems: ['x'] },
+    recipients: ['flow@df.uzh.ch'],
+  })
+
+  assert.equal(mail.subject, '[Staging] DF Theses - Failure: Posting')
 })
 
 test('mails a report and never throws', async () => {
