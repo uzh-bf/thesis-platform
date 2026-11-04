@@ -7,6 +7,8 @@ export interface Supervisor {
   email: string
   topicAreaSlugs: string[]
   submissionNotifications: boolean
+  // Internal admin notes; not part of the supervisor's own settings.
+  notes: string | null
 }
 
 export interface SupervisorUser extends Supervisor {
@@ -31,7 +33,11 @@ export interface SupervisorStore {
   // Topic areas of this department; supervisors can only pick from these.
   listTopicAreas(): Promise<TopicAreaOption[]>
   createSupervisor(
-    data: { name: string; email: string } & SupervisorSettings
+    data: {
+      name: string
+      email: string
+      notes: string | null
+    } & SupervisorSettings
   ): Promise<Supervisor>
   updateUser(
     id: string,
@@ -39,6 +45,7 @@ export interface SupervisorStore {
       name?: string
       role?: string
       department?: Department
+      notes?: string | null
     } & Partial<SupervisorSettings>
   ): Promise<Supervisor>
   findSupervisorsToNotify(
@@ -71,6 +78,7 @@ const userSelect = {
   role: true,
   department: true,
   supervisorSubmissionNotifications: true,
+  supervisorNotes: true,
   supervisorTopicAreas: { select: { slug: true }, orderBy: { name: 'asc' } },
 } as const
 
@@ -81,6 +89,7 @@ type SelectedUser = {
   role: string
   department: Department | null
   supervisorSubmissionNotifications: boolean
+  supervisorNotes: string | null
   supervisorTopicAreas: { slug: string }[]
 }
 
@@ -92,6 +101,7 @@ const toSupervisorUser = (user: SelectedUser): SupervisorUser => ({
   department: user.department,
   topicAreaSlugs: user.supervisorTopicAreas.map((area) => area.slug),
   submissionNotifications: user.supervisorSubmissionNotifications,
+  notes: user.supervisorNotes,
 })
 
 const toSupervisor = ({ role: _r, department: _d, ...rest }: SupervisorUser) =>
@@ -150,7 +160,13 @@ export function createPrismaSupervisorStore(
       })
     },
 
-    async createSupervisor({ name, email, topicAreaSlugs, ...settings }) {
+    async createSupervisor({
+      name,
+      email,
+      notes,
+      topicAreaSlugs,
+      ...settings
+    }) {
       const user = await prisma.user.create({
         data: {
           name,
@@ -158,6 +174,7 @@ export function createPrismaSupervisorStore(
           role: UserRole.SUPERVISOR,
           department,
           supervisorSubmissionNotifications: settings.submissionNotifications,
+          supervisorNotes: notes,
           supervisorTopicAreas: {
             connect: topicAreaSlugs.map((slug) => ({ slug })),
           },
@@ -167,11 +184,15 @@ export function createPrismaSupervisorStore(
       return toSupervisor(toSupervisorUser(user))
     },
 
-    async updateUser(id, { name, role, department: newDepartment, ...rest }) {
+    async updateUser(
+      id,
+      { name, role, department: newDepartment, notes, ...rest }
+    ) {
       const user = await prisma.user.update({
         where: { id },
         data: {
           ...(name !== undefined ? { name } : {}),
+          ...(notes !== undefined ? { supervisorNotes: notes } : {}),
           ...(role !== undefined ? { role } : {}),
           ...(newDepartment !== undefined ? { department: newDepartment } : {}),
           ...settingsData(rest),
@@ -212,6 +233,10 @@ const sortSlugs = (slugs: string[]) =>
 
 const uniqueSlugs = (slugs: string[]) => sortSlugs([...new Set(slugs)])
 
+// Blank notes are stored as null; undefined leaves stored notes unchanged.
+const normalizeNotes = (notes: string | undefined) =>
+  notes === undefined ? undefined : notes.trim() || null
+
 // Replaces the Power Automate "User Creation With Supervisor Role" flow: adds
 // a new user as supervisor, or makes an existing user of this department one.
 // An existing user gets the new name, as with the flow. Existing supervisors
@@ -223,11 +248,13 @@ export async function addSupervisor({
   email,
   topicAreaSlugs,
   submissionNotifications,
+  notes,
 }: {
   store: SupervisorStore
   department: Department
   name: string
   email: string
+  notes?: string
 } & SupervisorSettings): Promise<{
   // The user before it became a supervisor; null for a new user.
   before: SupervisorUser | null
@@ -247,6 +274,7 @@ export async function addSupervisor({
     const after = await store.createSupervisor({
       name: trimmedName,
       email: normalizedEmail,
+      notes: normalizeNotes(notes) ?? null,
       ...settings,
     })
     return { before: null, after }
@@ -278,6 +306,7 @@ export async function addSupervisor({
     role: UserRole.SUPERVISOR,
     department,
     ...settings,
+    ...(notes !== undefined ? { notes: normalizeNotes(notes) } : {}),
   })
   return { before: existing, after }
 }
@@ -300,17 +329,20 @@ async function findSupervisor(
   return user
 }
 
-// Used by admins for any supervisor and by supervisors for themselves.
+// Used by admins for any supervisor and by supervisors for themselves; only
+// admins pass notes.
 export async function updateSupervisorSettings({
   store,
   department,
   userId,
   topicAreaSlugs,
   submissionNotifications,
+  notes,
 }: {
   store: SupervisorStore
   department: Department
   userId: string
+  notes?: string
 } & SupervisorSettings): Promise<{ before: Supervisor; after: Supervisor }> {
   const settings = {
     topicAreaSlugs: uniqueSlugs(topicAreaSlugs),
@@ -318,11 +350,15 @@ export async function updateSupervisorSettings({
   }
   await assertKnownTopicAreas(store, settings.topicAreaSlugs)
   const existing = await findSupervisor(store, department, userId)
-  const after = await store.updateUser(existing.id, settings)
+  const after = await store.updateUser(existing.id, {
+    ...settings,
+    ...(notes !== undefined ? { notes: normalizeNotes(notes) } : {}),
+  })
   return { before: toSupervisor(existing), after }
 }
 
-// The user is kept: proposals, supervisions and feedback reference it.
+// The user is kept: proposals, supervisions and feedback reference it. Notes
+// are kept too, as context in case the person is added again.
 export async function removeSupervisorRole({
   store,
   department,

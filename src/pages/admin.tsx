@@ -89,6 +89,12 @@ export default function AdminPanel() {
     }
   )
 
+  const { data: supervisorListAccess } = trpc.getSupervisorListAccess.useQuery(
+    undefined,
+    { enabled: isAdmin || isDeveloper }
+  )
+  const canAccessSupervisorsTab = supervisorListAccess?.canView === true
+
   const { data: supervisors } = trpc.getAllSupervisors.useQuery(undefined, {
     enabled: isAdminOnly,
   })
@@ -173,7 +179,7 @@ export default function AdminPanel() {
     if (router.query.tab === 'users' && canAccessUsersTab) {
       setActiveTab('users')
     }
-    if (router.query.tab === 'supervisors' && canAccessUsersTab) {
+    if (router.query.tab === 'supervisors' && canAccessSupervisorsTab) {
       setActiveTab('supervisors')
     }
     if (router.query.tab === 'stats' && isAdminOnly) setActiveTab('stats')
@@ -184,6 +190,7 @@ export default function AdminPanel() {
     router.isReady,
     router.query.tab,
     canAccessUsersTab,
+    canAccessSupervisorsTab,
     isAdminOnly,
     isAdmin,
     isDeveloper,
@@ -278,6 +285,10 @@ export default function AdminPanel() {
             value: 'users',
             label: 'Users',
           },
+        ]
+      : []),
+    ...(canAccessSupervisorsTab
+      ? [
           {
             id: 'admin-tabs-supervisors',
             value: 'supervisors',
@@ -1467,9 +1478,11 @@ export default function AdminPanel() {
             </TabContent>
           )}
 
-          {canAccessUsersTab && (
+          {canAccessSupervisorsTab && (
             <TabContent value="supervisors" className={{ root: 'pt-3' }}>
-              <AdminSupervisors />
+              <AdminSupervisors
+                canManageAccess={supervisorListAccess?.canManageAccess === true}
+              />
             </TabContent>
           )}
 

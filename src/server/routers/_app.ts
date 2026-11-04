@@ -63,6 +63,7 @@ import {
 } from 'src/lib/proposalSubmission'
 import { isFileRelayConfigured } from 'src/lib/sharePointFileRelay'
 import { STUDENT_PROPOSAL_REMINDER_INTERVAL_DAYS } from 'src/lib/studentReminder'
+import { canViewSupervisorList } from 'src/lib/supervisorListAccess'
 import {
   SupervisorError,
   addSupervisor,
@@ -82,6 +83,7 @@ import {
   optionalAuthedProcedure,
   publicProcedure,
   router,
+  supervisorListProcedure,
 } from 'src/server/trpc'
 import { ProposalStatusFilter } from 'src/types/app'
 import { v4 as uuidv4 } from 'uuid'
@@ -585,6 +587,11 @@ async function runSupervisorAction<T>(
 const supervisorSettingsInput = z.object({
   topicAreaSlugs: z.array(z.string().min(1)),
   submissionNotifications: z.boolean(),
+})
+
+// Admin-only; supervisors cannot see or change their notes.
+const adminSupervisorSettingsInput = supervisorSettingsInput.extend({
+  notes: z.string().max(2000).optional(),
 })
 
 async function sendAdminChangeNotification({
@@ -4175,7 +4182,94 @@ export const appRouter = router({
       return { success: true }
     }),
 
-  adminGetSupervisors: adminProcedure.query(() =>
+  // Whether the current user sees the Supervisors tab; developers also manage
+  // who else does.
+  getSupervisorListAccess: authedProcedure.query(async ({ ctx }) => {
+    const user = ctx.user.sub
+      ? await prisma.user.findUnique({
+          where: { id: ctx.user.sub },
+          select: { role: true, adminRole: true, supervisorListAccess: true },
+        })
+      : null
+    return {
+      canView: user ? canViewSupervisorList(user) : false,
+      canManageAccess: user?.role === UserRole.DEVELOPER,
+    }
+  }),
+
+  // Admins of this department, who can be granted the Supervisors list.
+  developerGetSupervisorListAccess: developerProcedure.query(() =>
+    prisma.user.findMany({
+      where: {
+        department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department,
+        adminRole: { not: 'UNSET' },
+        role: { not: UserRole.DEVELOPER },
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        adminRole: true,
+        supervisorListAccess: true,
+      },
+      orderBy: [{ name: 'asc' }, { email: 'asc' }],
+    })
+  ),
+
+  developerSetSupervisorListAccess: developerProcedure
+    .input(z.object({ userId: z.string().min(1), access: z.boolean() }))
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      const department = process.env.NEXT_PUBLIC_DEPARTMENT_NAME as Department
+      const select = {
+        id: true,
+        name: true,
+        email: true,
+        adminRole: true,
+        supervisorListAccess: true,
+      } as const
+      const before = await prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { ...select, department: true },
+      })
+      if (!before || before.department !== department) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' })
+      }
+      if (input.access && before.adminRole === 'UNSET') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `${before.email} has no admin role and cannot open the admin panel`,
+        })
+      }
+
+      const after = await prisma.user.update({
+        where: { id: before.id },
+        data: { supervisorListAccess: input.access },
+        select,
+      })
+
+      await sendAdminChangeNotification({
+        tab: 'Supervisors',
+        action: input.access
+          ? 'Grant supervisor list access'
+          : 'Revoke supervisor list access',
+        actor: {
+          userId: ctx.user.sub,
+          name: ctx.user.name,
+          email: ctx.user.email,
+          role: ctx.user.role,
+          adminRole: ctx.user.adminRole,
+        },
+        entityId: after.id,
+        details: `User: ${after.name} (${after.email})`,
+        oldState: before,
+        newState: after,
+      })
+
+      return { success: true }
+    }),
+
+  adminGetSupervisors: supervisorListProcedure.query(() =>
     runSupervisorAction(async ({ store }) => {
       const [supervisors, topicAreas] = await Promise.all([
         store.listSupervisors(),
@@ -4185,9 +4279,9 @@ export const appRouter = router({
     })
   ),
 
-  adminAddSupervisor: adminProcedure
+  adminAddSupervisor: supervisorListProcedure
     .input(
-      supervisorSettingsInput.extend({
+      adminSupervisorSettingsInput.extend({
         name: z.string().trim().min(1),
         email: z.string().trim().email(),
       })
@@ -4218,8 +4312,8 @@ export const appRouter = router({
       return { success: true, created: before === null }
     }),
 
-  adminUpdateSupervisorSettings: adminProcedure
-    .input(supervisorSettingsInput.extend({ userId: z.string().min(1) }))
+  adminUpdateSupervisorSettings: supervisorListProcedure
+    .input(adminSupervisorSettingsInput.extend({ userId: z.string().min(1) }))
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
       const { before, after } = await runSupervisorAction(
@@ -4246,7 +4340,7 @@ export const appRouter = router({
       return { success: true }
     }),
 
-  adminRemoveSupervisorRole: adminProcedure
+  adminRemoveSupervisorRole: supervisorListProcedure
     .input(z.object({ userId: z.string().min(1) }))
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {

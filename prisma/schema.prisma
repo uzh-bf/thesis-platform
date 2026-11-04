@@ -90,6 +90,13 @@ model User {
   // with notifications enabled are emailed about a new submission.
   supervisorTopicAreas              TopicArea[] @relation("SupervisorTopicAreas")
   supervisorSubmissionNotifications Boolean     @default(false)
+  // Internal admin notes (leave, funding, external status, ...); never shown
+  // to the supervisor.
+  supervisorNotes                   String?     @db.Text
+
+  // Developers always see the Supervisors list; admins only when a developer
+  // grants it here.
+  supervisorListAccess Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt

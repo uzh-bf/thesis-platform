@@ -27,6 +27,7 @@ const user = (overrides: Partial<SupervisorUser> = {}): SupervisorUser => ({
   department: 'DF',
   topicAreaSlugs: [],
   submissionNotifications: false,
+  notes: null,
   ...overrides,
 })
 
@@ -252,4 +253,35 @@ test('notifies only opted-in supervisors of the topic area', async () => {
   assert.deepEqual(await findSupervisorsToNotify(store, 'corporate_finance'), [
     { name: 'Ada Lovelace', email: 'ada@df.uzh.ch' },
   ])
+})
+
+test('admins set notes; blank notes are cleared and omitted notes are kept', async () => {
+  const { store, users } = createStore()
+  await addSupervisor({
+    store,
+    department: 'DF',
+    name: 'Grace Hopper',
+    email: 'grace@df.uzh.ch',
+    ...settings,
+    notes: '  Extern  ',
+  })
+  assert.equal(users.get('u1')!.notes, 'Extern')
+
+  // Supervisors updating their own settings pass no notes.
+  await updateSupervisorSettings({
+    store,
+    department: 'DF',
+    userId: 'u1',
+    ...settings,
+  })
+  assert.equal(users.get('u1')!.notes, 'Extern')
+
+  await updateSupervisorSettings({
+    store,
+    department: 'DF',
+    userId: 'u1',
+    ...settings,
+    notes: '   ',
+  })
+  assert.equal(users.get('u1')!.notes, null)
 })
