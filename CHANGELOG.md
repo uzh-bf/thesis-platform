@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.37.0](https://github.com/uzh-bf/thesis-platform/compare/v1.36.0...v1.37.0) (2026-11-04)
+
+
+### Features
+
+* **notifications:** tag production failure mails with [Production] ([#228](https://github.com/uzh-bf/thesis-platform/issues/228)) ([f006317](https://github.com/uzh-bf/thesis-platform/commit/f006317f3c87de239f8ed6f913e029b506fbf97d))
+
 ## [1.36.0](https://github.com/uzh-bf/thesis-platform/compare/v1.35.0...v1.36.0) (2026-11-04)
 
 
