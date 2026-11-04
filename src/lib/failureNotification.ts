@@ -35,8 +35,10 @@ export function getFailureNotificationRecipients(
 }
 
 // Staging also runs as department DF, so its failures would read exactly like
-// production's; non-production environments are named in the subject.
+// production's; every deployed environment is named in the subject.
 const environmentLabels: Record<string, string> = {
+  prd: 'Production',
+  prd_ibw: 'Production',
   stg: 'Staging',
   dev: 'Dev',
 }
@@ -56,7 +58,7 @@ export function buildFailureNotificationEmail({
 }: {
   // Short department name (DF, IBW) used in the subject.
   department: string
-  // e.g. "Staging"; empty in production.
+  // e.g. "Production" or "Staging"; empty when unknown.
   environment?: string
   report: FailureReport
   recipients: string[]
