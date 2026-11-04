@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button } from '@uzh-bf/design-system'
 import { useSession } from 'next-auth/react'
 import { useMemo, useState } from 'react'
+import SupervisorListAccess from 'src/components/SupervisorListAccess'
 import SupervisorSettingsFields, {
   type SupervisorSettingsDraft,
 } from 'src/components/SupervisorSettingsFields'
@@ -19,9 +20,12 @@ const EMPTY_SETTINGS: SupervisorSettingsDraft = {
   submissionNotifications: false,
 }
 
-export default function AdminSupervisors() {
+// Rendered only for users who may see the supervisor list (see
+// canViewSupervisorList); the endpoints enforce the same rule.
+export default function AdminSupervisors({
+  canManageAccess,
+}: Readonly<{ canManageAccess: boolean }>) {
   const { data: session } = useSession()
-  const isAdmin = session?.user?.isAdmin === true
   const selfUserId = session?.user?.sub
 
   const [search, setSearch] = useState('')
@@ -36,10 +40,7 @@ export default function AdminSupervisors() {
   const [editNotes, setEditNotes] = useState('')
   const [editError, setEditError] = useState<string | null>(null)
 
-  const { data, isLoading, refetch } = trpc.adminGetSupervisors.useQuery(
-    undefined,
-    { enabled: isAdmin }
-  )
+  const { data, isLoading, refetch } = trpc.adminGetSupervisors.useQuery()
   const topicAreas = useMemo(() => data?.topicAreas ?? [], [data])
   const areaName = useMemo(
     () => new Map(topicAreas.map((area) => [area.slug, area.name])),
@@ -86,8 +87,6 @@ export default function AdminSupervisors() {
         s.notes?.toLowerCase().includes(q)
     )
   }, [data, search])
-
-  if (!isAdmin) return null
 
   const handleAdd = () => {
     setAddError(null)
@@ -234,6 +233,8 @@ export default function AdminSupervisors() {
           {addError && <p className="text-sm text-red-600">{addError}</p>}
         </div>
       )}
+
+      {canManageAccess && <SupervisorListAccess />}
 
       <div className="mt-3">
         {emptyMessage ? (

@@ -1,5 +1,7 @@
 import { initTRPC, TRPCError } from '@trpc/server'
 import { UserRole } from 'src/lib/constants'
+import { canViewSupervisorList } from 'src/lib/supervisorListAccess'
+import { prisma } from 'src/server/prisma'
 import { OpenApiMeta } from 'trpc-to-openapi'
 import { Context } from './context'
 
@@ -144,3 +146,31 @@ const isAdminOrDeveloper = middleware(({ next, ctx }) => {
 })
 
 export const adminOrDeveloperProcedure = t.procedure.use(isAdminOrDeveloper)
+
+// Read from the database on every request: the session token stops being
+// refreshed for admins, so a grant or revocation would otherwise lag behind.
+const isSupervisorListViewer = middleware(async ({ next, ctx }) => {
+  const user = ctx.session?.user
+
+  if (!user?.name || !user.sub) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.sub },
+    select: { role: true, adminRole: true, supervisorListAccess: true },
+  })
+
+  if (!dbUser || !canViewSupervisorList(dbUser)) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Access to the supervisor list required',
+    })
+  }
+
+  return next({
+    ctx: { user },
+  })
+})
+
+export const supervisorListProcedure = t.procedure.use(isSupervisorListViewer)
