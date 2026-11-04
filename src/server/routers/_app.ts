@@ -34,6 +34,7 @@ import {
 import {
   createFailureReporter,
   describeError,
+  getFailureEnvironmentLabel,
   getFailureNotificationRecipients,
   type ReportFailure,
 } from 'src/lib/failureNotification'
@@ -244,6 +245,7 @@ const getManagementNotificationRecipients = (
 const reportFailure: ReportFailure = (report) =>
   createFailureReporter({
     department: process.env.NEXT_PUBLIC_DEPARTMENT_NAME ?? '',
+    environment: getFailureEnvironmentLabel(),
     recipients: getFailureNotificationRecipients(),
   })(report)
 
