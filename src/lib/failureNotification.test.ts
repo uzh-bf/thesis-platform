@@ -48,7 +48,7 @@ test('builds an escaped failure mail', () => {
   )
 })
 
-test('names non-production environments', () => {
+test('names the deployed environments', () => {
   assert.equal(
     getFailureEnvironmentLabel({ THESIS_PLATFORM_ENV: 'stg' }),
     'Staging'
@@ -57,15 +57,18 @@ test('names non-production environments', () => {
     getFailureEnvironmentLabel({ THESIS_PLATFORM_ENV: ' DEV ' }),
     'Dev'
   )
-  assert.equal(getFailureEnvironmentLabel({ THESIS_PLATFORM_ENV: 'prd' }), '')
+  assert.equal(
+    getFailureEnvironmentLabel({ THESIS_PLATFORM_ENV: 'prd' }),
+    'Production'
+  )
   assert.equal(
     getFailureEnvironmentLabel({ THESIS_PLATFORM_ENV: 'prd_ibw' }),
-    ''
+    'Production'
   )
   assert.equal(getFailureEnvironmentLabel({}), '')
 })
 
-test('marks the subject of a staging failure mail', () => {
+test('marks the subject with the environment', () => {
   const mail = buildFailureNotificationEmail({
     department: 'DF',
     environment: 'Staging',
@@ -74,6 +77,15 @@ test('marks the subject of a staging failure mail', () => {
   })
 
   assert.equal(mail.subject, '[Staging] DF Theses - Failure: Posting')
+  assert.equal(
+    buildFailureNotificationEmail({
+      department: 'IBW',
+      environment: 'Production',
+      report: { process: 'Posting', problems: ['x'] },
+      recipients: ['flow@df.uzh.ch'],
+    }).subject,
+    '[Production] IBW Theses - Failure: Posting'
+  )
 })
 
 test('mails a report and never throws', async () => {
