@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.35.0](https://github.com/uzh-bf/thesis-platform/compare/v1.34.0...v1.35.0) (2026-11-04)
+
+
+### Features
+
+* **notifications:** name the environment in failure mail subjects ([#226](https://github.com/uzh-bf/thesis-platform/issues/226)) ([d4b39dd](https://github.com/uzh-bf/thesis-platform/commit/d4b39dd2a66faab4b02927765e0d8d3cd0726574))
+
 ## [1.34.0](https://github.com/uzh-bf/thesis-platform/compare/v1.33.0...v1.34.0) (2026-11-02)
 
 
