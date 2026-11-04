@@ -587,6 +587,11 @@ const supervisorSettingsInput = z.object({
   submissionNotifications: z.boolean(),
 })
 
+// Admin-only; supervisors cannot see or change their notes.
+const adminSupervisorSettingsInput = supervisorSettingsInput.extend({
+  notes: z.string().max(2000).optional(),
+})
+
 async function sendAdminChangeNotification({
   tab,
   action,
@@ -4187,7 +4192,7 @@ export const appRouter = router({
 
   adminAddSupervisor: adminProcedure
     .input(
-      supervisorSettingsInput.extend({
+      adminSupervisorSettingsInput.extend({
         name: z.string().trim().min(1),
         email: z.string().trim().email(),
       })
@@ -4219,7 +4224,7 @@ export const appRouter = router({
     }),
 
   adminUpdateSupervisorSettings: adminProcedure
-    .input(supervisorSettingsInput.extend({ userId: z.string().min(1) }))
+    .input(adminSupervisorSettingsInput.extend({ userId: z.string().min(1) }))
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
       const { before, after } = await runSupervisorAction(
