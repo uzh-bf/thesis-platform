@@ -1,4 +1,4 @@
-import { faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faDownload, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button } from '@uzh-bf/design-system'
 import { useSession } from 'next-auth/react'
@@ -7,6 +7,7 @@ import SupervisorListAccess from 'src/components/SupervisorListAccess'
 import SupervisorSettingsFields, {
   type SupervisorSettingsDraft,
 } from 'src/components/SupervisorSettingsFields'
+import { buildSupervisorCsv, getCsvDelimiter } from 'src/lib/supervisorCsv'
 import { trpc } from 'src/lib/trpc'
 
 const INPUT_CLASSES =
@@ -14,6 +15,9 @@ const INPUT_CLASSES =
 
 const TH_CLASSES =
   'px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
+
+// Topic area filter value for supervisors without any topic area.
+const NO_AREA = '__none__'
 
 const EMPTY_SETTINGS: SupervisorSettingsDraft = {
   topicAreaSlugs: [],
@@ -29,6 +33,10 @@ export default function AdminSupervisors({
   const selfUserId = session?.user?.sub
 
   const [search, setSearch] = useState('')
+  const [areaFilter, setAreaFilter] = useState('')
+  const [notificationFilter, setNotificationFilter] = useState<
+    '' | 'yes' | 'no'
+  >('')
   const [showAdd, setShowAdd] = useState(false)
   const [newName, setNewName] = useState('')
   const [newEmail, setNewEmail] = useState('')
@@ -79,14 +87,34 @@ export default function AdminSupervisors({
   const filteredSupervisors = useMemo(() => {
     const list = data?.supervisors ?? []
     const q = search.trim().toLowerCase()
-    if (!q) return list
-    return list.filter(
-      (s) =>
-        s.name.toLowerCase().includes(q) ||
-        s.email.toLowerCase().includes(q) ||
-        s.notes?.toLowerCase().includes(q)
-    )
-  }, [data, search])
+    return list.filter((s) => {
+      if (
+        q &&
+        !s.name.toLowerCase().includes(q) &&
+        !s.email.toLowerCase().includes(q) &&
+        !s.notes?.toLowerCase().includes(q)
+      ) {
+        return false
+      }
+      if (areaFilter === NO_AREA && s.topicAreaSlugs.length > 0) return false
+      if (
+        areaFilter &&
+        areaFilter !== NO_AREA &&
+        !s.topicAreaSlugs.includes(areaFilter)
+      ) {
+        return false
+      }
+      if (notificationFilter === 'yes' && !s.submissionNotifications) {
+        return false
+      }
+      if (notificationFilter === 'no' && s.submissionNotifications) {
+        return false
+      }
+      return true
+    })
+  }, [data, search, areaFilter, notificationFilter])
+
+  const hasFilters = !!search.trim() || !!areaFilter || !!notificationFilter
 
   const handleAdd = () => {
     setAddError(null)
@@ -109,10 +137,36 @@ export default function AdminSupervisors({
     }
   }
 
+  const areaNames = (slugs: string[]) =>
+    slugs.map((slug) => areaName.get(slug) ?? slug)
+
   const formatAreas = (slugs: string[]) =>
-    slugs.length === 0
-      ? '–'
-      : slugs.map((slug) => areaName.get(slug) ?? slug).join(', ')
+    slugs.length === 0 ? '–' : areaNames(slugs).join(', ')
+
+  // Exports the rows currently shown, so filters narrow the download too.
+  const handleDownload = () => {
+    const csv = buildSupervisorCsv(
+      filteredSupervisors.map((s) => ({
+        name: s.name,
+        email: s.email,
+        topicAreas: areaNames(s.topicAreaSlugs),
+        submissionNotifications: s.submissionNotifications,
+        notes: s.notes,
+      })),
+      getCsvDelimiter(navigator.language)
+    )
+    const date = new Date().toISOString().slice(0, 10)
+    const objectUrl = URL.createObjectURL(
+      new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    )
+    const link = document.createElement('a')
+    link.href = objectUrl
+    link.download = `supervisors-${date}.csv`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
+  }
 
   let emptyMessage: string | null = null
   if (isLoading) {
@@ -120,7 +174,7 @@ export default function AdminSupervisors({
   } else if (!data || data.supervisors.length === 0) {
     emptyMessage = 'No supervisors found.'
   } else if (filteredSupervisors.length === 0) {
-    emptyMessage = 'No results for the current search.'
+    emptyMessage = 'No supervisors match the current search and filters.'
   }
 
   return (
@@ -235,6 +289,81 @@ export default function AdminSupervisors({
       )}
 
       {canManageAccess && <SupervisorListAccess />}
+
+      <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-end">
+        <div className="md:w-72">
+          <label
+            htmlFor="supervisor-area-filter"
+            className="block text-xs font-medium text-gray-700 mb-0.5"
+          >
+            Topic area
+          </label>
+          <select
+            id="supervisor-area-filter"
+            value={areaFilter}
+            onChange={(e) => setAreaFilter(e.target.value)}
+            className={INPUT_CLASSES}
+          >
+            <option value="">All topic areas</option>
+            {topicAreas.map((area) => (
+              <option key={area.slug} value={area.slug}>
+                {area.name}
+              </option>
+            ))}
+            <option value={NO_AREA}>No topic area</option>
+          </select>
+        </div>
+        <div className="md:w-44">
+          <label
+            htmlFor="supervisor-notification-filter"
+            className="block text-xs font-medium text-gray-700 mb-0.5"
+          >
+            Notifications
+          </label>
+          <select
+            id="supervisor-notification-filter"
+            value={notificationFilter}
+            onChange={(e) =>
+              setNotificationFilter(e.target.value as '' | 'yes' | 'no')
+            }
+            className={INPUT_CLASSES}
+          >
+            <option value="">All</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearch('')
+              setAreaFilter('')
+              setNotificationFilter('')
+            }}
+            className="px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 whitespace-nowrap"
+          >
+            Clear filters
+          </button>
+        )}
+        <div className="flex items-center gap-3 md:ml-auto">
+          {data && (
+            <span className="text-sm text-gray-600 whitespace-nowrap">
+              {filteredSupervisors.length} of {data.supervisors.length}{' '}
+              supervisors
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={filteredSupervisors.length === 0}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          >
+            <FontAwesomeIcon icon={faDownload} />
+            Download CSV
+          </button>
+        </div>
+      </div>
 
       <div className="mt-3">
         {emptyMessage ? (
