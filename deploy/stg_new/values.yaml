@@ -1,5 +1,5 @@
 image:
-  tag: 'latest-arm-f006317f3c87de239f8ed6f913e029b506fbf97d'
+  tag: 'latest-arm-0ea2b920cbb8fe16d134b2dba3344ee27951a38f'
   runtime: distroless
   pullPolicy: IfNotPresent
 
@@ -29,4 +29,4 @@ ingress:
 
 migration:
   image:
-    tag: 'migration-latest-arm-f006317f3c87de239f8ed6f913e029b506fbf97d'
+    tag: 'migration-latest-arm-0ea2b920cbb8fe16d134b2dba3344ee27951a38f'
