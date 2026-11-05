@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.39.0](https://github.com/uzh-bf/thesis-platform/compare/v1.38.0...v1.39.0) (2026-11-05)
+
+
+### Features
+
+* **admin:** filter supervisors by multiple topic areas ([#230](https://github.com/uzh-bf/thesis-platform/issues/230)) ([672975a](https://github.com/uzh-bf/thesis-platform/commit/672975a7ff140bb5e89f4eb2f6b34dff0fdf93f8))
+
 ## [1.38.0](https://github.com/uzh-bf/thesis-platform/compare/v1.37.0...v1.38.0) (2026-11-04)
 
 
