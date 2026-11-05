@@ -1,8 +1,12 @@
-import { faDownload, faPlus } from '@fortawesome/free-solid-svg-icons'
+import {
+  faChevronDown,
+  faDownload,
+  faPlus,
+} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button } from '@uzh-bf/design-system'
 import { useSession } from 'next-auth/react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import SupervisorListAccess from 'src/components/SupervisorListAccess'
 import SupervisorSettingsFields, {
   type SupervisorSettingsDraft,
@@ -33,7 +37,7 @@ export default function AdminSupervisors({
   const selfUserId = session?.user?.sub
 
   const [search, setSearch] = useState('')
-  const [areaFilter, setAreaFilter] = useState('')
+  const [areaFilter, setAreaFilter] = useState<string[]>([])
   const [notificationFilter, setNotificationFilter] = useState<
     '' | 'yes' | 'no'
   >('')
@@ -96,11 +100,15 @@ export default function AdminSupervisors({
       ) {
         return false
       }
-      if (areaFilter === NO_AREA && s.topicAreaSlugs.length > 0) return false
+      // Selected topic areas combine with OR: a supervisor matches when they
+      // cover any of them (or have none, if "No topic area" is selected).
       if (
-        areaFilter &&
-        areaFilter !== NO_AREA &&
-        !s.topicAreaSlugs.includes(areaFilter)
+        areaFilter.length > 0 &&
+        !areaFilter.some((slug) =>
+          slug === NO_AREA
+            ? s.topicAreaSlugs.length === 0
+            : s.topicAreaSlugs.includes(slug)
+        )
       ) {
         return false
       }
@@ -114,7 +122,8 @@ export default function AdminSupervisors({
     })
   }, [data, search, areaFilter, notificationFilter])
 
-  const hasFilters = !!search.trim() || !!areaFilter || !!notificationFilter
+  const hasFilters =
+    !!search.trim() || areaFilter.length > 0 || !!notificationFilter
 
   const handleAdd = () => {
     setAddError(null)
@@ -292,26 +301,24 @@ export default function AdminSupervisors({
 
       <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-end">
         <div className="md:w-72">
-          <label
-            htmlFor="supervisor-area-filter"
+          <span
+            id="supervisor-area-filter-label"
             className="block text-xs font-medium text-gray-700 mb-0.5"
           >
-            Topic area
-          </label>
-          <select
-            id="supervisor-area-filter"
+            Topic areas
+          </span>
+          <TopicAreaFilter
+            labelId="supervisor-area-filter-label"
+            options={[
+              ...topicAreas.map((area) => ({
+                value: area.slug,
+                label: area.name,
+              })),
+              { value: NO_AREA, label: 'No topic area' },
+            ]}
             value={areaFilter}
-            onChange={(e) => setAreaFilter(e.target.value)}
-            className={INPUT_CLASSES}
-          >
-            <option value="">All topic areas</option>
-            {topicAreas.map((area) => (
-              <option key={area.slug} value={area.slug}>
-                {area.name}
-              </option>
-            ))}
-            <option value={NO_AREA}>No topic area</option>
-          </select>
+            onChange={setAreaFilter}
+          />
         </div>
         <div className="md:w-44">
           <label
@@ -338,7 +345,7 @@ export default function AdminSupervisors({
             type="button"
             onClick={() => {
               setSearch('')
-              setAreaFilter('')
+              setAreaFilter([])
               setNotificationFilter('')
             }}
             className="px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 whitespace-nowrap"
@@ -540,6 +547,102 @@ function NotesField({
         placeholder="e.g. external, on leave until 08/2026, prefers no emails"
         className={INPUT_CLASSES}
       />
+    </div>
+  )
+}
+
+// Dropdown with a checkbox per topic area; an empty selection means all.
+function TopicAreaFilter({
+  labelId,
+  options,
+  value,
+  onChange,
+}: Readonly<{
+  labelId: string
+  options: { value: string; label: string }[]
+  value: string[]
+  onChange: (value: string[]) => void
+}>) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handlePointer = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', handlePointer)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('mousedown', handlePointer)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [open])
+
+  const selectedLabels = options
+    .filter((option) => value.includes(option.value))
+    .map((option) => option.label)
+  let summary = 'All topic areas'
+  if (selectedLabels.length === 1) summary = selectedLabels[0]
+  else if (selectedLabels.length > 1) {
+    summary = `${selectedLabels.length} topic areas selected`
+  }
+
+  const toggle = (slug: string) =>
+    onChange(
+      value.includes(slug) ? value.filter((v) => v !== slug) : [...value, slug]
+    )
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        aria-labelledby={labelId}
+        aria-expanded={open}
+        title={selectedLabels.join(', ') || undefined}
+        onClick={() => setOpen((prev) => !prev)}
+        className={`${INPUT_CLASSES} flex items-center justify-between gap-2 bg-white text-left`}
+      >
+        <span className="truncate">{summary}</span>
+        <FontAwesomeIcon
+          icon={faChevronDown}
+          className="text-xs text-gray-500"
+        />
+      </button>
+      {open && (
+        <div
+          role="group"
+          aria-labelledby={labelId}
+          className="absolute z-20 mt-1 w-full max-h-72 overflow-auto rounded-md border border-gray-300 bg-white py-1 shadow-lg"
+        >
+          {options.map((option) => (
+            <label
+              key={option.value}
+              className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm text-gray-800 hover:bg-gray-50"
+            >
+              <input
+                type="checkbox"
+                checked={value.includes(option.value)}
+                onChange={() => toggle(option.value)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              {option.label}
+            </label>
+          ))}
+          {value.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="mt-1 w-full border-t border-gray-200 px-3 py-1.5 text-left text-sm text-blue-700 hover:bg-gray-50"
+            >
+              Show all topic areas
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
